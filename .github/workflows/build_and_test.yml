@@ -188,7 +188,6 @@ jobs:
         .\dotnet-install.ps1
         # Note: iqsharp version 0.14 suffers from a performance issue that can freeze the CI.
         dotnet tool install --version 0.13.20102604 -g Microsoft.Quantum.IQSharp
-        dotnet iqsharp install --user
 
     - name: Set up Python 3.7
       if: github.event_name == 'push'
