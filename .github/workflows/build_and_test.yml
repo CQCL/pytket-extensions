@@ -1,0 +1,222 @@
+name: Build and test
+
+on:
+  pull_request:
+    branches:
+      - master
+      - develop
+  push:
+    branches:
+      - develop
+      - 'wheel/**'
+  release:
+    types:
+      - created
+      - edited
+
+env:
+  IQSHARP_TELEMETRY_OPT_OUT: 1
+
+jobs:
+
+  linux:
+    name: Build and test (Linux)
+    runs-on: ubuntu-20.04
+
+    steps:
+
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: '0'
+    - run: git fetch --depth=1 origin +refs/tags/*:refs/tags/* +refs/heads/*:refs/remotes/origin/*
+    - name: Initialize modules list
+      run: |
+        cd ${GITHUB_WORKSPACE}/modules
+        LS_MODULES=`ls -d */`
+        ALL_MODULES=`echo ${LS_MODULES} | sed -e 's/\///g'`
+        echo "MODULES_TO_TEST=${ALL_MODULES}" >> $GITHUB_ENV
+    - name: check for mofified modules
+      if: github.event_name == 'pull_request'
+      run : |
+        MM=`python3 .github/workflows/changed_modules.py origin/${{ github.base_ref }} ${{ github.sha }}`
+        echo "MODULES_TO_TEST=${MM}" >> $GITHUB_ENV
+
+    - name: Pull docker images
+      if: contains(env.MODULES_TO_TEST, 'pytket-pyquil')
+      run: |
+        docker pull rigetti/quilc
+        docker pull rigetti/qvm
+    - name: Install dotnet SDK and iqsharp
+      if: contains(env.MODULES_TO_TEST, 'pytket-qsharp')
+      run: |
+        curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
+        sudo apt-add-repository https://packages.microsoft.com/ubuntu/20.04/prod
+        sudo apt-get update
+        sudo apt-get install dotnet-sdk-3.1
+        echo "~/.dotnet/tools" >> $GITHUB_PATH
+        # Note: iqsharp version 0.14 suffers from a performance issue that can freeze the CI.
+        dotnet tool install --version 0.13.20102604 -g Microsoft.Quantum.IQSharp
+
+    - name: Set up Python 3.7
+      if: github.event_name == 'push'
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.7
+    - name: Build and test (3.7)
+      if: github.event_name == 'push'
+      run: |
+        ./.github/workflows/build-test nomypy
+    - name: Set up Python 3.8
+      if: github.event_name == 'pull_request'
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
+    - name: Build and test (3.8)
+      if: github.event_name == 'pull_request'
+      run: |
+        ./.github/workflows/build-test nomypy
+    - name: Set up Python 3.9
+      if: github.event_name == 'push' || github.event_name == 'release' || contains('refs/heads/wheel', github.ref)
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.9
+    - name: Build and test (3.9)
+      if: github.event_name == 'push'
+      run: |
+        ./.github/workflows/build-test nomypy
+    - name: Build, test and save (3.9)
+      if: github.event_name == 'release' || contains('refs/heads/wheel', github.ref)
+      run: |
+        ./.github/workflows/build-test nomypy
+    - uses: actions/upload-artifact@v2
+      if: github.event_name == 'release' || contains('refs/heads/wheel', github.ref)
+      with:
+        name: artefacts
+        path: $(GITHUB_WORKSPACE)/build
+
+  macos:
+    if: github.event_name != 'release'
+    name: Build and test (MacOS)
+    runs-on: macos-10.15
+
+    steps:
+
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: '0'
+    - run: git fetch --depth=1 origin +refs/tags/*:refs/tags/* +refs/heads/*:refs/remotes/origin/*
+    - name: Initialize modules list
+      run: |
+        cd ${GITHUB_WORKSPACE}/modules
+        LS_MODULES=`ls -d */`
+        ALL_MODULES=`echo ${LS_MODULES} | sed -e 's/\///g'`
+        echo "MODULES_TO_TEST=${ALL_MODULES}" >> $GITHUB_ENV
+    - name: check for mofified modules
+      if: github.event_name == 'pull_request'
+      run : |
+        MM=`python3 .github/workflows/changed_modules.py origin/${{ github.base_ref }} ${{ github.sha }}`
+        echo "MODULES_TO_TEST=${MM}" >> $GITHUB_ENV
+
+    - name: Install dotnet SDK and iqsharp
+      run: |
+        brew install mono-libgdiplus jupyter
+        wget https://dot.net/v1/dotnet-install.sh
+        chmod a+x dotnet-install.sh
+        ./dotnet-install.sh --channel 3.1
+        dotnet tool install -g Microsoft.Quantum.IQSharp
+        dotnet iqsharp install
+
+    - name: Set up Python 3.7
+      if: github.event_name == 'push'
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.7
+    - name: Build and test (3.7)
+      if: github.event_name == 'push'
+      run: |
+        ./.github/workflows/build-test nomypy
+
+    - name: Set up Python 3.8
+      if: github.event_name == 'pull_request'
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
+    - name: Build and test (3.8) + mypy
+      if: github.event_name == 'pull_request'
+      run: |
+        ./.github/workflows/build-test mypy
+
+    - name: Set up Python 3.9
+      if: github.event_name == 'push'
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.9
+    - name: Build and test (3.9)
+      if: github.event_name == 'push'
+      run: |
+        ./.github/workflows/build-test nomypy
+
+  windows:
+    if: github.event_name != 'release'
+    name: Build and test (Windows)
+    runs-on: windows-2019
+
+    steps:
+
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: '0'
+    - run: git fetch --depth=1 origin +refs/tags/*:refs/tags/* +refs/heads/*:refs/remotes/origin/*
+    - name: Initialize modules list
+      shell: bash
+      run: |
+        cd ${GITHUB_WORKSPACE}/modules
+        LS_MODULES=`ls -d */`
+        ALL_MODULES=`echo ${LS_MODULES} | sed -e 's/\///g'`
+        echo "MODULES_TO_TEST=${ALL_MODULES}" >> $GITHUB_ENV
+    - name: Determine changed modules
+      if: github.event_name == 'pull_request'
+      shell: bash
+      run: |
+        MM=`python .github/workflows/changed_modules.py origin/${{ github.base_ref }} ${{ github.sha }}`
+        echo "MODULES_TO_TEST=${MM}" >> $GITHUB_ENV
+
+    - name: Install dotnet SDK and iqsharp
+      if: contains(env.MODULES_TO_TEST, 'pytket-qsharp')
+      run: |
+        Invoke-WebRequest "https://dot.net/v1/dotnet-install.ps1" -outfile "dotnet-install.ps1"
+        .\dotnet-install.ps1
+        # Note: iqsharp version 0.14 suffers from a performance issue that can freeze the CI.
+        dotnet tool install --version 0.13.20102604 -g Microsoft.Quantum.IQSharp
+        dotnet iqsharp install --user
+
+    - name: Set up Python 3.7
+      if: github.event_name == 'push'
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.7
+    - name: Build and test (3.7)
+      if: github.event_name == 'push'
+      shell: bash
+      run: |
+        ./.github/workflows/build-test nomypy
+    - name: Set up Python 3.8
+      if: github.event_name == 'pull_request'
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
+    - name: Build and test (3.8)
+      if: github.event_name == 'pull_request'
+      shell: bash
+      run: |
+        ./.github/workflows/build-test nomypy
+    - name: Set up Python 3.9
+      if: github.event_name == 'push'
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.9
+    - name: Build and test (3.9)
+      if: github.event_name == 'push'
+      shell: bash
+      run: |
+        ./.github/workflows/build-test nomypy

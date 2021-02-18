@@ -1,0 +1,66 @@
+name: Hotfix
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+
+  generate:
+    name: Generate hotfixed modules
+    if: contains(github.event.head_commit.message, 'hotfix')
+    runs-on: ubuntu-20.04
+
+    steps:
+
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: '0'
+    - run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+    - name: Parse modules from commit message
+      run: |
+        tmpfile=`mktemp`
+        cat << EOF > $tmpfile
+        ${{ github.event.head_commit.message }}
+
+        EOF
+        COMMIT_MSG=`cat $tmpfile`
+        LS_MODULES=`ls ${GITHUB_WORKSPACE}/modules`
+        ALL_MODULES=`echo ${LS_MODULES}`
+        MODULES_TO_TEST=""
+        for MODULE in ${ALL_MODULES}
+        do
+          if [[ ${COMMIT_MSG} =~ ${MODULE} ]]
+          then
+            MODULES_TO_TEST="${MODULES_TO_TEST} ${MODULE}"
+          fi
+        done
+        echo "MODULES_TO_TEST=${MODULES_TO_TEST}" >> $GITHUB_ENV
+
+    - name: Pull docker images
+      if: contains(env.MODULES_TO_TEST, 'pytket-pyquil')
+      run: |
+        docker pull rigetti/quilc
+        docker pull rigetti/qvm
+    - name: Install dotnet SDK and iqsharp
+      if: contains(env.MODULES_TO_TEST, 'pytket-qsharp')
+      run: |
+        curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
+        sudo apt-add-repository https://packages.microsoft.com/ubuntu/20.04/prod
+        sudo apt-get update
+        sudo apt-get install dotnet-sdk-3.1
+        echo "~/.dotnet/tools" >> $GITHUB_PATH
+        # Note: iqsharp version 0.14 suffers from a performance issue that can freeze the CI.
+        dotnet tool install --version 0.13.20102604 -g Microsoft.Quantum.IQSharp
+
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.9
+    - name: Build and test
+      run: |
+        ./.github/workflows/build-test nomypy
+    - uses: actions/upload-artifact@v2
+      with:
+        name: artefacts
+        path: $(GITHUB_WORKSPACE)/build

@@ -1,0 +1,70 @@
+name: Pytket Extensions Docs
+
+on:
+  push:
+    branches:
+      - 'docs/**'
+  schedule:
+    # 04:00 every weekday morning
+    - cron: '0 4 * * 1-5'
+
+jobs:
+  docs:
+    name: build docs
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        python-version: [3.8]
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: '0'
+    - run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Get pip cache
+      id: pip-cache
+      run: |
+       python -c "from pip._internal.locations import USER_CACHE_DIR; print('::set-output name=dir::' + USER_CACHE_DIR)"
+    - name: Cache pip
+      uses: actions/cache@v2
+      with:
+        path: ${{ steps.pip-cache.outputs.dir }}
+        # Look to see if there is a cache hit for the corresponding requirements file
+        key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('docs/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-${{ matrix.python-version }}-
+          ${{ runner.os }}-pip-
+    - name: Install pytket extensions
+      run: |
+        for path in modules/*/
+        do
+          cd ${path}
+          pip install .
+          cd ../..
+        done
+    - name: Install dotnet SDK and iqsharp
+      run: |
+        curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
+        sudo apt-add-repository https://packages.microsoft.com/ubuntu/20.04/prod
+        sudo apt-get update
+        sudo apt-get install dotnet-sdk-3.1
+        echo "~/.dotnet/tools" >> $GITHUB_PATH
+        # Note: iqsharp version 0.14 suffers from a performance issue that can freeze the CI.
+        dotnet tool install --version 0.13.20102604 -g Microsoft.Quantum.IQSharp
+        dotnet iqsharp install --user
+    - name: Install docs dependencies
+      run: |
+        pip install --pre -r docs/requirements.txt
+
+    - name: Test building docs
+      timeout-minutes: 20
+      run: |
+        cd docs
+        make html
+    - uses: actions/upload-artifact@v2
+      with:
+        name: pytket-extension-docs
+        path: docs/build/html/

@@ -1,0 +1,65 @@
+#!/bin/bash
+set -evu
+
+# Usage:
+#
+# build-test [mypy|nomypy]
+#
+# Arguments:
+# - mypy: include mypy check ("mypy" or "nomypy")
+#
+# Environment variables used:
+# - MODULES_TO_TEST: space-separated list of modules to test
+# - GITHUB_WORKSPACE: workspace directory
+
+MYPY=$1
+
+PLAT=`python -c 'import platform; print(platform.system())'`
+
+git clean -dfx
+
+echo "Modules to test: ${MODULES_TO_TEST}"
+
+MODULEDIR="${GITHUB_WORKSPACE}/modules"
+
+ARTEFACTSDIR=${GITHUB_WORKSPACE}/build
+
+rm -rf ${ARTEFACTSDIR} && mkdir ${ARTEFACTSDIR}
+
+python -m pip install --upgrade pip wheel pytest hypothesis
+
+# Generate and install packages:
+for MODULE in $MODULES_TO_TEST; do
+    echo "${MODULE}..."
+    cd ${MODULEDIR}/${MODULE}
+    python setup.py sdist
+    for sdist in dist/*.tar.gz ; do
+        python -m pip install $sdist
+        cp $sdist ${ARTEFACTSDIR}
+    done
+done
+
+# Test and mypy:
+if [[ "${MYPY}" = "mypy" ]]
+then
+    python -m pip install --upgrade mypy
+fi
+for MODULE in $MODULES_TO_TEST; do
+    echo "${MODULE}..."
+
+    cd ${MODULEDIR}/${MODULE}/tests
+
+    python -m pip install -r test-requirements.txt
+
+    if [[ "${MODULE}" = "pytket-qsharp" && "${PLAT}" != "Darwin" ]]
+    then
+        dotnet iqsharp install --user
+    fi
+
+    pytest --doctest-modules
+
+    if [[ "${MYPY}" = "mypy" ]]
+    then
+        ${MODULEDIR}/mypy-check ${MODULEDIR}/${MODULE}
+    fi
+done

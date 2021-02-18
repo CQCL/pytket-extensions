@@ -1,0 +1,26 @@
+name: Lint python projects
+
+on: [push]
+
+jobs:
+  lint:
+
+    runs-on: ubuntu-20.04
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.x
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+    - name: Update pip
+      run: pip install --upgrade pip
+    - name: Install black and pylint
+      run: pip install black~=20.8b1 pylint
+    - name: Check files are formatted with black
+      run: |
+        black --check modules/
+    - name: Run pylint
+      run: |
+        cd modules/
+        pylint */
