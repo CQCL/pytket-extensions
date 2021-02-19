@@ -46,7 +46,8 @@ Full documentation for each extension module is available [TODO WHERE?].
 
 ## Bugs and feature requests
 
-Please file bugs an feature requests on Github [TODO LINK].
+Please file bugs an feature requests on the Github
+[issue tracker](https://github.com/CQCL/pytket-extensions/issues).
 
 ## Development
 
