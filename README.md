@@ -3,7 +3,7 @@
 This repository contains a collection of Python extension modules for CQC's
 [pytket](https://cqcl.github.io/pytket) quantum SDK.
 
-Each of these module provides one or several _backends_ (intefaces to devices
+Each of these modules provides one or several _backends_ (intefaces to devices
 or simulators), _frontends_ (interfaces to other high-level quantum languages),
 or both.
 
@@ -46,7 +46,7 @@ Full documentation for each extension module is available [TODO WHERE?].
 
 ## Bugs and feature requests
 
-Please file bugs an feature requests on the Github
+Please file bugs and feature requests on the Github
 [issue tracker](https://github.com/CQCL/pytket-extensions/issues).
 
 ## Development
