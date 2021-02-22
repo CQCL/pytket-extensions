@@ -22,9 +22,9 @@ echo "Modules to test: ${MODULES_TO_TEST}"
 
 MODULEDIR="${GITHUB_WORKSPACE}/modules"
 
-ARTEFACTSDIR=${GITHUB_WORKSPACE}/build
+ARTIFACTSDIR=${GITHUB_WORKSPACE}/build
 
-rm -rf ${ARTEFACTSDIR} && mkdir ${ARTEFACTSDIR}
+rm -rf ${ARTIFACTSDIR} && mkdir ${ARTIFACTSDIR}
 
 python -m pip install --upgrade pip wheel pytest hypothesis
 
@@ -35,7 +35,7 @@ for MODULE in $MODULES_TO_TEST; do
     python setup.py sdist
     for sdist in dist/*.tar.gz ; do
         python -m pip install $sdist
-        cp $sdist ${ARTEFACTSDIR}
+        cp $sdist ${ARTIFACTSDIR}
     done
 done
 
