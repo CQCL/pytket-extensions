@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from collections import Counter
-from typing import Callable, Any
+from typing import Callable, Any  # pylint: disable=unused-import
 from ast import literal_eval
 import os
 from hypothesis import given, settings, strategies
