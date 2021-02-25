@@ -31,7 +31,7 @@ from pytket.circuit import Circuit, OpType  # type: ignore
 from pytket.backends import Backend, CircuitNotRunError, CircuitStatus, ResultHandle
 from pytket.backends.backendresult import BackendResult
 from pytket.backends.resulthandle import _ResultIdTuple
-from pytket.extensions.qiskit import process_characterisation
+from pytket.extensions.qiskit.qiskit_convert import process_characterisation
 from pytket.device import Device  # type: ignore
 from pytket.passes import (  # type: ignore
     BasePass,

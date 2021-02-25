@@ -51,7 +51,7 @@ from pytket.predicates import (  # type: ignore
     NoMidMeasurePredicate,
     NoSymbolsPredicate,
 )
-from pytket.extensions.qsharp import tk_to_qsharp
+from pytket.extensions.qsharp.qsharp_convert import tk_to_qsharp
 
 if TYPE_CHECKING:
     from qsharp.loader import QSharpCallable  # type: ignore

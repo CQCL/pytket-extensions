@@ -59,7 +59,7 @@ from pytket.predicates import (  # type: ignore
     DefaultRegisterPredicate,
     Predicate,
 )
-from pytket.extensions.pyquil import process_characterisation, tk_to_pyquil
+from pytket.extensions.pyquil.pyquil_convert import process_characterisation, tk_to_pyquil
 from pytket.routing import NoiseAwarePlacement, Architecture  # type: ignore
 from pytket.utils.operators import QubitPauliOperator
 from pytket.utils.outcomearray import OutcomeArray

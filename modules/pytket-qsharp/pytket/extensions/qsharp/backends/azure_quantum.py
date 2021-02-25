@@ -32,7 +32,7 @@ from pytket.utils.outcomearray import OutcomeArray
 
 from pytket.extensions.qsharp.backends.config import QSharpConfig
 from pytket.extensions.qsharp.backends.common import _QsharpBaseBackend
-from pytket.extensions.qsharp import tk_to_qsharp
+from pytket.extensions.qsharp.qsharp_convert import tk_to_qsharp
 
 
 if TYPE_CHECKING:

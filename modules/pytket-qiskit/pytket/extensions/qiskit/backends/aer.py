@@ -44,8 +44,8 @@ from pytket.predicates import (  # type: ignore
     NoSymbolsPredicate,
     Predicate,
 )
-from pytket.extensions.qiskit import tk_to_qiskit
 from pytket.extensions.qiskit.qiskit_convert import (
+    tk_to_qiskit,
     _qiskit_gates_1q,
     _qiskit_gates_2q,
     _gate_str_2_optype,

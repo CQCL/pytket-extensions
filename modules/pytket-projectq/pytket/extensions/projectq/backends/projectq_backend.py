@@ -54,7 +54,7 @@ from pytket.predicates import (  # type: ignore
     DefaultRegisterPredicate,
     Predicate,
 )
-from pytket.extensions.projectq import tk_to_projectq
+from pytket.extensions.projectq.projectq_convert import tk_to_projectq
 from pytket.utils.operators import QubitPauliOperator
 from pytket.utils.results import KwargTypes
 
