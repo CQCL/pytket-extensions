@@ -12,7 +12,7 @@ To install, run:
 .. note::   Requires an `Amazon Braket <https://aws.amazon.com/braket/>`_ account.
 
 pytket.extensions.braket
-~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. automodule:: pytket.extensions.braket
     :special-members:

@@ -10,7 +10,7 @@ install, run:
 ``pip install pytket-aqt``
 
 pytket.extensions.aqt
-~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
 
 .. automodule:: pytket.extensions.aqt
     :special-members:

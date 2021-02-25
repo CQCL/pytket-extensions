@@ -34,9 +34,5 @@ pytket.extensions.qulacs
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. automodule:: pytket.extensions.qulacs
-    :members: tk_to_qulacs
-
-.. autoclass:: pytket.extensions.qulacs.QulacsBackend
-    :inherited-members:
-    :members:
+    :members: tk_to_qulacs, QulacsBackend
 

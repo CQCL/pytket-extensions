@@ -22,7 +22,7 @@ modify your ``PATH``:
 4. Run ``dotnet iqsharp install --user``.
 
 pytket.extensions.qsharp
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autoclass:: pytket.extensions.qsharp.QsharpSimulatorBackend
     :special-members: __init__

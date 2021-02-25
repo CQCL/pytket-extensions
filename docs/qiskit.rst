@@ -15,7 +15,7 @@ install, run:
 ``pip install pytket-qiskit``
 
 pytket.extensions.qiskit
-~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autoclass:: pytket.extensions.qiskit.IBMQBackend
     :special-members:
