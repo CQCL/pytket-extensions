@@ -20,7 +20,7 @@ import numpy as np  # type: ignore
 import pytest
 from pytket.circuit import Circuit  # type: ignore
 from pytket.backends.backend_exceptions import CircuitNotValidError
-from pytket.extensions.backends.ionq import IonQBackend
+from pytket.extensions.ionq import IonQBackend
 
 skip_remote_tests: bool = os.getenv("PYTKET_RUN_REMOTE_TESTS") is None or not os.getenv(
     "IONQ_AUTH"

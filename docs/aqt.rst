@@ -9,9 +9,9 @@ install, run:
 
 ``pip install pytket-aqt``
 
-pytket.backends.aqt
-~~~~~~~~~~~~~~~~~~~
+pytket.extensions.aqt
+~~~~~~~~~~~~~~~~~~~~~
 
-.. automodule:: pytket.backends.aqt
+.. automodule:: pytket.extensions.aqt
     :special-members:
     :members: AQTBackend

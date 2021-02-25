@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from pytket.circuit import Circuit, OpType  # type: ignore
-from pytket.extensions.backends.qsharp import QsharpSimulatorBackend
+from pytket.extensions.qsharp import QsharpSimulatorBackend
 
 
 def test_bell() -> None:

@@ -13,9 +13,9 @@ To install, run:
 .. note::   Requires a `Honeywell Quantum Solutions <https://www.honeywell.com/en-us/company/quantum>`_ account.
             When initialising the backend for the first time, you will be prompted for your username and password.
 
-pytket.backends.honeywell
-~~~~~~~~~~~~~~~~~~~~~~~~~
+pytket.extensions.honeywell
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. automodule:: pytket.backends.honeywell
+.. automodule:: pytket.extensions.honeywell
     :special-members:
     :members: HoneywellBackend

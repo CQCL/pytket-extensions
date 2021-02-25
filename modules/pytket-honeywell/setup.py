@@ -21,7 +21,7 @@ with open("_metadata.py") as fp:
     exec(fp.read(), metadata)
 shutil.copy(
     "_metadata.py",
-    os.path.join("pytket", "extensions", "backends", "honeywell", "_metadata.py"),
+    os.path.join("pytket", "extensions", "honeywell", "_metadata.py"),
 )
 
 setup(

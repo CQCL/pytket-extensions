@@ -15,4 +15,12 @@
 """Module for conversion from tket to Q#
 """
 
+# _metadata.py is copied to the folder after installation.
+from ._metadata import __extension_version__, __extension_name__  # type: ignore
+from .backends import (
+    QsharpSimulatorBackend,
+    QsharpEstimatorBackend,
+    QsharpToffoliSimulatorBackend,
+    AzureBackend,
+)
 from .qsharp_convert import tk_to_qsharp

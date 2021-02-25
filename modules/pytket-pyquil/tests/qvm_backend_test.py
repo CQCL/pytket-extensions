@@ -23,7 +23,7 @@ import numpy as np  # type: ignore
 import pytest
 from _pytest.fixtures import FixtureRequest
 
-from pytket.extensions.backends.forest import ForestBackend, ForestStateBackend
+from pytket.extensions.pyquil import ForestBackend, ForestStateBackend
 from pytket.circuit import BasisOrder, Circuit, OpType, Qubit, Node  # type: ignore
 from pytket.device import Device  # type: ignore
 from pytket.passes import CliffordSimp  # type: ignore

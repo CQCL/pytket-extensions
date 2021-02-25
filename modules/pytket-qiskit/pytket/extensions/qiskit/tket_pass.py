@@ -19,7 +19,7 @@ from qiskit.converters import circuit_to_dag, dag_to_circuit  # type: ignore
 from qiskit.providers.aer.aerprovider import AerProvider  # type: ignore
 from qiskit.providers.ibmq.accountprovider import AccountProvider  # type: ignore
 from pytket.passes import BasePass  # type: ignore
-from pytket.extensions.backends.ibm import (
+from pytket.extensions.qiskit import (
     IBMQBackend,
     AerBackend,
     AerStateBackend,
