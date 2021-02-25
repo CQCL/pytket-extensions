@@ -13,11 +13,12 @@
 # limitations under the License.
 
 from collections import Counter
+from typing import cast
 import os
 from hypothesis import given, strategies
 import numpy as np  # type: ignore
 import pytest
-from pytket.extensions.braket import BraketBackend  # type: ignore
+from pytket.extensions.braket import BraketBackend
 from pytket.circuit import Circuit, OpType, Qubit  # type: ignore
 from pytket.pauli import Pauli, QubitPauliString  # type: ignore
 from pytket.utils.expectations import (
@@ -30,12 +31,12 @@ from pytket.utils.operators import QubitPauliOperator
 # variables USE_AWS, S3_BUCKET and S3_FOLDER. See:
 # https://github.com/aws/amazon-braket-sdk-python
 # Otherwise, all tests are run on a local simulator.
-S3_BUCKET = os.getenv("S3_BUCKET")
-S3_FOLDER = os.getenv("S3_FOLDER")
-
 skip_remote_tests: bool = os.getenv("PYTKET_RUN_REMOTE_TESTS") is None or not os.getenv(
     "USE_AWS"
 )
+if not skip_remote_tests:
+    S3_BUCKET = cast(str, os.getenv("S3_BUCKET"))
+    S3_FOLDER = cast(str, os.getenv("S3_FOLDER"))
 
 
 @pytest.mark.skipif(skip_remote_tests, reason="Not running AWS tests")
@@ -88,11 +89,13 @@ def test_ionq() -> None:
 
     # Device is fully connected
     dev = b.device()
+    assert dev is not None
     arch = dev.architecture
     n = len(arch.nodes)
     assert len(arch.coupling) == n * (n - 1)
 
     chars = b.characterisation
+    assert chars is not None
     fid = chars["fidelity"]
     assert "1Q" in fid
     assert "2Q" in fid
@@ -136,6 +139,7 @@ def test_rigetti() -> None:
     assert not b.supports_state
 
     chars = b.characterisation
+    assert chars is not None
     specs = chars["specs"]
     assert "1Q" in specs
     assert "2Q" in specs
