@@ -380,7 +380,7 @@ def test_machine_debug() -> None:
     assert "in submitted does not satisfy GateSetPredicate" in str(errorinfo.value)
     backend.compile_circuit(c)
     handles = backend.process_circuits([c, c.copy()], n_shots=4)
-    from pytket.extensions.backends.ibm.ibm import _DEBUG_HANDLE_PREFIX
+    from pytket.extensions.qiskit.backends.ibm import _DEBUG_HANDLE_PREFIX
 
     assert all(cast(str, hand[0]).startswith(_DEBUG_HANDLE_PREFIX) for hand in handles)
 
