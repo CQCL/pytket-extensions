@@ -12,11 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import shutil
+import os
 from setuptools import setup, find_namespace_packages  # type: ignore
 
 metadata: dict = {}
 with open("_metadata.py") as fp:
     exec(fp.read(), metadata)
+shutil.copy(
+    "_metadata.py",
+    os.path.join("pytket", "extensions", "pyzx", "_metadata.py"),
+)
 
 setup(
     name=metadata["__extension_name__"],

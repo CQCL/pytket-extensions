@@ -11,16 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Backend for utilising the Qulacs simulator directly from pytket"""
 
-import warnings
+"""
+Backends for connecting to devices and simulators from the Rigetti Forest platform
+directly from pytket
+"""
 
-# _metadata.py is copied to the folder after installation.
-from ._metadata import __extension_version__, __extension_name__  # type: ignore
-
-from .qulacs_backend import QulacsBackend
-
-try:
-    from .qulacs_backend import QulacsGPUBackend
-except ImportError:
-    warnings.warn("local settings failed to import QulacsGPUBackend", ImportWarning)
+from .forest import ForestBackend, ForestStateBackend

@@ -12,6 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Module for conversion between IBM Qiskit and tket primitives."""
+
+# _metadata.py is copied to the folder after installation.
+from ._metadata import __extension_version__, __extension_name__  # type: ignore
+from .backends import (
+    IBMQBackend,
+    NoIBMQAccountError,
+    AerBackend,
+    AerStateBackend,
+    AerUnitaryBackend,
+    IBMQEmulatorBackend,
+)
 from .qiskit_convert import qiskit_to_tk, tk_to_qiskit, process_characterisation
 
 # from .tket_pass import TketPass

@@ -1,4 +1,4 @@
-# Copyright 2019-2021 Cambridge Quantum Computing
+# Copyright 2020-2021 Cambridge Quantum Computing
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,8 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Backend for utilising the ProjectQ simulator directly from pytket"""
+
+"""Backends for processing pytket circuits with AQT devices
+"""
 
 # _metadata.py is copied to the folder after installation.
 from ._metadata import __extension_version__, __extension_name__  # type: ignore
-from .projectq_backend import ProjectQBackend
+from .backends import AQTBackend

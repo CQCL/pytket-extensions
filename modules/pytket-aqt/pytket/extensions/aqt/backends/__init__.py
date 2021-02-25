@@ -1,4 +1,4 @@
-# Copyright 2019-2021 Cambridge Quantum Computing
+# Copyright 2020-2021 Cambridge Quantum Computing
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,16 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Module for conversion between Google Cirq and tket primitives."""
 
-# _metadata.py is copied to the folder after installation.
-from ._metadata import __extension_version__, __extension_name__  # type: ignore
-from .cirq_convert import cirq_to_tk, tk_to_cirq, process_characterisation
-from .backends import (
-    CirqStateSampleBackend,
-    CirqStateSimBackend,
-    CirqCliffordSampleBackend,
-    CirqCliffordSimBackend,
-    CirqDensityMatrixSampleBackend,
-    CirqDensityMatrixSimBackend,
-)
+"""Backends for processing pytket circuits with AQT devices
+"""
+
+from .aqt import AQTBackend

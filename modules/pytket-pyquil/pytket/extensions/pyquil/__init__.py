@@ -12,4 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Module for conversion between Rigetti pyQuil and tket primitives."""
+
+# _metadata.py is copied to the folder after installation.
+from ._metadata import __extension_version__, __extension_name__  # type: ignore
+from .backends import ForestBackend, ForestStateBackend
 from .pyquil_convert import pyquil_to_tk, tk_to_pyquil, process_characterisation

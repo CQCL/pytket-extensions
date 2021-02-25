@@ -12,12 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Backends for processing pytket circuits with the Microsoft QDK
+"""Backends for processing pytket circuits via Amazon Braket
 """
 
-# _metadata.py is copied to the folder after installation.
-from ._metadata import __extension_version__, __extension_name__  # type: ignore
-from .simulator import QsharpSimulatorBackend
-from .estimator import QsharpEstimatorBackend
-from .toffoli import QsharpToffoliSimulatorBackend
-from .azure_quantum import AzureBackend
+from .braket import BraketBackend

@@ -12,9 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Backends for processing pytket circuits with AQT devices
+"""Backends for processing pytket circuits with Honeywell devices
 """
 
-# _metadata.py is copied to the folder after installation.
-from ._metadata import __extension_version__, __extension_name__  # type: ignore
-from .aqt import AQTBackend
+from .honeywell import HoneywellBackend
+from .api_wrappers import split_utf8

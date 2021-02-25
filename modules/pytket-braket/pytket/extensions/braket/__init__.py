@@ -15,4 +15,7 @@
 """Module for conversion from tket to braket
 """
 
+# _metadata.py is copied to the folder after installation.
+from ._metadata import __extension_version__, __extension_name__  # type: ignore
 from .braket_convert import tk_to_braket, braket_to_tk
+from .backends import BraketBackend

@@ -11,11 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Backends for connecting to Cirq simulators directly from pytket"""
 
-"""Backends for processing pytket circuits with Honeywell devices
-"""
-
-# _metadata.py is copied to the folder after installation.
-from ._metadata import __extension_version__, __extension_name__  # type: ignore
-from .honeywell import HoneywellBackend
-from .api_wrappers import split_utf8
+from .cirq import (
+    CirqStateSampleBackend,
+    CirqStateSimBackend,
+    CirqCliffordSampleBackend,
+    CirqCliffordSimBackend,
+    CirqDensityMatrixSampleBackend,
+    CirqDensityMatrixSimBackend,
+)

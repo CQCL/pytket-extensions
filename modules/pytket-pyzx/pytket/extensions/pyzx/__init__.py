@@ -12,4 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Module for conversion between PyZX and tket primitives."""
+
+# _metadata.py is copied to the folder after installation.
+from ._metadata import __extension_version__, __extension_name__  # type: ignore
 from .pyzx_convert import tk_to_pyzx, pyzx_to_tk
