@@ -16,7 +16,7 @@ from collections import Counter
 import os
 from pytket.backends.status import StatusEnum
 from pytket.circuit import Circuit  # type: ignore
-from pytket.extensions.backends.qsharp import AzureBackend
+from pytket.extensions.qsharp import AzureBackend
 
 skip_remote_tests: bool = (
     os.getenv("PYTKET_RUN_REMOTE_TESTS") is None or os.getenv("AZURE_AUTH") is None

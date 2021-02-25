@@ -30,8 +30,8 @@ from pytket.backends.status import StatusEnum
 from pytket.circuit import Circuit  # type: ignore
 from pytket.utils.outcomearray import OutcomeArray
 
-from pytket.extensions.backends.qsharp.config import QSharpConfig
-from pytket.extensions.backends.qsharp.common import _QsharpBaseBackend
+from pytket.extensions.qsharp.backends.config import QSharpConfig
+from pytket.extensions.qsharp.backends.common import _QsharpBaseBackend
 from pytket.extensions.qsharp import tk_to_qsharp
 
 

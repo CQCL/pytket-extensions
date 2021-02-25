@@ -35,7 +35,7 @@ from pytket.backends import (
     CircuitStatus,
     StatusEnum,
 )
-from pytket.extensions.backends.ibm import (
+from pytket.extensions.qiskit import (
     IBMQBackend,
     AerBackend,
     AerStateBackend,

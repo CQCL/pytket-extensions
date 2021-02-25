@@ -43,7 +43,7 @@ from sympy import pi, Symbol  # type: ignore
 
 from pytket.circuit import Circuit  # type: ignore
 from pytket.extensions.pyquil import pyquil_to_tk, tk_to_pyquil
-from pytket.extensions.backends.forest import ForestStateBackend
+from pytket.extensions.pyquil import ForestStateBackend
 from pytket.passes import RemoveRedundancies  # type: ignore
 
 skip_qvm_tests = (which("docker") is None) or (platform.system() == "Windows")

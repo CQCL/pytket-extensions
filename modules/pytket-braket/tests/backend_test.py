@@ -17,7 +17,7 @@ import os
 from hypothesis import given, strategies
 import numpy as np  # type: ignore
 import pytest
-from pytket.backends.braket import BraketBackend  # type: ignore
+from pytket.extensions.braket import BraketBackend  # type: ignore
 from pytket.circuit import Circuit, OpType, Qubit  # type: ignore
 from pytket.pauli import Pauli, QubitPauliString  # type: ignore
 from pytket.utils.expectations import (

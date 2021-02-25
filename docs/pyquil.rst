@@ -13,15 +13,8 @@ install, run:
 
 ``pip install pytket-pyquil``
 
-pytket.extensions.backends.forest
+pytket.extensions.pyquil
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. automodule:: pytket.extensions.backends.forest
-    :special-members:
-    :members: ForestBackend, ForestStateBackend
-
-pytket.extensions.pyquil
-~~~~~~~~~~~~~~~~~~~~~~~~
-
 .. automodule:: pytket.extensions.pyquil
-    :members: pyquil_to_tk, tk_to_pyquil
+    :members: pyquil_to_tk, tk_to_pyquil, ForestBackend, ForestStateBackend

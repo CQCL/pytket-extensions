@@ -24,7 +24,7 @@ import numpy as np  # type: ignore
 import pytest
 from pytket.backends.backend_exceptions import CircuitNotRunError
 from pytket.backends.status import StatusEnum
-from pytket.extensions.backends.projectq import ProjectQBackend
+from pytket.extensions.projectq import ProjectQBackend
 from pytket.backends.resulthandle import ResultHandle
 from pytket.circuit import BasisOrder, Circuit, Qubit, OpType  # type: ignore
 from pytket.passes import CliffordSimp  # type: ignore

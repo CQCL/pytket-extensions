@@ -20,7 +20,7 @@ import numpy as np  # type: ignore
 import pytest
 from pytket.circuit import Circuit  # type: ignore
 from pytket.backends import StatusEnum
-from pytket.extensions.backends.aqt import AQTBackend
+from pytket.extensions.aqt import AQTBackend
 
 skip_remote_tests: bool = (
     os.getenv("PYTKET_RUN_REMOTE_TESTS") is None or os.getenv("AQT_AUTH") is None

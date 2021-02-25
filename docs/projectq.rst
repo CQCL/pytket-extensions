@@ -16,10 +16,10 @@ To install, run:
 .. warning::
     ``pytket-projectq`` currently cannot be installed on MacOS Big Sur due to a compatibility issue in ProjectQ <= 0.5.1.
 
-pytket.backends.projectq
+pytket.extensions.projectq
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. automodule:: pytket.backends.projectq
+.. automodule:: pytket.extensions.projectq
     :members: ProjectQBackend
 
 pytket.extensions.projectq

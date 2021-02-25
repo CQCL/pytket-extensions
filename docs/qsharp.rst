@@ -21,35 +21,32 @@ modify your ``PATH``:
 3. Run ``dotnet tool install -g Microsoft.Quantum.IQSharp``.
 4. Run ``dotnet iqsharp install --user``.
 
-pytket.extensions.backends.qsharp
+pytket.extensions.qsharp
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: pytket.extensions.backends.qsharp.QsharpSimulatorBackend
+.. autoclass:: pytket.extensions.qsharp.QsharpSimulatorBackend
     :special-members: __init__
     :inherited-members:
     :members:
     :exclude-members: get_state, get_unitary
 
-.. autoclass:: pytket.extensions.backends.qsharp.QsharpToffoliSimulatorBackend
+.. autoclass:: pytket.extensions.qsharp.QsharpToffoliSimulatorBackend
     :special-members: __init__
     :inherited-members:
     :members:
     :exclude-members: get_state, get_unitary
 
-.. autoclass:: pytket.extensions.backends.qsharp.QsharpEstimatorBackend
+.. autoclass:: pytket.extensions.qsharp.QsharpEstimatorBackend
     :special-members: __init__
     :inherited-members:
     :members:
     :exclude-members: get_counts, get_shots, get_state, get_unitary
 
-.. autoclass:: pytket.extensions.backends.qsharp.AzureBackend
+.. autoclass:: pytket.extensions.qsharp.AzureBackend
     :special-members: __init__
     :inherited-members:
     :members:
     :exclude-members: get_state, get_unitary
-
-pytket.extensions.qsharp
-~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. automodule:: pytket.extensions.qsharp
     :members: tk_to_qsharp

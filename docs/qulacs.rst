@@ -30,15 +30,13 @@ Afterwards, install ``qulacs-gpu``:
 The ``QulacsGPUBackend`` has an identical API to the ``QulacsBackend`` described
 below.
 
-pytket.backends.qulacs
-~~~~~~~~~~~~~~~~~~~~~~
-
-.. autoclass:: pytket.backends.qulacs.QulacsBackend
-    :inherited-members:
-    :members:
-
 pytket.extensions.qulacs
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. automodule:: pytket.extensions.qulacs
     :members: tk_to_qulacs
+
+.. autoclass:: pytket.extensions.qulacs.QulacsBackend
+    :inherited-members:
+    :members:
+

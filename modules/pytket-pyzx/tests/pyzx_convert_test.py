@@ -14,7 +14,7 @@
 
 from pytket.extensions.pyzx import tk_to_pyzx, pyzx_to_tk
 from pytket.circuit import Circuit, fresh_symbol  # type: ignore
-from pytket.extensions.backends.ibm import AerStateBackend
+from pytket.extensions.qiskit import AerStateBackend
 import numpy as np  # type: ignore
 import pytest
 

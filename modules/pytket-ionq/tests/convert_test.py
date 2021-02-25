@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from pytket.circuit import Circuit, OpType  # type: ignore
-from pytket.extensions.backends.ionq.ionq_convert import tk_to_ionq
+from pytket.extensions.ionq.ionq_convert import tk_to_ionq
 
 
 def test_convert() -> None:

@@ -14,37 +14,34 @@ install, run:
 
 ``pip install pytket-qiskit``
 
-pytket.backends.ibm
+pytket.extensions.qiskit
 ~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: pytket.backends.ibm.IBMQBackend
+.. autoclass:: pytket.extensions.qiskit.IBMQBackend
     :special-members:
     :members:
 
-.. autoclass:: pytket.backends.ibm.IBMQEmulatorBackend
+.. autoclass:: pytket.extensions.qiskit.IBMQEmulatorBackend
     :special-members: __init__
     :members:
 
-.. autoclass:: pytket.backends.ibm.AerBackend
+.. autoclass:: pytket.extensions.qiskit.AerBackend
     :special-members: __init__
     :inherited-members:
     :members:
     :exclude-members: get_state, get_unitary
 
-.. autoclass:: pytket.backends.ibm.AerStateBackend
+.. autoclass:: pytket.extensions.qiskit.AerStateBackend
     :special-members: __init__
     :inherited-members:
     :members:
     :exclude-members: get_counts, get_shots, get_unitary
 
-.. autoclass:: pytket.backends.ibm.AerUnitaryBackend
+.. autoclass:: pytket.extensions.qiskit.AerUnitaryBackend
     :special-members: __init__
     :inherited-members:
     :members:
     :exclude-members: get_counts, get_shots, get_state
-
-pytket.extensions.qiskit
-~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. automodule:: pytket.extensions.qiskit
     :members: qiskit_to_tk, tk_to_qiskit, process_characterisation
