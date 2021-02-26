@@ -92,7 +92,7 @@ jobs:
       if: github.event_name == 'release' || contains(github.ref, 'refs/heads/wheel')
       with:
         name: artefacts
-        path: $(GITHUB_WORKSPACE)/build
+        path: wheelhouse/
 
   macos:
     if: github.event_name != 'release'

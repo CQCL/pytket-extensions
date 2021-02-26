@@ -22,7 +22,7 @@ echo "Modules to test: ${MODULES_TO_TEST}"
 
 MODULEDIR="${GITHUB_WORKSPACE}/modules"
 
-ARTIFACTSDIR=${GITHUB_WORKSPACE}/build
+ARTIFACTSDIR=${GITHUB_WORKSPACE}/wheelhouse
 
 rm -rf ${ARTIFACTSDIR} && mkdir ${ARTIFACTSDIR}
 
