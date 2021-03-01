@@ -237,7 +237,7 @@ class HoneywellQAPI:
             keyring.get_password(self.keyring_service, f"{token_name}_{i}")  # type: ignore
             for i in count(start=0)
         )
-        return takewhile(lambda x: x is not None, token_parts)
+        return takewhile(lambda x: x is not None, token_parts)  # type: ignore
 
     def _get_token(self, token_name: str):  # type: ignore
         """Method to retrieve id and refresh tokens from system's keyring service.
