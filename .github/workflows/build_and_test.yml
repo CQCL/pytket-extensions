@@ -118,6 +118,7 @@ jobs:
         echo "MODULES_TO_TEST=${MM}" >> $GITHUB_ENV
 
     - name: Install dotnet SDK and iqsharp
+      if: contains(env.MODULES_TO_TEST, 'pytket-qsharp')
       run: |
         brew install mono-libgdiplus jupyter
         wget https://dot.net/v1/dotnet-install.sh

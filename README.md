@@ -42,7 +42,8 @@ pip install pytket-qiskit
 This will install `pytket` if it isn't already installed, and add new classes
 and methods into the `pytket.extensions` namespace.
 
-Full documentation for each extension module is available [TODO WHERE?].
+Full documentation for all these extension module is available
+[here](https://cqcl.github.io/pytket/build/html/extensions/index.html).
 
 ## Bugs and feature requests
 
