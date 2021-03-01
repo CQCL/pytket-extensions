@@ -34,7 +34,7 @@ use_qulacs = platform.system() != "Windows"
 if use_qulacs:
     # Temporary fix before pytket_qulacs 0.4.1 release
     try:
-        from pytket.extensions.qulacs import QulacsBackend
+        from pytket.extensions.qulacs import QulacsBackend  # type: ignore
     except ImportError:
         from pytket.extensions.backends.qulacs import QulacsBackend
 
