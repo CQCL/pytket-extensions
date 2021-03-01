@@ -14,7 +14,13 @@
 
 from pytket.extensions.pyzx import tk_to_pyzx, pyzx_to_tk
 from pytket.circuit import Circuit, fresh_symbol  # type: ignore
-from pytket.extensions.qiskit import AerStateBackend
+
+#Temporary fix before pytket_qiskit 0.7.2 release
+try:
+    from pytket.extensions.qiskit import AerStateBackend
+except ImportError:
+    from pytket.extensions.backends.qiskit import AerStateBackend
+
 import numpy as np  # type: ignore
 import pytest
 
