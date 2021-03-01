@@ -36,7 +36,7 @@ if use_qulacs:
     try:
         from pytket.extensions.qulacs import QulacsBackend  # type: ignore
     except ImportError:
-        from pytket.extensions.backends.qulacs import QulacsBackend
+        from pytket.extensions.backends.qulacs import QulacsBackend  # type: ignore
 
 
 def circuit_gen(measure: bool = False) -> QuantumCircuit:

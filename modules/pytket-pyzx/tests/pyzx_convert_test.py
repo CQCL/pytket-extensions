@@ -19,7 +19,7 @@ from pytket.circuit import Circuit, fresh_symbol  # type: ignore
 try:
     from pytket.extensions.qiskit import AerStateBackend  # type: ignore
 except ImportError:
-    from pytket.extensions.backends.qiskit import AerStateBackend
+    from pytket.extensions.backends.qiskit import AerStateBackend  # type: ignore
 
 import numpy as np  # type: ignore
 import pytest
