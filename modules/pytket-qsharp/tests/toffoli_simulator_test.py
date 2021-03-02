@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from pytket.circuit import Circuit, OpType  # type: ignore
-from pytket.extensions.backends.qsharp import QsharpToffoliSimulatorBackend
+from pytket.extensions.qsharp import QsharpToffoliSimulatorBackend
 
 
 def test_incrementer() -> None:

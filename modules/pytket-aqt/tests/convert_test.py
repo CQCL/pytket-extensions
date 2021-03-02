@@ -17,7 +17,7 @@ import json
 import os
 import pytest
 from pytket.circuit import Circuit, OpType  # type: ignore
-from pytket.extensions.backends.aqt.aqt import _translate_aqt, AQTBackend
+from pytket.extensions.aqt.backends.aqt import _translate_aqt, AQTBackend
 
 skip_remote_tests: bool = (
     os.getenv("PYTKET_RUN_REMOTE_TESTS") is None or os.getenv("AQT_AUTH") is None

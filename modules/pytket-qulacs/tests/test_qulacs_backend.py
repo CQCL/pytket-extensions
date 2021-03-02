@@ -24,12 +24,12 @@ from pytket.circuit import Circuit, BasisOrder, OpType, Qubit  # type: ignore
 from pytket.pauli import Pauli, QubitPauliString  # type: ignore
 from pytket.passes import CliffordSimp  # type: ignore
 from pytket.utils.operators import QubitPauliOperator
-from pytket.extensions.backends.qulacs import QulacsBackend
+from pytket.extensions.qulacs import QulacsBackend
 
 backends = [QulacsBackend()]
 
 try:
-    from pytket.extensions.backends.qulacs import QulacsGPUBackend
+    from pytket.extensions.qulacs import QulacsGPUBackend
 
     backends.append(QulacsGPUBackend())
 except ImportError:

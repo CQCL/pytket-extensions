@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from collections import Counter
-from typing import Callable, Any
+from typing import Callable, Any  # pylint: disable=unused-import
 from ast import literal_eval
 import os
 from hypothesis import given, settings, strategies
@@ -34,12 +34,12 @@ from pytket.circuit import (  # type: ignore
     reg_geq,
     if_not_bit,
 )
-from pytket.extensions.backends.honeywell import HoneywellBackend
-from pytket.extensions.backends.honeywell.honeywell import (
+from pytket.extensions.honeywell import HoneywellBackend
+from pytket.extensions.honeywell.backends.honeywell import (
     _GATE_SET,
 )
-from pytket.extensions.backends.honeywell import split_utf8
-from pytket.extensions.backends.honeywell.api_wrappers import HQSAPIError
+from pytket.extensions.honeywell import split_utf8
+from pytket.extensions.honeywell.backends.api_wrappers import HQSAPIError
 from pytket.backends.status import StatusEnum
 
 skip_remote_tests: bool = os.getenv("PYTKET_RUN_REMOTE_TESTS") is None or not os.getenv(

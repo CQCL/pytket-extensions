@@ -12,9 +12,9 @@ To install, run:
 
 .. note::   Requires an `IonQ <https://ionq.com/>`_ account.
 
-pytket.extensions.backends.ionq
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+pytket.extensions.ionq
+~~~~~~~~~~~~~~~~~~~~~~
 
-.. automodule:: pytket.extensions.backends.ionq
+.. automodule:: pytket.extensions.ionq
     :special-members:
     :members: IonQBackend

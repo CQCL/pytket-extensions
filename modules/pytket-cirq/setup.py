@@ -21,7 +21,7 @@ with open("_metadata.py") as fp:
     exec(fp.read(), metadata)
 shutil.copy(
     "_metadata.py",
-    os.path.join("pytket", "extensions", "backends", "cirq", "_metadata.py"),
+    os.path.join("pytket", "extensions", "cirq", "_metadata.py"),
 )
 
 setup(

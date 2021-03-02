@@ -76,7 +76,7 @@ jobs:
       run: |
         ./.github/workflows/build-test nomypy
     - name: Set up Python 3.9
-      if: github.event_name == 'push' || github.event_name == 'release' || contains('refs/heads/wheel', github.ref)
+      if: github.event_name == 'push' || github.event_name == 'release' || contains(github.ref, 'refs/heads/wheel')
       uses: actions/setup-python@v2
       with:
         python-version: 3.9
@@ -85,14 +85,14 @@ jobs:
       run: |
         ./.github/workflows/build-test nomypy
     - name: Build, test and save (3.9)
-      if: github.event_name == 'release' || contains('refs/heads/wheel', github.ref)
+      if: github.event_name == 'release' || contains(github.ref, 'refs/heads/wheel')
       run: |
         ./.github/workflows/build-test nomypy
     - uses: actions/upload-artifact@v2
-      if: github.event_name == 'release' || contains('refs/heads/wheel', github.ref)
+      if: github.event_name == 'release' || contains(github.ref, 'refs/heads/wheel')
       with:
         name: artefacts
-        path: $(GITHUB_WORKSPACE)/build
+        path: wheelhouse/
 
   macos:
     if: github.event_name != 'release'
@@ -118,6 +118,7 @@ jobs:
         echo "MODULES_TO_TEST=${MM}" >> $GITHUB_ENV
 
     - name: Install dotnet SDK and iqsharp
+      if: contains(env.MODULES_TO_TEST, 'pytket-qsharp')
       run: |
         brew install mono-libgdiplus jupyter
         wget https://dot.net/v1/dotnet-install.sh
@@ -188,7 +189,6 @@ jobs:
         .\dotnet-install.ps1
         # Note: iqsharp version 0.14 suffers from a performance issue that can freeze the CI.
         dotnet tool install --version 0.13.20102604 -g Microsoft.Quantum.IQSharp
-        dotnet iqsharp install --user
 
     - name: Set up Python 3.7
       if: github.event_name == 'push'

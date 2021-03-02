@@ -14,7 +14,7 @@
 
 from pytket.circuit import Circuit, PauliExpBox  # type: ignore
 from pytket.pauli import Pauli  # type: ignore
-from pytket.extensions.backends.qsharp import QsharpEstimatorBackend
+from pytket.extensions.qsharp import QsharpEstimatorBackend
 
 
 def test_estimates() -> None:

@@ -14,6 +14,7 @@
 
 from pytket.extensions.braket import braket_to_tk, tk_to_braket
 from pytket.circuit import Circuit, OpType  # type: ignore
+import pytest
 
 
 def test_convert() -> None:
@@ -54,3 +55,8 @@ def test_convert_qubit_order() -> None:
     bkc = tk_to_braket(c)
     c1 = braket_to_tk(bkc)
     assert c.get_commands() == c1.get_commands()
+
+
+def test_unsupported() -> None:
+    c = Circuit(1).add_gate(OpType.U3, [0.1, 0.2, 0.3], [0])
+    pytest.raises(NotImplementedError, tk_to_braket, c)

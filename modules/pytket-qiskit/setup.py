@@ -21,7 +21,7 @@ with open("_metadata.py") as fp:
     exec(fp.read(), metadata)
 shutil.copy(
     "_metadata.py",
-    os.path.join("pytket", "extensions", "backends", "ibm", "_metadata.py"),
+    os.path.join("pytket", "extensions", "qiskit", "_metadata.py"),
 )
 
 setup(
@@ -40,7 +40,7 @@ setup(
     include_package_data=True,
     install_requires=[
         "pytket ~= 0.7.0",
-        "qiskit ~= 0.23.2",
+        "qiskit ~= 0.23.5",
     ],
     classifiers=[
         "Environment :: Console",

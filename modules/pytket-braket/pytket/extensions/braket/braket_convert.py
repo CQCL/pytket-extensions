@@ -104,7 +104,7 @@ def tk_to_braket(tkcirc: Circuit, allqbs: Optional[Iterable[int]] = None) -> BK_
         elif optype == OpType.ZZPhase:
             bkcirc.zz(*qbs, params[0] * pi)
         else:
-            raise NotImplementedError(f"Cannot convert {optype.get_name()} to braket")
+            raise NotImplementedError(f"Cannot convert {op.get_name()} to braket")
     return bkcirc
 
 
