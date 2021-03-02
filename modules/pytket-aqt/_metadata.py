@@ -1,2 +1,2 @@
-__extension_version__ = "0.4.1"
+__extension_version__ = "0.5.0"
 __extension_name__ = "pytket-aqt"
