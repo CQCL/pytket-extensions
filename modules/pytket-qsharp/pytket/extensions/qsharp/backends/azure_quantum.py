@@ -114,7 +114,6 @@ class AzureBackend(_QsharpBaseBackend):
                 config.location = location
             if storage:
                 config.storage = storage
-            print(config.__dict__)
             # check required parameters
             if any(val is None for val in (config.resourceId, config.location)):
                 raise ValueError(
