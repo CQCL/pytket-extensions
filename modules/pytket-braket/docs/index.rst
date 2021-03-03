@@ -1,6 +1,10 @@
 pytket-braket
 ==================================
 
+.. image:: CQCLogo.png
+   :width: 120px
+   :align: right
+
 ``pytket-braket`` is an extension to ``pytket`` that allows ``pytket`` circuits to
 be executed on quantum devices and simulators via Amazon's Braket service.
 

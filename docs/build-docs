@@ -1,0 +1,144 @@
+#!/usr/bin/env python
+
+import argparse
+import datetime
+from importlib import import_module
+from pathlib import Path
+import shutil
+import subprocess
+import sys
+
+DOCS_DIR = Path(sys.argv[0]).absolute().parent
+MODULES_DIR = DOCS_DIR.parent / "modules"
+
+
+def get_all_modules():
+    all_mods = []
+    for d in MODULES_DIR.iterdir():
+        if d.is_dir():
+            dname = d.name
+            if dname.startswith("pytket-"):
+                all_mods.append(dname[7:])
+    return all_mods
+
+
+def get_module_version(module):
+    m = import_module(f"pytket.extensions.{module}")
+    return m._metadata.__extension_version__.split(".")
+
+
+def remove_dir(dirpath):
+    if dirpath.exists() and dirpath.is_dir():
+        shutil.rmtree(dirpath)
+
+
+def fix_links(filepath):
+    with open(filepath, "r") as f:
+        content = f.read()
+    content = content.replace("pytket._tket", "pytket")
+    with open(filepath, "w") as f:
+        f.write(content)
+
+
+def build_module_docs(module):
+    v = get_module_version(module)
+    mod_docs = MODULES_DIR / f"pytket-{module}" / "docs"
+    mod_build = mod_docs / "build"
+    conf_copy = mod_docs / "conf.py"
+    logo_copy = mod_docs / "CQCLogo.png"
+    shutil.copy(DOCS_DIR / "conf.py", conf_copy)
+    shutil.copy(DOCS_DIR / "CQCLogo.png", logo_copy)
+    remove_dir(mod_build)
+    subprocess.run(
+        [
+            "sphinx-build",
+            "-b",
+            "html",
+            "-D",
+            f"project=pytket-{module}",
+            "-D",
+            f"copyright={datetime.date.today().year} Cambridge Quantum Computing",
+            "-D",
+            f"version={'.'.join(v[:2])}",
+            "-D",
+            f"release={'.'.join(v)}",
+            ".",
+            "build",
+        ],
+        cwd=mod_docs,
+    )
+    for htmlfile in mod_build.rglob("*.html"):
+        fix_links(htmlfile)
+    fix_links(mod_build / "searchindex.js")
+    conf_copy.unlink()
+    logo_copy.unlink()
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Build HTML documentation for one or more modules."
+    )
+    parser.add_argument(
+        "-m",
+        "--modules",
+        nargs="*",
+        default=[],
+        help="names of modules to build (without the `pytket-` prefix)",
+    )
+    parser.add_argument("-a", "--all", action="store_true", help="build all modules")
+    parser.add_argument("-i", "--index", action="store_true", help="build index page")
+    parser.add_argument("-d", "--dest", help="copy artifacts into destination folder")
+    args = parser.parse_args()
+
+    if args.all:
+        modules_to_build = get_all_modules()
+    else:
+        modules_to_build = args.modules
+
+    print("Building docs for modules:", modules_to_build)
+    for module in modules_to_build:
+        build_module_docs(module)
+
+    if args.index:
+        print("Building index page...")
+        index_rst = DOCS_DIR / "index.rst"
+        with open(DOCS_DIR / "intro.txt", "r") as f:
+            content = f.readlines()
+            content.append("\n")
+            for module in get_all_modules():
+                content.append(f"- `pytket-{module} <{module}/index.html>`_\n")
+        with open(index_rst, "w") as f:
+            f.writelines(content)
+        remove_dir(DOCS_DIR / "build")
+        subprocess.run(
+            [
+                "sphinx-build",
+                "-b",
+                "html",
+                "-D",
+                f"project=pytket-extensions",
+                "-D",
+                f"copyright={datetime.date.today().year} Cambridge Quantum Computing",
+                "-D",
+                "templates_path=templates",
+                ".",
+                "build",
+            ],
+            cwd=DOCS_DIR,
+        )
+        index_rst.unlink()
+
+    if args.dest is not None:
+        dest = Path(args.dest)
+        for module in modules_to_build:
+            shutil.copytree(
+                MODULES_DIR / f"pytket-{module}" / "docs" / "build",
+                dest / module,
+                dirs_exist_ok=True,
+            )
+        if args.index:
+            for f in (DOCS_DIR / "build").iterdir():
+                if f.is_dir():
+                    shutil.copytree(f, dest / f.name, dirs_exist_ok=True)
+                else:
+                    shutil.copy(f, dest)

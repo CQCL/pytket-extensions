@@ -1,6 +1,10 @@
 pytket-projectq
 ==================================
 
+.. image:: CQCLogo.png
+   :width: 120px
+   :align: right
+
 `ProjectQ <https://github.com/ProjectQ-Framework/ProjectQ>`_ is an open-source
 library for quantum circuit compilation and simulation.
 

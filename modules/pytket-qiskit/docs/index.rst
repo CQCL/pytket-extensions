@@ -1,6 +1,10 @@
 pytket-qiskit
 ==================================
 
+.. image:: CQCLogo.png
+   :width: 120px
+   :align: right
+
 IBM's `Qiskit <https://qiskit.org>`_ is an open-source framework for quantum
 computation, ranging from high-level algorithms to low-level circuit
 representations, simulation and access to the `IBMQ <https://www.research.ibm.com/ibm-q/>`_ Experience devices.
