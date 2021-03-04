@@ -61,7 +61,7 @@ jobs:
       run: |
         cd docs
         mkdir extensions
-        ./build-docs -a -i -d ${GITHUB_WORKDPACE}/docs/extensions
+        ./build-docs -a -i -d ${GITHUB_WORKSPACE}/docs/extensions
     - uses: actions/upload-artifact@v2
       with:
         name: pytket-extension-docs
