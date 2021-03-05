@@ -20,4 +20,5 @@ jobs:
       with:
         project: TKET
         issuetype: Task
-        summary: Close ${{ github.context.issue.number }} on ${{ github.repository }}
+        summary: «${{ github.event.issue.title }}»
+        description: Close ${{ github.event.issue.html_url }}
