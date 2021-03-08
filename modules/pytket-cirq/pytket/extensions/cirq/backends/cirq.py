@@ -16,11 +16,13 @@ from abc import abstractmethod
 from typing import Sequence, cast, Optional, Iterable, List, Union
 from uuid import uuid4
 from cirq.sim import (
-    DensityMatrixSimulator,
-    Simulator,
     CliffordSimulator,
-    StateVectorTrialResult,
+    CliffordSimulatorStepResult,
+    DensityMatrixSimulator,
     DensityMatrixTrialResult,
+    Simulator,
+    SparseSimulatorStep,
+    StateVectorTrialResult,
 )
 
 # import cirq
@@ -350,7 +352,10 @@ class CirqStateSimBackend(_CirqSimBackend):
             ),
         )
         all_backres = [
-            BackendResult(state=run.state_vector(copy=True), q_bits=q_bits)
+            BackendResult(
+                state=cast(SparseSimulatorStep, run).state_vector(copy=True),
+                q_bits=q_bits,
+            )
             for run in moments
         ]
         return all_backres
@@ -422,7 +427,10 @@ class CirqCliffordSimBackend(_CirqSimBackend):
             ),
         )
         all_backres = [
-            BackendResult(state=run.state.state_vector(), q_bits=q_bits)
+            BackendResult(
+                state=cast(CliffordSimulatorStepResult, run).state.state_vector(),
+                q_bits=q_bits,
+            )
             for run in moments
         ]
         return all_backres
