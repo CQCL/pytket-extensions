@@ -1,0 +1,24 @@
+name: New issue
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  jira_task:
+    name: Create Jira task
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Login
+      uses: atlassian/gajira-login@v2.0.0
+      env:
+        JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+        JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
+        JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+    - name: Create
+      uses: atlassian/gajira-create@v2.0.1
+      with:
+        project: TKET
+        issuetype: Task
+        summary: «${{ github.event.issue.title }}»
+        description: Close ${{ github.event.issue.html_url }}
