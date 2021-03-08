@@ -16,11 +16,13 @@ from abc import abstractmethod
 from typing import Sequence, cast, Optional, Iterable, List, Union
 from uuid import uuid4
 from cirq.sim import (
-    DensityMatrixSimulator,
-    Simulator,
     CliffordSimulator,
-    StateVectorTrialResult,
+    CliffordSimulatorStepResult,
+    DensityMatrixSimulator,
     DensityMatrixTrialResult,
+    Simulator,
+    SparseSimulatorStep,
+    StateVectorTrialResult,
 )
 
 # import cirq
@@ -350,7 +352,10 @@ class CirqStateSimBackend(_CirqSimBackend):
             ),
         )
         all_backres = [
-            BackendResult(state=run.state_vector(copy=True), q_bits=q_bits)
+            BackendResult(
+                state=cast(SparseSimulatorStep, run).state_vector(copy=True),
+                q_bits=q_bits,
+            )
             for run in moments
         ]
         return all_backres
@@ -377,7 +382,10 @@ class CirqDensityMatrixSimBackend(_CirqSimBackend):
     ) -> List[BackendResult]:
         moments = self._simulator.simulate_moment_steps(circuit)
         all_backres = [
-            BackendResult(density_matrix=run.density_matrix(copy=True), q_bits=q_bits)
+            BackendResult(
+                density_matrix=run.density_matrix(copy=True),  # type: ignore
+                q_bits=q_bits,
+            )
             for run in moments
         ]
 
@@ -410,7 +418,7 @@ class CirqCliffordSimBackend(_CirqSimBackend):
                 ).order_for(circuit.all_qubits()),
             ),
         )
-        return BackendResult(state=run.final_state.state_vector(), q_bits=q_bits)
+        return BackendResult(state=run.final_state_vector, q_bits=q_bits)
 
     def package_results(
         self, circuit: CirqCircuit, q_bits: Sequence[Qubit]
@@ -422,7 +430,10 @@ class CirqCliffordSimBackend(_CirqSimBackend):
             ),
         )
         all_backres = [
-            BackendResult(state=run.state.state_vector(), q_bits=q_bits)
+            BackendResult(
+                state=cast(CliffordSimulatorStepResult, run).state.state_vector(),
+                q_bits=q_bits,
+            )
             for run in moments
         ]
         return all_backres
