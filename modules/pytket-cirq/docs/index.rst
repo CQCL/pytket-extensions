@@ -1,6 +1,10 @@
 pytket-cirq
 ==================================
 
+.. image:: CQCLogo.png
+   :width: 120px
+   :align: right
+
 `Cirq <https://www.github.com/quantumlib/cirq>`_ is a python library for producing
 quantum circuits and running them on simulators and physical quantum devices.
 

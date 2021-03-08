@@ -1,6 +1,10 @@
 pytket-qsharp
 ==================================
 
+.. image:: CQCLogo.png
+   :width: 120px
+   :align: right
+
 Microsoft's `QDK <https://docs.microsoft.com/en-us/quantum/install-guide>`_ is a
 language and associated toolkit for quantum programming.
 

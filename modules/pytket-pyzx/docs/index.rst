@@ -1,6 +1,10 @@
 pytket-pyzx
 ==================================
 
+.. image:: CQCLogo.png
+   :width: 120px
+   :align: right
+
 `PyZX <https://github.com/Quantomatic/pyzx>`_ is an open-source Python library for
 automated rewriting and optimisation of quantum circuits using the
 `ZX <http://zxcalculus.com/>`_ calculus.
