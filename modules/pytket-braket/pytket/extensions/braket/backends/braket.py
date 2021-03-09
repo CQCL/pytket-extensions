@@ -775,4 +775,5 @@ class BraketBackend(Backend):
             raise NotImplementedError("Circuits on local device cannot be cancelled")
         task_id = handle[0]
         task = AwsQuantumTask(task_id)
-        task.cancel()
+        if task.state() != "COMPLETED":
+            task.cancel()
