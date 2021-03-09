@@ -132,7 +132,7 @@ def test_rigetti() -> None:
         s3_folder=S3_FOLDER,
         device_type="qpu",
         provider="rigetti",
-        device="Aspen-8",
+        device="Aspen-9",
     )
     assert b.persistent_handles
     assert b.supports_shots
@@ -173,7 +173,7 @@ def test_rigetti_with_rerouting() -> None:
         s3_folder=S3_FOLDER,
         device_type="qpu",
         provider="rigetti",
-        device="Aspen-8",
+        device="Aspen-9",
     )
     c = Circuit(4).CX(0, 1).CX(0, 2).CX(0, 3).CX(1, 2).CX(1, 3).CX(2, 3)
     b.compile_circuit(c)
