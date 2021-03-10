@@ -58,6 +58,7 @@ from pytket.extensions.qiskit.result_convert import qiskit_result_to_backendresu
 from pytket.routing import NoiseAwarePlacement, Architecture  # type: ignore
 from pytket.utils.results import KwargTypes
 from .ibm_utils import _STATUS_MAP
+from .config import QiskitConfig
 
 if TYPE_CHECKING:
     from qiskit.providers.ibmq import IBMQBackend as _QiskIBMQBackend  # type: ignore
@@ -97,7 +98,8 @@ class NoIBMQAccountError(Exception):
 
     def __init__(self) -> None:
         super().__init__(
-            "No IBMQ credentials found on disk, store your account using qiskit first."
+            "No IBMQ credentials found on disk, store your account using qiskit,"
+            " or using :py:meth:`pytket.extensions.qiskit.set_ibmq_config` first."
         )
 
 
@@ -140,6 +142,10 @@ class IBMQBackend(Backend):
         monitor: bool = True,
     ):
         """A backend for running circuits on remote IBMQ devices.
+        The provider arguments of `hub`, `group` and `project` can
+        be specified here as parameters or set in the config file
+        using pytket.extensions.qiskit.set_ibmq_config.
+        This function can also be used to set the IBMQ API token.
 
         :param backend_name: Name of the IBMQ device, e.g. `ibmqx4`,
          `ibmq_16_melbourne`.
@@ -157,18 +163,19 @@ class IBMQBackend(Backend):
         :raises ValueError: If no IBMQ account is loaded and none exists on the disk.
         """
         super().__init__()
+        self._pytket_config = QiskitConfig.from_default_config_file()
         if not IBMQ.active_account():
             if IBMQ.stored_account():
                 IBMQ.load_account()
             else:
-                raise NoIBMQAccountError()
+                if self._pytket_config.ibmq_api_token is not None:
+                    IBMQ.save_account(self._pytket_config.ibmq_api_token)
+                else:
+                    raise NoIBMQAccountError()
         provider_kwargs = {}
-        if hub:
-            provider_kwargs["hub"] = hub
-        if group:
-            provider_kwargs["group"] = group
-        if project:
-            provider_kwargs["project"] = project
+        provider_kwargs["hub"] = hub if hub else self._pytket_config.hub
+        provider_kwargs["group"] = group if group else self._pytket_config.group
+        provider_kwargs["project"] = project if project else self._pytket_config.project
 
         try:
             if provider_kwargs:

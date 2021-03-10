@@ -14,7 +14,7 @@
 
 """Honeywell config."""
 
-from typing import Any, Dict, Optional, cast, Type, TypeVar, ClassVar
+from typing import Any, Dict, Optional, cast, Type, ClassVar
 from dataclasses import dataclass
 from pytket.config import PytketExtConfig
 

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any, ClassVar, Dict, Optional, cast, TypeVar, Type
+from typing import Any, ClassVar, Dict, Optional, Type
 from dataclasses import dataclass
 from pytket.config import PytketExtConfig
 
