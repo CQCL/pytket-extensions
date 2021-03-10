@@ -50,7 +50,6 @@ from pytket.predicates import (  # type: ignore
 )
 from pytket.routing import FullyConnected  # type: ignore
 from pytket.utils.outcomearray import OutcomeArray
-from pytket.config import PytketConfig, get_config_file_path, load_ext_config
 
 from .config import HoneywellConfig
 from .api_wrappers import HQSAPIError, HoneywellQAPI
@@ -458,16 +457,9 @@ class HoneywellBackend(Backend):
 
 
 def _set_config_username(username: Optional[str]) -> None:
-    config_path = get_config_file_path()
-    config = PytketConfig.read_file(config_path)
-    hconfig = load_ext_config(HoneywellConfig)
+    hconfig = HoneywellConfig.from_default_config_file()
     hconfig.username = username
-    # TODO fix the type of config.extensions to not need cast
-    if cast(Optional[Dict], config.extensions) is None:
-        config.extensions = dict()
-    config.extensions["honeywell"] = hconfig.to_dict()
-
-    config.write_file(config_path)
+    hconfig.update_default_config_file()
 
 
 def _convert_result(resultdict: Dict[str, List[str]]) -> BackendResult:

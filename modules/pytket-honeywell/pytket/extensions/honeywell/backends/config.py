@@ -14,22 +14,19 @@
 
 """Honeywell config."""
 
-from typing import Dict, Optional, cast, Type, TypeVar
+from typing import Any, Dict, Optional, cast, Type, TypeVar, ClassVar
 from dataclasses import dataclass
-from pytket.config import PytketConfig, PytketExtConfig
-
-
-T = TypeVar("T", bound="HoneywellConfig")
+from pytket.config import PytketExtConfig
 
 
 @dataclass
 class HoneywellConfig(PytketExtConfig):
+    ext_dict_key: ClassVar[str] = "honeywell"
+
     username: Optional[str]
 
     @classmethod
-    def from_pytketconfig(cls: Type[T], config: PytketConfig) -> T:
-        if config.extensions and "honeywell" in config.extensions:
-            config_dict = cast(Dict[str, str], config.extensions["honeywell"])
-            return cls(config_dict.get("username"))
-
-        return cls(None)
+    def from_extension_dict(
+        cls: Type["HoneywellConfig"], ext_dict: Dict[str, Any]
+    ) -> "HoneywellConfig":
+        return cls(ext_dict.get("username", None))
