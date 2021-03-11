@@ -71,7 +71,7 @@ def test_big_circuit_ionq() -> None:
 
 def test_invalid_token() -> None:
     token = "invalid"
-    b = IonQBackend(token, device_name="simulator", label="test 3")
+    b = IonQBackend(api_key=token, device_name="simulator", label="test 3")
     c = Circuit(2, 2).H(0).CX(0, 1)
     c.measure_all()
     b.compile_circuit(c)
@@ -86,7 +86,7 @@ def test_invalid_token() -> None:
 )
 def test_invalid_request() -> None:
     token = cast(str, os.getenv("IONQ_AUTH"))
-    b = IonQBackend(token, device_name="simulator", label="test 4")
+    b = IonQBackend(api_key=token, device_name="simulator", label="test 4")
     c = Circuit(2, 2).H(0).CZ(0, 1)
     c.measure_all()
     with pytest.raises(CircuitNotValidError) as excinfo:
@@ -95,7 +95,7 @@ def test_invalid_request() -> None:
 
 
 def test_machine_debug() -> None:
-    b = IonQBackend("invalid", device_name="simulator", label="test 5")
+    b = IonQBackend(api_key="invalid", device_name="simulator", label="test 5")
     b._MACHINE_DEBUG = True
     c = Circuit(2)
     c.H(0)
@@ -126,7 +126,7 @@ def test_cancellation() -> None:
 
 
 def test_default_pass() -> None:
-    b = IonQBackend("invalid", device_name="simulator")
+    b = IonQBackend(api_key="invalid", device_name="simulator")
     for ol in range(3):
         comp_pass = b.default_compilation_pass(ol)
         c = Circuit(3, 3)
@@ -145,7 +145,7 @@ def test_default_pass() -> None:
     n_bits=strategies.integers(min_value=0, max_value=10),
 )
 def test_shots_bits_edgecases(n_shots, n_bits) -> None:
-    ionq_backend = IonQBackend("invalid", device_name="simulator", label="test 5")
+    ionq_backend = IonQBackend(api_key="invalid", device_name="simulator", label="test 5")
     ionq_backend._MACHINE_DEBUG = True
     c = Circuit(n_bits, n_bits)
     # TODO TKET-813 add more shot based backends and move to integration tests

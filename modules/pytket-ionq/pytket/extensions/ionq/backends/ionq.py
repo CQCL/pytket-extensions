@@ -46,6 +46,7 @@ from pytket.routing import FullyConnected  # type: ignore
 from pytket.utils.outcomearray import OutcomeArray
 from pytket.device import Device  # type: ignore
 from .ionq_convert import ionq_pass, ionq_gates, ionq_singleqs, tk_to_ionq
+from .config import IonQConfig
 
 IONQ_JOBS_URL = "https://api.ionq.co/v0.1/jobs/"
 
@@ -61,10 +62,19 @@ _STATUS_MAP = {
 
 _DEBUG_HANDLE_PREFIX = "_MACHINE_DEBUG_"
 
+class IonQAuthenticationError(Exception):
+    """Raised when there is no IonQ api key available."""
+
+    def __init__(self) -> None:
+        super().__init__("No IonQ api key provided or found in config file.")
 
 class IonQBackend(Backend):
     """
     Interface to an IonQ device.
+
+    Requires a valid API key/access token, this can either be provided as a
+    parameter or set in config using :py:meth:`pytket.extensions.aqt.set_aqt_config`
+
     """
 
     _supports_counts = True
@@ -72,18 +82,18 @@ class IonQBackend(Backend):
 
     def __init__(
         self,
-        api_key: str,
         device_name: Optional[str] = "qpu",
+        api_key: Optional[str] = None,
         label: Optional[str] = "job",
     ):
         """
         Construct a new IonQ backend.
 
-        :param      api_key: IonQ API key
-        :type       api_key: string
         :param      device_name:  device name, either "qpu" or "simulator". Default is
             "qpu".
         :type       device_name:  Optional[string]
+        :param      api_key: IonQ API key. Default is None (read from config).
+        :type       api_key: Optional[string]
         :param      label:        label to apply to submitted jobs. Default is "job".
         :type       label:        Optional[string]
         """
@@ -91,6 +101,13 @@ class IonQBackend(Backend):
         self._url = IONQ_JOBS_URL
         self._device_name = device_name
         self._label = label
+        config = IonQConfig.from_default_config_file()
+
+        if api_key is None:
+            api_key = config.api_key
+        if api_key is None:
+            raise IonQAuthenticationError()
+
         self._header = {"Authorization": f"apiKey {api_key}"}
         self._max_n_qubits = IONQ_N_QUBITS
         self._device = Device(FullyConnected(self._max_n_qubits))

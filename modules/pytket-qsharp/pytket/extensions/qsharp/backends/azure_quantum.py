@@ -58,9 +58,8 @@ class AzureBackend(_QsharpBaseBackend):
     quantum extension.
     Requires ``resourceId`` and ``location`` for Quantum Resource (found when you click
     on the resource in Azure).
-    This can be provided as a parameter at initialisation or stored in the
-    `~/.config/pytket/config.json` file as
-    `{'extensions':{'qsharp':{'resourceId':<val>, 'location':<val>}}}`
+    This can be provided as a parameter at initialisation or stored in
+    config using :py:meth:`pytket.extensions.qsharp.set_azure_config`
 
     Optional parameters can be provided in the same way:
     ``storage``: The connection string to the Azure storage account.
