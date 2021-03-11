@@ -34,3 +34,18 @@ class QSharpConfig(PytketExtConfig):
             ext_dict.get("location", None),
             ext_dict.get("storage", None),
         )
+
+
+def set_azure_config(
+    resourceId: Optional[str] = None,
+    location: Optional[str] = None,
+    storage: Optional[str] = None,
+) -> None:
+    config = QSharpConfig.from_default_config_file()
+    if resourceId is not None:
+        config.resourceId = resourceId
+    if location is not None:
+        config.location = location
+    if storage is not None:
+        config.storage = storage
+    config.update_default_config_file()
