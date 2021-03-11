@@ -33,8 +33,7 @@ def tk_to_aqt(circ: Circuit) -> Tuple[List[List], str]:
     c = circ.copy()
     token = cast(str, os.getenv("AQT_AUTH"))
     AQTBackend(
-        token,
-        device_name="sim/noise-model-1",
+        device_name="sim/noise-model-1", access_token=token
     ).default_compilation_pass().apply(c)
     return _translate_aqt(c)
 

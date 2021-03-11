@@ -144,7 +144,7 @@ class IBMQBackend(Backend):
         """A backend for running circuits on remote IBMQ devices.
         The provider arguments of `hub`, `group` and `project` can
         be specified here as parameters or set in the config file
-        using pytket.extensions.qiskit.set_ibmq_config.
+        using :py:meth:`pytket.extensions.qiskit.set_ibmq_config`.
         This function can also be used to set the IBMQ API token.
 
         :param backend_name: Name of the IBMQ device, e.g. `ibmqx4`,

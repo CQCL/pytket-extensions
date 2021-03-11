@@ -50,6 +50,7 @@ from pytket.predicates import (  # type: ignore
 )
 from pytket.routing import FullyConnected  # type: ignore
 from pytket.utils.outcomearray import OutcomeArray
+from .config import AQTConfig
 
 AQT_URL_PREFIX = "https://gateway.aqt.eu/marmot/"
 
@@ -78,6 +79,13 @@ _STATUS_MAP = {
 }
 
 
+class AqtAuthenticationError(Exception):
+    """Raised when there is no AQT access token available."""
+
+    def __init__(self) -> None:
+        super().__init__("No AQT access token provided or found in config file.")
+
+
 class AQTBackend(Backend):
     """
     Interface to an AQT device or simulator.
@@ -88,22 +96,36 @@ class AQTBackend(Backend):
     _persistent_handles = True
 
     def __init__(
-        self, access_token: str, device_name: str = AQT_DEVICE_SIM, label: str = ""
+        self,
+        device_name: str = AQT_DEVICE_SIM,
+        access_token: Optional[str] = None,
+        label: str = "",
     ):
         """
         Construct a new AQT backend.
 
-        :param      access_token: AQT access token
-        :type       access_token: string
+        Requires a valid API key/access token, this can either be provided as a
+        parameter or set in config using :py:meth:`pytket.extensions.aqt.set_aqt_config`
+        
         :param      device_name:  device name (suffix of URL, e.g. "sim/noise-model-1")
         :type       device_name:  string
+        :param      access_token: AQT access token, default None
+        :type       access_token: string
         :param      label:        label to apply to submitted jobs
         :type       label:        string
         """
         super().__init__()
         self._url = AQT_URL_PREFIX + device_name
         self._label = label
+        config = AQTConfig.from_default_config_file()
+
+        if access_token is None:
+            access_token = config.access_token
+        if access_token is None:
+            raise AqtAuthenticationError()
+
         self._header = {"Ocp-Apim-Subscription-Key": access_token, "SDK": "pytket"}
+        print(self._header)
         if device_name in device_info:
             self._max_n_qubits: Optional[int] = device_info[device_name]["max_n_qubits"]
             self._device = FullyConnected(self._max_n_qubits)

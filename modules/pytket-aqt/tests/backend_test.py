@@ -34,7 +34,7 @@ skip_remote_tests: bool = (
 def test_aqt() -> None:
     # Run a circuit on the noisy simulator.
     token = cast(str, os.getenv("AQT_AUTH"))
-    b = AQTBackend(token, device_name="sim/noise-model-1", label="test 1")
+    b = AQTBackend(device_name="sim/noise-model-1", access_token=token, label="test 1")
     c = Circuit(4, 4)
     c.H(0)
     c.CX(0, 1)
@@ -61,7 +61,7 @@ def test_aqt() -> None:
 def test_bell() -> None:
     # On the noiseless simulator, we should always get Bell states here.
     token = cast(str, os.getenv("AQT_AUTH"))
-    b = AQTBackend(token, device_name="sim", label="test 2")
+    b = AQTBackend(device_name="sim", access_token=token, label="test 2")
     c = Circuit(2, 2)
     c.H(0)
     c.CX(0, 1)
@@ -74,7 +74,7 @@ def test_bell() -> None:
 
 def test_invalid_cred() -> None:
     token = "invalid"
-    b = AQTBackend(token, device_name="sim", label="test 3")
+    b = AQTBackend(device_name="sim", access_token=token, label="test 3")
     c = Circuit(2, 2).H(0).CX(0, 1)
     c.measure_all()
     b.compile_circuit(c)
@@ -89,7 +89,7 @@ def test_invalid_cred() -> None:
 )
 def test_invalid_request() -> None:
     token = cast(str, os.getenv("AQT_AUTH"))
-    b = AQTBackend(token, device_name="sim", label="test 4")
+    b = AQTBackend(device_name="sim", access_token=token, label="test 4")
     c = Circuit(2, 2).H(0).CX(0, 1)
     c.measure_all()
     b.compile_circuit(c)
@@ -104,7 +104,7 @@ def test_invalid_request() -> None:
 )
 def test_handles() -> None:
     token = cast(str, os.getenv("AQT_AUTH"))
-    b = AQTBackend(token, device_name="sim/noise-model-1", label="test 5")
+    b = AQTBackend(device_name="sim/noise-model-1", access_token=token, label="test 5")
     c = Circuit(2, 2)
     c.H(0)
     c.CX(0, 1)
@@ -122,7 +122,7 @@ def test_handles() -> None:
 
 
 def test_machine_debug() -> None:
-    b = AQTBackend("invalid", device_name="sim", label="test 6")
+    b = AQTBackend(device_name="sim", access_token="invalid", label="test 6")
     b._MACHINE_DEBUG = True
     c = Circuit(2, 2)
     c.H(0)
@@ -135,7 +135,7 @@ def test_machine_debug() -> None:
 
 
 def test_default_pass() -> None:
-    b = AQTBackend("invalid", device_name="sim/noise-model-1")
+    b = AQTBackend(device_name="sim/noise-model-1", access_token="invalid")
     for ol in range(3):
         comp_pass = b.default_compilation_pass(ol)
         c = Circuit(3, 3)
@@ -154,7 +154,7 @@ def test_default_pass() -> None:
     n_bits=strategies.integers(min_value=0, max_value=10),
 )
 def test_shots_bits_edgecases(n_shots, n_bits) -> None:
-    aqt_backend = AQTBackend("invalid", device_name="sim", label="test 6")
+    aqt_backend = AQTBackend(device_name="sim", access_token="invalid", label="test 6")
     aqt_backend._MACHINE_DEBUG = True
     c = Circuit(n_bits, n_bits)
 
