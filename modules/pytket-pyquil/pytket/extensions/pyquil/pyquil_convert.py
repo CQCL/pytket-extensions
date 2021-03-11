@@ -107,7 +107,7 @@ def param_to_pyquil(p: Union[float, Expr]) -> Union[float, Expression]:
 
 def param_from_pyquil(p: Union[float, Expression]) -> Expr:
     def to_sympy(e: Union[float, Expression]) -> Expr:
-        if isinstance(e, float):
+        if isinstance(e, (float, int)):
             return e
         elif isinstance(e, MemoryReference):
             return Symbol(e.name)
