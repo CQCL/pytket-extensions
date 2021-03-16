@@ -18,7 +18,7 @@ import json
 from http import HTTPStatus
 from typing import Dict, Iterable, List, Optional, Sequence, Any, cast
 
-import numpy as np  # type: ignore
+import numpy as np
 import requests
 import keyring  # type: ignore
 

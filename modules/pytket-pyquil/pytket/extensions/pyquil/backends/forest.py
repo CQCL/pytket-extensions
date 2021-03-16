@@ -17,7 +17,7 @@ from typing import Iterable, List, Optional
 from uuid import uuid4
 from logging import warning
 
-import numpy as np  # type: ignore
+import numpy as np
 from pyquil import get_qc
 from pyquil.api import QuantumComputer, WavefunctionSimulator
 from pyquil.gates import I

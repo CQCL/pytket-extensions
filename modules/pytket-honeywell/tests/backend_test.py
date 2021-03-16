@@ -16,7 +16,7 @@ from typing import Callable, Any  # pylint: disable=unused-import
 from ast import literal_eval
 import os
 from hypothesis import given, settings, strategies
-import numpy as np  # type: ignore
+import numpy as np
 import pytest
 import hypothesis.strategies as st
 from hypothesis.strategies._internal import SearchStrategy

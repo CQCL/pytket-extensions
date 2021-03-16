@@ -14,7 +14,7 @@
 
 from typing import List
 import platform
-import numpy as np  # type: ignore
+import numpy as np
 from pytket.backends import Backend
 from pytket.extensions.qiskit import (
     AerBackend,

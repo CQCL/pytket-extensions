@@ -11,7 +11,7 @@ from typing import (
 )
 from collections import Counter
 
-import numpy as np  # type: ignore
+import numpy as np
 
 from qiskit.result import Result  # type: ignore
 from qiskit.result.models import ExperimentResultData  # type: ignore

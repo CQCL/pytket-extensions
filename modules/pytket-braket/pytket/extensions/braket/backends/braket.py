@@ -69,7 +69,7 @@ from braket.circuits.result_type import ResultType  # type: ignore
 from braket.device_schema import DeviceActionType  # type: ignore
 from braket.devices import LocalSimulator  # type: ignore
 from braket.tasks.local_quantum_task import LocalQuantumTask  # type: ignore
-import numpy as np  # type: ignore
+import numpy as np
 
 # Known schemas for noise characteristics
 IONQ_SCHEMA = {

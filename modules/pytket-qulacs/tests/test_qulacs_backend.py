@@ -16,7 +16,7 @@ from collections import Counter
 import warnings
 import math
 from hypothesis import given, strategies
-import numpy as np  # type: ignore
+import numpy as np
 import pytest
 from openfermion.ops import QubitOperator  # type: ignore
 from openfermion.linalg import eigenspectrum  # type: ignore
