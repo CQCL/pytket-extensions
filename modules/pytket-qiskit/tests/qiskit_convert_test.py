@@ -16,7 +16,7 @@ from collections import Counter
 from typing import List, Set, Union
 from math import pi
 import pytest
-import numpy as np  # type: ignore
+import numpy as np
 from qiskit import (  # type: ignore
     QuantumCircuit,
     QuantumRegister,

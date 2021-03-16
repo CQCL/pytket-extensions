@@ -24,7 +24,7 @@ from projectq.ops._command import Command as ProjectQCommand, apply_command  # t
 from projectq.types._qubit import Qureg  # type: ignore
 from pytket.circuit import OpType, Op, Circuit, Command, Bit  # type: ignore
 from pytket.transform import Transform  # type: ignore
-import numpy as np  # type: ignore
+import numpy as np
 
 _pq_to_tk_singleqs = {
     pqo.XGate: OpType.X,

@@ -19,7 +19,7 @@ from typing import TYPE_CHECKING, Iterable, List, Optional
 from uuid import uuid4
 from logging import warning
 
-import numpy as np  # type: ignore
+import numpy as np
 import projectq  # type: ignore
 from projectq import MainEngine
 from projectq.backends import Simulator  # type: ignore

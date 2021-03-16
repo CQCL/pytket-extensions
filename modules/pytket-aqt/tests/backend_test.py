@@ -16,7 +16,7 @@ from collections import Counter
 from typing import cast
 import os
 from hypothesis import given, strategies
-import numpy as np  # type: ignore
+import numpy as np
 import pytest
 from pytket.circuit import Circuit  # type: ignore
 from pytket.backends import StatusEnum

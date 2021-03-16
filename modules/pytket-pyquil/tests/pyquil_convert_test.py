@@ -17,7 +17,7 @@ from shutil import which
 import platform
 
 import docker  # type: ignore
-import numpy as np  # type: ignore
+import numpy as np
 import pytest
 from pyquil import Program
 from pyquil.api import WavefunctionSimulator

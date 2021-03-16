@@ -15,7 +15,7 @@
 from typing import Dict, Tuple, Any, List
 from pytket.passes import RebaseCustom  # type: ignore
 from pytket.circuit import Circuit, OpType, Command  # type: ignore
-from numpy import pi  # type: ignore
+from numpy import pi
 
 
 def _from_tk1(a: float, b: float, c: float) -> Circuit:

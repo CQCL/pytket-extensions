@@ -20,7 +20,7 @@ import warnings
 from collections import Counter
 
 from hypothesis import given, strategies
-import numpy as np  # type: ignore
+import numpy as np
 import pytest
 from pytket.backends.backend_exceptions import CircuitNotRunError
 from pytket.backends.status import StatusEnum

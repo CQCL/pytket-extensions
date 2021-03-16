@@ -20,7 +20,7 @@ import math
 import cmath
 import pickle
 from hypothesis import given, strategies
-import numpy as np  # type: ignore
+import numpy as np
 from pytket.circuit import Circuit, OpType, BasisOrder, Qubit, reg_eq  # type: ignore
 from pytket.passes import CliffordSimp  # type: ignore
 from pytket.pauli import Pauli, QubitPauliString  # type: ignore

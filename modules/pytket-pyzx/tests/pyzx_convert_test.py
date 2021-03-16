@@ -21,7 +21,7 @@ try:
 except ImportError:
     from pytket.extensions.backends.qiskit import AerStateBackend  # type: ignore
 
-import numpy as np  # type: ignore
+import numpy as np
 import pytest
 
 
