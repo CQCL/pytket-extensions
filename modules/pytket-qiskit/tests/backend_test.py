@@ -24,7 +24,7 @@ import numpy as np
 from pytket.circuit import Circuit, OpType, BasisOrder, Qubit, reg_eq  # type: ignore
 from pytket.passes import CliffordSimp  # type: ignore
 from pytket.pauli import Pauli, QubitPauliString  # type: ignore
-from pytket.predicates import CompilationUnit  # type: ignore
+from pytket.predicates import CompilationUnit, NoMidMeasurePredicate  # type: ignore
 from pytket.routing import Architecture, route  # type: ignore
 from pytket.device import Device  # type: ignore
 from pytket.transform import Transform  # type: ignore
@@ -798,17 +798,10 @@ def test_ibmq_mid_measure() -> None:
 
     c.CX(1, 0).H(0).Measure(2, 2)
 
-    # test open backend does not support mid-measure
-    # cannot test premium backends that do
     b = IBMQEmulatorBackend("ibmq_athens")
-
-    with pytest.raises(RuntimeError) as warninfo:
-        b.compile_circuit(c)
-        assert "Not a valid operation" in str(warninfo.value)
-
-    with pytest.raises(CircuitNotValidError) as warninfo2:
-        b.get_counts(c, 10)
-        assert "NoMidMeasurePredicate" in str(warninfo2.value)
+    b.compile_circuit(c)
+    assert not NoMidMeasurePredicate().verify(c)
+    assert b.valid_circuit(c)
 
 
 @pytest.mark.skipif(not IBMQ.stored_account(), reason="No IBM account stored")
