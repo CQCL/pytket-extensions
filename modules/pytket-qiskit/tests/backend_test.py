@@ -329,28 +329,6 @@ def test_process_characterisation_complete_noise_model() -> None:
     assert char["ReadoutErrors"][1] == [[0.7, 0.3], [0.3, 0.7]]
 
 
-@pytest.mark.skipif(skip_remote_tests, reason="Skipping remote tests")
-def test_device() -> None:
-    c = circuit_gen(False)
-    b = IBMQBackend("ibmq_santiago", hub="ibm-q", group="open", project="main")
-    assert b._max_per_job == 75
-    operator = QubitPauliOperator(
-        {
-            QubitPauliString(Qubit(0), Pauli.Z): 1.0,
-            QubitPauliString(Qubit(0), Pauli.X): 0.5,
-        }
-    )
-    val = get_operator_expectation_value(c, operator, b, 8000)
-    print(val)
-    c1 = circuit_gen(True)
-    c2 = circuit_gen(True)
-    b.compile_circuit(c1)
-    b.compile_circuit(c2)
-
-    print(b.get_shots(c1, n_shots=10))
-    print(b.get_shots(c2, n_shots=10))
-
-
 def test_cancellation_aer() -> None:
     b = AerBackend()
     c = circuit_gen(True)
