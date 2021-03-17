@@ -12,8 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Union
 from qiskit.dagcircuit import DAGCircuit  # type: ignore
-from qiskit.providers import BaseBackend  # type: ignore
+from qiskit.providers import BaseBackend, BackendV1  # type: ignore
 from qiskit.transpiler.basepasses import TransformationPass, BasePass as qBasePass  # type: ignore
 from qiskit.converters import circuit_to_dag, dag_to_circuit  # type: ignore
 from qiskit.providers.aer.aerprovider import AerProvider  # type: ignore
@@ -73,13 +74,14 @@ class TketAutoPass(TketPass):
         "UnitarySimulator": AerUnitaryBackend,
     }
 
-    def __init__(self, backend: BaseBackend, optimisation_level: int = 1):
+    def __init__(
+        self, backend: Union[BaseBackend, BackendV1], optimisation_level: int = 1
+    ):
         """Identifies a Qiskit backend and provides the corresponding default
         compilation pass from pytket as a
         :py:class:`qiskit.transpiler.TransformationPass`.
 
         :param backend: The Qiskit backend to target. Accepts Aer or IBMQ backends.
-        :type backend: BaseBackend
         :param optimisation_level: The level of optimisation to perform during
             compilation. Level 0 just solves the device constraints without
             optimising. Level 1 additionally performs some light optimisations.
@@ -87,8 +89,6 @@ class TketAutoPass(TketPass):
             time for large circuits. Defaults to 1.
         :type optimisation_level: int, optional
         """
-        if not isinstance(backend, BaseBackend):
-            raise ValueError("Requires BaseBackend instance")
         if isinstance(backend._provider, AerProvider):
             tk_backend = self._aer_backend_map[type(backend).__name__]()
         elif isinstance(backend._provider, AccountProvider):
