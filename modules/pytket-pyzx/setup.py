@@ -30,7 +30,7 @@ setup(
     author="Alexander Cowtan",
     author_email="alexander.cowtan@cambridgequantum.com",
     python_requires=">=3.7",
-    url="https://github.com/CQCL/pytket",
+    url="https://github.com/CQCL/pytket-extensions",
     description="Extension for pytket, providing translation to and from the PyZX "
     "framework",
     long_description=open("README.md").read(),

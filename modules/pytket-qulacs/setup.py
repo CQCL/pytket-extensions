@@ -30,7 +30,7 @@ setup(
     author="Irfan Khan",
     author_email="irfan.khan@cambridgequantum.com",
     python_requires=">=3.7",
-    url="https://github.com/CQCL/pytket",
+    url="https://github.com/CQCL/pytket-extensions",
     description="Extension for pytket, providing access to the Qulacs Simulator",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
