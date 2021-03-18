@@ -30,7 +30,7 @@ setup(
     author="Alexander Cowtan",
     author_email="alexander.cowtan@cambridgequantum.com",
     python_requires=">=3.7",
-    url="https://github.com/CQCL/pytket",
+    url="https://github.com/CQCL/pytket-extensions",
     description="Extension for pytket, providing access to AQT backends",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",

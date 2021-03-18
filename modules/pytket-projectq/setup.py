@@ -30,7 +30,7 @@ setup(
     author="Luca Mondada",
     author_email="luca.mondada@cambridgequantum.com",
     python_requires=">=3.7",
-    url="https://github.com/CQCL/pytket",
+    url="https://github.com/CQCL/pytket-extensions",
     description="Extension for pytket, providing translation to and from the ProjectQ "
     "framework",
     long_description=open("README.md").read(),
