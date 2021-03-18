@@ -32,11 +32,7 @@ from qiskit.aqua.components.oracles import TruthTableOracle  # type: ignore
 # Memory corruption on Windows with qulacs 0.2.0 (TKET-1056)
 use_qulacs = platform.system() != "Windows"
 if use_qulacs:
-    # Temporary fix before pytket_qulacs 0.4.1 release
-    try:
-        from pytket.extensions.qulacs import QulacsBackend  # type: ignore
-    except ImportError:
-        from pytket.extensions.backends.qulacs import QulacsBackend  # type: ignore
+    from pytket.extensions.qulacs import QulacsBackend  # type: ignore
 
 
 def circuit_gen(measure: bool = False) -> QuantumCircuit:
