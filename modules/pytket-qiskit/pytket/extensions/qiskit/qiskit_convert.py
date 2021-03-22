@@ -352,7 +352,7 @@ def append_tk_command_to_qiskit(
     if optype == OpType.Unitary2qBox:
         qargs = [qregmap[q.reg_name][q.index[0]] for q in args]
         u = op.get_matrix()
-        g = UnitaryGate(u, label="u2q")
+        g = UnitaryGate(u, label="unitary")
         return qcirc.append(g, qargs=qargs)
     if optype == OpType.Barrier:
         qargs = [qregmap[q.reg_name][q.index[0]] for q in args]
