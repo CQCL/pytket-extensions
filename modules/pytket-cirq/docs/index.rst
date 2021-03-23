@@ -31,7 +31,6 @@ pytket.extensions.cirq
     :members:
 
 .. autoclass:: pytket.extensions.cirq.CirqCliffordSampleBackend
-    :special-members: __init__
     :inherited-members:
     :members:
 
@@ -44,6 +43,5 @@ pytket.extensions.cirq
     :members:
 
 .. autoclass:: pytket.extensions.cirq.CirqCliffordSimBackend
-    :special-members: __init__
     :inherited-members:
     :members:
