@@ -8,7 +8,6 @@ author = "Cambridge Quantum Computing Ltd"
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
-    "sphinx_autodoc_annotation",
     "sphinx.ext.intersphinx",
     "sphinx.ext.mathjax",
 ]

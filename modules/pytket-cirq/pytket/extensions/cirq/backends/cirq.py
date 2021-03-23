@@ -203,7 +203,6 @@ class _CirqSimBackend(_CirqBaseBackend):
         :type circuit: CirqCircuit
         :param q_bits: ordered pytket Qubit
         :type q_bits: Sequence[Qubit]
-        Returns BackendResult
         :return: result of simulation
         :rtype: BackendResult
         """
@@ -247,7 +246,6 @@ class _CirqSimBackend(_CirqBaseBackend):
         :type circuit: CirqCircuit
         :param q_bits: ordered pytket Qubit
         :type q_bits: Sequence[Qubit]
-        Returns BackendResult
         :return: sequence of moments from simulator
         :rtype: List[BackendResult]
         """
