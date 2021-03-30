@@ -141,7 +141,7 @@ class QulacsBackend(Backend):
     ) -> List[ResultHandle]:
         circuit_list = list(circuits)
         if valid_check:
-            self._check_all_circuits(circuit_list, nomeasure_warn=(n_shots is not None))
+            self._check_all_circuits(circuit_list, nomeasure_warn=False)
 
         handle_list = []
         for circuit in circuit_list:
