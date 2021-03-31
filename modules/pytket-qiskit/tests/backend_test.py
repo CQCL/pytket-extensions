@@ -845,7 +845,7 @@ def test_compilation_correctness() -> None:
     c.Rz(0.125, 0)
     c.X(1)
     c.Rz(0.125, 2).X(2).Rz(0.25, 2)
-    c.V(3).Rz(0.125, 3).V(3)
+    c.SX(3).Rz(0.125, 3).SX(3)
     c.CX(0, 3).CX(0, 4)
     u_backend = AerUnitaryBackend()
     u = u_backend.get_unitary(c)
