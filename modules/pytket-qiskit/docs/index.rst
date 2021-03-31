@@ -62,3 +62,6 @@ pytket.extensions.qiskit
 .. automodule:: pytket.extensions.qiskit.tket_job
     :special-members: __init__
     :members:
+
+.. automodule:: pytket.extensions.qiskit.backends.config
+    :members:

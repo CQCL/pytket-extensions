@@ -14,13 +14,15 @@
 
 """Honeywell config."""
 
-from typing import Any, Dict, Optional, cast, Type, ClassVar
+from typing import Any, Dict, Optional, Type, ClassVar
 from dataclasses import dataclass
 from pytket.config import PytketExtConfig
 
 
 @dataclass
 class HoneywellConfig(PytketExtConfig):
+    """Holds config parameters for pytket-honeywell."""
+
     ext_dict_key: ClassVar[str] = "honeywell"
 
     username: Optional[str]
@@ -30,3 +32,11 @@ class HoneywellConfig(PytketExtConfig):
         cls: Type["HoneywellConfig"], ext_dict: Dict[str, Any]
     ) -> "HoneywellConfig":
         return cls(ext_dict.get("username", None))
+
+
+def set_honeywell_config(username: Optional[str]) -> None:
+    """Set default value for HQS username.
+    Can be overriden in backend construction."""
+    hconfig = HoneywellConfig.from_default_config_file()
+    hconfig.username = username
+    hconfig.update_default_config_file()

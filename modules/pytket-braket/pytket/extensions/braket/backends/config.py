@@ -19,6 +19,8 @@ from pytket.config import PytketExtConfig
 
 @dataclass
 class BraketConfig(PytketExtConfig):
+    """Holds config parameters for pytket-braket."""
+
     ext_dict_key: ClassVar[str] = "braket"
 
     s3_bucket: Optional[str]
@@ -44,6 +46,8 @@ def set_braket_config(
     device_type: Optional[str] = None,
     provider: Optional[str] = None,
 ) -> None:
+    """Set default values for any of s3_bucket, s3_folder, device_type or provider
+    for AWS Braket. Can be overriden in backend construction."""
     config = BraketConfig.from_default_config_file()
     if s3_bucket is not None:
         config.s3_bucket = s3_bucket

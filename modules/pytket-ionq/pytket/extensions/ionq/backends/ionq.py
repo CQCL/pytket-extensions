@@ -62,11 +62,13 @@ _STATUS_MAP = {
 
 _DEBUG_HANDLE_PREFIX = "_MACHINE_DEBUG_"
 
+
 class IonQAuthenticationError(Exception):
     """Raised when there is no IonQ api key available."""
 
     def __init__(self) -> None:
         super().__init__("No IonQ api key provided or found in config file.")
+
 
 class IonQBackend(Backend):
     """

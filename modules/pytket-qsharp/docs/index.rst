@@ -54,3 +54,6 @@ pytket.extensions.qsharp
 
 .. automodule:: pytket.extensions.qsharp
     :members: tk_to_qsharp
+
+.. automodule:: pytket.extensions.qsharp.backends.config
+    :members:

@@ -106,7 +106,7 @@ class AQTBackend(Backend):
 
         Requires a valid API key/access token, this can either be provided as a
         parameter or set in config using :py:meth:`pytket.extensions.aqt.set_aqt_config`
-        
+
         :param      device_name:  device name (suffix of URL, e.g. "sim/noise-model-1")
         :type       device_name:  string
         :param      access_token: AQT access token, default None

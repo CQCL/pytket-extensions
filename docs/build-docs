@@ -33,10 +33,10 @@ def remove_dir(dirpath):
 
 
 def fix_links(filepath):
-    with open(filepath, "r") as f:
+    with open(filepath, "r", encoding="utf8") as f:
         content = f.read()
     content = content.replace("pytket._tket", "pytket")
-    with open(filepath, "w") as f:
+    with open(filepath, "w", encoding="utf8") as f:
         f.write(content)
 
 

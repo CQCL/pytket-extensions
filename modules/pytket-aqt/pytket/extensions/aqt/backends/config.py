@@ -14,13 +14,15 @@
 
 """AQT config."""
 
-from typing import Any, Dict, Optional, cast, Type, ClassVar
+from typing import Any, Dict, Optional, Type, ClassVar
 from dataclasses import dataclass
 from pytket.config import PytketExtConfig
 
 
 @dataclass
 class AQTConfig(PytketExtConfig):
+    """Holds config parameters for pytket-aqt."""
+
     ext_dict_key: ClassVar[str] = "aqt"
 
     access_token: Optional[str]
@@ -35,6 +37,7 @@ class AQTConfig(PytketExtConfig):
 def set_aqt_config(
     access_token: Optional[str] = None,
 ) -> None:
+    """Set default value for AQT API token."""
     config = AQTConfig.from_default_config_file()
     if access_token is not None:
         config.access_token = access_token

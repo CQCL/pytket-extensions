@@ -145,7 +145,9 @@ def test_default_pass() -> None:
     n_bits=strategies.integers(min_value=0, max_value=10),
 )
 def test_shots_bits_edgecases(n_shots, n_bits) -> None:
-    ionq_backend = IonQBackend(api_key="invalid", device_name="simulator", label="test 5")
+    ionq_backend = IonQBackend(
+        api_key="invalid", device_name="simulator", label="test 5"
+    )
     ionq_backend._MACHINE_DEBUG = True
     c = Circuit(n_bits, n_bits)
     # TODO TKET-813 add more shot based backends and move to integration tests

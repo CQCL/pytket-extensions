@@ -19,6 +19,8 @@ from pytket.config import PytketExtConfig
 
 @dataclass
 class QSharpConfig(PytketExtConfig):
+    """Holds config parameters for pytket-qsharp."""
+
     ext_dict_key: ClassVar[str] = "qsharp"
 
     resourceId: Optional[str]
@@ -41,6 +43,8 @@ def set_azure_config(
     location: Optional[str] = None,
     storage: Optional[str] = None,
 ) -> None:
+    """Set default values for any of resourceId, location or storage
+    for your Azure Quantum Workspace. Can be overriden in backend construction."""
     config = QSharpConfig.from_default_config_file()
     if resourceId is not None:
         config.resourceId = resourceId

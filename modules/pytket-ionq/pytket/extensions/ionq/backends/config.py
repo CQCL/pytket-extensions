@@ -14,13 +14,15 @@
 
 """IonQ config."""
 
-from typing import Any, Dict, Optional, cast, Type, ClassVar
+from typing import Any, Dict, Optional, Type, ClassVar
 from dataclasses import dataclass
 from pytket.config import PytketExtConfig
 
 
 @dataclass
 class IonQConfig(PytketExtConfig):
+    """Holds config parameters for pytket-ionq."""
+
     ext_dict_key: ClassVar[str] = "ionq"
 
     api_key: Optional[str]
@@ -35,6 +37,7 @@ class IonQConfig(PytketExtConfig):
 def set_ionq_config(
     api_key: Optional[str] = None,
 ) -> None:
+    """Set default value for IonQ API key."""
     config = IonQConfig.from_default_config_file()
     if api_key is not None:
         config.api_key = api_key
