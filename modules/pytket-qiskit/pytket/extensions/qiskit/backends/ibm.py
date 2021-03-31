@@ -106,7 +106,7 @@ def _approx_0_mod_2(x: float, eps: float = 1e-10) -> bool:
     return min(x, 2 - x) < eps
 
 
-def _tk1_to_x_v_rz(a: float, b: float, c: float) -> Circuit:
+def _tk1_to_x_sx_rz(a: float, b: float, c: float) -> Circuit:
     circ = Circuit(1)
     if _approx_0_mod_2(b):
         circ.Rz(a + c, 0)
@@ -116,10 +116,13 @@ def _tk1_to_x_v_rz(a: float, b: float, c: float) -> Circuit:
         else:
             circ.Rz(c, 0).X(0).Rz(a, 0)
     else:
+        # use SX; SX = e^{i\pi/4}V; V = RX(1/2)
         if _approx_0_mod_2(a - 0.5) and _approx_0_mod_2(c - 0.5):
-            circ.V(0).Rz(1 - b, 0).V(0)
+            circ.SX(0).Rz(1 - b, 0).SX(0)
+            circ.add_phase(-0.5)
         else:
-            circ.Rz(c + 0.5, 0).V(0).Rz(b - 1, 0).V(0).Rz(a + 0.5, 0)
+            circ.Rz(c + 0.5, 0).SX(0).Rz(b - 1, 0).SX(0).Rz(a + 0.5, 0)
+            circ.add_phase(-0.5)
     return circ
 
 
@@ -189,20 +192,20 @@ class IBMQBackend(Backend):
 
         self._mid_measure = self._config.simulator or self._config.multi_meas_enabled
 
-        self._legacy_gateset = OpType.V not in self._gate_set
+        self._legacy_gateset = OpType.SX not in self._gate_set
 
         if self._legacy_gateset:
             if not self._gate_set >= {OpType.U1, OpType.U2, OpType.U3, OpType.CX}:
                 raise NotImplementedError(f"Gate set {self._gate_set} unsupported")
             self._rebase_pass = RebaseIBM()
         else:
-            if not self._gate_set >= {OpType.X, OpType.V, OpType.Rz, OpType.CX}:
+            if not self._gate_set >= {OpType.X, OpType.SX, OpType.Rz, OpType.CX}:
                 raise NotImplementedError(f"Gate set {self._gate_set} unsupported")
             self._rebase_pass = RebaseCustom(
                 {OpType.CX},
                 Circuit(2).CX(0, 1),
-                {OpType.X, OpType.V, OpType.Rz},
-                _tk1_to_x_v_rz,
+                {OpType.X, OpType.SX, OpType.Rz},
+                _tk1_to_x_sx_rz,
             )
 
         if hasattr(self._config, "max_experiments"):
