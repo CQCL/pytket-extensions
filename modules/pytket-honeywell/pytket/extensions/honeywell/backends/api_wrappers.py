@@ -19,7 +19,6 @@ import websockets
 import nest_asyncio  # type: ignore
 import keyring  # type: ignore
 
-from pytket.config import load_ext_config
 from .config import HoneywellConfig
 
 # This is necessary for use in Jupyter notebooks to allow for nested asyncio loops
@@ -102,7 +101,7 @@ class HoneywellQAPI:
             shots (int): Default number of shots for submitted experiments
             use_websockets: Whether to default to using websockets to reduce traffic
         """
-        self.config = load_ext_config(HoneywellConfig)
+        self.config = HoneywellConfig.from_default_config_file()
 
         self.url = (
             f"{api_url}v{api_version}/"

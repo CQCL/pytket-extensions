@@ -23,4 +23,5 @@ from .backends import (
     QsharpToffoliSimulatorBackend,
     AzureBackend,
 )
+from .backends.config import set_azure_config, QSharpConfig
 from .qsharp_convert import tk_to_qsharp

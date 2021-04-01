@@ -13,7 +13,6 @@
 # limitations under the License.
 import os
 import sys
-import warnings
 from collections import Counter
 from typing import Dict, Any, cast
 import math
@@ -60,17 +59,6 @@ import pytest
 skip_remote_tests: bool = (
     not IBMQ.stored_account() or os.getenv("PYTKET_RUN_REMOTE_TESTS") is None
 )
-
-
-def test_nomeasure_warning() -> None:
-    warnings.simplefilter("error")
-    circuit = Circuit(2)
-    warn_msg = "Circuit with index 0 in submitted does not contain a measure "
-    "operation."
-    with pytest.raises(UserWarning) as warninfo:
-        AerBackend().get_shots(circuit, 4)
-        assert warn_msg in str(warninfo.value)
-        assert warninfo == UserWarning
 
 
 def circuit_gen(measure: bool = False) -> Circuit:
@@ -798,7 +786,7 @@ def test_ibmq_mid_measure() -> None:
 
     c.CX(1, 0).H(0).Measure(2, 2)
 
-    b = IBMQEmulatorBackend("ibmq_athens")
+    b = IBMQEmulatorBackend("ibmq_athens", hub="ibm-q", group="open", project="main")
     b.compile_circuit(c)
     assert not NoMidMeasurePredicate().verify(c)
     assert b.valid_circuit(c)

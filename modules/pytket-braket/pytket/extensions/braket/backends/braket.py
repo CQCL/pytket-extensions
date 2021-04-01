@@ -71,6 +71,8 @@ from braket.devices import LocalSimulator  # type: ignore
 from braket.tasks.local_quantum_task import LocalQuantumTask  # type: ignore
 import numpy as np
 
+from .config import BraketConfig
+
 # Known schemas for noise characteristics
 IONQ_SCHEMA = {
     "name": "braket.device_schema.ionq.ionq_provider_properties",
@@ -183,25 +185,54 @@ class BraketBackend(Backend):
     def __init__(
         self,
         local: bool = False,
-        s3_bucket: str = "",
-        s3_folder: str = "",
-        device_type: str = "quantum-simulator",
-        provider: str = "amazon",
-        device: str = "sv1",
+        device: Optional[str] = None,
+        s3_bucket: Optional[str] = None,
+        s3_folder: Optional[str] = None,
+        device_type: Optional[str] = None,
+        provider: Optional[str] = None,
     ):
         """
         Construct a new braket backend.
 
         If `local=True`, other parameters are ignored.
 
-        :param local: use simulator running on local machine
+        All parameters except `device` can be set in config using
+        :py:meth:`pytket.extensions.braket.set_braket_config`.
+        For `device_type`, `provider` and `device` if no parameter
+        is specified as a keyword argument or
+        in the config file the defaults specified below are used.
+
+        :param local: use simulator running on local machine,
+            default: False
+        :param device: device name from device ARN (e.g. "ionQdevice", "Aspen-8", ...),
+            default: "sv1"
         :param s3_bucket: name of S3 bucket to store results
         :param s3_folder: name of folder ("key") in S3 bucket to store results in
-        :param device_type: device type from device ARN (e.g. "qpu")
-        :param provider: provider name from device ARN (e.g. "ionq", "rigetti", ...)
-        :paran device: device name from device ARN (e.g. "ionQdevice", "Aspen-8", ...)
+        :param device_type: device type from device ARN (e.g. "qpu"),
+            default: "quantum-simulator"
+        :param provider: provider name from device ARN (e.g. "ionq", "rigetti", ...),
+            default: "amazon"
         """
         super().__init__()
+        # load config
+        config = BraketConfig.from_default_config_file()
+        if s3_bucket is None:
+            s3_bucket = config.s3_bucket
+        if s3_folder is None:
+            s3_bucket = config.s3_folder
+        if device_type is None:
+            s3_bucket = config.device_type
+        if provider is None:
+            s3_bucket = config.provider
+
+        # set defaults if not overridden
+        if device_type is None:
+            device_type = "quantum-simulator"
+        if provider is None:
+            provider = "amazon"
+        if device is None:
+            device = "sv1"
+
         if local:
             self._device = LocalSimulator()
             self._device_type = _DeviceType.LOCAL
@@ -218,7 +249,6 @@ class BraketBackend(Backend):
                 self._device_type = _DeviceType.QPU
             else:
                 raise ValueError(f"Unsupported device type {aws_device_type}")
-
         props = self._device.properties.dict()
         paradigm = props["paradigm"]
         n_qubits = paradigm["qubitCount"]
