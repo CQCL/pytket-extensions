@@ -62,17 +62,6 @@ skip_remote_tests: bool = (
 )
 
 
-def test_nomeasure_warning() -> None:
-    warnings.simplefilter("error")
-    circuit = Circuit(2)
-    warn_msg = "Circuit with index 0 in submitted does not contain a measure "
-    "operation."
-    with pytest.raises(UserWarning) as warninfo:
-        AerBackend().get_shots(circuit, 4)
-        assert warn_msg in str(warninfo.value)
-        assert warninfo == UserWarning
-
-
 def circuit_gen(measure: bool = False) -> Circuit:
     c = Circuit(2, 2)
     c.H(0)
