@@ -22,7 +22,7 @@ import qsharp  # type: ignore
 import qsharp.azure  # type: ignore
 from qsharp import compile as qscompile  # type: ignore
 
-from pytket.config import load_ext_config, get_config_file_path
+from pytket.config import get_config_file_path
 from pytket.backends.backend import Backend, BackendResult, CircuitStatus, KwargTypes
 from pytket.backends.backend_exceptions import CircuitNotRunError
 from pytket.backends.resulthandle import ResultHandle, _ResultIdTuple
@@ -58,9 +58,8 @@ class AzureBackend(_QsharpBaseBackend):
     quantum extension.
     Requires ``resourceId`` and ``location`` for Quantum Resource (found when you click
     on the resource in Azure).
-    This can be provided as a parameter at initialisation or stored in the
-    `~/.config/pytket/config.json` file as
-    `{'extensions':{'qsharp':{'resourceId':<val>, 'location':<val>}}}`
+    This can be provided as a parameter at initialisation or stored in
+    config using :py:meth:`pytket.extensions.qsharp.set_azure_config`
 
     Optional parameters can be provided in the same way:
     ``storage``: The connection string to the Azure storage account.
@@ -102,12 +101,12 @@ class AzureBackend(_QsharpBaseBackend):
         self._MACHINE_DEBUG = machine_debug
         if not self._MACHINE_DEBUG:
             try:
-                config = load_ext_config(QSharpConfig)
-            except FileNotFoundError:
+                config = QSharpConfig.from_default_config_file()
+            except FileNotFoundError as e:
                 raise FileNotFoundError(
                     f"Error loading config file at {get_config_file_path()}. "
                     "Try reinstalling a compatible version of pytket."
-                )
+                ) from e
             if resourceId:
                 config.resourceId = resourceId
             if location:

@@ -50,9 +50,8 @@ from pytket.predicates import (  # type: ignore
 )
 from pytket.routing import FullyConnected  # type: ignore
 from pytket.utils.outcomearray import OutcomeArray
-from pytket.config import PytketConfig, get_config_file_path, load_ext_config
 
-from .config import HoneywellConfig
+from .config import set_honeywell_config
 from .api_wrappers import HQSAPIError, HoneywellQAPI
 
 _DEBUG_HANDLE_PREFIX = "_MACHINE_DEBUG_"
@@ -443,31 +442,18 @@ class HoneywellBackend(Backend):
 
         This is not advised, providing your credentials when prompted is more secure.
         """
-        _set_config_username(user_name)
+        set_honeywell_config(user_name)
 
         keyring.set_password(HoneywellQAPI.KEYRING_NAME, user_name, pwd)  # type: ignore
 
     @staticmethod
     def clear_saved_login(user_name: str) -> None:
         """Delete saved password for user_name if it exists"""
-        _set_config_username(None)
+        set_honeywell_config(None)
         try:
             keyring.delete_password(HoneywellQAPI.KEYRING_NAME, user_name)  # type: ignore
         except keyring.errors.PasswordDeleteError:
             raise ValueError(f"No credentials stored for {user_name}")
-
-
-def _set_config_username(username: Optional[str]) -> None:
-    config_path = get_config_file_path()
-    config = PytketConfig.read_file(config_path)
-    hconfig = load_ext_config(HoneywellConfig)
-    hconfig.username = username
-    # TODO fix the type of config.extensions to not need cast
-    if cast(Optional[Dict], config.extensions) is None:
-        config.extensions = dict()
-    config.extensions["honeywell"] = hconfig.to_dict()
-
-    config.write_file(config_path)
 
 
 def _convert_result(resultdict: Dict[str, List[str]]) -> BackendResult:

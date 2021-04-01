@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Honeywell config."""
+"""AQT config."""
 
 from typing import Any, Dict, Optional, Type, ClassVar
 from dataclasses import dataclass
@@ -20,23 +20,25 @@ from pytket.config import PytketExtConfig
 
 
 @dataclass
-class HoneywellConfig(PytketExtConfig):
-    """Holds config parameters for pytket-honeywell."""
+class AQTConfig(PytketExtConfig):
+    """Holds config parameters for pytket-aqt."""
 
-    ext_dict_key: ClassVar[str] = "honeywell"
+    ext_dict_key: ClassVar[str] = "aqt"
 
-    username: Optional[str]
+    access_token: Optional[str]
 
     @classmethod
     def from_extension_dict(
-        cls: Type["HoneywellConfig"], ext_dict: Dict[str, Any]
-    ) -> "HoneywellConfig":
-        return cls(ext_dict.get("username", None))
+        cls: Type["AQTConfig"], ext_dict: Dict[str, Any]
+    ) -> "AQTConfig":
+        return cls(ext_dict.get("access_token", None))
 
 
-def set_honeywell_config(username: Optional[str]) -> None:
-    """Set default value for HQS username.
-    Can be overriden in backend construction."""
-    hconfig = HoneywellConfig.from_default_config_file()
-    hconfig.username = username
-    hconfig.update_default_config_file()
+def set_aqt_config(
+    access_token: Optional[str] = None,
+) -> None:
+    """Set default value for AQT API token."""
+    config = AQTConfig.from_default_config_file()
+    if access_token is not None:
+        config.access_token = access_token
+    config.update_default_config_file()
