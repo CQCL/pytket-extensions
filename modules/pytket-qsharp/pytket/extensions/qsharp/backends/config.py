@@ -44,7 +44,7 @@ def set_azure_config(
     storage: Optional[str] = None,
 ) -> None:
     """Set default values for any of resourceId, location or storage
-    for your Azure Quantum Workspace. Can be overriden in backend construction."""
+    for your Azure Quantum Workspace. Can be overridden in backend construction."""
     config = QSharpConfig.from_default_config_file()
     if resourceId is not None:
         config.resourceId = resourceId

@@ -75,7 +75,7 @@ class IonQBackend(Backend):
     Interface to an IonQ device.
 
     Requires a valid API key/access token, this can either be provided as a
-    parameter or set in config using :py:meth:`pytket.extensions.aqt.set_aqt_config`
+    parameter or set in config using :py:meth:`pytket.extensions.ionq.set_ionq_config`
 
     """
 

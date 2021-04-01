@@ -47,7 +47,7 @@ def set_ibmq_config(
     ibmq_api_token: Optional[str] = None,
 ) -> None:
     """Set default values for any of hub, group, project or API token
-    for your IBMQ provider. Can be overriden in backend construction."""
+    for your IBMQ provider. Can be overridden in backend construction."""
 
     config = QiskitConfig.from_default_config_file()
     if hub is not None:

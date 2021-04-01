@@ -47,7 +47,7 @@ def set_braket_config(
     provider: Optional[str] = None,
 ) -> None:
     """Set default values for any of s3_bucket, s3_folder, device_type or provider
-    for AWS Braket. Can be overriden in backend construction."""
+    for AWS Braket. Can be overridden in backend construction."""
     config = BraketConfig.from_default_config_file()
     if s3_bucket is not None:
         config.s3_bucket = s3_bucket

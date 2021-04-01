@@ -198,13 +198,20 @@ class BraketBackend(Backend):
 
         All parameters except `device` can be set in config using
         :py:meth:`pytket.extensions.braket.set_braket_config`.
+        For `device_type`, `provider` and `device` if no parameter
+        is specified as a keyword argument or
+        in the config file the defaults specified below are used.
 
-        :param local: use simulator running on local machine
-        :param device: device name from device ARN (e.g. "ionQdevice", "Aspen-8", ...)
+        :param local: use simulator running on local machine,
+            default: False
+        :param device: device name from device ARN (e.g. "ionQdevice", "Aspen-8", ...),
+            default: "sv1"
         :param s3_bucket: name of S3 bucket to store results
         :param s3_folder: name of folder ("key") in S3 bucket to store results in
-        :param device_type: device type from device ARN (e.g. "qpu")
-        :param provider: provider name from device ARN (e.g. "ionq", "rigetti", ...)
+        :param device_type: device type from device ARN (e.g. "qpu"),
+            default: "quantum-simulator"
+        :param provider: provider name from device ARN (e.g. "ionq", "rigetti", ...),
+            default: "amazon"
         """
         super().__init__()
         # load config
@@ -218,7 +225,7 @@ class BraketBackend(Backend):
         if provider is None:
             s3_bucket = config.provider
 
-        # set defaults if not overriden
+        # set defaults if not overridden
         if device_type is None:
             device_type = "quantum-simulator"
         if provider is None:

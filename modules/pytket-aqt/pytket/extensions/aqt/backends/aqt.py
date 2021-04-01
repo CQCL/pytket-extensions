@@ -125,7 +125,6 @@ class AQTBackend(Backend):
             raise AqtAuthenticationError()
 
         self._header = {"Ocp-Apim-Subscription-Key": access_token, "SDK": "pytket"}
-        print(self._header)
         if device_name in device_info:
             self._max_n_qubits: Optional[int] = device_info[device_name]["max_n_qubits"]
             self._device = FullyConnected(self._max_n_qubits)
