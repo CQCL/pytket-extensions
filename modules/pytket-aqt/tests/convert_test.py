@@ -24,10 +24,6 @@ skip_remote_tests: bool = (
 )
 
 
-@pytest.mark.skipif(
-    skip_remote_tests,
-    reason="requires environment variable AQT_AUTH to be a valid AQT credential",
-)
 def tk_to_aqt(circ: Circuit) -> Tuple[List[List], str]:
     """ Convert a circuit to AQT list representation """
     c = circ.copy()
@@ -38,6 +34,10 @@ def tk_to_aqt(circ: Circuit) -> Tuple[List[List], str]:
     return _translate_aqt(c)
 
 
+@pytest.mark.skipif(
+    skip_remote_tests,
+    reason="requires environment variable AQT_AUTH to be a valid AQT credential",
+)
 def test_convert() -> None:
     circ = Circuit(4, 4)
     circ.H(0).CX(0, 1)
