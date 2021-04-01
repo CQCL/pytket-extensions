@@ -178,7 +178,7 @@ class IBMQBackend(Backend):
         provider_kwargs["project"] = project if project else self._pytket_config.project
 
         try:
-            if provider_kwargs:
+            if any(x is not None for x in provider_kwargs.values()):
                 provider = IBMQ.get_provider(**provider_kwargs)
             else:
                 provider = IBMQ.providers()[0]
