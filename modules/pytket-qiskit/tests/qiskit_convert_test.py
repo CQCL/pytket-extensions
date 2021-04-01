@@ -236,7 +236,7 @@ def test_tketautopass() -> None:
     if not skip_remote_tests:
         if not IBMQ.active_account():
             IBMQ.load_account()
-        provider = IBMQ.providers()[0]
+        provider = IBMQ.providers(hub="ibm-q")[0]
         backends.append(provider.get_backend("ibmq_santiago"))
     for back in backends:
         for o_level in range(3):

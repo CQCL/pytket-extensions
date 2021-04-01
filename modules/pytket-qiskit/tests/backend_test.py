@@ -787,7 +787,7 @@ def test_ibmq_mid_measure() -> None:
 
     c.CX(1, 0).H(0).Measure(2, 2)
 
-    b = IBMQEmulatorBackend("ibmq_athens")
+    b = IBMQEmulatorBackend("ibmq_athens", hub="ibm-q", group="open", project="main")
     b.compile_circuit(c)
     assert not NoMidMeasurePredicate().verify(c)
     assert b.valid_circuit(c)
