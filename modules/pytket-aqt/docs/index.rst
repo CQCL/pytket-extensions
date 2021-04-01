@@ -1,6 +1,10 @@
 pytket-aqt
 ==================================
 
+.. image:: CQCLogo.png
+   :width: 120px
+   :align: right
+
 ``pytket-aqt`` is an extension to ``pytket`` that allows ``pytket`` circuits to be
 executed on AQT's quantum devices and simulators.
 
@@ -15,3 +19,7 @@ pytket.extensions.aqt
 .. automodule:: pytket.extensions.aqt
     :special-members:
     :members: AQTBackend
+
+
+.. automodule:: pytket.extensions.aqt.backends.config
+    :members:

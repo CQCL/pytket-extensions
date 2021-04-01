@@ -17,7 +17,7 @@ from collections import defaultdict
 from logging import warning
 from typing import Dict, Iterable, List, Optional, Tuple, cast, TYPE_CHECKING, Set
 
-import numpy as np  # type: ignore
+import numpy as np
 import qiskit.providers.aer.extensions.snapshot_expectation_value  # type: ignore # pylint: disable=unused-import
 from pytket.backends import Backend, CircuitNotRunError, CircuitStatus, ResultHandle
 from pytket.backends.backendresult import BackendResult

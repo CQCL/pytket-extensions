@@ -30,7 +30,7 @@ setup(
     author="Will Simmons",
     author_email="will.simmons@cambridgequantum.com",
     python_requires=">=3.7",
-    url="https://github.com/CQCL/pytket",
+    url="https://github.com/CQCL/pytket-extensions",
     description="Extension for pytket, providing translation to and from the Qiskit "
     "framework",
     long_description=open("README.md").read(),
@@ -39,8 +39,8 @@ setup(
     packages=find_namespace_packages(include=["pytket.*"]),
     include_package_data=True,
     install_requires=[
-        "pytket ~= 0.8.0",
-        "qiskit ~= 0.23.5",
+        "pytket ~= 0.9.0",
+        "qiskit ~= 0.24.0",
     ],
     classifiers=[
         "Environment :: Console",

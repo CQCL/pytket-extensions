@@ -1,6 +1,10 @@
 pytket-qulacs
 ==================================
 
+.. image:: CQCLogo.png
+   :width: 120px
+   :align: right
+
 `Qulacs <https://docs.qulacs.org/en/latest/index.html>`_ is an optimized quantum
 circuit simulator.
 

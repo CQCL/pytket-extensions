@@ -30,7 +30,7 @@ setup(
     author="Will Simmons",
     author_email="will.simmons@cambridgequantum.com",
     python_requires=">=3.7",
-    url="https://github.com/CQCL/pytket",
+    url="https://github.com/CQCL/pytket-extensions",
     description="Extension for pytket, providing translation to and from the pyQuil "
     "framework",
     long_description=open("README.md").read(),
@@ -38,7 +38,7 @@ setup(
     license="Apache 2",
     packages=find_namespace_packages(include=["pytket.*"]),
     include_package_data=True,
-    install_requires=["pytket ~= 0.8.0", "pyquil ~= 2.28", "typing-extensions ~= 3.7"],
+    install_requires=["pytket ~= 0.9.0", "pyquil ~= 2.28", "typing-extensions ~= 3.7"],
     classifiers=[
         "Environment :: Console",
         "Programming Language :: Python :: 3.7",

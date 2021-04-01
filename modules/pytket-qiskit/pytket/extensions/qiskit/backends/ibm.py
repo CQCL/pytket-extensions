@@ -58,6 +58,7 @@ from pytket.extensions.qiskit.result_convert import qiskit_result_to_backendresu
 from pytket.routing import NoiseAwarePlacement, Architecture  # type: ignore
 from pytket.utils.results import KwargTypes
 from .ibm_utils import _STATUS_MAP
+from .config import QiskitConfig
 
 if TYPE_CHECKING:
     from qiskit.providers.ibmq import IBMQBackend as _QiskIBMQBackend  # type: ignore
@@ -97,7 +98,8 @@ class NoIBMQAccountError(Exception):
 
     def __init__(self) -> None:
         super().__init__(
-            "No IBMQ credentials found on disk, store your account using qiskit first."
+            "No IBMQ credentials found on disk, store your account using qiskit,"
+            " or using :py:meth:`pytket.extensions.qiskit.set_ibmq_config` first."
         )
 
 
@@ -106,7 +108,7 @@ def _approx_0_mod_2(x: float, eps: float = 1e-10) -> bool:
     return min(x, 2 - x) < eps
 
 
-def _tk1_to_x_v_rz(a: float, b: float, c: float) -> Circuit:
+def _tk1_to_x_sx_rz(a: float, b: float, c: float) -> Circuit:
     circ = Circuit(1)
     if _approx_0_mod_2(b):
         circ.Rz(a + c, 0)
@@ -116,10 +118,13 @@ def _tk1_to_x_v_rz(a: float, b: float, c: float) -> Circuit:
         else:
             circ.Rz(c, 0).X(0).Rz(a, 0)
     else:
+        # use SX; SX = e^{i\pi/4}V; V = RX(1/2)
         if _approx_0_mod_2(a - 0.5) and _approx_0_mod_2(c - 0.5):
-            circ.V(0).Rz(1 - b, 0).V(0)
+            circ.SX(0).Rz(1 - b, 0).SX(0)
+            circ.add_phase(-0.5)
         else:
-            circ.Rz(c + 0.5, 0).V(0).Rz(b - 1, 0).V(0).Rz(a + 0.5, 0)
+            circ.Rz(c + 0.5, 0).SX(0).Rz(b - 1, 0).SX(0).Rz(a + 0.5, 0)
+            circ.add_phase(-0.5)
     return circ
 
 
@@ -137,6 +142,10 @@ class IBMQBackend(Backend):
         monitor: bool = True,
     ):
         """A backend for running circuits on remote IBMQ devices.
+        The provider arguments of `hub`, `group` and `project` can
+        be specified here as parameters or set in the config file
+        using :py:meth:`pytket.extensions.qiskit.set_ibmq_config`.
+        This function can also be used to set the IBMQ API token.
 
         :param backend_name: Name of the IBMQ device, e.g. `ibmqx4`,
          `ibmq_16_melbourne`.
@@ -154,21 +163,22 @@ class IBMQBackend(Backend):
         :raises ValueError: If no IBMQ account is loaded and none exists on the disk.
         """
         super().__init__()
+        self._pytket_config = QiskitConfig.from_default_config_file()
         if not IBMQ.active_account():
             if IBMQ.stored_account():
                 IBMQ.load_account()
             else:
-                raise NoIBMQAccountError()
+                if self._pytket_config.ibmq_api_token is not None:
+                    IBMQ.save_account(self._pytket_config.ibmq_api_token)
+                else:
+                    raise NoIBMQAccountError()
         provider_kwargs = {}
-        if hub:
-            provider_kwargs["hub"] = hub
-        if group:
-            provider_kwargs["group"] = group
-        if project:
-            provider_kwargs["project"] = project
+        provider_kwargs["hub"] = hub if hub else self._pytket_config.hub
+        provider_kwargs["group"] = group if group else self._pytket_config.group
+        provider_kwargs["project"] = project if project else self._pytket_config.project
 
         try:
-            if provider_kwargs:
+            if any(x is not None for x in provider_kwargs.values()):
                 provider = IBMQ.get_provider(**provider_kwargs)
             else:
                 provider = IBMQ.providers()[0]
@@ -189,20 +199,20 @@ class IBMQBackend(Backend):
 
         self._mid_measure = self._config.simulator or self._config.multi_meas_enabled
 
-        self._legacy_gateset = OpType.V not in self._gate_set
+        self._legacy_gateset = OpType.SX not in self._gate_set
 
         if self._legacy_gateset:
             if not self._gate_set >= {OpType.U1, OpType.U2, OpType.U3, OpType.CX}:
                 raise NotImplementedError(f"Gate set {self._gate_set} unsupported")
             self._rebase_pass = RebaseIBM()
         else:
-            if not self._gate_set >= {OpType.X, OpType.V, OpType.Rz, OpType.CX}:
+            if not self._gate_set >= {OpType.X, OpType.SX, OpType.Rz, OpType.CX}:
                 raise NotImplementedError(f"Gate set {self._gate_set} unsupported")
             self._rebase_pass = RebaseCustom(
                 {OpType.CX},
                 Circuit(2).CX(0, 1),
-                {OpType.X, OpType.V, OpType.Rz},
-                _tk1_to_x_v_rz,
+                {OpType.X, OpType.SX, OpType.Rz},
+                _tk1_to_x_sx_rz,
             )
 
         if hasattr(self._config, "max_experiments"):

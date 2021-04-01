@@ -84,8 +84,8 @@ _qiskit_gates_1q = {
     qiskit_gates.RZGate: OpType.Rz,
     qiskit_gates.SdgGate: OpType.Sdg,
     qiskit_gates.SGate: OpType.S,
-    qiskit_gates.SXdgGate: OpType.Vdg,
-    qiskit_gates.SXGate: OpType.V,
+    qiskit_gates.SXdgGate: OpType.SXdg,
+    qiskit_gates.SXGate: OpType.SX,
     qiskit_gates.TdgGate: OpType.Tdg,
     qiskit_gates.TGate: OpType.T,
     qiskit_gates.U1Gate: OpType.U1,
@@ -352,7 +352,7 @@ def append_tk_command_to_qiskit(
     if optype == OpType.Unitary2qBox:
         qargs = [qregmap[q.reg_name][q.index[0]] for q in args]
         u = op.get_matrix()
-        g = UnitaryGate(u, label="u2q")
+        g = UnitaryGate(u, label="unitary")
         return qcirc.append(g, qargs=qargs)
     if optype == OpType.Barrier:
         qargs = [qregmap[q.reg_name][q.index[0]] for q in args]

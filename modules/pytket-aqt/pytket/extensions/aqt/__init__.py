@@ -18,3 +18,4 @@
 # _metadata.py is copied to the folder after installation.
 from ._metadata import __extension_version__, __extension_name__  # type: ignore
 from .backends import AQTBackend
+from .backends.config import AQTConfig, set_aqt_config

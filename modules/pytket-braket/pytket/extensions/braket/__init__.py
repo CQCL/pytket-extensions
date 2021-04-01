@@ -19,3 +19,4 @@
 from ._metadata import __extension_version__, __extension_name__  # type: ignore
 from .braket_convert import tk_to_braket, braket_to_tk
 from .backends import BraketBackend
+from .backends.config import BraketConfig, set_braket_config

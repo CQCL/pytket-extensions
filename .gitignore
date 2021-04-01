@@ -9,3 +9,4 @@ dist
 _metadata.py
 !modules/*/_metadata.py
 obj
+docs/extensions

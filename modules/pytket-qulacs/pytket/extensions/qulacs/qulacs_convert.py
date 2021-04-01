@@ -14,7 +14,7 @@
 
 """Conversion from to tket circuits to Qulacs circuits
 """
-import numpy as np  # type: ignore
+import numpy as np
 from qulacs import QuantumCircuit, gate  # type: ignore
 from pytket.circuit import Circuit, OpType  # type: ignore
 

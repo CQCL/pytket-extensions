@@ -19,7 +19,7 @@ import platform
 
 from typing import cast
 import docker  # type: ignore
-import numpy as np  # type: ignore
+import numpy as np
 import pytest
 from _pytest.fixtures import FixtureRequest
 

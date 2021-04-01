@@ -14,7 +14,7 @@
 
 import warnings
 
-import numpy as np  # type: ignore
+import numpy as np
 from qulacs import QuantumCircuit, QuantumState  # type: ignore
 from qulacs.state import inner_product  # type: ignore
 from pytket.circuit import Circuit, OpType  # type: ignore

@@ -18,7 +18,7 @@
 from typing import TYPE_CHECKING, Iterable, List, Optional
 from logging import warning
 from uuid import uuid4
-import numpy as np  # type: ignore
+import numpy as np
 from qulacs import Observable, QuantumState  # type: ignore
 from qulacs.observable import create_observable_from_openfermion_text  # type: ignore
 from pytket.backends import (
@@ -141,7 +141,7 @@ class QulacsBackend(Backend):
     ) -> List[ResultHandle]:
         circuit_list = list(circuits)
         if valid_check:
-            self._check_all_circuits(circuit_list, nomeasure_warn=(n_shots is not None))
+            self._check_all_circuits(circuit_list, nomeasure_warn=False)
 
         handle_list = []
         for circuit in circuit_list:

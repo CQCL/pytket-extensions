@@ -1,6 +1,10 @@
 pytket-pyquil
 ==================================
 
+.. image:: CQCLogo.png
+   :width: 120px
+   :align: right
+
 Rigetti's `pyQuil <http://rigetti.com/forest>`_ is a library for generating
 programs in the Quil language and running them on the Forest platform.
 

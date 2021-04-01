@@ -1,6 +1,10 @@
 pytket-honeywell
 ==================================
 
+.. image:: CQCLogo.png
+   :width: 120px
+   :align: right
+
 ``pytket-honeywell`` is an extension to ``pytket`` that allows ``pytket`` circuits to
 be executed on Honeywell's quantum devices.
 
@@ -19,3 +23,6 @@ pytket.extensions.honeywell
 .. automodule:: pytket.extensions.honeywell
     :special-members:
     :members: HoneywellBackend
+
+.. automodule:: pytket.extensions.honeywell.backends.config
+    :members:

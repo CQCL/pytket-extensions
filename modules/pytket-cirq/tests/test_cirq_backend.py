@@ -16,7 +16,7 @@ from collections import Counter
 from typing import List
 import math
 from hypothesis import given, strategies
-import numpy as np  # type: ignore
+import numpy as np
 from pytket.extensions.cirq import (
     CirqDensityMatrixSampleBackend,
     CirqDensityMatrixSimBackend,

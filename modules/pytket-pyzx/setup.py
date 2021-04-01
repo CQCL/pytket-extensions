@@ -30,7 +30,7 @@ setup(
     author="Alexander Cowtan",
     author_email="alexander.cowtan@cambridgequantum.com",
     python_requires=">=3.7",
-    url="https://github.com/CQCL/pytket",
+    url="https://github.com/CQCL/pytket-extensions",
     description="Extension for pytket, providing translation to and from the PyZX "
     "framework",
     long_description=open("README.md").read(),
@@ -38,7 +38,7 @@ setup(
     license="Apache 2",
     packages=find_namespace_packages(include=["pytket.*"]),
     include_package_data=True,
-    install_requires=["pytket ~= 0.8.0", "pyzx ~= 0.6.3"],
+    install_requires=["pytket ~= 0.9.0", "pyzx ~= 0.6.3"],
     classifiers=[
         "Environment :: Console",
         "Programming Language :: Python :: 3.7",

@@ -18,7 +18,7 @@
 from typing import Iterable, Optional
 from pytket.circuit import Circuit, OpType  # type: ignore
 from braket.circuits import Circuit as BK_Circuit  # type: ignore
-from numpy import pi  # type: ignore
+from numpy import pi
 
 
 def tk_to_braket(tkcirc: Circuit, allqbs: Optional[Iterable[int]] = None) -> BK_Circuit:

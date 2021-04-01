@@ -13,18 +13,17 @@
 # limitations under the License.
 import os
 import sys
-import warnings
 from collections import Counter
 from typing import Dict, Any, cast
 import math
 import cmath
 import pickle
 from hypothesis import given, strategies
-import numpy as np  # type: ignore
+import numpy as np
 from pytket.circuit import Circuit, OpType, BasisOrder, Qubit, reg_eq  # type: ignore
 from pytket.passes import CliffordSimp  # type: ignore
 from pytket.pauli import Pauli, QubitPauliString  # type: ignore
-from pytket.predicates import CompilationUnit  # type: ignore
+from pytket.predicates import CompilationUnit, NoMidMeasurePredicate  # type: ignore
 from pytket.routing import Architecture, route  # type: ignore
 from pytket.device import Device  # type: ignore
 from pytket.transform import Transform  # type: ignore
@@ -60,17 +59,6 @@ import pytest
 skip_remote_tests: bool = (
     not IBMQ.stored_account() or os.getenv("PYTKET_RUN_REMOTE_TESTS") is None
 )
-
-
-def test_nomeasure_warning() -> None:
-    warnings.simplefilter("error")
-    circuit = Circuit(2)
-    warn_msg = "Circuit with index 0 in submitted does not contain a measure "
-    "operation."
-    with pytest.raises(UserWarning) as warninfo:
-        AerBackend().get_shots(circuit, 4)
-        assert warn_msg in str(warninfo.value)
-        assert warninfo == UserWarning
 
 
 def circuit_gen(measure: bool = False) -> Circuit:
@@ -327,28 +315,6 @@ def test_process_characterisation_complete_noise_model() -> None:
     assert dev.get_error(OpType.CX, (dev.nodes[1], dev.nodes[0])) == 0.80859375
     assert char["ReadoutErrors"][0] == [[0.8, 0.2], [0.2, 0.8]]
     assert char["ReadoutErrors"][1] == [[0.7, 0.3], [0.3, 0.7]]
-
-
-@pytest.mark.skipif(skip_remote_tests, reason="Skipping remote tests")
-def test_device() -> None:
-    c = circuit_gen(False)
-    b = IBMQBackend("ibmq_santiago", hub="ibm-q", group="open", project="main")
-    assert b._max_per_job == 75
-    operator = QubitPauliOperator(
-        {
-            QubitPauliString(Qubit(0), Pauli.Z): 1.0,
-            QubitPauliString(Qubit(0), Pauli.X): 0.5,
-        }
-    )
-    val = get_operator_expectation_value(c, operator, b, 8000)
-    print(val)
-    c1 = circuit_gen(True)
-    c2 = circuit_gen(True)
-    b.compile_circuit(c1)
-    b.compile_circuit(c2)
-
-    print(b.get_shots(c1, n_shots=10))
-    print(b.get_shots(c2, n_shots=10))
 
 
 def test_cancellation_aer() -> None:
@@ -820,17 +786,10 @@ def test_ibmq_mid_measure() -> None:
 
     c.CX(1, 0).H(0).Measure(2, 2)
 
-    # test open backend does not support mid-measure
-    # cannot test premium backends that do
-    b = IBMQEmulatorBackend("ibmq_athens")
-
-    with pytest.raises(RuntimeError) as warninfo:
-        b.compile_circuit(c)
-        assert "Not a valid operation" in str(warninfo.value)
-
-    with pytest.raises(CircuitNotValidError) as warninfo2:
-        b.get_counts(c, 10)
-        assert "NoMidMeasurePredicate" in str(warninfo2.value)
+    b = IBMQEmulatorBackend("ibmq_athens", hub="ibm-q", group="open", project="main")
+    b.compile_circuit(c)
+    assert not NoMidMeasurePredicate().verify(c)
+    assert b.valid_circuit(c)
 
 
 @pytest.mark.skipif(not IBMQ.stored_account(), reason="No IBM account stored")
@@ -874,7 +833,7 @@ def test_compilation_correctness() -> None:
     c.Rz(0.125, 0)
     c.X(1)
     c.Rz(0.125, 2).X(2).Rz(0.25, 2)
-    c.V(3).Rz(0.125, 3).V(3)
+    c.SX(3).Rz(0.125, 3).SX(3)
     c.CX(0, 3).CX(0, 4)
     u_backend = AerUnitaryBackend()
     u = u_backend.get_unitary(c)

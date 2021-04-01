@@ -1,6 +1,10 @@
 pytket-ionq
 ==================================
 
+.. image:: CQCLogo.png
+   :width: 120px
+   :align: right
+
 ``pytket-ionq`` is an extension to ``pytket`` that allows ``pytket`` circuits to
 be executed on IonQ's quantum devices.
 
@@ -18,3 +22,7 @@ pytket.extensions.ionq
 .. automodule:: pytket.extensions.ionq
     :special-members:
     :members: IonQBackend
+
+
+.. automodule:: pytket.extensions.ionq.backends.config
+    :members:

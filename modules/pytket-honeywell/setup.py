@@ -30,7 +30,7 @@ setup(
     author="Seyon Sivarajah",
     author_email="seyon.sivarajah@cambridgequantum.com",
     python_requires=">=3.7",
-    url="https://github.com/CQCL/pytket",
+    url="https://github.com/CQCL/pytket-extensions",
     description="Extension for pytket, providing access to Honeywell backends",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
@@ -38,7 +38,7 @@ setup(
     packages=find_namespace_packages(include=["pytket.*"]),
     include_package_data=True,
     install_requires=[
-        "pytket ~= 0.8.0",
+        "pytket ~= 0.9.0",
         "requests >= 2.2",
         "websockets >= 7.0",
         "nest_asyncio >= 1.2",
