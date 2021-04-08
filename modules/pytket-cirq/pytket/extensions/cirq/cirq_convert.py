@@ -219,13 +219,9 @@ def tk_to_cirq(tkcirc: Circuit) -> cirq.circuits.Circuit:
                 "Cirq can only support registers of dimension <=2"
             )
     oplst = []
-    unused_qbs = set(tkcirc.qubits)
     for command in tkcirc:
         op = command.op
         optype = op.type
-        for qbit in command.args:
-            if qbit in unused_qbs:
-                unused_qbs.remove(qbit)
         try:
             gatetype = _ops2cirq_mapping[optype]
         except KeyError as error:
@@ -252,10 +248,6 @@ def tk_to_cirq(tkcirc: Circuit) -> cirq.circuits.Circuit:
             else:
                 cirqop = gatetype(exponent=params[0])(*qids)
         oplst.append(cirqop)
-
-    for q in unused_qbs:
-        oplst.append(cirq.ops.I(qmap[q]))
-
     try:
         coeff = cmath.exp(float(tkcirc.phase) * cmath.pi * 1j)
         if coeff != 1.0:
