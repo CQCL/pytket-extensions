@@ -228,7 +228,6 @@ class _CirqSimBackend(_CirqBaseBackend):
 
         handle_list = []
         for i, circuit in enumerate(circuit_list):
-            circuit.remove_blank_wires()
             handle = ResultHandle(str(uuid4()), i)
             handle_list.append(handle)
             backres = self.run_circuit(circuit, n_shots=n_shots)
@@ -307,7 +306,6 @@ class _CirqSimBackend(_CirqBaseBackend):
 
         handle_list = []
         for i, circuit in enumerate(circuit_list):
-            circuit.remove_blank_wires()
             handle = ResultHandle(str(uuid4()), i)
             handle_list.append(handle)
             backres = self.run_circuit_moments(circuit)
