@@ -383,7 +383,6 @@ class CirqDensityMatrixSimBackend(_CirqSimBackend):
         self, circuit: CirqCircuit, q_bits: Sequence[Qubit]
     ) -> List[BackendResult]:
         moments = self._simulator.simulate_moment_steps(circuit)
-        print(circuit, q_bits)
         all_backres = [
             BackendResult(
                 density_matrix=run.density_matrix(copy=True),  # type: ignore
