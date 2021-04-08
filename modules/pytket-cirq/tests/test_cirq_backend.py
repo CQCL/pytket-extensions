@@ -38,12 +38,18 @@ def test_blank_wires() -> None:
         CirqStateSimBackend(),
     ]
     for b in backends:
-        assert b.get_result(b.process_circuit(Circuit(2).X(0))).q_bits == {Qubit(0): 0}
-        assert b.get_result(b.process_circuit(Circuit(2).X(1))).q_bits == {Qubit(1): 0}
+        assert b.get_result(b.process_circuit(Circuit(2).X(0))).q_bits == {
+            Qubit(0): 0,
+            Qubit(1): 1,
+        }
+        assert b.get_result(b.process_circuit(Circuit(2).X(1))).q_bits == {
+            Qubit(0): 0,
+            Qubit(1): 1,
+        }
         for r in b.get_result(b.process_circuit_moments(Circuit(2).X(0).X(0).X(0))):  # type: ignore
-            assert r.q_bits == {Qubit(0): 0}
+            assert r.q_bits == {Qubit(0): 0, Qubit(1): 1}
         for r in b.get_result(b.process_circuit_moments(Circuit(2).X(1).X(1).X(1))):  # type: ignore
-            assert r.q_bits == {Qubit(1): 0}
+            assert r.q_bits == {Qubit(0): 0, Qubit(1): 1}
 
     for b in [CirqDensityMatrixSampleBackend(), CirqStateSampleBackend()]:
         assert b.get_result(
