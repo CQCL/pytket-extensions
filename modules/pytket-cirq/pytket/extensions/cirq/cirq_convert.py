@@ -182,7 +182,7 @@ def cirq_to_tk(circuit: cirq.circuits.Circuit) -> Circuit:
     return tkcirc
 
 
-def tk_to_cirq(tkcirc: Circuit, copy_all_qubits=False) -> cirq.circuits.Circuit:
+def tk_to_cirq(tkcirc: Circuit, copy_all_qubits: bool = False) -> cirq.circuits.Circuit:
     """Converts a tket :py:class:`Circuit` object to a Cirq :py:class:`Circuit`.
 
     :param tkcirc: The input tket :py:class:`Circuit`
