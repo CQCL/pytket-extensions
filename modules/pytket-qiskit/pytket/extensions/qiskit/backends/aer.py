@@ -664,12 +664,10 @@ def _process_model(noise_model: NoiseModel, gate_set: Set[OpType]) -> dict:
 
 
 def _sparse_to_qiskit_pauli(pauli: QubitPauliString, n_qubits: int) -> qk_Pauli:
-    empty = np.zeros(n_qubits)
-    q_pauli = qk_Pauli(empty, empty)
+    x = [False] * n_qubits
+    z = [False] * n_qubits
     for q, p in pauli.to_dict().items():
         i = _default_q_index(q)
-        if p in (Pauli.X, Pauli.Y):
-            q_pauli._x[i] = True
-        if p in (Pauli.Z, Pauli.Y):
-            q_pauli._z[i] = True
-    return q_pauli
+        z[i] = p in (Pauli.Z, Pauli.Y)
+        x[i] = p in (Pauli.X, Pauli.Y)
+    return qk_Pauli((z, x))

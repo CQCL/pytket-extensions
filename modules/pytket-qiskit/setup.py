@@ -40,7 +40,7 @@ setup(
     include_package_data=True,
     install_requires=[
         "pytket ~= 0.9.0",
-        "qiskit ~= 0.24.0",
+        "qiskit ~= 0.25.0",
     ],
     classifiers=[
         "Environment :: Console",
