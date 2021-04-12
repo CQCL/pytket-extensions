@@ -71,10 +71,10 @@ def test_conversions() -> None:
 
     tket_false = cirq_to_tk(cirq_false)
     tket_true = cirq_to_tk(cirq_true)
-
     assert len(tket_false.get_commands()) + len(tket_false.qubits) == len(
         tket_true.get_commands()
     )
+    assert tket_true != coms
 
 
 def test_device() -> None:

@@ -190,6 +190,7 @@ def tk_to_cirq(tkcirc: Circuit, copy_all_qubits: bool = False) -> cirq.circuits.
     :return: The Cirq :py:class:`Circuit` corresponding to the input circuit
     """
     if copy_all_qubits:
+        tkcirc = tkcirc.copy()
         for q in tkcirc.qubits:
             tkcirc.add_gate(OpType.noop, [q])
 
