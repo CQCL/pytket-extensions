@@ -209,11 +209,8 @@ class _CirqSimBackend(_CirqBaseBackend):
         ...
 
     def run_circuit(self, circuit: Circuit, **kwargs: KwargTypes) -> BackendResult:
-        c = circuit.copy()
-        for q in c.qubits:
-            c.add_gate(OpType.noop, [q])
-        cirq_circ = tk_to_cirq(c)
-        _, q_bits = _get_default_uids(cirq_circ, c)
+        cirq_circ = tk_to_cirq(circuit, copy_all_qubits=True)
+        _, q_bits = _get_default_uids(cirq_circ, circuit)
         return self.package_result(cirq_circ, q_bits)
 
     def process_circuits(
@@ -256,11 +253,8 @@ class _CirqSimBackend(_CirqBaseBackend):
     def run_circuit_moments(
         self, circuit: Circuit, **kwargs: KwargTypes
     ) -> List[BackendResult]:
-        c = circuit.copy()
-        for q in c.qubits:
-            c.add_gate(OpType.noop, [q])
-        cirq_circ = tk_to_cirq(c)
-        _, q_bits = _get_default_uids(cirq_circ, c)
+        cirq_circ = tk_to_cirq(circuit, copy_all_qubits=True)
+        _, q_bits = _get_default_uids(cirq_circ, circuit)
         return self.package_results(cirq_circ, q_bits)
 
     def process_circuit_moments(

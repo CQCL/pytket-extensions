@@ -182,13 +182,17 @@ def cirq_to_tk(circuit: cirq.circuits.Circuit) -> Circuit:
     return tkcirc
 
 
-def tk_to_cirq(tkcirc: Circuit) -> cirq.circuits.Circuit:
+def tk_to_cirq(tkcirc: Circuit, copy_all_qubits=False) -> cirq.circuits.Circuit:
     """Converts a tket :py:class:`Circuit` object to a Cirq :py:class:`Circuit`.
 
     :param tkcirc: The input tket :py:class:`Circuit`
 
     :return: The Cirq :py:class:`Circuit` corresponding to the input circuit
     """
+    if copy_all_qubits:
+        for q in tkcirc.qubits:
+            tkcirc.add_gate(OpType.noop, [q])
+
     qmap = {}
     line_name = None
     grid_name = None

@@ -63,9 +63,18 @@ def get_match_circuit() -> cirq.Circuit:
 def test_conversions() -> None:
     circ = get_match_circuit()
     coms = cirq_to_tk(circ)
-    print(str(circ))
-    print(str(tk_to_cirq(coms)))
-    assert str(circ) == str(tk_to_cirq(coms))
+
+    cirq_false = tk_to_cirq(coms, copy_all_qubits=False)
+    cirq_true = tk_to_cirq(coms, copy_all_qubits=True)
+    assert str(circ) == str(cirq_false)
+    assert str(cirq) != str(cirq_true)
+
+    tket_false = cirq_to_tk(cirq_false)
+    tket_true = cirq_to_tk(cirq_true)
+
+    assert len(tket_false.get_commands()) + len(tket_false.qubits) == len(
+        tket_true.get_commands()
+    )
 
 
 def test_device() -> None:
