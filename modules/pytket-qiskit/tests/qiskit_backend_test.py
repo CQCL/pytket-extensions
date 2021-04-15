@@ -25,7 +25,7 @@ from pytket.extensions.qiskit.tket_backend import TketBackend
 from qiskit import QuantumCircuit, execute  # type: ignore
 from qiskit.providers import JobStatus  # type: ignore
 from qiskit.providers.aer import Aer  # type: ignore
-from qiskit.aqua import QuantumInstance  # type: ignore
+from qiskit.utils import QuantumInstance  # type: ignore
 from qiskit.aqua.algorithms import BernsteinVazirani, DeutschJozsa  # type: ignore
 from qiskit.aqua.components.oracles import TruthTableOracle  # type: ignore
 
