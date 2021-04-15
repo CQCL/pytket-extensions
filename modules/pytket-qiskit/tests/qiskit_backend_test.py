@@ -12,10 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import List
 import platform
 import numpy as np
-from pytket.backends import Backend
 from pytket.extensions.qiskit import (
     AerBackend,
     AerStateBackend,
@@ -26,11 +24,6 @@ from qiskit import QuantumCircuit, execute  # type: ignore
 from qiskit.providers import JobStatus  # type: ignore
 from qiskit.providers.aer import Aer  # type: ignore
 from qiskit.utils import QuantumInstance  # type: ignore
-
-# Memory corruption on Windows with qulacs 0.2.0 (TKET-1056)
-use_qulacs = platform.system() != "Windows"
-if use_qulacs:
-    from pytket.extensions.qulacs import QulacsBackend  # type: ignore
 
 
 def circuit_gen(measure: bool = False) -> QuantumCircuit:
