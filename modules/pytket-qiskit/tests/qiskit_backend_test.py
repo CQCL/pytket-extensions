@@ -26,8 +26,6 @@ from qiskit import QuantumCircuit, execute  # type: ignore
 from qiskit.providers import JobStatus  # type: ignore
 from qiskit.providers.aer import Aer  # type: ignore
 from qiskit.utils import QuantumInstance  # type: ignore
-from qiskit.aqua.algorithms import BernsteinVazirani, DeutschJozsa  # type: ignore
-from qiskit.aqua.components.oracles import TruthTableOracle  # type: ignore
 
 # Memory corruption on Windows with qulacs 0.2.0 (TKET-1056)
 use_qulacs = platform.system() != "Windows"
@@ -82,28 +80,6 @@ def test_unitary() -> None:
         job2 = execute(qc, qb)
         u2 = job2.result().get_unitary()
         assert np.allclose(u, u2)
-
-
-def test_aqua_algorithm() -> None:
-    backends: List[Backend] = [AerBackend(), AerStateBackend()]
-    if use_qulacs:
-        backends.append(QulacsBackend())
-    for b in backends:
-        for comp in (None, b.default_compilation_pass()):
-            if use_qulacs and type(b) == QulacsBackend and comp is None:
-                continue
-            tb = TketBackend(b, comp)
-            ora = TruthTableOracle(bitmaps="01100110")
-            alg = BernsteinVazirani(oracle=ora, quantum_instance=tb)
-            result = alg.run()
-            assert result["result"] == "011"
-            alg = DeutschJozsa(oracle=ora, quantum_instance=tb)
-            result = alg.run()
-            assert result["result"] == "balanced"
-            ora = TruthTableOracle(bitmaps="11111111")
-            alg = DeutschJozsa(oracle=ora, quantum_instance=tb)
-            result = alg.run()
-            assert result["result"] == "constant"
 
 
 def test_cancel() -> None:
