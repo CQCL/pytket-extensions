@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import platform
 import numpy as np
 from pytket.extensions.qiskit import (
     AerBackend,
