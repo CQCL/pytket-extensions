@@ -25,7 +25,8 @@ from qiskit import (  # type: ignore
     Aer,
     IBMQ,
 )
-from qiskit.aqua.operators import WeightedPauliOperator  # type: ignore
+from qiskit.opflow import PauliTrotterEvolution  # type: ignore
+from qiskit.opflow.primitive_ops import PauliSumOp  # type: ignore
 from qiskit.quantum_info import Pauli  # type: ignore
 from qiskit.transpiler import PassManager  # type: ignore
 from qiskit.circuit.library import RYGate, MCMT  # type: ignore
@@ -249,10 +250,13 @@ def test_tketautopass() -> None:
 def test_instruction() -> None:
     # TKET-446
     qreg = QuantumRegister(3)
-    paulis = list(map(Pauli.from_label, ["XXI", "YYI", "ZZZ"]))
-    weights = [0.3, 0.5 + 1j * 0.2, -0.4]
-    op = WeightedPauliOperator.from_list(paulis, weights)
-    evolution_circ = op.evolve(None, 1.2, num_time_slices=1, quantum_registers=qreg)
+    op = PauliSumOp.from_list([("XXI", 0.3), ("YYI", 0.5 + 1j * 0.2), ("ZZZ", -0.4)])
+    evolved_op = (1.2 * op).exp_i()
+    evo = PauliTrotterEvolution(reps=1)
+    evo_circop = evo.convert(evolved_op)
+    evo_instr = evo_circop.to_instruction()
+    evolution_circ = QuantumCircuit(qreg)
+    evolution_circ.append(evo_instr, qargs=list(qreg))
     tk_circ = qiskit_to_tk(evolution_circ)
     cmds = tk_circ.get_commands()
     assert len(cmds) == 1
