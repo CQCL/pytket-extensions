@@ -126,15 +126,16 @@ def test_convert() -> None:
 def test_symbolic() -> None:
     pi2 = Symbol("pi2")
     pi3 = Symbol("pi3")
-
+    pi0 = Symbol("pi0")
     tkc = Circuit(3, 3, name="test").Ry(pi2, 1).Rx(pi3, 1).CX(1, 0)
+    tkc.add_phase(Symbol("pi0") * 2)
     USquashIBM().apply(tkc)
 
     qc = tk_to_qiskit(tkc)
     tkc2 = qiskit_to_tk(qc)
 
-    assert tkc2.free_symbols() == {pi2, pi3}
-    tkc2.symbol_substitution({pi2: pi / 2, pi3: pi / 3})
+    assert tkc2.free_symbols() == {pi2, pi3, pi0}
+    tkc2.symbol_substitution({pi2: pi / 2, pi3: pi / 3, pi0: 0.1})
 
     backend = Aer.get_backend("statevector_simulator")
     qc = tk_to_qiskit(tkc2)
@@ -143,16 +144,14 @@ def test_symbolic() -> None:
     state1 = job.result().get_statevector(qc)
     state0 = np.array(
         [
-            [
-                0.6252345 + 0.0j,
-                0.0 + 0.0j,
-                0.0 + 0.0j,
-                -0.78000172 + 0.02606021j,
-                0.0 + 0.0j,
-                0.0 + 0.0j,
-                0.0 + 0.0j,
-                0.0 + 0.0j,
-            ]
+            0.41273953 - 0.46964269j,
+            0.0 + 0.0j,
+            -0.0 + 0.0j,
+            -0.49533184 + 0.60309882j,
+            0.0 + 0.0j,
+            0.0 + 0.0j,
+            -0.0 + 0.0j,
+            -0.0 + 0.0j,
         ]
     )
     assert np.allclose(state0, state1, atol=1e-10)
