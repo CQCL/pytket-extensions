@@ -15,9 +15,11 @@
 from typing import Tuple, List, cast
 import json
 import os
+import numpy as np
 import pytest
 from pytket.circuit import Circuit, OpType  # type: ignore
-from pytket.extensions.aqt.backends.aqt import _translate_aqt, AQTBackend
+from pytket.extensions.aqt.backends.aqt import _translate_aqt, AQTBackend, _aqt_rebase
+from pytket.extensions.qiskit import AerUnitaryBackend
 
 skip_remote_tests: bool = (
     os.getenv("PYTKET_RUN_REMOTE_TESTS") is None or os.getenv("AQT_AUTH") is None
@@ -53,3 +55,17 @@ def test_convert() -> None:
     circ_aqt = tk_to_aqt(circ)
     assert json.loads(circ_aqt[1]) == [0, 3, 1, 2]
     assert all(gate[0] in ["X", "Y", "MS"] for gate in circ_aqt[0])
+
+
+def test_rebase() -> None:
+    circ = Circuit(2)
+    circ.CX(0, 1)
+    orig_circ = circ.copy()
+
+    _aqt_rebase().apply(circ)
+
+    # TODO use tketsim for this test once available
+    u1 = AerUnitaryBackend().get_unitary(orig_circ)
+    u2 = AerUnitaryBackend().get_unitary(circ)
+
+    assert np.allclose(u1, u2)
