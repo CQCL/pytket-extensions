@@ -146,6 +146,8 @@ class _CirqSampleBackend(_CirqBaseBackend):
         valid_check: bool = True,
         **kwargs: KwargTypes,
     ) -> List[ResultHandle]:
+        if n_shots is None or n_shots < 1:
+            raise ValueError("Parameter n_shots is required for this backend")
         self._simulator = self.set_simulator(seed=kwargs.get("seed"))
         circuit_list = list(circuits)
         if valid_check:
