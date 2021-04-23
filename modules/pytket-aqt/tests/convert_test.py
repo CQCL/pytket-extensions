@@ -57,9 +57,41 @@ def test_convert() -> None:
     assert all(gate[0] in ["X", "Y", "MS"] for gate in circ_aqt[0])
 
 
-def test_rebase() -> None:
+def test_rebase_CX() -> None:
     circ = Circuit(2)
     circ.CX(0, 1)
+    orig_circ = circ.copy()
+
+    _aqt_rebase().apply(circ)
+
+    # TODO use tketsim for this test once available
+    u1 = AerUnitaryBackend().get_unitary(orig_circ)
+    u2 = AerUnitaryBackend().get_unitary(circ)
+
+    assert np.allclose(u1, u2)
+
+
+def test_rebase_singleq() -> None:
+    circ = Circuit(1)
+    # some arbitrary unitary
+    circ.add_gate(OpType.U3, [0.01231, 0.848, 38.200], [0])
+    orig_circ = circ.copy()
+
+    _aqt_rebase().apply(circ)
+
+    # TODO use tketsim for this test once available
+    u1 = AerUnitaryBackend().get_unitary(orig_circ)
+    u2 = AerUnitaryBackend().get_unitary(circ)
+
+    assert np.allclose(u1, u2)
+
+
+def test_rebase_large() -> None:
+    circ = Circuit(3)
+    # some arbitrary unitary
+    circ.Rx(0.21, 0).Rz(0.12, 1).Rz(8.2, 2).X(2).CX(0, 1).CX(1, 2).Rz(0.44, 1).Rx(
+        0.43, 0
+    )
     orig_circ = circ.copy()
 
     _aqt_rebase().apply(circ)
