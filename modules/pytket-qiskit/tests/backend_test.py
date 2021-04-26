@@ -229,19 +229,21 @@ def test_process_characterisation_incomplete_noise_model() -> None:
         char.get("Architecture", Architecture([])),
     )
     nodes = dev.nodes
-    assert dev.architecture.coupling == [
-        (nodes[0], nodes[1]),
-        (nodes[0], nodes[2]),
-        (nodes[0], nodes[3]),
-        (nodes[1], nodes[2]),
-        (nodes[1], nodes[3]),
-        (nodes[2], nodes[0]),
-        (nodes[2], nodes[1]),
-        (nodes[2], nodes[3]),
-        (nodes[3], nodes[0]),
-        (nodes[3], nodes[1]),
-        (nodes[3], nodes[2]),
-    ]
+    assert set(dev.architecture.coupling) == set(
+        [
+            (nodes[0], nodes[1]),
+            (nodes[0], nodes[2]),
+            (nodes[0], nodes[3]),
+            (nodes[1], nodes[2]),
+            (nodes[1], nodes[3]),
+            (nodes[2], nodes[0]),
+            (nodes[2], nodes[1]),
+            (nodes[2], nodes[3]),
+            (nodes[3], nodes[0]),
+            (nodes[3], nodes[1]),
+            (nodes[3], nodes[2]),
+        ]
+    )
 
 
 def test_circuit_compilation_complete_noise_model() -> None:
