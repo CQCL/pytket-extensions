@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from collections import Counter
-from typing import Callable, Any  # pylint: disable=unused-import
+from typing import cast, Callable, Any  # pylint: disable=unused-import
 from ast import literal_eval
 import os
 from hypothesis import given, settings, strategies
@@ -251,6 +251,29 @@ def test_classical() -> None:
 
     b.compile_circuit(c)
     assert b.get_counts(c, 10)
+
+
+@pytest.mark.skipif(
+    skip_remote_tests,
+    reason="set environment variable HQS_AUTH to login and use API",
+)
+def test_postprocess() -> None:
+    b = HoneywellBackend("HQS-LT-S1-APIVAL")
+    assert b.supports_contextual_optimisation
+    c = Circuit(2, 2)
+    c.add_gate(OpType.PhasedX, [1, 1], [0])
+    c.add_gate(OpType.PhasedX, [1, 1], [1])
+    c.add_gate(OpType.ZZMax, [0, 1])
+    c.measure_all()
+    b.compile_circuit(c)
+    h = b.process_circuit(c, n_shots=10, postprocess=True)
+    ppcirc = Circuit.from_dict(literal_eval(cast(str, h[1])))
+    ppcmds = ppcirc.get_commands()
+    assert len(ppcmds) > 0
+    assert all(ppcmd.op.type == OpType.ClassicalTransform for ppcmd in ppcmds)
+    r = b.get_result(h)
+    shots = r.get_shots()
+    assert len(shots) == 10
 
 
 @given(
