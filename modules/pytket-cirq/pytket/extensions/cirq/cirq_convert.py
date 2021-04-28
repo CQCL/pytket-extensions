@@ -182,13 +182,18 @@ def cirq_to_tk(circuit: cirq.circuits.Circuit) -> Circuit:
     return tkcirc
 
 
-def tk_to_cirq(tkcirc: Circuit) -> cirq.circuits.Circuit:
+def tk_to_cirq(tkcirc: Circuit, copy_all_qubits: bool = False) -> cirq.circuits.Circuit:
     """Converts a tket :py:class:`Circuit` object to a Cirq :py:class:`Circuit`.
 
     :param tkcirc: The input tket :py:class:`Circuit`
 
     :return: The Cirq :py:class:`Circuit` corresponding to the input circuit
     """
+    if copy_all_qubits:
+        tkcirc = tkcirc.copy()
+        for q in tkcirc.qubits:
+            tkcirc.add_gate(OpType.noop, [q])
+
     qmap = {}
     line_name = None
     grid_name = None
@@ -248,7 +253,6 @@ def tk_to_cirq(tkcirc: Circuit) -> cirq.circuits.Circuit:
             else:
                 cirqop = gatetype(exponent=params[0])(*qids)
         oplst.append(cirqop)
-
     try:
         coeff = cmath.exp(float(tkcirc.phase) * cmath.pi * 1j)
         if coeff != 1.0:
@@ -258,7 +262,6 @@ def tk_to_cirq(tkcirc: Circuit) -> cirq.circuits.Circuit:
             "Global phase is dependent on a symbolic parameter, so cannot adjust for "
             "phase"
         )
-
     return cirq.circuits.Circuit(*oplst)
 
 

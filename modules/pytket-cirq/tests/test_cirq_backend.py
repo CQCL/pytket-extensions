@@ -38,12 +38,18 @@ def test_blank_wires() -> None:
         CirqStateSimBackend(),
     ]
     for b in backends:
-        assert b.get_result(b.process_circuit(Circuit(2).X(0))).q_bits == {Qubit(0): 0}
-        assert b.get_result(b.process_circuit(Circuit(2).X(1))).q_bits == {Qubit(1): 0}
+        assert b.get_result(b.process_circuit(Circuit(2).X(0))).q_bits == {
+            Qubit(0): 0,
+            Qubit(1): 1,
+        }
+        assert b.get_result(b.process_circuit(Circuit(2).X(1))).q_bits == {
+            Qubit(0): 0,
+            Qubit(1): 1,
+        }
         for r in b.get_result(b.process_circuit_moments(Circuit(2).X(0).X(0).X(0))):  # type: ignore
-            assert r.q_bits == {Qubit(0): 0}
+            assert r.q_bits == {Qubit(0): 0, Qubit(1): 1}
         for r in b.get_result(b.process_circuit_moments(Circuit(2).X(1).X(1).X(1))):  # type: ignore
-            assert r.q_bits == {Qubit(1): 0}
+            assert r.q_bits == {Qubit(0): 0, Qubit(1): 1}
 
     for b in [CirqDensityMatrixSampleBackend(), CirqStateSampleBackend()]:
         assert b.get_result(
@@ -110,13 +116,14 @@ def test_moment_backends() -> None:
 
 
 def test_state() -> None:
-    c = Circuit(2).H(0).CX(0, 1)
+    c0 = Circuit(2).H(0).CX(0, 1)
     b = CirqStateSimBackend()
-    state = b.get_state(c)
-    assert np.allclose(state, [math.sqrt(0.5), 0, 0, math.sqrt(0.5)], atol=1e-10)
-    c.add_phase(0.5)
-    state1 = b.get_state(c)
-    assert np.allclose(state1, state * 1j, atol=1e-10)
+    state0 = b.get_state(c0)
+    assert np.allclose(state0, [math.sqrt(0.5), 0, 0, math.sqrt(0.5)], atol=1e-10)
+    c0.add_phase(0.5)
+    state1 = b.get_state(c0)
+    assert np.allclose(state1, state0 * 1j, atol=1e-10)
+    assert np.allclose(b.get_state(Circuit(2).X(1)), [0, 1.0, 0, 0], atol=1e-10)
 
 
 def test_density_matrix() -> None:

@@ -59,6 +59,3 @@ def test_azure_backend() -> None:
         assert counts == Counter({(0, 0, 0): 10})
     else:
         assert counts == Counter({(0, 0, 0): 5, (0, 1, 1): 5})
-
-
-test_azure_backend()

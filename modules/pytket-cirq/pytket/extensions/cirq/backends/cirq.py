@@ -146,6 +146,8 @@ class _CirqSampleBackend(_CirqBaseBackend):
         valid_check: bool = True,
         **kwargs: KwargTypes,
     ) -> List[ResultHandle]:
+        if n_shots is None or n_shots < 1:
+            raise ValueError("Parameter n_shots is required for this backend")
         self._simulator = self.set_simulator(seed=kwargs.get("seed"))
         circuit_list = list(circuits)
         if valid_check:
@@ -209,7 +211,7 @@ class _CirqSimBackend(_CirqBaseBackend):
         ...
 
     def run_circuit(self, circuit: Circuit, **kwargs: KwargTypes) -> BackendResult:
-        cirq_circ = tk_to_cirq(circuit)
+        cirq_circ = tk_to_cirq(circuit, copy_all_qubits=True)
         _, q_bits = _get_default_uids(cirq_circ, circuit)
         return self.package_result(cirq_circ, q_bits)
 
@@ -228,7 +230,6 @@ class _CirqSimBackend(_CirqBaseBackend):
 
         handle_list = []
         for i, circuit in enumerate(circuit_list):
-            circuit.remove_blank_wires()
             handle = ResultHandle(str(uuid4()), i)
             handle_list.append(handle)
             backres = self.run_circuit(circuit, n_shots=n_shots)
@@ -254,7 +255,7 @@ class _CirqSimBackend(_CirqBaseBackend):
     def run_circuit_moments(
         self, circuit: Circuit, **kwargs: KwargTypes
     ) -> List[BackendResult]:
-        cirq_circ = tk_to_cirq(circuit)
+        cirq_circ = tk_to_cirq(circuit, copy_all_qubits=True)
         _, q_bits = _get_default_uids(cirq_circ, circuit)
         return self.package_results(cirq_circ, q_bits)
 
@@ -307,7 +308,6 @@ class _CirqSimBackend(_CirqBaseBackend):
 
         handle_list = []
         for i, circuit in enumerate(circuit_list):
-            circuit.remove_blank_wires()
             handle = ResultHandle(str(uuid4()), i)
             handle_list.append(handle)
             backres = self.run_circuit_moments(circuit)

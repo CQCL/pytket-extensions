@@ -15,7 +15,6 @@
 
 """Methods to allow conversion between Qiskit and pytket circuit classes
 """
-from math import pi
 from typing import (
     Dict,
     List,
@@ -29,7 +28,6 @@ from typing import (
     TYPE_CHECKING,
 )
 from inspect import signature
-import warnings
 import sympy  # type: ignore
 import qiskit.circuit.library.standard_gates as qiskit_gates  # type: ignore
 from qiskit import (
@@ -202,7 +200,7 @@ class CircuitBuilder:
         qregs: List[QuantumRegister],
         cregs: Optional[List[ClassicalRegister]] = None,
         name: Optional[str] = None,
-        phase: Optional[float] = 0.0,
+        phase: Optional[sympy.Expr] = 0 * sympy.pi,
     ):
         self.qregs = qregs
         self.cregs = [] if cregs is None else cregs
@@ -289,7 +287,7 @@ def qiskit_to_tk(qcirc: QuantumCircuit) -> Circuit:
         qregs=qcirc.qregs,
         cregs=qcirc.cregs,
         name=qcirc.name,
-        phase=qcirc.global_phase / pi,
+        phase=param_to_tk(qcirc.global_phase),
     )
     builder.add_qiskit_data(qcirc.data)
     return builder.circuit()
@@ -469,11 +467,7 @@ def tk_to_qiskit(tkcirc: Circuit) -> QuantumCircuit:
         append_tk_command_to_qiskit(
             command.op, command.args, qcirc, qregmap, cregmap, symb_map, range_preds
         )
-    try:
-        a = float(tkc.phase)
-        qcirc.global_phase += a * pi
-    except TypeError:
-        warnings.warn("Qiskit circuits cannot have symbolic global phase: ignoring.")
+    qcirc.global_phase += param_to_qiskit(tkc.phase, symb_map)
     return qcirc
 
 

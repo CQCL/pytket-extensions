@@ -12,10 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import List
-import platform
 import numpy as np
-from pytket.backends import Backend
 from pytket.extensions.qiskit import (
     AerBackend,
     AerStateBackend,
@@ -25,14 +22,7 @@ from pytket.extensions.qiskit.tket_backend import TketBackend
 from qiskit import QuantumCircuit, execute  # type: ignore
 from qiskit.providers import JobStatus  # type: ignore
 from qiskit.providers.aer import Aer  # type: ignore
-from qiskit.aqua import QuantumInstance  # type: ignore
-from qiskit.aqua.algorithms import BernsteinVazirani, DeutschJozsa  # type: ignore
-from qiskit.aqua.components.oracles import TruthTableOracle  # type: ignore
-
-# Memory corruption on Windows with qulacs 0.2.0 (TKET-1056)
-use_qulacs = platform.system() != "Windows"
-if use_qulacs:
-    from pytket.extensions.qulacs import QulacsBackend  # type: ignore
+from qiskit.utils import QuantumInstance  # type: ignore
 
 
 def circuit_gen(measure: bool = False) -> QuantumCircuit:
@@ -82,28 +72,6 @@ def test_unitary() -> None:
         job2 = execute(qc, qb)
         u2 = job2.result().get_unitary()
         assert np.allclose(u, u2)
-
-
-def test_aqua_algorithm() -> None:
-    backends: List[Backend] = [AerBackend(), AerStateBackend()]
-    if use_qulacs:
-        backends.append(QulacsBackend())
-    for b in backends:
-        for comp in (None, b.default_compilation_pass()):
-            if use_qulacs and type(b) == QulacsBackend and comp is None:
-                continue
-            tb = TketBackend(b, comp)
-            ora = TruthTableOracle(bitmaps="01100110")
-            alg = BernsteinVazirani(oracle=ora, quantum_instance=tb)
-            result = alg.run()
-            assert result["result"] == "011"
-            alg = DeutschJozsa(oracle=ora, quantum_instance=tb)
-            result = alg.run()
-            assert result["result"] == "balanced"
-            ora = TruthTableOracle(bitmaps="11111111")
-            alg = DeutschJozsa(oracle=ora, quantum_instance=tb)
-            result = alg.run()
-            assert result["result"] == "constant"
 
 
 def test_cancel() -> None:
