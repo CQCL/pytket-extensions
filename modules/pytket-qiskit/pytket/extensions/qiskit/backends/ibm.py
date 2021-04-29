@@ -112,25 +112,65 @@ def _approx_0_mod_2(x: Union[float, Expr], eps: float = 1e-10) -> bool:
     return min(x, 2 - x) < eps
 
 
+def int_half(angle: float) -> int:
+    # assume float is approximately an even integer, and return the half
+    two_x = round(angle)
+    assert not two_x % 2
+    return two_x // 2
+
+
 def _tk1_to_x_sx_rz(
     a: Union[float, Expr], b: Union[float, Expr], c: Union[float, Expr]
 ) -> Circuit:
     circ = Circuit(1)
+    correction_phase = 0.0
+
+    # all phase identities use, for integer k,
+    # Rx(2k) = Rz(2k) = (-1)^{k}I
+
+    # _approx_0_mod_2 checks if parameters are constant
+    # so they can be assumed to be constant
     if _approx_0_mod_2(b):
         circ.Rz(a + c, 0)
+        # b = 2k, if k is odd, then Rx(b) = -I
+        correction_phase += int_half(float(b))
+
     elif _approx_0_mod_2(b + 1):
-        if _approx_0_mod_2(a - 0.5) and _approx_0_mod_2(c - 0.5):
+        # Use Rx(2k-1) = i(-1)^{k}X
+        correction_phase += -0.5 + int_half(float(b) - 1)
+        if _approx_0_mod_2(a - c):
             circ.X(0)
+            # a - c = 2m
+            # overall operation is (-1)^{m}Rx(2k -1)
+            correction_phase += int_half(float(a - c))
+
         else:
             circ.Rz(c, 0).X(0).Rz(a, 0)
+
+    elif _approx_0_mod_2(b - 0.5) and _approx_0_mod_2(a) and _approx_0_mod_2(c):
+        # a = 2k, b = 2m+0.5, c = 2n
+        # Rz(2k)Rx(2m + 0.5)Rz(2n) = (-1)^{k+m+n}e^{-i \pi /4} SX
+        circ.SX(0)
+        correction_phase += (
+            int_half(float(b) - 0.5) + int_half(float(a)) + int_half(float(c)) - 0.25
+        )
+
+    elif _approx_0_mod_2(b + 0.5) and _approx_0_mod_2(a) and _approx_0_mod_2(c):
+        # a = 2k, b = 2m-0.5, c = 2n
+        # Rz(2k)Rx(2m - 0.5)Rz(2n) = (-1)^{k+m+n}e^{i \pi /4} X.SX
+        circ.X(0).SX(0)
+        correction_phase += (
+            int_half(float(b) + 0.5) + int_half(float(a)) + int_half(float(c)) + 0.25
+        )
+    elif _approx_0_mod_2(a - 0.5) and _approx_0_mod_2(c - 0.5):
+        # Rz(2k + 0.5)Rx(b)Rz(2m + 0.5) = -i(-1)^{k+m}SX.Rz(1-b).SX
+        circ.SX(0).Rz(1 - b, 0).SX(0)
+        correction_phase += int_half(float(a) - 0.5) + int_half(float(c) - 0.5) - 0.5
     else:
-        # use SX; SX = e^{i\pi/4}V; V = RX(1/2)
-        if _approx_0_mod_2(a - 0.5) and _approx_0_mod_2(c - 0.5):
-            circ.SX(0).Rz(1 - b, 0).SX(0)
-            circ.add_phase(-0.5)
-        else:
-            circ.Rz(c + 0.5, 0).SX(0).Rz(b - 1, 0).SX(0).Rz(a + 0.5, 0)
-            circ.add_phase(-0.5)
+        circ.Rz(c + 0.5, 0).SX(0).Rz(b - 1, 0).SX(0).Rz(a + 0.5, 0)
+        correction_phase += -0.5
+
+    circ.add_phase(correction_phase)
     return circ
 
 

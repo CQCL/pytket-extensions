@@ -886,3 +886,33 @@ def test_symbolic_rebase() -> None:
     _rebase_pass.apply(pytket_circ)
 
     assert len(pytket_circ.free_symbols()) == 2
+
+
+def _tk1_to_rotations(a: float, b: float, c: float) -> Circuit:
+    """Translate tk1 to a RzRxRz so AerUnitaryBackend can simulate"""
+    circ = Circuit(1)
+    circ.Rz(c, 0).Rx(b, 0).Rz(a, 0)
+    return circ
+
+
+def _verify_single_q_rebase(
+    backend: AerUnitaryBackend, a: float, b: float, c: float
+) -> bool:
+    """Compare the unitary of a tk1 gate to the unitary of the translated circuit"""
+    rotation_circ = _tk1_to_rotations(a, b, c)
+    u_before = backend.get_unitary(rotation_circ)
+    circ = Circuit(1)
+    circ.add_gate(OpType.TK1, [a, b, c], [0])
+    _rebase_pass.apply(circ)
+    u_after = backend.get_unitary(circ)
+    return np.allclose(u_before, u_after)
+
+
+def test_rebase_phase() -> None:
+    backend = AerUnitaryBackend()
+    for a in [0.6, 0, 1, 2, 3]:
+        for b in [0.7, 0, 0.5, 1, 1.5]:
+            for c in [0.8, 0, 1, 2, 3]:
+                assert _verify_single_q_rebase(backend, a, b, c)
+                assert _verify_single_q_rebase(backend, -a, -b, -c)
+                assert _verify_single_q_rebase(backend, 2 * a, 3 * b, 4 * c)
