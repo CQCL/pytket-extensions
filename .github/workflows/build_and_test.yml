@@ -9,6 +9,7 @@ on:
     branches:
       - develop
       - 'wheel/**'
+      - alec-test-iqsharpver
   release:
     types:
       - created
@@ -34,7 +35,7 @@ jobs:
         cd ${GITHUB_WORKSPACE}/modules
         LS_MODULES=`ls -d */`
         ALL_MODULES=`echo ${LS_MODULES} | sed -e 's/\///g'`
-        echo "MODULES_TO_TEST=${ALL_MODULES}" >> $GITHUB_ENV
+        echo "MODULES_TO_TEST=pytket-qsharp" >> $GITHUB_ENV
     - name: check for mofified modules
       if: github.event_name == 'pull_request'
       run : |
@@ -92,69 +93,6 @@ jobs:
       with:
         name: artefacts
         path: wheelhouse/
-
-  macos:
-    if: github.event_name != 'release'
-    name: Build and test (MacOS)
-    runs-on: macos-10.15
-
-    steps:
-
-    - uses: actions/checkout@v2
-      with:
-        fetch-depth: '0'
-    - run: git fetch --depth=1 origin +refs/tags/*:refs/tags/* +refs/heads/*:refs/remotes/origin/*
-    - name: Initialize modules list
-      run: |
-        cd ${GITHUB_WORKSPACE}/modules
-        LS_MODULES=`ls -d */`
-        ALL_MODULES=`echo ${LS_MODULES} | sed -e 's/\///g'`
-        echo "MODULES_TO_TEST=${ALL_MODULES}" >> $GITHUB_ENV
-    - name: check for mofified modules
-      if: github.event_name == 'pull_request'
-      run : |
-        MM=`python3 .github/workflows/changed_modules.py origin/${{ github.base_ref }} ${{ github.sha }}`
-        echo "MODULES_TO_TEST=${MM}" >> $GITHUB_ENV
-
-    - name: Install dotnet SDK and iqsharp
-      if: contains(env.MODULES_TO_TEST, 'pytket-qsharp')
-      run: |
-        brew install mono-libgdiplus jupyter
-        wget https://dot.net/v1/dotnet-install.sh
-        chmod a+x dotnet-install.sh
-        ./dotnet-install.sh --channel 3.1
-        dotnet tool install -g Microsoft.Quantum.IQSharp
-        dotnet iqsharp install
-
-    - name: Set up Python 3.7
-      if: github.event_name == 'push'
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.7
-    - name: Build and test (3.7)
-      if: github.event_name == 'push'
-      run: |
-        ./.github/workflows/build-test nomypy
-
-    - name: Set up Python 3.8
-      if: github.event_name == 'pull_request'
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.8
-    - name: Build and test (3.8) + mypy
-      if: github.event_name == 'pull_request'
-      run: |
-        ./.github/workflows/build-test mypy
-
-    - name: Set up Python 3.9
-      if: github.event_name == 'push'
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.9
-    - name: Build and test (3.9)
-      if: github.event_name == 'push'
-      run: |
-        ./.github/workflows/build-test nomypy
 
   windows:
     if: github.event_name != 'release'
