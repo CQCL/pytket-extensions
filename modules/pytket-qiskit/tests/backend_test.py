@@ -41,6 +41,7 @@ from pytket.extensions.qiskit import (
     AerUnitaryBackend,
     IBMQEmulatorBackend,
 )
+from pytket.extensions.qiskit.backends.ibm import _rebase_pass
 from pytket.extensions.qiskit import qiskit_to_tk, process_characterisation
 from pytket.utils.expectations import (
     get_pauli_expectation_value,
@@ -50,6 +51,7 @@ from pytket.utils.operators import QubitPauliOperator
 from pytket.utils.results import compare_unitaries
 from qiskit import IBMQ  # type: ignore
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
+from qiskit.circuit import Parameter  # type: ignore
 from qiskit.providers.aer.noise.noise_model import NoiseModel  # type: ignore
 from qiskit.providers.aer.noise.errors import depolarizing_error, pauli_error  # type: ignore
 import pytest
@@ -869,3 +871,18 @@ def test_compilation_correctness(santiago_backend: IBMQBackend) -> None:
         m_inv_fin = lift_perm(inv_fin)
 
         assert compare_unitaries(u, m_inv_fin @ compiled_u @ m_ini)
+
+
+# pytket-extensions issue #69
+def test_symbolic_rebase() -> None:
+    circ = QuantumCircuit(2)
+    circ.rx(Parameter("a"), 0)
+    circ.ry(Parameter("b"), 1)
+    circ.cx(0, 1)
+
+    pytket_circ = qiskit_to_tk(circ)
+
+    # rebase pass could not handle symbolic parameters originally and would fail here:
+    _rebase_pass.apply(pytket_circ)
+
+    assert len(pytket_circ.free_symbols()) == 2
