@@ -15,9 +15,10 @@
 import itertools
 import logging
 from ast import literal_eval
-from typing import cast, Iterable, List, Optional, Dict, Any, TYPE_CHECKING, Set
+from typing import cast, Iterable, List, Optional, Dict, Any, TYPE_CHECKING, Set, Union
 from warnings import warn
 
+from sympy import Expr  # type: ignore
 import qiskit  # type: ignore
 from qiskit import IBMQ
 from qiskit.compiler import assemble  # type: ignore
@@ -103,12 +104,17 @@ class NoIBMQAccountError(Exception):
         )
 
 
-def _approx_0_mod_2(x: float, eps: float = 1e-10) -> bool:
+def _approx_0_mod_2(x: Union[float, Expr], eps: float = 1e-10) -> bool:
+    if isinstance(x, Expr) and not x.is_constant():
+        return False
+    x = float(x)
     x %= 2
     return min(x, 2 - x) < eps
 
 
-def _tk1_to_x_sx_rz(a: float, b: float, c: float) -> Circuit:
+def _tk1_to_x_sx_rz(
+    a: Union[float, Expr], b: Union[float, Expr], c: Union[float, Expr]
+) -> Circuit:
     circ = Circuit(1)
     if _approx_0_mod_2(b):
         circ.Rz(a + c, 0)
@@ -126,6 +132,14 @@ def _tk1_to_x_sx_rz(a: float, b: float, c: float) -> Circuit:
             circ.Rz(c + 0.5, 0).SX(0).Rz(b - 1, 0).SX(0).Rz(a + 0.5, 0)
             circ.add_phase(-0.5)
     return circ
+
+
+_rebase_pass = RebaseCustom(
+    {OpType.CX},
+    Circuit(2).CX(0, 1),
+    {OpType.X, OpType.SX, OpType.Rz},
+    _tk1_to_x_sx_rz,
+)
 
 
 class IBMQBackend(Backend):
@@ -208,12 +222,7 @@ class IBMQBackend(Backend):
         else:
             if not self._gate_set >= {OpType.X, OpType.SX, OpType.Rz, OpType.CX}:
                 raise NotImplementedError(f"Gate set {self._gate_set} unsupported")
-            self._rebase_pass = RebaseCustom(
-                {OpType.CX},
-                Circuit(2).CX(0, 1),
-                {OpType.X, OpType.SX, OpType.Rz},
-                _tk1_to_x_sx_rz,
-            )
+            self._rebase_pass = _rebase_pass
 
         if hasattr(self._config, "max_experiments"):
             self._max_per_job = self._config.max_experiments
