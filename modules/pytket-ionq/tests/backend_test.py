@@ -12,13 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from ast import literal_eval
 from collections import Counter
 from typing import cast
 import os
 from hypothesis import given, strategies
 import numpy as np
 import pytest
-from pytket.circuit import Circuit  # type: ignore
+from pytket.circuit import Circuit, OpType  # type: ignore
 from pytket.backends.backend_exceptions import CircuitNotValidError
 from pytket.extensions.ionq import IonQBackend
 
@@ -138,6 +139,30 @@ def test_default_pass() -> None:
         comp_pass.apply(c)
         for pred in b.required_predicates:
             assert pred.verify(c)
+
+
+@pytest.mark.skipif(
+    skip_remote_tests,
+    reason="requires environment variable IONQ_AUTH to be a valid IonQ credential",
+)
+def test_postprocess() -> None:
+    token = cast(str, os.getenv("IONQ_AUTH"))
+    b = IonQBackend(api_key=token, device_name="simulator", label="test 7")
+    assert b.supports_contextual_optimisation
+    c = Circuit(2, 2)
+    c.Rx(0.1, 0)
+    c.Ry(0.1, 1)
+    c.CX(0, 1)
+    c.measure_all()
+    b.compile_circuit(c)
+    h = b.process_circuit(c, n_shots=10, postprocess=True)
+    ppcirc = Circuit.from_dict(literal_eval(cast(str, h[3])))
+    ppcmds = ppcirc.get_commands()
+    assert len(ppcmds) > 0
+    assert all(ppcmd.op.type == OpType.ClassicalTransform for ppcmd in ppcmds)
+    r = b.get_result(h)
+    counts = r.get_counts()
+    assert sum(counts.values()) == 10
 
 
 @given(

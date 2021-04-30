@@ -32,6 +32,7 @@ from pytket.passes import (  # type: ignore
     DecomposeBoxes,
     FlattenRegisters,
     RenameQubitsPass,
+    SimplifyInitial,
 )
 from pytket.predicates import (  # type: ignore
     GateSetPredicate,
@@ -43,6 +44,7 @@ from pytket.predicates import (  # type: ignore
     Predicate,
 )
 from pytket.routing import FullyConnected  # type: ignore
+from pytket.utils import prepare_circuit
 from pytket.utils.outcomearray import OutcomeArray
 from pytket.device import Device  # type: ignore
 from .ionq_convert import ionq_pass, ionq_gates, ionq_singleqs, tk_to_ionq
@@ -80,6 +82,7 @@ class IonQBackend(Backend):
     """
 
     _supports_counts = True
+    _supports_contextual_optimisation = True
     _persistent_handles = True
 
     def __init__(
@@ -151,6 +154,7 @@ class IonQBackend(Backend):
                     FlattenRegisters(),
                     RenameQubitsPass(self._qm),
                     ionq_pass,
+                    SimplifyInitial(allow_classical=False, create_all_qubits=True),
                 ]
             )
         else:
@@ -165,13 +169,14 @@ class IonQBackend(Backend):
                         ionq_singleqs,
                         lambda a, b, c: Circuit(1).Rz(c, 0).Rx(b, 0).Rz(a, 0),
                     ),
+                    SimplifyInitial(allow_classical=False, create_all_qubits=True),
                 ]
             )
 
     @property
     def _result_id_type(self) -> _ResultIdTuple:
-        # job id, qubit no., measure permutation
-        return (str, int, str)
+        # job id, qubit no., measure permutation, ppcirc
+        return (str, int, str, str)
 
     def process_circuits(
         self,
@@ -189,6 +194,9 @@ class IonQBackend(Backend):
 
         if valid_check:
             self._check_all_circuits(circuits)
+
+        postprocess = kwargs.get("postprocess", False)
+
         basebody = {
             "lang": "json",
             "body": None,
@@ -199,7 +207,12 @@ class IonQBackend(Backend):
         for i, circ in enumerate(circuits):
             result = dict()
             bodycopy = basebody.copy()
-            (bodycopy["body"], meas) = tk_to_ionq(circ)  # type: ignore
+            if postprocess:
+                c0, ppcirc = prepare_circuit(circ, allow_classical=False)
+                ppcirc_rep = ppcirc.to_dict()
+            else:
+                c0, ppcirc_rep = circ, None
+            (bodycopy["body"], meas) = tk_to_ionq(c0)  # type: ignore
             if len(meas) == 0:
                 result["result"] = self.empty_result(circ, n_shots=n_shots)
             measures = json.dumps(meas)
@@ -209,6 +222,7 @@ class IonQBackend(Backend):
                     _DEBUG_HANDLE_PREFIX + str(circ.n_qubits),
                     n_shots,
                     measures,
+                    str(ppcirc_rep),
                 )
                 handles.append(handle)
             else:
@@ -228,7 +242,7 @@ class IonQBackend(Backend):
 
                 # extract job ID from response
                 job_id = resp["id"]
-                handle = ResultHandle(job_id, n_shots, measures)
+                handle = ResultHandle(job_id, n_shots, measures, str(ppcirc_rep))
                 handles.append(handle)
         for handle in handles:
             self._cache[handle] = result
@@ -293,12 +307,18 @@ class IonQBackend(Backend):
                 sum_counts = sum(tket_counts.values())
                 diff = n_shots - sum_counts
                 tket_counts[max_array] += diff
+                ppcirc_rep = literal_eval(cast(str, handle[3]))
+                ppcirc = (
+                    Circuit.from_dict(ppcirc_rep) if ppcirc_rep is not None else None
+                )
                 if handle in self._cache:
                     self._cache[handle].update(
-                        {"result": BackendResult(counts=tket_counts)}
+                        {"result": BackendResult(counts=tket_counts, ppcirc=ppcirc)}
                     )
                 else:
-                    self._cache[handle] = {"result": BackendResult(counts=tket_counts)}
+                    self._cache[handle] = {
+                        "result": BackendResult(counts=tket_counts, ppcirc=ppcirc)
+                    }
         return CircuitStatus(statenum)
 
     def get_result(self, handle: ResultHandle, **kwargs: KwargTypes) -> BackendResult:
