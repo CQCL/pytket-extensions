@@ -15,7 +15,18 @@
 import itertools
 import logging
 from ast import literal_eval
-from typing import cast, Iterable, List, Optional, Dict, Any, TYPE_CHECKING, Set, Union
+from typing import (
+    cast,
+    Iterable,
+    List,
+    Optional,
+    Dict,
+    Any,
+    TYPE_CHECKING,
+    Set,
+    Tuple,
+    Union,
+)
 from warnings import warn
 
 from sympy import Expr  # type: ignore
@@ -45,6 +56,7 @@ from pytket.passes import (  # type: ignore
     DecomposeBoxes,
     FullPeepholeOptimise,
     CliffordSimp,
+    SimplifyInitial,
 )
 from pytket.predicates import (  # type: ignore
     NoMidMeasurePredicate,
@@ -55,8 +67,11 @@ from pytket.predicates import (  # type: ignore
     Predicate,
 )
 from pytket.extensions.qiskit.qiskit_convert import tk_to_qiskit, _tk_gate_set
-from pytket.extensions.qiskit.result_convert import qiskit_result_to_backendresult
+from pytket.extensions.qiskit.result_convert import (
+    qiskit_experimentresult_to_backendresult,
+)
 from pytket.routing import NoiseAwarePlacement, Architecture  # type: ignore
+from pytket.utils import prepare_circuit
 from pytket.utils.results import KwargTypes
 from .ibm_utils import _STATUS_MAP
 from .config import QiskitConfig
@@ -185,6 +200,7 @@ _rebase_pass = RebaseCustom(
 class IBMQBackend(Backend):
     _supports_shots = True
     _supports_counts = True
+    _supports_contextual_optimisation = True
     _persistent_handles = True
 
     def __init__(
@@ -277,6 +293,9 @@ class IBMQBackend(Backend):
         )
         self._monitor = monitor
 
+        # cache of results keyed by job id and circuit index
+        self._ibm_res_cache: Dict[Tuple[str, int], models.ExperimentResult] = dict()
+
         self._MACHINE_DEBUG = False
 
     @property
@@ -330,11 +349,15 @@ class IBMQBackend(Backend):
             passlist.extend([CliffordSimp(False), SynthesiseIBM()])
         if not self._legacy_gateset:
             passlist.extend([self._rebase_pass, RemoveRedundancies()])
+        if optimisation_level > 0:
+            passlist.append(
+                SimplifyInitial(allow_classical=False, create_all_qubits=True)
+            )
         return SequencePass(passlist)
 
     @property
     def _result_id_type(self) -> _ResultIdTuple:
-        return (str, int)
+        return (str, int, str)
 
     def process_circuits(
         self,
@@ -345,28 +368,45 @@ class IBMQBackend(Backend):
     ) -> List[ResultHandle]:
         """
         See :py:meth:`pytket.backends.Backend.process_circuits`.
-        Supported kwargs: none.
+        Supported kwargs: `postprocess`.
         """
         if n_shots is None or n_shots < 1:
             raise ValueError("Parameter n_shots is required for this backend")
         handle_list = []
         for chunk in itertools.zip_longest(*([iter(circuits)] * self._max_per_job)):
             filtchunk = list(filter(lambda x: x is not None, chunk))
+
             if valid_check:
                 self._check_all_circuits(filtchunk)
-            qcs = [tk_to_qiskit(tkc) for tkc in filtchunk]
+
+            postprocess = kwargs.get("postprocess", False)
+
+            qcs, ppcirc_strs = [], []
+            for tkc in filtchunk:
+                if postprocess:
+                    c0, ppcirc = prepare_circuit(tkc, allow_classical=False)
+                    ppcirc_rep = ppcirc.to_dict()
+                else:
+                    c0, ppcirc_rep = tkc, None
+                qcs.append(tk_to_qiskit(c0))
+                ppcirc_strs.append(str(ppcirc_rep))
             qobj = assemble(qcs, shots=n_shots, memory=self._config.memory)
             if self._MACHINE_DEBUG:
                 handle_list += [
-                    ResultHandle(_DEBUG_HANDLE_PREFIX + str((c.n_qubits, n_shots)), i)
+                    ResultHandle(
+                        _DEBUG_HANDLE_PREFIX + str((c.n_qubits, n_shots)),
+                        i,
+                        ppcirc_strs[i],
+                    )
                     for i, c in enumerate(filtchunk)
                 ]
             else:
                 job = self._backend.run(qobj)
                 jobid = job.job_id()
-                handle_list += [ResultHandle(jobid, i) for i in range(len(filtchunk))]
-        for handle in handle_list:
-            self._cache[handle] = dict()
+                handle_list += [
+                    ResultHandle(jobid, i, ppcirc_strs[i])
+                    for i in range(len(filtchunk))
+                ]
         return handle_list
 
     def _retrieve_job(self, jobid: str) -> IBMQJob:
@@ -390,11 +430,14 @@ class IBMQBackend(Backend):
         See :py:meth:`pytket.backends.Backend.get_result`.
         Supported kwargs: `timeout`, `wait`.
         """
-        try:
-            return super().get_result(handle)
-        except CircuitNotRunError:
-            jobid = cast(str, handle[0])
-            index = cast(int, handle[1])
+        self._check_handle_type(handle)
+        if handle in self._cache:
+            return cast(BackendResult, self._cache[handle]["result"])
+        jobid, index, ppcirc_str = handle
+        ppcirc_rep = literal_eval(ppcirc_str)
+        ppcirc = Circuit.from_dict(ppcirc_rep) if ppcirc_rep is not None else None
+        cache_key = (jobid, index)
+        if cache_key not in self._ibm_res_cache:
             if self._MACHINE_DEBUG or jobid.startswith(_DEBUG_HANDLE_PREFIX):
                 shots: int
                 n_qubits: int
@@ -412,10 +455,11 @@ class IBMQBackend(Backend):
                     key: kwargs[key] for key in ("wait", "timeout") if key in kwargs
                 }
                 res = job.result(**newkwargs)
-            backresults = list(qiskit_result_to_backendresult(res))
-            self._cache.update(
-                (ResultHandle(jobid, circ_index), {"result": backres})
-                for circ_index, backres in enumerate(backresults)
-            )
 
-            return cast(BackendResult, self._cache[handle]["result"])
+            for circ_index, r in enumerate(res.results):
+                self._ibm_res_cache[(jobid, circ_index)] = r
+        result = qiskit_experimentresult_to_backendresult(
+            self._ibm_res_cache[cache_key], ppcirc
+        )
+        self._cache[handle] = {"result": result}
+        return result

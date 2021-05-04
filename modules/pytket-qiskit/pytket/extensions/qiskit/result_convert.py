@@ -14,9 +14,9 @@ from collections import Counter
 import numpy as np
 
 from qiskit.result import Result  # type: ignore
-from qiskit.result.models import ExperimentResultData  # type: ignore
+from qiskit.result.models import ExperimentResult, ExperimentResultData  # type: ignore
 
-from pytket.circuit import Bit, Qubit, UnitID  # type: ignore
+from pytket.circuit import Bit, Qubit, UnitID, Circuit  # type: ignore
 
 from pytket.backends.backendresult import BackendResult
 from pytket.utils.outcomearray import OutcomeArray
@@ -41,53 +41,58 @@ def _hex_to_outar(hexes: Sequence[str], width: int) -> OutcomeArray:
     return OutcomeArray.from_ints(ints, width)
 
 
+def qiskit_experimentresult_to_backendresult(
+    result: ExperimentResult, ppcirc: Optional[Circuit] = None
+) -> BackendResult:
+    header = result.header
+    width = header.memory_slots
+
+    c_bits = (
+        _gen_uids(header.creg_sizes, Bit) if hasattr(header, "creg_sizes") else None
+    )
+    q_bits = (
+        _gen_uids(header.qreg_sizes, Qubit) if hasattr(header, "qreg_sizes") else None
+    )
+    shots, counts, state, unitary = (None,) * 4
+    datadict = result.data.to_dict()
+    if len(datadict) == 0 and result.shots > 0:
+        n_bits = len(c_bits) if c_bits else 0
+        shots = OutcomeArray.from_readouts(
+            np.zeros((result.shots, n_bits), dtype=np.uint8)  #  type: ignore
+        )
+    else:
+        if "memory" in datadict:
+            memory = datadict["memory"]
+            shots = _hex_to_outar(memory, width)
+        elif "counts" in datadict:
+            qis_counts = datadict["counts"]
+            counts = Counter(
+                dict(
+                    (_hex_to_outar([hexst], width), count)
+                    for hexst, count in qis_counts.items()
+                )
+            )
+
+        if "statevector" in datadict:
+            state = datadict["statevector"]
+
+        if "unitary" in datadict:
+            unitary = datadict["unitary"]
+
+    return BackendResult(
+        c_bits=c_bits,
+        q_bits=q_bits,
+        shots=shots,
+        counts=counts,
+        state=state,
+        unitary=unitary,
+        ppcirc=ppcirc,
+    )
+
+
 def qiskit_result_to_backendresult(res: Result) -> Iterator[BackendResult]:
     for result in res.results:
-        header = result.header
-        width = header.memory_slots
-
-        c_bits = (
-            _gen_uids(header.creg_sizes, Bit) if hasattr(header, "creg_sizes") else None
-        )
-        q_bits = (
-            _gen_uids(header.qreg_sizes, Qubit)
-            if hasattr(header, "qreg_sizes")
-            else None
-        )
-        shots, counts, state, unitary = (None,) * 4
-        datadict = result.data.to_dict()
-        if len(datadict) == 0 and result.shots > 0:
-            n_bits = len(c_bits) if c_bits else 0
-            shots = OutcomeArray.from_readouts(
-                np.zeros((result.shots, n_bits), dtype=np.uint8)  #  type: ignore
-            )
-        else:
-            if "memory" in datadict:
-                memory = datadict["memory"]
-                shots = _hex_to_outar(memory, width)
-            elif "counts" in datadict:
-                qis_counts = datadict["counts"]
-                counts = Counter(
-                    dict(
-                        (_hex_to_outar([hexst], width), count)
-                        for hexst, count in qis_counts.items()
-                    )
-                )
-
-            if "statevector" in datadict:
-                state = datadict["statevector"]
-
-            if "unitary" in datadict:
-                unitary = datadict["unitary"]
-
-        yield BackendResult(
-            c_bits=c_bits,
-            q_bits=q_bits,
-            shots=shots,
-            counts=counts,
-            state=state,
-            unitary=unitary,
-        )
+        yield qiskit_experimentresult_to_backendresult(result)
 
 
 def backendresult_to_qiskit_resultdata(
