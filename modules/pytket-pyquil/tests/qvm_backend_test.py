@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from ast import literal_eval
 import math
 from collections import Counter
 from shutil import which
@@ -40,7 +41,6 @@ skip_qvm_tests = (which("docker") is None) or (platform.system() == "Windows")
 
 @pytest.fixture(scope="module")
 def qvm(request: FixtureRequest) -> None:
-    print("running qvm container")
     dock = docker.from_env()
     container = dock.containers.run(
         image="rigetti/qvm", command="-S", detach=True, ports={5000: 5000}, remove=True
@@ -97,8 +97,7 @@ def test_sim(qvm: None, quilc: None) -> None:
     c = circuit_gen(True)
     b = ForestBackend("9q-square")
     b.compile_circuit(c)
-    shots = b.get_shots(c, 1024)
-    print(shots)
+    _ = b.get_shots(c, 1024)
 
 
 @pytest.mark.skipif(
@@ -114,7 +113,6 @@ def test_measures(qvm: None, quilc: None) -> None:
     b = ForestBackend("9q-square")
     b.compile_circuit(c)
     shots = b.get_shots(c, 10)
-    print(shots)
     all_ones = True
     all_zeros = True
     for i in x_qbs:
@@ -349,8 +347,6 @@ def test_delay_measures() -> None:
     skip_qvm_tests, reason="Can only run Rigetti QVM if docker is installed"
 )
 def test_shots_bits_edgecases(qvm: None, quilc: None) -> None:
-    print(type(qvm))
-    print(type(quilc))
     forest_backend = ForestBackend("9q-square")
 
     for n_bits in range(1, 9):  # Getting runtime error if n_qubit > 9.
@@ -373,3 +369,22 @@ def test_shots_bits_edgecases(qvm: None, quilc: None) -> None:
             assert np.array_equal(forest_backend.get_shots(c, n_shots), correct_shots)
             assert forest_backend.get_shots(c, n_shots).shape == correct_shape
             assert forest_backend.get_counts(c, n_shots) == correct_counts
+
+
+@pytest.mark.skipif(
+    skip_qvm_tests, reason="Can only run Rigetti QVM if docker is installed"
+)
+def test_postprocess() -> None:
+    b = ForestBackend("9q-square")
+    assert b.supports_contextual_optimisation
+    c = Circuit(2, 2)
+    c.Rx(0.5, 0).Rx(0.5, 1).CZ(0, 1).X(0).X(1).measure_all()
+    b.compile_circuit(c)
+    h = b.process_circuit(c, n_shots=10, postprocess=True)
+    ppcirc = Circuit.from_dict(literal_eval(cast(str, h[1])))
+    ppcmds = ppcirc.get_commands()
+    assert len(ppcmds) > 0
+    assert all(ppcmd.op.type == OpType.ClassicalTransform for ppcmd in ppcmds)
+    r = b.get_result(h)
+    shots = r.get_shots()
+    assert len(shots) == 10
