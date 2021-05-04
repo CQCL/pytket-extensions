@@ -932,3 +932,20 @@ def test_postprocess(santiago_backend: IBMQBackend) -> None:
     assert len(ppcmds) > 0
     assert all(ppcmd.op.type == OpType.ClassicalTransform for ppcmd in ppcmds)
     b.cancel(h)
+
+
+@pytest.mark.skipif(not IBMQ.stored_account(), reason="No IBM account stored")
+def test_postprocess_emu() -> None:
+    b = IBMQEmulatorBackend("ibmq_santiago", hub="ibm-q", group="open", project="main")
+    assert b.supports_contextual_optimisation
+    c = Circuit(2, 2)
+    c.SX(0).SX(1).CX(0, 1).measure_all()
+    b.compile_circuit(c)
+    h = b.process_circuit(c, n_shots=10, postprocess=True)
+    ppcirc = Circuit.from_dict(literal_eval(cast(str, h[2])))
+    ppcmds = ppcirc.get_commands()
+    assert len(ppcmds) > 0
+    assert all(ppcmd.op.type == OpType.ClassicalTransform for ppcmd in ppcmds)
+    r = b.get_result(h)
+    shots = r.get_shots()
+    assert len(shots) == 10
