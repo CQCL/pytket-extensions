@@ -12,10 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from ast import literal_eval
 from collections import Counter
 import os
+from typing import cast
 from pytket.backends.status import StatusEnum
-from pytket.circuit import Circuit  # type: ignore
+from pytket.circuit import Circuit, OpType  # type: ignore
 from pytket.extensions.qsharp import AzureBackend
 
 skip_remote_tests: bool = (
@@ -59,3 +61,19 @@ def test_azure_backend() -> None:
         assert counts == Counter({(0, 0, 0): 10})
     else:
         assert counts == Counter({(0, 0, 0): 5, (0, 1, 1): 5})
+
+
+def test_postprocess() -> None:
+    b = AzureBackend("ionq.simulator", machine_debug=skip_remote_tests)
+    assert b.supports_contextual_optimisation
+    c = Circuit(2, 2)
+    c.Rx(0.5, 0).Rx(0.5, 1).CZ(0, 1).X(0).X(1).measure_all()
+    b.compile_circuit(c)
+    h = b.process_circuit(c, n_shots=10, postprocess=True)
+    ppcirc = Circuit.from_dict(literal_eval(cast(str, h[2])))
+    ppcmds = ppcirc.get_commands()
+    assert len(ppcmds) > 0
+    assert all(ppcmd.op.type == OpType.ClassicalTransform for ppcmd in ppcmds)
+    r = b.get_result(h)
+    shots = r.get_shots()
+    assert len(shots) == 10
