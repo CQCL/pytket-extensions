@@ -21,25 +21,18 @@ from pytket.circuit import Circuit, OpType  # type: ignore
 from pytket.extensions.aqt.backends.aqt import _translate_aqt, AQTBackend, _aqt_rebase
 from pytket.extensions.qiskit import AerUnitaryBackend
 
-skip_remote_tests: bool = (
-    os.getenv("PYTKET_RUN_REMOTE_TESTS") is None or os.getenv("AQT_AUTH") is None
-)
+skip_remote_tests: bool = os.getenv("PYTKET_RUN_REMOTE_TESTS") is None
+REASON = "PYTKET_RUN_REMOTE_TESTS not set (requires configuration of AQT access token)"
 
 
 def tk_to_aqt(circ: Circuit) -> Tuple[List[List], str]:
     """ Convert a circuit to AQT list representation """
     c = circ.copy()
-    token = cast(str, os.getenv("AQT_AUTH"))
-    AQTBackend(
-        device_name="sim/noise-model-1", access_token=token
-    ).default_compilation_pass().apply(c)
+    AQTBackend(device_name="sim/noise-model-1").default_compilation_pass().apply(c)
     return _translate_aqt(c)
 
 
-@pytest.mark.skipif(
-    skip_remote_tests,
-    reason="requires environment variable AQT_AUTH to be a valid AQT credential",
-)
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_convert() -> None:
     circ = Circuit(4, 4)
     circ.H(0).CX(0, 1)
