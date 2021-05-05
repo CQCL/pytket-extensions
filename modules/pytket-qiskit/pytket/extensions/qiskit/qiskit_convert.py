@@ -28,6 +28,7 @@ from typing import (
     TYPE_CHECKING,
 )
 from inspect import signature
+from uuid import UUID
 import sympy  # type: ignore
 import qiskit.circuit.library.standard_gates as qiskit_gates  # type: ignore
 from qiskit import (
@@ -275,18 +276,31 @@ class CircuitBuilder:
                 self.tkc.add_gate(optype, params, qubits + bits, **condition_kwargs)
 
 
-def qiskit_to_tk(qcirc: QuantumCircuit) -> Circuit:
+def qiskit_to_tk(qcirc: QuantumCircuit, preserve_param_uuid: bool = False) -> Circuit:
     """Convert a :py:class:`qiskit.QuantumCircuit` to a :py:class:`Circuit`.
 
     :param qcirc: A circuit to be converted
     :type qcirc: QuantumCircuit
+    :param preserve_param_uuid: Whether to preserve symbolic Parameter uuids
+        by appending them to the tket Circuit symbol names as "_UUID:<uuid>".
+        This can be useful if you want to reassign Parameters after conversion
+        to tket and back, as it is necessary for Parameter object equality
+        to be preserved.
+    :type preserve_param_uuid: bool
     :return: The converted circuit
     :rtype: Circuit
     """
+    circ_name = qcirc.name
+    # Parameter uses a hidden _uuid for equality check
+    # we optionally preserve this in parameter name for later use
+    if preserve_param_uuid:
+        updates = {p: Parameter(f"{p.name}_UUID:{p._uuid}") for p in qcirc.parameters}
+        qcirc = cast(QuantumCircuit, qcirc.assign_parameters(updates))
+
     builder = CircuitBuilder(
         qregs=qcirc.qregs,
         cregs=qcirc.cregs,
-        name=qcirc.name,
+        name=circ_name,
         phase=param_to_tk(qcirc.global_phase),
     )
     builder.add_qiskit_data(qcirc.data)
@@ -468,6 +482,17 @@ def tk_to_qiskit(tkcirc: Circuit) -> QuantumCircuit:
             command.op, command.args, qcirc, qregmap, cregmap, symb_map, range_preds
         )
     qcirc.global_phase += param_to_qiskit(tkc.phase, symb_map)
+
+    # if UUID stored in name, set parameter uuids accordingly (see qiskit_to_tk)
+    updates = dict()
+    for p in qcirc.parameters:
+        name_spl = p.name.split("_UUID:", 2)
+        if len(name_spl) == 2:
+            p_name, uuid = name_spl
+            new_p = Parameter.__new__(Parameter, p_name, UUID(uuid))
+            new_p.__init__(p_name)
+            updates[p] = new_p
+    qcirc.assign_parameters(updates, inplace=True)
     return qcirc
 
 
