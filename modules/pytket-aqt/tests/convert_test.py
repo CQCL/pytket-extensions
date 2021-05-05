@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Tuple, List, cast
+from typing import Tuple, List
 import json
 import os
 import numpy as np

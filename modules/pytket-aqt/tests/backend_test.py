@@ -13,7 +13,6 @@
 # limitations under the License.
 
 from collections import Counter
-from typing import cast
 import os
 from hypothesis import given, strategies
 import numpy as np
