@@ -29,6 +29,7 @@ from qiskit.opflow import PauliTrotterEvolution  # type: ignore
 from qiskit.opflow.primitive_ops import PauliSumOp  # type: ignore
 from qiskit.transpiler import PassManager  # type: ignore
 from qiskit.circuit.library import RYGate, MCMT  # type: ignore
+from qiskit.circuit import Parameter  # type: ignore
 from pytket.circuit import (  # type: ignore
     Circuit,
     CircBox,
@@ -575,3 +576,24 @@ def test_cnry_conversion() -> None:
         # we do not expect equality between new_tcirc and tcirc.
         require_tk_equality=False,
     )
+
+
+# pytket-extensions issue #72
+def test_parameter_equality() -> None:
+    param_a = Parameter("a")
+    param_b = Parameter("b")
+
+    circ = QuantumCircuit(2)
+    circ.rx(param_a, 0)
+    circ.ry(param_b, 1)
+    circ.cx(0, 1)
+    # fails with preserve_param_uuid=False
+    # as Parameter uuid attribute is not preserved
+    # and so fails equality check at bind_parameters
+    pytket_circ = qiskit_to_tk(circ, preserve_param_uuid=True)
+    final_circ = tk_to_qiskit(pytket_circ)
+
+    param_dict = dict(zip([param_a, param_b], [1, 2]))
+    final_circ.bind_parameters(param_dict)
+
+    assert final_circ.parameters == circ.parameters
