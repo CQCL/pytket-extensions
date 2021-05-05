@@ -62,6 +62,7 @@ import pytest
 skip_remote_tests: bool = (
     not IBMQ.stored_account() or os.getenv("PYTKET_RUN_REMOTE_TESTS") is None
 )
+REASON = "PYTKET_RUN_REMOTE_TESTS not set (requires configuration of IBMQ account)"
 
 
 @pytest.fixture(scope="module")
@@ -180,7 +181,7 @@ def test_noise() -> None:
     assert shots.shape == (10, 4)
 
 
-@pytest.mark.skipif(skip_remote_tests, reason="Skipping remote tests")
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_process_characterisation() -> None:
     if not IBMQ.active_account():
         IBMQ.load_account()
@@ -336,7 +337,7 @@ def test_cancellation_aer() -> None:
     print(b.circuit_status(h))
 
 
-@pytest.mark.skipif(skip_remote_tests, reason="Skipping remote tests")
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_cancellation_ibmq(santiago_backend: IBMQBackend) -> None:
     b = santiago_backend
     c = circuit_gen(True)
@@ -346,7 +347,7 @@ def test_cancellation_ibmq(santiago_backend: IBMQBackend) -> None:
     print(b.circuit_status(h))
 
 
-@pytest.mark.skipif(skip_remote_tests, reason="Skipping remote tests")
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_machine_debug(santiago_backend: IBMQBackend) -> None:
     backend = santiago_backend
     backend._MACHINE_DEBUG = True
@@ -404,7 +405,7 @@ def test_pauli_sim() -> None:
     assert abs(energy + 1) < 0.001
 
 
-@pytest.mark.skipif(skip_remote_tests, reason="Skipping remote tests")
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_default_pass(santiago_backend: IBMQBackend) -> None:
     b = santiago_backend
     for ol in range(3):
@@ -687,7 +688,7 @@ def test_aer_placed_expectation() -> None:
         assert "default register Qubits" in str(errorinfoCirc.value)
 
 
-@pytest.mark.skipif(skip_remote_tests, reason="Skipping remote tests")
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_ibmq_emulator() -> None:
     b_emu = IBMQEmulatorBackend(
         "ibmq_santiago", hub="ibm-q", group="open", project="main"
@@ -779,7 +780,7 @@ def test_aer_expanded_gates() -> None:
     assert backend.valid_circuit(c)
 
 
-@pytest.mark.skipif(skip_remote_tests, reason="Skipping remote tests")
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_remote_simulator() -> None:
     remote_qasm = IBMQBackend(
         "ibmq_qasm_simulator", hub="ibm-q", group="open", project="main"
@@ -795,7 +796,7 @@ def test_remote_simulator() -> None:
     assert sum(remote_qasm.get_counts(c, 10).values()) == 10
 
 
-@pytest.mark.skipif(skip_remote_tests, reason="Skipping remote tests")
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_ibmq_mid_measure(santiago_backend: IBMQBackend) -> None:
     c = Circuit(3, 3).H(1).CX(1, 2).Measure(0, 0).Measure(1, 1)
     c.add_barrier([0, 1, 2])
@@ -808,7 +809,7 @@ def test_ibmq_mid_measure(santiago_backend: IBMQBackend) -> None:
     assert b.valid_circuit(c)
 
 
-@pytest.mark.skipif(not IBMQ.stored_account(), reason="No IBM account stored")
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_compile_x(santiago_backend: IBMQBackend) -> None:
     # TKET-1028
     b = santiago_backend
@@ -837,7 +838,7 @@ def lift_perm(p: Dict[int, int]) -> np.ndarray:
     return pm
 
 
-@pytest.mark.skipif(not IBMQ.stored_account(), reason="No IBM account stored")
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_compilation_correctness(santiago_backend: IBMQBackend) -> None:
     c = Circuit(5)
     c.H(0).H(1).H(2)

@@ -42,13 +42,13 @@ from pytket.extensions.honeywell import split_utf8
 from pytket.extensions.honeywell.backends.api_wrappers import HQSAPIError
 from pytket.backends.status import StatusEnum
 
-skip_remote_tests: bool = os.getenv("PYTKET_RUN_REMOTE_TESTS") is None or not os.getenv(
-    "HQS_AUTH"
+skip_remote_tests: bool = os.getenv("PYTKET_RUN_REMOTE_TESTS") is None
+REASON = (
+    "PYTKET_RUN_REMOTE_TESTS not set (requires configuration of Honeywell username)"
 )
 
 
 def test_honeywell() -> None:
-    token = os.getenv("HQS_AUTH")
     backend = HoneywellBackend(
         device_name="HQS-LT-1.0-APIVAL", machine_debug=skip_remote_tests
     )
@@ -77,14 +77,11 @@ def test_honeywell() -> None:
     assert np.all(newshots == correct_shots)
     newcounts = backend.get_counts(c, 4)
     assert newcounts == correct_counts
-    if token is None:
+    if skip_remote_tests:
         assert backend.device is None
 
 
-@pytest.mark.skipif(
-    skip_remote_tests,
-    reason="set environment variable HQS_AUTH to login and use API",
-)
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_bell() -> None:
     b = HoneywellBackend(device_name="HQS-LT-1.0-APIVAL")
     c = Circuit(2, 2, "test 2")
@@ -98,10 +95,7 @@ def test_bell() -> None:
     assert all(q[0] == q[1] for q in shots)
 
 
-@pytest.mark.skipif(
-    skip_remote_tests,
-    reason="set environment variable HQS_AUTH to login and use API",
-)
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_multireg() -> None:
     b = HoneywellBackend(device_name="HQS-LT-1.0-APIVAL", label="test 3")
     c = Circuit()
@@ -124,10 +118,7 @@ def test_multireg() -> None:
     assert np.array_equal(shots, np.zeros((10, 2)))
 
 
-@pytest.mark.skipif(
-    skip_remote_tests,
-    reason="set environment variable HQS_AUTH to login and use API",
-)
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_default_pass() -> None:
     b = HoneywellBackend(device_name="HQS-LT-1.0-APIVAL")
     for ol in range(3):
@@ -143,10 +134,7 @@ def test_default_pass() -> None:
             assert pred.verify(c)
 
 
-@pytest.mark.skipif(
-    skip_remote_tests,
-    reason="set environment variable HQS_AUTH to login and use API",
-)
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_cancel() -> None:
     b = HoneywellBackend(device_name="HQS-LT-1.0-APIVAL", label="test cancel")
     c = Circuit(2, 2).H(0).CX(0, 1).measure_all()
@@ -197,10 +185,7 @@ def circuits(
     return circuit
 
 
-@pytest.mark.skipif(
-    skip_remote_tests,
-    reason="set environment variable HQS_AUTH to login and use API",
-)
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 @given(
     circuits(),  # pylint: disable=no-value-for-parameter
     st.integers(min_value=1, max_value=10000),
@@ -219,10 +204,7 @@ def test_cost_estimate(c: Circuit, n_shots: int) -> None:
         assert estimate == api_cost
 
 
-@pytest.mark.skipif(
-    skip_remote_tests,
-    reason="set environment variable HQS_AUTH to login and use API",
-)
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_classical() -> None:
     # circuit to cover capabilities covered in HQS example notebook
     c = Circuit(1)

@@ -20,9 +20,7 @@ from pytket.backends.status import StatusEnum
 from pytket.circuit import Circuit, OpType  # type: ignore
 from pytket.extensions.qsharp import AzureBackend
 
-skip_remote_tests: bool = (
-    os.getenv("PYTKET_RUN_REMOTE_TESTS") is None or os.getenv("AZURE_AUTH") is None
-)
+skip_remote_tests: bool = os.getenv("PYTKET_RUN_REMOTE_TESTS") is None
 
 
 def test_azure_backend() -> None:
