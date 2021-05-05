@@ -15,7 +15,7 @@ import json
 import getpass
 import jwt
 import requests
-import websockets as websockets
+import websockets
 import nest_asyncio  # type: ignore
 import keyring  # type: ignore
 
