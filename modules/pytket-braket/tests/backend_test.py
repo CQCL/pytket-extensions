@@ -14,6 +14,7 @@
 
 from ast import literal_eval
 from collections import Counter
+from typing import cast
 import os
 from hypothesis import given, strategies
 import numpy as np
@@ -338,11 +339,9 @@ def test_shots_bits_edgecases(n_shots, n_bits) -> None:
     assert braket_backend.get_counts(c, n_shots) == correct_counts
 
 
-@pytest.mark.skipif(skip_remote_tests, reason="Not running AWS tests")
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_postprocess_sim() -> None:
     b = BraketBackend(
-        s3_bucket=S3_BUCKET,
-        s3_folder=S3_FOLDER,
         device_type="quantum-simulator",
         provider="amazon",
         device="sv1",
@@ -356,11 +355,9 @@ def test_postprocess_sim() -> None:
     assert all(shot[0] != shot[1] for shot in shots)
 
 
-@pytest.mark.skipif(skip_remote_tests, reason="Not running AWS tests")
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_postprocess_ionq() -> None:
     b = BraketBackend(
-        s3_bucket=S3_BUCKET,
-        s3_folder=S3_FOLDER,
         device_type="qpu",
         provider="ionq",
         device="ionQdevice",

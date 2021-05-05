@@ -920,7 +920,7 @@ def test_rebase_phase() -> None:
                 assert _verify_single_q_rebase(backend, 2 * a, 3 * b, 4 * c)
 
 
-@pytest.mark.skipif(not IBMQ.stored_account(), reason="No IBM account stored")
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_postprocess(santiago_backend: IBMQBackend) -> None:
     b = santiago_backend
     assert b.supports_contextual_optimisation
@@ -935,7 +935,7 @@ def test_postprocess(santiago_backend: IBMQBackend) -> None:
     b.cancel(h)
 
 
-@pytest.mark.skipif(not IBMQ.stored_account(), reason="No IBM account stored")
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_postprocess_emu() -> None:
     b = IBMQEmulatorBackend("ibmq_santiago", hub="ibm-q", group="open", project="main")
     assert b.supports_contextual_optimisation

@@ -131,13 +131,9 @@ def test_default_pass() -> None:
             assert pred.verify(c)
 
 
-@pytest.mark.skipif(
-    skip_remote_tests,
-    reason="requires environment variable AQT_AUTH to be a valid AQT credential",
-)
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_postprocess() -> None:
-    token = cast(str, os.getenv("AQT_AUTH"))
-    b = AQTBackend(device_name="sim", access_token=token, label="test 7")
+    b = AQTBackend(device_name="sim", label="test 7")
     assert b.supports_contextual_optimisation
     c = Circuit(2, 2)
     c.H(0)

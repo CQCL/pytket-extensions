@@ -14,6 +14,7 @@
 
 from ast import literal_eval
 from collections import Counter
+from typing import cast
 import os
 from hypothesis import given, strategies
 import numpy as np
@@ -123,13 +124,9 @@ def test_default_pass() -> None:
             assert pred.verify(c)
 
 
-@pytest.mark.skipif(
-    skip_remote_tests,
-    reason="requires environment variable IONQ_AUTH to be a valid IonQ credential",
-)
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_postprocess() -> None:
-    token = cast(str, os.getenv("IONQ_AUTH"))
-    b = IonQBackend(api_key=token, device_name="simulator", label="test 7")
+    b = IonQBackend(device_name="simulator", label="test 7")
     assert b.supports_contextual_optimisation
     c = Circuit(2, 2)
     c.Rx(0.1, 0)

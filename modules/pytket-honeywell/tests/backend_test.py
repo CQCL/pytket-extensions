@@ -235,10 +235,7 @@ def test_classical() -> None:
     assert b.get_counts(c, 10)
 
 
-@pytest.mark.skipif(
-    skip_remote_tests,
-    reason="set environment variable HQS_AUTH to login and use API",
-)
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_postprocess() -> None:
     b = HoneywellBackend("HQS-LT-S1-APIVAL")
     assert b.supports_contextual_optimisation
