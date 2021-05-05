@@ -15,7 +15,7 @@ import json
 import getpass
 import jwt
 import requests
-import websockets
+from websockets import connect, exceptions  # type: ignore
 import nest_asyncio  # type: ignore
 import keyring  # type: ignore
 
@@ -499,7 +499,7 @@ class HoneywellQAPI:
                 task_token = jr["websocket"]["task_token"]
                 execution_arn = jr["websocket"]["executionArn"]
                 websocket_uri = self.url.replace("https://", "wss://ws.")
-                async with websockets.connect(websocket_uri) as websocket:
+                async with connect(websocket_uri) as websocket:
                     body = {
                         "action": "OpenConnection",
                         "task_token": task_token,
@@ -518,7 +518,7 @@ class HoneywellQAPI:
                                 return jr
                         except (
                             asyncio.TimeoutError,
-                            websockets.exceptions.ConnectionClosed,
+                            exceptions.ConnectionClosed,
                         ):
                             try:
                                 # Try to keep the connection alive...

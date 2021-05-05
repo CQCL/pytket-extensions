@@ -13,7 +13,6 @@
 # limitations under the License.
 
 from collections import Counter
-from typing import cast
 import os
 from hypothesis import given, strategies
 import numpy as np
@@ -27,23 +26,17 @@ from pytket.utils.expectations import (
 )
 from pytket.utils.operators import QubitPauliOperator
 
-# To test on AWS backends, first set up auth using boto3, then set the environment
-# variables USE_AWS, S3_BUCKET and S3_FOLDER. See:
+# To test on AWS backends, first set up auth using boto3, then set the S3 bucket and
+# folder in pytket config. See:
 # https://github.com/aws/amazon-braket-sdk-python
 # Otherwise, all tests are run on a local simulator.
-skip_remote_tests: bool = os.getenv("PYTKET_RUN_REMOTE_TESTS") is None or not os.getenv(
-    "USE_AWS"
-)
-if not skip_remote_tests:
-    S3_BUCKET = cast(str, os.getenv("S3_BUCKET"))
-    S3_FOLDER = cast(str, os.getenv("S3_FOLDER"))
+skip_remote_tests: bool = os.getenv("PYTKET_RUN_REMOTE_TESTS") is None
+REASON = "PYTKET_RUN_REMOTE_TESTS not set (requires configuration of AWS storage)"
 
 
-@pytest.mark.skipif(skip_remote_tests, reason="Not running AWS tests")
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_simulator() -> None:
     b = BraketBackend(
-        s3_bucket=S3_BUCKET,
-        s3_folder=S3_FOLDER,
         device_type="quantum-simulator",
         provider="amazon",
         device="sv1",
@@ -74,11 +67,9 @@ def test_simulator() -> None:
     assert readout[1] == readout[2]
 
 
-@pytest.mark.skipif(skip_remote_tests, reason="Not running AWS tests")
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_ionq() -> None:
     b = BraketBackend(
-        s3_bucket=S3_BUCKET,
-        s3_folder=S3_FOLDER,
         device_type="qpu",
         provider="ionq",
         device="ionQdevice",
@@ -125,11 +116,9 @@ def test_ionq() -> None:
     b.cancel(h)
 
 
-@pytest.mark.skipif(skip_remote_tests, reason="Not running AWS tests")
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_rigetti() -> None:
     b = BraketBackend(
-        s3_bucket=S3_BUCKET,
-        s3_folder=S3_FOLDER,
         device_type="qpu",
         provider="rigetti",
         device="Aspen-9",
@@ -165,12 +154,10 @@ def test_rigetti() -> None:
     b.cancel(h)
 
 
-@pytest.mark.skipif(skip_remote_tests, reason="Not running AWS tests")
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_rigetti_with_rerouting() -> None:
     # A circuit that requires rerouting to a non-fully-connected architecture
     b = BraketBackend(
-        s3_bucket=S3_BUCKET,
-        s3_folder=S3_FOLDER,
         device_type="qpu",
         provider="rigetti",
         device="Aspen-9",

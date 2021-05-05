@@ -13,7 +13,6 @@
 # limitations under the License.
 
 from collections import Counter
-from typing import cast
 import os
 from hypothesis import given, strategies
 import numpy as np
@@ -22,19 +21,14 @@ from pytket.circuit import Circuit  # type: ignore
 from pytket.backends import StatusEnum
 from pytket.extensions.aqt import AQTBackend
 
-skip_remote_tests: bool = (
-    os.getenv("PYTKET_RUN_REMOTE_TESTS") is None or os.getenv("AQT_AUTH") is None
-)
+skip_remote_tests: bool = os.getenv("PYTKET_RUN_REMOTE_TESTS") is None
+REASON = "PYTKET_RUN_REMOTE_TESTS not set (requires configuration of AQT access token)"
 
 
-@pytest.mark.skipif(
-    skip_remote_tests,
-    reason="requires environment variable AQT_AUTH to be a valid AQT credential",
-)
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_aqt() -> None:
     # Run a circuit on the noisy simulator.
-    token = cast(str, os.getenv("AQT_AUTH"))
-    b = AQTBackend(device_name="sim/noise-model-1", access_token=token, label="test 1")
+    b = AQTBackend(device_name="sim/noise-model-1", label="test 1")
     c = Circuit(4, 4)
     c.H(0)
     c.CX(0, 1)
@@ -54,14 +48,10 @@ def test_aqt() -> None:
     assert sum(counts.values()) == n_shots
 
 
-@pytest.mark.skipif(
-    skip_remote_tests,
-    reason="requires environment variable AQT_AUTH to be a valid AQT credential",
-)
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_bell() -> None:
     # On the noiseless simulator, we should always get Bell states here.
-    token = cast(str, os.getenv("AQT_AUTH"))
-    b = AQTBackend(device_name="sim", access_token=token, label="test 2")
+    b = AQTBackend(device_name="sim", label="test 2")
     c = Circuit(2, 2)
     c.H(0)
     c.CX(0, 1)
@@ -83,13 +73,9 @@ def test_invalid_cred() -> None:
         assert "Access denied" in str(excinfo.value)
 
 
-@pytest.mark.skipif(
-    skip_remote_tests,
-    reason="requires environment variable AQT_AUTH to be a valid AQT credential",
-)
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_invalid_request() -> None:
-    token = cast(str, os.getenv("AQT_AUTH"))
-    b = AQTBackend(device_name="sim", access_token=token, label="test 4")
+    b = AQTBackend(device_name="sim", label="test 4")
     c = Circuit(2, 2).H(0).CX(0, 1)
     c.measure_all()
     b.compile_circuit(c)
@@ -98,13 +84,9 @@ def test_invalid_request() -> None:
         assert "1000000" in str(excinfo.value)
 
 
-@pytest.mark.skipif(
-    skip_remote_tests,
-    reason="requires environment variable AQT_AUTH to be a valid AQT credential",
-)
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_handles() -> None:
-    token = cast(str, os.getenv("AQT_AUTH"))
-    b = AQTBackend(device_name="sim/noise-model-1", access_token=token, label="test 5")
+    b = AQTBackend(device_name="sim/noise-model-1", label="test 5")
     c = Circuit(2, 2)
     c.H(0)
     c.CX(0, 1)
