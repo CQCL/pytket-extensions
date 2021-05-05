@@ -40,7 +40,7 @@ setup(
     install_requires=[
         "pytket ~= 0.10.1",
         "requests >= 2.2",
-        "websockets >= 7.0, < 9.0",
+        "websockets >= 7.0",
         "nest_asyncio >= 1.2",
         "pyjwt >= 1.7, < 2.0",
         "keyring >= 19.0",
