@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from ast import literal_eval
+import json
 from typing import cast, Dict, Iterable, Optional, List, Tuple, TYPE_CHECKING
 
 from pytket.backends import CircuitNotRunError, ResultHandle
@@ -115,7 +115,7 @@ class IBMQEmulatorBackend(AerBackend):
             else:
                 c0, ppcirc_rep = tkc, None
             qcs.append(tk_to_qiskit(c0))
-            ppcirc_strs.append(str(ppcirc_rep))
+            ppcirc_strs.append(json.dumps(ppcirc_rep))
         qobj = assemble(qcs, shots=n_shots, memory=self._memory, seed_simulator=seed)
         job = self._backend.run(qobj, noise_model=self._noise_model)
         jobid = job.job_id()
@@ -135,7 +135,7 @@ class IBMQEmulatorBackend(AerBackend):
         if handle in self._cache and "result" in self._cache[handle]:
             return cast(BackendResult, self._cache[handle]["result"])
         jobid, index, ppcirc_str = handle
-        ppcirc_rep = literal_eval(ppcirc_str)
+        ppcirc_rep = json.loads(ppcirc_str)
         ppcirc = Circuit.from_dict(ppcirc_rep) if ppcirc_rep is not None else None
         cache_key = (jobid, index)
         if cache_key not in self._ibm_res_cache:

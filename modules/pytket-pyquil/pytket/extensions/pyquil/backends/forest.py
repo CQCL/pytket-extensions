@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from ast import literal_eval
+import json
 from copy import copy
 from typing import cast, Iterable, List, Optional
 from uuid import uuid4
@@ -194,7 +194,7 @@ class ForestBackend(Backend):
             qam.load(ex)
             qam.random_seed = kwargs.get("seed")  # type: ignore
             qam.run()
-            handle = ResultHandle(uuid4().int, str(ppcirc_rep))
+            handle = ResultHandle(uuid4().int, json.dumps(ppcirc_rep))
             measures = circuit.n_gates_of_type(OpType.Measure)
             if measures == 0:
                 self._cache[handle] = {
@@ -230,7 +230,7 @@ class ForestBackend(Backend):
             qam = self._cache[handle]["qam"]
             shots = qam.wait().read_memory(region_name="ro")
             shots = OutcomeArray.from_readouts(shots)
-            ppcirc_rep = literal_eval(cast(str, handle[1]))
+            ppcirc_rep = json.loads(cast(str, handle[1]))
             ppcirc = Circuit.from_dict(ppcirc_rep) if ppcirc_rep is not None else None
             res = BackendResult(
                 shots=shots, c_bits=self._cache[handle]["c_bits"], ppcirc=ppcirc

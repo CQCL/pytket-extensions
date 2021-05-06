@@ -222,7 +222,7 @@ class IonQBackend(Backend):
                     _DEBUG_HANDLE_PREFIX + str(circ.n_qubits),
                     n_shots,
                     measures,
-                    str(ppcirc_rep),
+                    json.dumps(ppcirc_rep),
                 )
                 handles.append(handle)
             else:
@@ -242,7 +242,7 @@ class IonQBackend(Backend):
 
                 # extract job ID from response
                 job_id = resp["id"]
-                handle = ResultHandle(job_id, n_shots, measures, str(ppcirc_rep))
+                handle = ResultHandle(job_id, n_shots, measures, json.dumps(ppcirc_rep))
                 handles.append(handle)
         for handle in handles:
             self._cache[handle] = result
@@ -307,7 +307,7 @@ class IonQBackend(Backend):
                 sum_counts = sum(tket_counts.values())
                 diff = n_shots - sum_counts
                 tket_counts[max_array] += diff
-                ppcirc_rep = literal_eval(cast(str, handle[3]))
+                ppcirc_rep = json.loads(cast(str, handle[3]))
                 ppcirc = (
                     Circuit.from_dict(ppcirc_rep) if ppcirc_rep is not None else None
                 )

@@ -233,7 +233,7 @@ class AQTBackend(Backend):
                     ResultHandle(
                         _DEBUG_HANDLE_PREFIX + str((c.n_qubits, n_shots)),
                         measures,
-                        str(ppcirc_rep),
+                        json.dumps(ppcirc_rep),
                     )
                 )
             else:
@@ -251,7 +251,9 @@ class AQTBackend(Backend):
                     raise RuntimeError(resp["message"])
                 if resp["status"] == "error":
                     raise RuntimeError(resp["ERROR"])
-                handles.append(ResultHandle(resp["id"], measures, str(ppcirc_rep)))
+                handles.append(
+                    ResultHandle(resp["id"], measures, json.dumps(ppcirc_rep))
+                )
         for handle in handles:
             self._cache[handle] = dict()
         return handles
@@ -261,7 +263,7 @@ class AQTBackend(Backend):
         jobid = handle[0]
         message = ""
         measure_permutations = json.loads(handle[1])  # type: ignore
-        ppcirc_rep = literal_eval(cast(str, handle[2]))
+        ppcirc_rep = json.loads(cast(str, handle[2]))
         ppcirc = Circuit.from_dict(ppcirc_rep) if ppcirc_rep is not None else None
         if self._MACHINE_DEBUG:
             n_qubits, n_shots = literal_eval(jobid[len(_DEBUG_HANDLE_PREFIX) :])  # type: ignore

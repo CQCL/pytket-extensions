@@ -291,7 +291,7 @@ class HoneywellBackend(Backend):
                 handle_list.append(
                     ResultHandle(
                         _DEBUG_HANDLE_PREFIX + str((circ.n_qubits, n_shots)),
-                        str(ppcirc_rep),
+                        json.dumps(ppcirc_rep),
                     )
                 )
             else:
@@ -312,7 +312,7 @@ class HoneywellBackend(Backend):
                     )
 
                 # extract job ID from response
-                handle = ResultHandle(jobdict["job"], str(ppcirc_rep))
+                handle = ResultHandle(jobdict["job"], json.dumps(ppcirc_rep))
                 handle_list.append(handle)
                 self._cache[handle] = dict()
 
@@ -352,7 +352,7 @@ class HoneywellBackend(Backend):
     def circuit_status(self, handle: ResultHandle) -> CircuitStatus:
         self._check_handle_type(handle)
         jobid = str(handle[0])
-        ppcirc_rep = literal_eval(cast(str, handle[1]))
+        ppcirc_rep = json.loads(cast(str, handle[1]))
         ppcirc = Circuit.from_dict(ppcirc_rep) if ppcirc_rep is not None else None
         if self._api_handler is None or jobid.startswith(_DEBUG_HANDLE_PREFIX):
             return CircuitStatus(StatusEnum.COMPLETED)
@@ -382,7 +382,7 @@ class HoneywellBackend(Backend):
             return super().get_result(handle)
         except CircuitNotRunError:
             jobid = str(handle[0])
-            ppcirc_rep = literal_eval(cast(str, handle[1]))
+            ppcirc_rep = json.loads(cast(str, handle[1]))
             ppcirc = Circuit.from_dict(ppcirc_rep) if ppcirc_rep is not None else None
 
             if self._MACHINE_DEBUG or jobid.startswith(_DEBUG_HANDLE_PREFIX):

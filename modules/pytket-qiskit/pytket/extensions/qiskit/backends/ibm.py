@@ -15,6 +15,7 @@
 import itertools
 import logging
 from ast import literal_eval
+import json
 from typing import (
     cast,
     Iterable,
@@ -389,7 +390,7 @@ class IBMQBackend(Backend):
                 else:
                     c0, ppcirc_rep = tkc, None
                 qcs.append(tk_to_qiskit(c0))
-                ppcirc_strs.append(str(ppcirc_rep))
+                ppcirc_strs.append(json.dumps(ppcirc_rep))
             qobj = assemble(qcs, shots=n_shots, memory=self._config.memory)
             if self._MACHINE_DEBUG:
                 handle_list += [
@@ -434,7 +435,7 @@ class IBMQBackend(Backend):
         if handle in self._cache:
             return cast(BackendResult, self._cache[handle]["result"])
         jobid, index, ppcirc_str = handle
-        ppcirc_rep = literal_eval(ppcirc_str)
+        ppcirc_rep = json.loads(ppcirc_str)
         ppcirc = Circuit.from_dict(ppcirc_rep) if ppcirc_rep is not None else None
         cache_key = (jobid, index)
         if cache_key not in self._ibm_res_cache:

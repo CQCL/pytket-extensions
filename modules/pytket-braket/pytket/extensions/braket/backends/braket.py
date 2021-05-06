@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from ast import literal_eval
+import json
 from enum import Enum
 import time
 from typing import (
@@ -447,7 +447,7 @@ class BraketBackend(Backend):
 
     @property
     def _result_id_type(self) -> _ResultIdTuple:
-        # (task ID, whether state vector is wanted, serialized ppcirc or "None")
+        # (task ID, whether state vector is wanted, serialized ppcirc or "null")
         return (str, bool, str)
 
     def _run(
@@ -519,9 +519,9 @@ class BraketBackend(Backend):
                 # Task is asynchronous. Must wait for results.
                 results = {}
             if task is not None:
-                handle = ResultHandle(task.id, want_state, str(ppcirc_rep))
+                handle = ResultHandle(task.id, want_state, json.dumps(ppcirc_rep))
             else:
-                handle = ResultHandle(str(uuid4()), False, "None")
+                handle = ResultHandle(str(uuid4()), False, json.dumps(None))
             self._cache[handle] = results
             handles.append(handle)
         return handles
@@ -530,7 +530,7 @@ class BraketBackend(Backend):
         if self._device_type == _DeviceType.LOCAL:
             return CircuitStatus(StatusEnum.COMPLETED)
         task_id, want_state, ppcirc_str = handle
-        ppcirc_rep = literal_eval(ppcirc_str)
+        ppcirc_rep = json.loads(ppcirc_str)
         ppcirc = Circuit.from_dict(ppcirc_rep) if ppcirc_rep is not None else None
         task = AwsQuantumTask(task_id)
         state = task.state()

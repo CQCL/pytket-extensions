@@ -14,6 +14,7 @@
 from collections import Counter
 from typing import cast, Callable, Any  # pylint: disable=unused-import
 from ast import literal_eval
+import json
 import os
 from hypothesis import given, settings, strategies
 import numpy as np
@@ -246,7 +247,7 @@ def test_postprocess() -> None:
     c.measure_all()
     b.compile_circuit(c)
     h = b.process_circuit(c, n_shots=10, postprocess=True)
-    ppcirc = Circuit.from_dict(literal_eval(cast(str, h[1])))
+    ppcirc = Circuit.from_dict(json.loads(cast(str, h[1])))
     ppcmds = ppcirc.get_commands()
     assert len(ppcmds) > 0
     assert all(ppcmd.op.type == OpType.ClassicalTransform for ppcmd in ppcmds)

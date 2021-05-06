@@ -194,7 +194,7 @@ class AzureBackend(_QsharpBaseBackend):
                 ppcirc_rep = ppcirc.to_dict()
             else:
                 c0, ppcirc_rep = c, None
-            ppcirc_str = str(ppcirc_rep)
+            ppcirc_str = json.dumps(ppcirc_rep)
             if self._MACHINE_DEBUG:
                 handles.append(
                     ResultHandle(
@@ -217,7 +217,7 @@ class AzureBackend(_QsharpBaseBackend):
         jobid = cast(str, handle[0])
         message = ""
         n_shots = cast(int, handle[1])
-        ppcirc_rep = literal_eval(cast(str, handle[2]))
+        ppcirc_rep = json.loads(cast(str, handle[2]))
         ppcirc = Circuit.from_dict(ppcirc_rep) if ppcirc_rep is not None else None
         if self._MACHINE_DEBUG:
             n_bits = literal_eval(jobid[len(_DEBUG_HANDLE_PREFIX) :])

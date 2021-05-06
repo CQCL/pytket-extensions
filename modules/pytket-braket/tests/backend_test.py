@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from ast import literal_eval
+import json
 from collections import Counter
 from typing import cast
 import os
@@ -366,7 +366,7 @@ def test_postprocess_ionq() -> None:
     c = Circuit(2).H(0).CX(0, 1).Y(0)
     b.compile_circuit(c)
     h = b.process_circuit(c, n_shots=10, postprocess=True)
-    ppcirc = Circuit.from_dict(literal_eval(cast(str, h[2])))
+    ppcirc = Circuit.from_dict(json.loads(cast(str, h[2])))
     ppcmds = ppcirc.get_commands()
     assert len(ppcmds) > 0
     assert all(ppcmd.op.type == OpType.ClassicalTransform for ppcmd in ppcmds)
