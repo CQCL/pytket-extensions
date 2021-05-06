@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import json
 import os
 import sys
 from collections import Counter
@@ -917,3 +918,35 @@ def test_rebase_phase() -> None:
                 assert _verify_single_q_rebase(backend, a, b, c)
                 assert _verify_single_q_rebase(backend, -a, -b, -c)
                 assert _verify_single_q_rebase(backend, 2 * a, 3 * b, 4 * c)
+
+
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
+def test_postprocess(santiago_backend: IBMQBackend) -> None:
+    b = santiago_backend
+    assert b.supports_contextual_optimisation
+    c = Circuit(2, 2)
+    c.SX(0).SX(1).CX(0, 1).measure_all()
+    b.compile_circuit(c)
+    h = b.process_circuit(c, n_shots=10, postprocess=True)
+    ppcirc = Circuit.from_dict(json.loads(cast(str, h[2])))
+    ppcmds = ppcirc.get_commands()
+    assert len(ppcmds) > 0
+    assert all(ppcmd.op.type == OpType.ClassicalTransform for ppcmd in ppcmds)
+    b.cancel(h)
+
+
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
+def test_postprocess_emu() -> None:
+    b = IBMQEmulatorBackend("ibmq_santiago", hub="ibm-q", group="open", project="main")
+    assert b.supports_contextual_optimisation
+    c = Circuit(2, 2)
+    c.SX(0).SX(1).CX(0, 1).measure_all()
+    b.compile_circuit(c)
+    h = b.process_circuit(c, n_shots=10, postprocess=True)
+    ppcirc = Circuit.from_dict(json.loads(cast(str, h[2])))
+    ppcmds = ppcirc.get_commands()
+    assert len(ppcmds) > 0
+    assert all(ppcmd.op.type == OpType.ClassicalTransform for ppcmd in ppcmds)
+    r = b.get_result(h)
+    shots = r.get_shots()
+    assert len(shots) == 10

@@ -41,6 +41,7 @@ from pytket.passes import (  # type: ignore
     FullPeepholeOptimise,
     DecomposeBoxes,
     DecomposeClassicalExp,
+    SimplifyInitial,
 )
 from pytket.predicates import (  # type: ignore
     GateSetPredicate,
@@ -49,6 +50,7 @@ from pytket.predicates import (  # type: ignore
     NoSymbolsPredicate,
 )
 from pytket.routing import FullyConnected  # type: ignore
+from pytket.utils import prepare_circuit
 from pytket.utils.outcomearray import OutcomeArray
 
 from .config import set_honeywell_config
@@ -93,6 +95,7 @@ class HoneywellBackend(Backend):
 
     _supports_shots = True
     _supports_counts = True
+    _supports_contextual_optimisation = True
     _persistent_handles = True
 
     def __init__(
@@ -223,6 +226,9 @@ class HoneywellBackend(Backend):
                     RebaseHQS(),
                     RemoveRedundancies(),
                     SquashHQS(),
+                    SimplifyInitial(
+                        allow_classical=False, create_all_qubits=True, xcirc=_xcirc
+                    ),
                 ]
             )
         else:
@@ -234,12 +240,15 @@ class HoneywellBackend(Backend):
                     RebaseHQS(),
                     RemoveRedundancies(),
                     SquashHQS(),
+                    SimplifyInitial(
+                        allow_classical=False, create_all_qubits=True, xcirc=_xcirc
+                    ),
                 ]
             )
 
     @property
     def _result_id_type(self) -> _ResultIdTuple:
-        return tuple((str,))
+        return tuple((str, str))
 
     def process_circuits(
         self,
@@ -257,6 +266,9 @@ class HoneywellBackend(Backend):
 
         if valid_check:
             self._check_all_circuits(circuits)
+
+        postprocess = kwargs.get("postprocess", False)
+
         basebody = {
             "machine": self._device_name,
             "language": "OPENQASM 2.0",
@@ -266,13 +278,21 @@ class HoneywellBackend(Backend):
         }
         handle_list = []
         for i, circ in enumerate(circuits):
-            honeywell_circ = circuit_to_qasm_str(circ, header="hqslib1")
+            if postprocess:
+                c0, ppcirc = prepare_circuit(circ, allow_classical=False, xcirc=_xcirc)
+                ppcirc_rep = ppcirc.to_dict()
+            else:
+                c0, ppcirc_rep = circ, None
+            honeywell_circ = circuit_to_qasm_str(c0, header="hqslib1")
             body = basebody.copy()
             body["name"] = circ.name if circ.name else f"{self._label}_{i}"
             body["program"] = honeywell_circ
             if self._api_handler is None:
                 handle_list.append(
-                    ResultHandle(_DEBUG_HANDLE_PREFIX + str((circ.n_qubits, n_shots)))
+                    ResultHandle(
+                        _DEBUG_HANDLE_PREFIX + str((circ.n_qubits, n_shots)),
+                        json.dumps(ppcirc_rep),
+                    )
                 )
             else:
                 try:
@@ -292,7 +312,7 @@ class HoneywellBackend(Backend):
                     )
 
                 # extract job ID from response
-                handle = ResultHandle(jobdict["job"])
+                handle = ResultHandle(jobdict["job"], json.dumps(ppcirc_rep))
                 handle_list.append(handle)
                 self._cache[handle] = dict()
 
@@ -346,7 +366,13 @@ class HoneywellBackend(Backend):
         circ_status = _parse_status(response)
         if circ_status.status is StatusEnum.COMPLETED:
             if "results" in response:
-                self._update_cache_result(handle, _convert_result(response["results"]))
+                ppcirc_rep = json.loads(cast(str, handle[1]))
+                ppcirc = (
+                    Circuit.from_dict(ppcirc_rep) if ppcirc_rep is not None else None
+                )
+                self._update_cache_result(
+                    handle, _convert_result(response["results"], ppcirc)
+                )
         return circ_status
 
     def get_result(self, handle: ResultHandle, **kwargs: KwargTypes) -> BackendResult:
@@ -358,11 +384,13 @@ class HoneywellBackend(Backend):
             return super().get_result(handle)
         except CircuitNotRunError:
             jobid = str(handle[0])
+            ppcirc_rep = json.loads(cast(str, handle[1]))
+            ppcirc = Circuit.from_dict(ppcirc_rep) if ppcirc_rep is not None else None
 
             if self._MACHINE_DEBUG or jobid.startswith(_DEBUG_HANDLE_PREFIX):
                 debug_handle_info = jobid[len(_DEBUG_HANDLE_PREFIX) :]
                 n_qubits, shots = literal_eval(debug_handle_info)
-                return _convert_result({"c": (["0" * n_qubits] * shots)})
+                return _convert_result({"c": (["0" * n_qubits] * shots)}, ppcirc)
             # TODO exception handling when jobid not found on backend
             timeout = kwargs.get("timeout")
             if timeout is not None:
@@ -382,7 +410,7 @@ class HoneywellBackend(Backend):
             except KeyError:
                 raise RuntimeError("Results missing.")
 
-            backres = _convert_result(res)
+            backres = _convert_result(res, ppcirc)
             self._update_cache_result(handle, backres)
             return backres
 
@@ -456,7 +484,13 @@ class HoneywellBackend(Backend):
             raise ValueError(f"No credentials stored for {user_name}")
 
 
-def _convert_result(resultdict: Dict[str, List[str]]) -> BackendResult:
+_xcirc = Circuit(1).add_gate(OpType.PhasedX, [1, 0], [0])
+_xcirc.add_phase(0.5)
+
+
+def _convert_result(
+    resultdict: Dict[str, List[str]], ppcirc: Optional[Circuit] = None
+) -> BackendResult:
     array_dict = {
         creg: np.array([list(a) for a in reslist]).astype(np.uint8)
         for creg, reslist in resultdict.items()
@@ -472,6 +506,7 @@ def _convert_result(resultdict: Dict[str, List[str]]) -> BackendResult:
     return BackendResult(
         c_bits=c_bits,
         shots=OutcomeArray.from_readouts(cast(Sequence[Sequence[int]], stacked_array)),
+        ppcirc=ppcirc,
     )
 
 

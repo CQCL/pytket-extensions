@@ -28,6 +28,8 @@ from pytket.backends.backend_exceptions import CircuitNotRunError
 from pytket.backends.resulthandle import ResultHandle, _ResultIdTuple
 from pytket.backends.status import StatusEnum
 from pytket.circuit import Circuit  # type: ignore
+from pytket.passes import BasePass, SequencePass, SimplifyInitial  # type: ignore
+from pytket.utils import prepare_circuit
 from pytket.utils.outcomearray import OutcomeArray
 
 from pytket.extensions.qsharp.backends.config import QSharpConfig
@@ -68,6 +70,7 @@ class AzureBackend(_QsharpBaseBackend):
     """
 
     _supports_counts = True
+    _supports_contextual_optimisation = True
 
     def __init__(
         self,
@@ -149,9 +152,21 @@ class AzureBackend(_QsharpBaseBackend):
                     f" not available at resource {config.resourceId}."
                 )
 
+    def default_compilation_pass(self, optimisation_level: int = 1) -> BasePass:
+        comp_pass = super().default_compilation_pass(optimisation_level)
+        if optimisation_level == 0:
+            return comp_pass
+        else:
+            return SequencePass(
+                [
+                    comp_pass,
+                    SimplifyInitial(allow_classical=False, create_all_qubits=True),
+                ]
+            )
+
     @property
     def _result_id_type(self) -> _ResultIdTuple:
-        return (str, int)
+        return (str, int, str)
 
     def process_circuits(
         self,
@@ -162,25 +177,36 @@ class AzureBackend(_QsharpBaseBackend):
     ) -> List[ResultHandle]:
         """
         See :py:meth:`pytket.backends.Backend.process_circuits`.
-        Supported kwargs: none.
+        Supported kwargs: `postprocess`.
         """
         if n_shots is None or n_shots < 1:
             raise ValueError("Parameter n_shots is required for this backend")
 
         if valid_check:
             self._check_all_circuits(circuits, nomeasure_warn=True)
+
+        postprocess = kwargs.get("postprocess", False)
+
         handles = []
         for c in circuits:
+            if postprocess:
+                c0, ppcirc = prepare_circuit(c, allow_classical=False)
+                ppcirc_rep = ppcirc.to_dict()
+            else:
+                c0, ppcirc_rep = c, None
+            ppcirc_str = json.dumps(ppcirc_rep)
             if self._MACHINE_DEBUG:
                 handles.append(
-                    ResultHandle(_DEBUG_HANDLE_PREFIX + str(len(c.bits)), n_shots)
+                    ResultHandle(
+                        _DEBUG_HANDLE_PREFIX + str(len(c.bits)), n_shots, ppcirc_str
+                    )
                 )
             else:
-                qs = tk_to_qsharp(c, sim=False)
+                qs = tk_to_qsharp(c0, sim=False)
                 qc = cast("QSharpCallable", qscompile(qs))
                 qsharp.azure.target(self.target.id)
                 job = qsharp.azure.submit(qc, jobName=c.name, shots=n_shots)
-                handle = ResultHandle(job.id, n_shots)
+                handle = ResultHandle(job.id, n_shots, ppcirc_str)
                 handles.append(handle)
         for handle in handles:
             self._cache[handle] = dict()
@@ -191,6 +217,8 @@ class AzureBackend(_QsharpBaseBackend):
         jobid = cast(str, handle[0])
         message = ""
         n_shots = cast(int, handle[1])
+        ppcirc_rep = json.loads(cast(str, handle[2]))
+        ppcirc = Circuit.from_dict(ppcirc_rep) if ppcirc_rep is not None else None
         if self._MACHINE_DEBUG:
             n_bits = literal_eval(jobid[len(_DEBUG_HANDLE_PREFIX) :])
             empty_ar = OutcomeArray.from_ints([0] * n_shots, n_bits, big_endian=True)
@@ -203,7 +231,9 @@ class AzureBackend(_QsharpBaseBackend):
             message = repr(job)
             if statenum is StatusEnum.COMPLETED:
                 output = qsharp.azure.output(jobid)
-                self._cache[handle].update({"result": _convert_result(output, n_shots)})
+                self._cache[handle].update(
+                    {"result": _convert_result(output, n_shots, ppcirc=ppcirc)}
+                )
         return CircuitStatus(statenum, message)
 
     def get_result(self, handle: ResultHandle, **kwargs: KwargTypes) -> BackendResult:
@@ -228,7 +258,9 @@ class AzureBackend(_QsharpBaseBackend):
             raise RuntimeError(f"Timed out: no results after {timeout} seconds.")
 
 
-def _convert_result(output: Dict[str, float], n_shots: int) -> BackendResult:
+def _convert_result(
+    output: Dict[str, float], n_shots: int, ppcirc: Optional[Circuit] = None
+) -> BackendResult:
     counts = Counter(
         {
             OutcomeArray.from_readouts([json.loads(state)]): int(prob * n_shots)
@@ -236,4 +268,4 @@ def _convert_result(output: Dict[str, float], n_shots: int) -> BackendResult:
         }
     )
 
-    return BackendResult(counts=counts)
+    return BackendResult(counts=counts, ppcirc=ppcirc)

@@ -31,6 +31,8 @@ def tk_to_braket(tkcirc: Circuit, allqbs: Optional[Iterable[int]] = None) -> BK_
     This is to work around a quirk in braket where circuits whose qubit set contains
     gaps are rejected.
 
+    Any Measure gates present in the circuit are ignored.
+
     :param tkcirc: circuit to be converted
     :param allqbs: all qubits on braket device (superset of indices of tkcirc qubits)
 
@@ -103,6 +105,10 @@ def tk_to_braket(tkcirc: Circuit, allqbs: Optional[Iterable[int]] = None) -> BK_
             bkcirc.z(*qbs)
         elif optype == OpType.ZZPhase:
             bkcirc.zz(*qbs, params[0] * pi)
+        elif optype == OpType.Measure:
+            # Not wanted by braket, but may have been introduced by contextual
+            # optimization: ignore.
+            pass
         else:
             raise NotImplementedError(f"Cannot convert {op.get_name()} to braket")
     return bkcirc

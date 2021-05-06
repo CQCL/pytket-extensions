@@ -131,6 +131,21 @@ def test_default_pass() -> None:
             assert pred.verify(c)
 
 
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
+def test_postprocess() -> None:
+    b = AQTBackend(device_name="sim", label="test 7")
+    assert b.supports_contextual_optimisation
+    c = Circuit(2, 2)
+    c.H(0)
+    c.CX(0, 1)
+    c.measure_all()
+    b.compile_circuit(c)
+    h = b.process_circuit(c, n_shots=100, postprocess=True)
+    r = b.get_result(h)
+    shots = r.get_shots()
+    assert all(shot[0] == shot[1] for shot in shots)
+
+
 @given(
     n_shots=strategies.integers(min_value=1, max_value=10),  # type: ignore
     n_bits=strategies.integers(min_value=0, max_value=10),

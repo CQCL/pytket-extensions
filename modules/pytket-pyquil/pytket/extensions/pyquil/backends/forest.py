@@ -12,8 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 from copy import copy
-from typing import Iterable, List, Optional
+from typing import cast, Iterable, List, Optional
 from uuid import uuid4
 from logging import warning
 
@@ -47,6 +48,7 @@ from pytket.passes import (  # type: ignore
     FullPeepholeOptimise,
     CliffordSimp,
     FlattenRegisters,
+    SimplifyInitial,
 )
 from pytket.pauli import QubitPauliString  # type: ignore
 from pytket.predicates import (  # type: ignore
@@ -64,6 +66,7 @@ from pytket.extensions.pyquil.pyquil_convert import (
     tk_to_pyquil,
 )
 from pytket.routing import NoiseAwarePlacement, Architecture  # type: ignore
+from pytket.utils import prepare_circuit
 from pytket.utils.operators import QubitPauliOperator
 from pytket.utils.outcomearray import OutcomeArray
 
@@ -84,6 +87,7 @@ def _default_q_index(q: Qubit) -> int:
 class ForestBackend(Backend):
     _supports_shots = True
     _supports_counts = True
+    _supports_contextual_optimisation = True
     _persistent_handles = True
 
     def __init__(self, qc_name: str, simulator: bool = True):
@@ -142,12 +146,19 @@ class ForestBackend(Backend):
             passlist.append(SynthesiseIBM())
         passlist.append(RebaseQuil())
         if optimisation_level > 0:
-            passlist.append(EulerAngleReduction(OpType.Rx, OpType.Rz))
+            passlist.extend(
+                [
+                    EulerAngleReduction(OpType.Rx, OpType.Rz),
+                    SimplifyInitial(
+                        allow_classical=False, create_all_qubits=True, xcirc=_xcirc
+                    ),
+                ]
+            )
         return SequencePass(passlist)
 
     @property
     def _result_id_type(self) -> _ResultIdTuple:
-        return (int,)
+        return (int, str)
 
     def process_circuits(
         self,
@@ -166,16 +177,24 @@ class ForestBackend(Backend):
             )
         if valid_check:
             self._check_all_circuits(circuits)
+
+        postprocess = kwargs.get("postprocess", False)
+
         handle_list = []
         for circuit in circuits:
-            p, bits = tk_to_pyquil(circuit, return_used_bits=True)
+            if postprocess:
+                c0, ppcirc = prepare_circuit(circuit, allow_classical=False)
+                ppcirc_rep = ppcirc.to_dict()
+            else:
+                c0, ppcirc_rep = circuit, None
+            p, bits = tk_to_pyquil(c0, return_used_bits=True)
             p.wrap_in_numshots_loop(n_shots)
             ex = self._qc.compiler.native_quil_to_executable(p)
             qam = copy(self._qc.qam)
             qam.load(ex)
             qam.random_seed = kwargs.get("seed")  # type: ignore
             qam.run()
-            handle = ResultHandle(uuid4().int)
+            handle = ResultHandle(uuid4().int, json.dumps(ppcirc_rep))
             measures = circuit.n_gates_of_type(OpType.Measure)
             if measures == 0:
                 self._cache[handle] = {
@@ -211,7 +230,11 @@ class ForestBackend(Backend):
             qam = self._cache[handle]["qam"]
             shots = qam.wait().read_memory(region_name="ro")
             shots = OutcomeArray.from_readouts(shots)
-            res = BackendResult(shots=shots, c_bits=self._cache[handle]["c_bits"])
+            ppcirc_rep = json.loads(cast(str, handle[1]))
+            ppcirc = Circuit.from_dict(ppcirc_rep) if ppcirc_rep is not None else None
+            res = BackendResult(
+                shots=shots, c_bits=self._cache[handle]["c_bits"], ppcirc=ppcirc
+            )
             self._cache[handle].update({"result": res})
             return res
 
@@ -368,3 +391,7 @@ class ForestStateBackend(Backend):
             [self._gen_PauliTerm(term, coeff) for term, coeff in operator._dict.items()]
         )
         return complex(self._sim.expectation(prog, pauli_sum))
+
+
+_xcirc = Circuit(1).Rx(1, 0)
+_xcirc.add_phase(0.5)

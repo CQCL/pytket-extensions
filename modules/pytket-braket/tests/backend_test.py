@@ -12,7 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 from collections import Counter
+from typing import cast
 import os
 from hypothesis import given, strategies
 import numpy as np
@@ -335,3 +337,37 @@ def test_shots_bits_edgecases(n_shots, n_bits) -> None:
     assert np.array_equal(braket_backend.get_shots(c, n_shots), correct_shots)
     assert braket_backend.get_shots(c, n_shots).shape == correct_shape
     assert braket_backend.get_counts(c, n_shots) == correct_counts
+
+
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
+def test_postprocess_sim() -> None:
+    b = BraketBackend(
+        device_type="quantum-simulator",
+        provider="amazon",
+        device="sv1",
+    )
+    assert b.supports_contextual_optimisation
+    c = Circuit(2).H(0).CX(0, 1).Y(0)
+    b.compile_circuit(c)
+    h = b.process_circuit(c, n_shots=10, postprocess=True)
+    r = b.get_result(h)
+    shots = r.get_shots()
+    assert all(shot[0] != shot[1] for shot in shots)
+
+
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
+def test_postprocess_ionq() -> None:
+    b = BraketBackend(
+        device_type="qpu",
+        provider="ionq",
+        device="ionQdevice",
+    )
+    assert b.supports_contextual_optimisation
+    c = Circuit(2).H(0).CX(0, 1).Y(0)
+    b.compile_circuit(c)
+    h = b.process_circuit(c, n_shots=10, postprocess=True)
+    ppcirc = Circuit.from_dict(json.loads(cast(str, h[2])))
+    ppcmds = ppcirc.get_commands()
+    assert len(ppcmds) > 0
+    assert all(ppcmd.op.type == OpType.ClassicalTransform for ppcmd in ppcmds)
+    b.cancel(h)

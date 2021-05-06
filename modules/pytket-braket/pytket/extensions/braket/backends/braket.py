@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 from enum import Enum
 import time
 from typing import (
@@ -43,6 +44,7 @@ from pytket.passes import (  # type: ignore
     CliffordSimp,
     SquashCustom,
     DecomposeBoxes,
+    SimplifyInitial,
 )
 from pytket.pauli import Pauli, QubitPauliString  # type: ignore
 from pytket.predicates import (  # type: ignore
@@ -56,6 +58,7 @@ from pytket.predicates import (  # type: ignore
     Predicate,
 )
 from pytket.routing import Architecture, FullyConnected, NoiseAwarePlacement  # type: ignore
+from pytket.utils import prepare_circuit
 from pytket.utils.operators import QubitPauliOperator
 from pytket.utils.outcomearray import OutcomeArray
 import braket  # type: ignore
@@ -160,14 +163,18 @@ def _obs_from_qpo(operator: QubitPauliOperator, n_qubits: int) -> Observable:
 
 
 def _get_result(
-    completed_task: Union[AwsQuantumTask, LocalQuantumTask], want_state: bool
+    completed_task: Union[AwsQuantumTask, LocalQuantumTask],
+    want_state: bool,
+    ppcirc: Optional[Circuit] = None,
 ) -> Dict[str, BackendResult]:
     result = completed_task.result()
     kwargs = {}
     if want_state:
         kwargs["state"] = result.get_value_by_result_type(ResultType.StateVector())
+        assert ppcirc is None
     else:
         kwargs["shots"] = OutcomeArray.from_readouts(result.measurements)
+        kwargs["ppcirc"] = ppcirc
     return {"result": BackendResult(**kwargs)}
 
 
@@ -305,6 +312,7 @@ class BraketBackend(Backend):
             elif rtname == "Sample":
                 self._supports_shots = True
                 self._supports_counts = True
+                self._supports_contextual_optimisation = True
                 self._sample_min_shots = rtminshots
                 self._sample_max_shots = rtmaxshots
             elif rtname == "Variance":
@@ -313,12 +321,12 @@ class BraketBackend(Backend):
 
         self._multiqs = set()
         self._singleqs = set()
-        if not {"cnot", "rx", "rz"} <= supported_ops:
+        if not {"cnot", "rx", "rz", "x"} <= supported_ops:
             # This is so that we can define RebaseCustom without prior knowledge of the
-            # gate set. We could do better than this, by having a few different options
-            # for the CX- and tk1-replacement circuits. But it seems all existing
-            # backends support these gates.
-            raise NotImplementedError("Device must support cnot, rx and rz gates.")
+            # gate set, and use X as the bit-flip gate in contextual optimization. We
+            # could do better than this, by defining different options depending on the
+            # supported gates. But it seems all existing backends support these gates.
+            raise NotImplementedError("Device must support cnot, rx, rz and x gates.")
         for t in supported_ops:
             tkt = _gate_types[t]
             if tkt is not None:
@@ -431,12 +439,16 @@ class BraketBackend(Backend):
                     self._squash_pass,
                 ]
             )
+        if self.supports_contextual_optimisation and optimisation_level > 0:
+            passes.append(
+                SimplifyInitial(allow_classical=False, create_all_qubits=True)
+            )
         return SequencePass(passes)
 
     @property
     def _result_id_type(self) -> _ResultIdTuple:
-        # (task ID, whether state vector is wanted)
-        return (str, bool)
+        # (task ID, whether state vector is wanted, serialized ppcirc or "null")
+        return (str, bool, str)
 
     def _run(
         self, bkcirc: braket.circuits.Circuit, n_shots: int = 0, **kwargs: KwargTypes
@@ -477,9 +489,19 @@ class BraketBackend(Backend):
             )
         if valid_check:
             self._check_all_circuits(circuits, nomeasure_warn=False)
+
+        postprocess = kwargs.get("postprocess", False)
+
         handles = []
         for circ in circuits:
-            bkcirc = self._to_bkcirc(circ)
+            if postprocess:
+                circ_measured = circ.copy()
+                circ_measured.measure_all()
+                c0, ppcirc = prepare_circuit(circ_measured, allow_classical=False)
+                ppcirc_rep = ppcirc.to_dict()
+            else:
+                c0, ppcirc, ppcirc_rep = circ, None, None
+            bkcirc = self._to_bkcirc(c0)
             if want_state:
                 bkcirc.add_result_type(ResultType.StateVector())
             if not bkcirc.instructions and len(circ.bits) == 0:
@@ -490,16 +512,16 @@ class BraketBackend(Backend):
                 # Results are available now. Put them in the cache.
                 if task is not None:
                     assert task.state() == "COMPLETED"
-                    results = _get_result(task, want_state)
+                    results = _get_result(task, want_state, ppcirc)
                 else:
                     results = {"result": self.empty_result(circ, n_shots=n_shots)}
             else:
                 # Task is asynchronous. Must wait for results.
                 results = {}
             if task is not None:
-                handle = ResultHandle(task.id, want_state)
+                handle = ResultHandle(task.id, want_state, json.dumps(ppcirc_rep))
             else:
-                handle = ResultHandle(str(uuid4()), False)
+                handle = ResultHandle(str(uuid4()), False, json.dumps(None))
             self._cache[handle] = results
             handles.append(handle)
         return handles
@@ -507,7 +529,9 @@ class BraketBackend(Backend):
     def circuit_status(self, handle: ResultHandle) -> CircuitStatus:
         if self._device_type == _DeviceType.LOCAL:
             return CircuitStatus(StatusEnum.COMPLETED)
-        task_id, want_state = handle
+        task_id, want_state, ppcirc_str = handle
+        ppcirc_rep = json.loads(ppcirc_str)
+        ppcirc = Circuit.from_dict(ppcirc_rep) if ppcirc_rep is not None else None
         task = AwsQuantumTask(task_id)
         state = task.state()
         if state == "FAILED":
@@ -516,7 +540,7 @@ class BraketBackend(Backend):
         elif state == "CANCELLED":
             return CircuitStatus(StatusEnum.CANCELLED)
         elif state == "COMPLETED":
-            self._cache[handle].update(_get_result(task, want_state))
+            self._cache[handle].update(_get_result(task, want_state, ppcirc))
             return CircuitStatus(StatusEnum.COMPLETED)
         elif state == "QUEUED" or state == "CREATED":
             return CircuitStatus(StatusEnum.QUEUED)
