@@ -435,9 +435,9 @@ class IBMQBackend(Backend):
         """
         self._check_handle_type(handle)
         if handle in self._cache:
-            res = self._cache[handle]
-            if "result" in res:
-                return cast(BackendResult, res["result"])
+            cached_result = self._cache[handle]
+            if "result" in cached_result:
+                return cast(BackendResult, cached_result["result"])
         jobid, index, ppcirc_str = handle
         ppcirc_rep = json.loads(ppcirc_str)
         ppcirc = Circuit.from_dict(ppcirc_rep) if ppcirc_rep is not None else None
