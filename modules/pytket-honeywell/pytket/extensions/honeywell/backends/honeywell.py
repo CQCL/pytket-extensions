@@ -352,7 +352,6 @@ class HoneywellBackend(Backend):
     def circuit_status(self, handle: ResultHandle) -> CircuitStatus:
         self._check_handle_type(handle)
         jobid = str(handle[0])
-        ppcirc_rep = json.loads(cast(str, handle[1]))
         if self._api_handler is None or jobid.startswith(_DEBUG_HANDLE_PREFIX):
             return CircuitStatus(StatusEnum.COMPLETED)
         # TODO check queue position and add to message
@@ -367,6 +366,7 @@ class HoneywellBackend(Backend):
         circ_status = _parse_status(response)
         if circ_status.status is StatusEnum.COMPLETED:
             if "results" in response:
+                ppcirc_rep = json.loads(cast(str, handle[1]))
                 ppcirc = (
                     Circuit.from_dict(ppcirc_rep) if ppcirc_rep is not None else None
                 )
