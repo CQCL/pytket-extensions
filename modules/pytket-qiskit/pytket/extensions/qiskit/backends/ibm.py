@@ -408,6 +408,8 @@ class IBMQBackend(Backend):
                     ResultHandle(jobid, i, ppcirc_strs[i])
                     for i in range(len(filtchunk))
                 ]
+                for handle in handle_list:
+                    self._cache[handle] = dict()
         return handle_list
 
     def _retrieve_job(self, jobid: str) -> IBMQJob:
@@ -433,7 +435,9 @@ class IBMQBackend(Backend):
         """
         self._check_handle_type(handle)
         if handle in self._cache:
-            return cast(BackendResult, self._cache[handle]["result"])
+            res = self._cache[handle]
+            if "result" in res:
+                return cast(BackendResult, res["result"])
         jobid, index, ppcirc_str = handle
         ppcirc_rep = json.loads(ppcirc_str)
         ppcirc = Circuit.from_dict(ppcirc_rep) if ppcirc_rep is not None else None
