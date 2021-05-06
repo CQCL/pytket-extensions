@@ -35,7 +35,6 @@ from pytket.passes import (  # type: ignore
     FlattenRegisters,
     RebaseCustom,
     EulerAngleReduction,
-    RemoveRedundancies,
     DecomposeBoxes,
     RenameQubitsPass,
     SimplifyInitial,
@@ -177,11 +176,10 @@ class AQTBackend(Backend):
                     FlattenRegisters(),
                     RenameQubitsPass(self._qm),
                     _aqt_rebase(),
-                    RemoveRedundancies(),
-                    EulerAngleReduction(OpType.Ry, OpType.Rx),
                     SimplifyInitial(
                         allow_classical=False, create_all_qubits=True, xcirc=_xcirc
                     ),
+                    EulerAngleReduction(OpType.Ry, OpType.Rx),
                 ]
             )
         else:
@@ -192,11 +190,10 @@ class AQTBackend(Backend):
                     FlattenRegisters(),
                     RenameQubitsPass(self._qm),
                     _aqt_rebase(),
-                    RemoveRedundancies(),
-                    EulerAngleReduction(OpType.Ry, OpType.Rx),
                     SimplifyInitial(
                         allow_classical=False, create_all_qubits=True, xcirc=_xcirc
                     ),
+                    EulerAngleReduction(OpType.Ry, OpType.Rx),
                 ]
             )
 
