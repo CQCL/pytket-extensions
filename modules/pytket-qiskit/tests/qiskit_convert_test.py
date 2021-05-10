@@ -77,7 +77,7 @@ def get_test_circuit(measure: bool, reset: bool = True) -> QuantumCircuit:
     qc.crz(pi / 4, qr[1], qr[2])
     qc.cswap(qr[1], qr[2], qr[3])
     qc.cp(pi / 5, qr[2], qr[3])
-    qc.cu3(pi / 4, pi / 5, pi / 6, qr[3], qr[0])
+    qc.cu(pi / 4, pi / 5, pi / 6, 0, qr[3], qr[0])
     qc.cy(qr[0], qr[1])
     qc.cz(qr[1], qr[2])
     qc.i(qr[2])

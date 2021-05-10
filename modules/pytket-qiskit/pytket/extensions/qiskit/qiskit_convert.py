@@ -101,6 +101,7 @@ _qiskit_gates_2q = {
     qiskit_gates.CHGate: OpType.CH,
     qiskit_gates.CPhaseGate: OpType.CU1,
     qiskit_gates.CRZGate: OpType.CRz,
+    qiskit_gates.CUGate: OpType.CU3,
     qiskit_gates.CU1Gate: OpType.CU1,
     qiskit_gates.CU3Gate: OpType.CU3,
     qiskit_gates.CXGate: OpType.CX,
@@ -112,8 +113,6 @@ _qiskit_gates_2q = {
     qiskit_gates.RZZGate: OpType.ZZPhase,
     qiskit_gates.SwapGate: OpType.SWAP,
 }
-# Not included in the above list:
-# qiskit_gates.CUGate != OpType.CU3 : CUGate has an extra phase parameter
 
 _qiskit_gates_other = {
     # Exact equivalents (same signature except for factor of pi in each parameter):
@@ -240,7 +239,6 @@ class CircuitBuilder:
                     )
             else:
                 optype = _known_qiskit_gate[type(i)]
-
             qubits = [self.qregmap[qbit.register][qbit.index] for qbit in qargs]
             bits = [self.cregmap[bit.register][bit.index] for bit in cargs]
 
@@ -271,6 +269,16 @@ class CircuitBuilder:
                         i.name, subc, list(subc.free_symbols())
                     )
                     self.tkc.add_custom_gate(gate_def, params, qubits + bits)
+            elif optype == OpType.CU3 and type(i) == qiskit_gates.CUGate:
+                if i.params[-1] == 0:
+                    self.tkc.add_gate(
+                        optype,
+                        [param_to_tk(p) for p in i.params[:-1]],
+                        qubits,
+                        **condition_kwargs,
+                    )
+                else:
+                    raise NotImplementedError("CUGate with nonzero phase")
             else:
                 params = [param_to_tk(p) for p in i.params]
                 self.tkc.add_gate(optype, params, qubits + bits, **condition_kwargs)
@@ -426,6 +434,11 @@ def append_tk_command_to_qiskit(
             )
         qcirc.append(new_gate, qargs)
         return qcirc
+
+    if optype == OpType.CU3:
+        params = [param_to_qiskit(p, symb_map) for p in op.params] + [0]
+        params.append(0)
+        return qcirc.append(qiskit_gates.CUGate(*params), qargs=qargs)
 
     # others are direct translations
     try:
