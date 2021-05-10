@@ -1,0 +1,8 @@
+Changelog
+~~~~~~~~~
+
+0.6.0 (May 2021)
+----------------
+
+* Contextual optimisation added to default compilation passes (except at optimisation level 0).
+
