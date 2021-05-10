@@ -447,9 +447,7 @@ class AerBackend(_AerBaseBackend):
         Supported kwargs: `seed`.
         """
         if n_shots is None or n_shots < 1:
-            raise ValueError(
-                "Parameter n_shots is required for this backend for this backend."
-            )
+            raise ValueError("Parameter n_shots is required for this backend.")
         return super().process_circuits(circuits, n_shots, valid_check, **kwargs)
 
     def get_pauli_expectation_value(
