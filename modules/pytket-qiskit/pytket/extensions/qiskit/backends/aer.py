@@ -18,7 +18,6 @@ from logging import warning
 from typing import Dict, Iterable, List, Optional, Tuple, cast, TYPE_CHECKING, Set
 
 import numpy as np
-import qiskit.providers.aer.extensions.snapshot_expectation_value  # type: ignore # pylint: disable=unused-import
 from pytket.backends import Backend, CircuitNotRunError, CircuitStatus, ResultHandle
 from pytket.backends.backendresult import BackendResult
 from pytket.backends.resulthandle import _ResultIdTuple
@@ -56,6 +55,8 @@ from pytket.utils.operators import QubitPauliOperator
 from pytket.utils.results import KwargTypes, permute_basis_indexing
 from qiskit import Aer
 from qiskit.compiler import assemble  # type: ignore
+from qiskit.opflow.primitive_ops import PauliSumOp
+from qiskit.providers.aer.library import save_expectation_value
 from qiskit.providers.aer.noise import NoiseModel  # type: ignore
 from qiskit.quantum_info.operators import Pauli as qk_Pauli  # type: ignore
 
@@ -193,12 +194,13 @@ class _AerBaseBackend(Backend):
                 + f" onwards. Circuit qubits were: {circ_qbs}"
             )
         qc = tk_to_qiskit(circuit)
-        qc.snapshot_expectation_value("snap", hamiltonian, qc.qubits)
+        pso = PauliSumOp.from_list([(p.to_label(), z) for z, p in hamiltonian])
+        qc.save_expectation_value(pso, qc.qubits, "snap")
         qobj = assemble(qc)
         job = self._backend.run(qobj)
         return cast(
             complex,
-            job.result().data(qc)["snapshots"]["expectation_value"]["snap"][0]["value"],
+            job.result().data(qc)["snap"],
         )
 
     def get_pauli_expectation_value(
