@@ -209,10 +209,8 @@ class CircuitBuilder:
         self.cbmap = {}
         self.tkc = Circuit(name=name)
         self.tkc.add_phase(phase)
-        self.qregmap = {}
         for reg in qregs:
             tk_reg = self.tkc.add_q_register(reg.name, len(reg))
-            self.qregmap.update({reg: tk_reg})
             for i, qb in enumerate(reg):
                 self.qbmap[qb] = Qubit(reg.name, i)
         self.cregmap = {}
