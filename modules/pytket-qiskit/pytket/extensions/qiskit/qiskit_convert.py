@@ -59,6 +59,7 @@ from pytket.circuit import (  # type: ignore
     UnitType,
     CustomGateDef,
     Bit,
+    Qubit,
 )
 from pytket._tket.circuit import _TEMP_BIT_NAME  # type: ignore
 from pytket.device import QubitErrorContainer  # type: ignore
@@ -204,16 +205,22 @@ class CircuitBuilder:
     ):
         self.qregs = qregs
         self.cregs = [] if cregs is None else cregs
+        self.qbmap = {}
+        self.cbmap = {}
         self.tkc = Circuit(name=name)
         self.tkc.add_phase(phase)
         self.qregmap = {}
         for reg in qregs:
             tk_reg = self.tkc.add_q_register(reg.name, len(reg))
             self.qregmap.update({reg: tk_reg})
+            for i, qb in enumerate(reg):
+                self.qbmap[qb] = Qubit(reg.name, i)
         self.cregmap = {}
         for reg in self.cregs:
             tk_reg = self.tkc.add_c_register(reg.name, len(reg))
             self.cregmap.update({reg: tk_reg})
+            for i, cb in enumerate(reg):
+                self.cbmap[cb] = Bit(reg.name, i)
 
     def circuit(self) -> Circuit:
         return self.tkc
@@ -239,8 +246,8 @@ class CircuitBuilder:
                     )
             else:
                 optype = _known_qiskit_gate[type(i)]
-            qubits = [self.qregmap[qbit.register][qbit.index] for qbit in qargs]
-            bits = [self.cregmap[bit.register][bit.index] for bit in cargs]
+            qubits = [self.qbmap[qbit] for qbit in qargs]
+            bits = [self.cbmap[bit] for bit in cargs]
 
             if optype == OpType.Unitary2qBox:
                 u = i.to_matrix()
