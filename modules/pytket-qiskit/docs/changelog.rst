@@ -5,6 +5,8 @@ Changelog
 -----------------
 
 * Qiskit version updated to 0.26.
+* Code rewrites to avoid use of deprecated qiskit methods.
+* Restriction to hermitian operators for expectation values in `AerBackend`.
 
 0.11.0 (May 2021)
 -----------------
