@@ -90,6 +90,7 @@ class _AerBaseBackend(Backend):
 
     def __init__(self, backend_name: str):
         super().__init__()
+        self._backend_name = backend_name
         self._backend: "QiskitAerBackend" = Aer.get_backend(backend_name)
         self._gate_set: Set[OpType] = {
             _gate_str_2_optype[gate_str]
@@ -137,6 +138,9 @@ class _AerBaseBackend(Backend):
             self._check_all_circuits(circuit_list)
 
         qcs = [tk_to_qiskit(tkc) for tkc in circuit_list]
+        if self._backend_name == "aer_simulator_statevector":
+            for qc in qcs:
+                qc.save_state()
         seed = cast(Optional[int], kwargs.get("seed"))
         job = self._backend.run(
             qcs,
@@ -528,7 +532,7 @@ class AerStateBackend(_AerStateBaseBackend):
 
     def __init__(self) -> None:
         """Backend for running simulations on the Qiskit Aer Statevector simulator."""
-        super().__init__("statevector_simulator")
+        super().__init__("aer_simulator_statevector")
 
 
 class AerUnitaryBackend(_AerStateBaseBackend):

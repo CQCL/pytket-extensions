@@ -112,15 +112,19 @@ def get_test_circuit(measure: bool, reset: bool = True) -> QuantumCircuit:
 
 def test_convert() -> None:
     qc = get_test_circuit(False)
-    backend = Aer.get_backend("statevector_simulator")
-    job = execute([qc], backend)
-    state0 = job.result().get_statevector(qc)
     tkc = qiskit_to_tk(qc)
     assert qc.name == tkc.name
-    qc = tk_to_qiskit(tkc)
-    assert qc.name == tkc.name
+    qc1 = tk_to_qiskit(tkc)
+    assert qc1.name == tkc.name
+
+    backend = Aer.get_backend("aer_simulator_statevector")
+
+    qc.save_state()
     job = execute([qc], backend)
-    state1 = job.result().get_statevector(qc)
+    state0 = job.result().get_statevector(qc)
+    qc1.save_state()
+    job1 = execute([qc1], backend)
+    state1 = job1.result().get_statevector(qc1)
     assert np.allclose(state0, state1, atol=1e-10)
 
 
@@ -138,9 +142,10 @@ def test_symbolic() -> None:
     assert tkc2.free_symbols() == {pi2, pi3, pi0}
     tkc2.symbol_substitution({pi2: pi / 2, pi3: pi / 3, pi0: 0.1})
 
-    backend = Aer.get_backend("statevector_simulator")
+    backend = Aer.get_backend("aer_simulator_statevector")
     qc = tk_to_qiskit(tkc2)
     assert qc.name == tkc.name
+    qc.save_state()
     job = execute([qc], backend)
     state1 = job.result().get_statevector(qc)
     state0 = np.array(
@@ -229,7 +234,7 @@ def test_tketpass() -> None:
 
 def test_tketautopass() -> None:
     backends = [
-        Aer.get_backend("statevector_simulator"),
+        Aer.get_backend("aer_simulator_statevector"),
         Aer.get_backend("aer_simulator"),
         Aer.get_backend("unitary_simulator"),
     ]
@@ -363,9 +368,10 @@ def test_customgate() -> None:
     correct_circ = Circuit(3).Rx(0.1, 0).Rx(0.4, 2).CZ(0, 1).Rx(0.2, 1)
     correct_qc = tk_to_qiskit(correct_circ)
 
-    backend = Aer.get_backend("statevector_simulator")
+    backend = Aer.get_backend("aer_simulator_statevector")
     states = []
     for qc in (qc1, qc2, correct_qc):
+        qc.save_state()
         job = execute([qc], backend)
         states.append(job.result().get_statevector(qc))
 
@@ -384,8 +390,10 @@ def test_convert_result() -> None:
     qc.x(qr2[1])
 
     # check statevector
-    simulator = Aer.get_backend("statevector_simulator")
-    qisk_result = execute(qc, simulator, shots=10).result()
+    simulator = Aer.get_backend("aer_simulator_statevector")
+    qc1 = qc.copy()
+    qc1.save_state()
+    qisk_result = execute(qc1, simulator, shots=10).result()
 
     tk_res = next(qiskit_result_to_backendresult(qisk_result))
 
