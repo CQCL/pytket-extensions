@@ -27,7 +27,7 @@ from pytket.utils import prepare_circuit
 from pytket.utils.results import KwargTypes
 
 from qiskit.compiler import assemble  # type: ignore
-from qiskit.providers.aer import QasmSimulator  # type: ignore
+from qiskit.providers.aer import AerSimulator  # type: ignore
 from qiskit.providers.aer.noise.noise_model import NoiseModel  # type: ignore
 
 from .aer import AerBackend
@@ -66,9 +66,9 @@ class IBMQEmulatorBackend(AerBackend):
         """
 
         self._ibmq = IBMQBackend(backend_name, hub, group, project)
-        qasm_sim = QasmSimulator.from_backend(self._ibmq._backend)
-        super().__init__(noise_model=NoiseModel.from_backend(qasm_sim))
-        self._backend = qasm_sim
+        aer_sim = AerSimulator.from_backend(self._ibmq._backend)
+        super().__init__(noise_model=NoiseModel.from_backend(aer_sim))
+        self._backend = aer_sim
 
         # cache of results keyed by job id and circuit index
         self._ibm_res_cache: Dict[Tuple[str, int], ExperimentResult] = dict()

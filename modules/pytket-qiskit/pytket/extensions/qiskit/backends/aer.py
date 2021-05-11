@@ -369,7 +369,7 @@ class AerBackend(_AerBaseBackend):
         :param noise_model: Noise model to apply during simulation. Defaults to None.
         :type noise_model: Optional[NoiseModel], optional
         :param simulation_method: Simulation method, see
-         https://qiskit.org/documentation/stubs/qiskit.providers.aer.QasmSimulator.html
+         https://qiskit.org/documentation/stubs/qiskit.providers.aer.AerSimulator.html
          for available values. Defaults to "automatic".
         :type simulation_method: str
         """
