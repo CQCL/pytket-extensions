@@ -34,7 +34,7 @@ from pytket.passes import (  # type: ignore
     SequencePass,
     SynthesiseIBM,
 )
-from pytket.pauli import Pauli, QubitPauliString  # type: ignore
+from pytket.pauli import QubitPauliString  # type: ignore
 from pytket.predicates import (  # type: ignore
     ConnectivityPredicate,
     GateSetPredicate,
@@ -58,7 +58,6 @@ from qiskit.compiler import assemble  # type: ignore
 from qiskit.opflow.primitive_ops import PauliSumOp
 from qiskit.providers.aer.library import save_expectation_value
 from qiskit.providers.aer.noise import NoiseModel  # type: ignore
-from qiskit.quantum_info.operators import Pauli as qk_Pauli  # type: ignore
 
 from .ibm_utils import _STATUS_MAP
 
@@ -180,7 +179,7 @@ class _AerBaseBackend(Backend):
     def _snapshot_expectation_value(
         self,
         circuit: Circuit,
-        hamiltonian: List[Tuple[complex, qk_Pauli]],
+        hamiltonian: PauliSumOp,
         valid_check: bool = True,
     ) -> complex:
         if valid_check:
@@ -194,8 +193,7 @@ class _AerBaseBackend(Backend):
                 + f" onwards. Circuit qubits were: {circ_qbs}"
             )
         qc = tk_to_qiskit(circuit)
-        pso = PauliSumOp.from_list([(p.to_label(), z) for z, p in hamiltonian])
-        qc.save_expectation_value(pso, qc.qubits, "snap")
+        qc.save_expectation_value(hamiltonian, qc.qubits, "snap")
         qobj = assemble(qc)
         job = self._backend.run(qobj)
         return cast(
@@ -227,7 +225,9 @@ class _AerBaseBackend(Backend):
         if not self._supports_expectation:
             raise NotImplementedError("Cannot get expectation value from this backend")
 
-        operator = [(1 + 0j, _sparse_to_qiskit_pauli(pauli, state_circuit.n_qubits))]
+        operator = PauliSumOp.from_list(
+            [(_qiskit_label(pauli, state_circuit.n_qubits), 1)]
+        )
         return self._snapshot_expectation_value(state_circuit, operator, valid_check)
 
     def get_operator_expectation_value(
@@ -254,11 +254,13 @@ class _AerBaseBackend(Backend):
         if not self._supports_expectation:
             raise NotImplementedError("Cannot get expectation value from this backend")
 
-        q_operator = []
-        for term, coeff in operator._dict.items():
-            q_operator.append(
-                (coeff, _sparse_to_qiskit_pauli(term, state_circuit.n_qubits))
-            )
+        n_qubits = state_circuit.n_qubits
+        q_operator = PauliSumOp.from_list(
+            [
+                (_qiskit_label(pauli, n_qubits), coeff)
+                for pauli, coeff in operator._dict.items()
+            ]
+        )
         return self._snapshot_expectation_value(state_circuit, q_operator, valid_check)
 
 
@@ -663,11 +665,9 @@ def _process_model(noise_model: NoiseModel, gate_set: Set[OpType]) -> dict:
     return characterisation
 
 
-def _sparse_to_qiskit_pauli(pauli: QubitPauliString, n_qubits: int) -> qk_Pauli:
-    x = [False] * n_qubits
-    z = [False] * n_qubits
+def _qiskit_label(pauli: QubitPauliString, n_qubits: int) -> str:
+    labels = ["I"] * n_qubits
     for q, p in pauli.to_dict().items():
-        i = _default_q_index(q)
-        z[i] = p in (Pauli.Z, Pauli.Y)
-        x[i] = p in (Pauli.X, Pauli.Y)
-    return qk_Pauli((z, x))
+        labels[_default_q_index(q)] = p.name
+    labels.reverse()
+    return "".join(labels)
