@@ -26,7 +26,6 @@ from pytket.extensions.qiskit.result_convert import (
 from pytket.utils import prepare_circuit
 from pytket.utils.results import KwargTypes
 
-from qiskit.compiler import assemble  # type: ignore
 from qiskit.providers.aer import AerSimulator  # type: ignore
 from qiskit.providers.aer.noise.noise_model import NoiseModel  # type: ignore
 
@@ -116,8 +115,13 @@ class IBMQEmulatorBackend(AerBackend):
                 c0, ppcirc_rep = tkc, None
             qcs.append(tk_to_qiskit(c0))
             ppcirc_strs.append(json.dumps(ppcirc_rep))
-        qobj = assemble(qcs, shots=n_shots, memory=self._memory, seed_simulator=seed)
-        job = self._backend.run(qobj, noise_model=self._noise_model)
+        job = self._backend.run(
+            qcs,
+            shots=n_shots,
+            memory=self._memory,
+            seed_simulator=seed,
+            noise_model=self._noise_model,
+        )
         jobid = job.job_id()
         handle_list = [
             ResultHandle(jobid, i, ppcirc_strs[i]) for i in range(len(circuit_list))

@@ -54,7 +54,6 @@ from pytket.routing import Architecture, NoiseAwarePlacement  # type: ignore
 from pytket.utils.operators import QubitPauliOperator
 from pytket.utils.results import KwargTypes, permute_basis_indexing
 from qiskit import Aer
-from qiskit.compiler import assemble  # type: ignore
 from qiskit.opflow.primitive_ops import PauliSumOp
 from qiskit.providers.aer.library import save_expectation_value
 from qiskit.providers.aer.noise import NoiseModel  # type: ignore
@@ -139,8 +138,13 @@ class _AerBaseBackend(Backend):
 
         qcs = [tk_to_qiskit(tkc) for tkc in circuit_list]
         seed = cast(Optional[int], kwargs.get("seed"))
-        qobj = assemble(qcs, shots=n_shots, memory=self._memory, seed_simulator=seed)
-        job = self._backend.run(qobj, noise_model=self._noise_model)
+        job = self._backend.run(
+            qcs,
+            shots=n_shots,
+            memory=self._memory,
+            seed_simulator=seed,
+            noise_model=self._noise_model,
+        )
         jobid = job.job_id()
         handle_list = [ResultHandle(jobid, i) for i in range(len(circuit_list))]
         for handle in handle_list:
@@ -194,8 +198,7 @@ class _AerBaseBackend(Backend):
             )
         qc = tk_to_qiskit(circuit)
         qc.save_expectation_value(hamiltonian, qc.qubits, "snap")
-        qobj = assemble(qc)
-        job = self._backend.run(qobj)
+        job = self._backend.run(qc)
         return cast(
             complex,
             job.result().data(qc)["snap"],
