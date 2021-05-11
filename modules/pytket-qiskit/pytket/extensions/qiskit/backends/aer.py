@@ -141,6 +141,9 @@ class _AerBaseBackend(Backend):
         if self._backend_name == "aer_simulator_statevector":
             for qc in qcs:
                 qc.save_state()
+        elif self._backend_name == "aer_simulator_unitary":
+            for qc in qcs:
+                qc.save_unitary()
         seed = cast(Optional[int], kwargs.get("seed"))
         job = self._backend.run(
             qcs,
@@ -540,7 +543,7 @@ class AerUnitaryBackend(_AerStateBaseBackend):
 
     def __init__(self) -> None:
         """Backend for running simulations on the Qiskit Aer Unitary simulator."""
-        super().__init__("unitary_simulator")
+        super().__init__("aer_simulator_unitary")
 
     def get_unitary(
         self,

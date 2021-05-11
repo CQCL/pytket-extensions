@@ -55,8 +55,10 @@ def test_state() -> None:
         assert QuantumInstance(tb).is_statevector
         job = execute(qc, tb)
         state = job.result().get_statevector()
-        qb = Aer.get_backend("statevector_simulator")
-        job2 = execute(qc, qb)
+        qb = Aer.get_backend("aer_simulator_statevector")
+        qc1 = qc.copy()
+        qc1.save_state()
+        job2 = execute(qc1, qb)
         state2 = job2.result().get_statevector()
         assert np.allclose(state, state2)
 
@@ -68,8 +70,10 @@ def test_unitary() -> None:
         tb = TketBackend(b, comp)
         job = execute(qc, tb)
         u = job.result().get_unitary()
-        qb = Aer.get_backend("unitary_simulator")
-        job2 = execute(qc, qb)
+        qb = Aer.get_backend("aer_simulator_unitary")
+        qc1 = qc.copy()
+        qc1.save_unitary()
+        job2 = execute(qc1, qb)
         u2 = job2.result().get_unitary()
         assert np.allclose(u, u2)
 

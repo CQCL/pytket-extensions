@@ -206,7 +206,8 @@ def test_Unitary2qBox() -> None:
     # Convert to qiskit
     qc = tk_to_qiskit(c)
     # Verify that unitary from simulator is correct
-    back = Aer.get_backend("unitary_simulator")
+    back = Aer.get_backend("aer_simulator_unitary")
+    qc.save_unitary()
     job = execute(qc, back).result()
     a = job.get_unitary(qc)
     assert np.allclose(a, u)
@@ -215,18 +216,18 @@ def test_Unitary2qBox() -> None:
 def test_tketpass() -> None:
     qc = get_test_circuit(False, False)
     tkpass = FullPeepholeOptimise()
-    back = Aer.get_backend("unitary_simulator")
+    back = Aer.get_backend("aer_simulator_unitary")
     for _ in range(12):
         tkc = qiskit_to_tk(qc)
-        print(tkc.phase)
         tkpass.apply(tkc)
-        print(tkc.phase)
     qc1 = tk_to_qiskit(tkc)
+    qc1.save_unitary()
     res = execute(qc1, back).result()
     u1 = res.get_unitary(qc1)
     qispass = TketPass(tkpass)
     pm = PassManager(qispass)
     qc2 = pm.run(qc)
+    qc2.save_unitary()
     res = execute(qc2, back).result()
     u2 = res.get_unitary(qc2)
     assert np.allclose(u1, u2)
@@ -236,7 +237,7 @@ def test_tketautopass() -> None:
     backends = [
         Aer.get_backend("aer_simulator_statevector"),
         Aer.get_backend("aer_simulator"),
-        Aer.get_backend("unitary_simulator"),
+        Aer.get_backend("aer_simulator_unitary"),
     ]
     if not skip_remote_tests:
         if not IBMQ.active_account():
@@ -508,9 +509,14 @@ def assert_equivalence(
     assert len(names) == len(circuits)
     assert_tket_circuits_identical(tk_circuits)
 
-    backend = Aer.get_backend("unitary_simulator")
-    job = execute(circuits, backend)
-    unitaries = [job.result().get_unitary(circ) for circ in circuits]
+    backend = Aer.get_backend("aer_simulator_unitary")
+    unitaries = []
+    for circ in circuits:
+        assert isinstance(circ, QuantumCircuit)
+        circ1 = circ.copy()
+        circ1.save_unitary()
+        job = execute(circ1, backend)
+        unitaries.append(job.result().get_unitary(circ1))
     for nn in range(1, len(circuits)):
         # Default np.allclose is very lax here, so use strict tolerances
         assert np.allclose(unitaries[0], unitaries[nn], atol=1e-14, rtol=0.0)
