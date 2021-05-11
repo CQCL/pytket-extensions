@@ -160,7 +160,7 @@ def test_symbolic() -> None:
 
 def test_measures() -> None:
     qc = get_test_circuit(True)
-    backend = Aer.get_backend("qasm_simulator")
+    backend = Aer.get_backend("aer_simulator")
     job = execute([qc], backend, seed_simulator=7)
     counts0 = job.result().get_counts(qc)
     tkc = qiskit_to_tk(qc)
@@ -230,7 +230,7 @@ def test_tketpass() -> None:
 def test_tketautopass() -> None:
     backends = [
         Aer.get_backend("statevector_simulator"),
-        Aer.get_backend("qasm_simulator"),
+        Aer.get_backend("aer_simulator"),
         Aer.get_backend("unitary_simulator"),
     ]
     if not skip_remote_tests:
@@ -398,7 +398,7 @@ def test_convert_result() -> None:
     qc.measure(qr1[0], cr[0])
     qc.measure(qr2[1], cr2[0])
 
-    simulator = Aer.get_backend("qasm_simulator")
+    simulator = Aer.get_backend("aer_simulator")
     qisk_result = execute(qc, simulator, shots=10).result()
 
     tk_res = next(qiskit_result_to_backendresult(qisk_result))

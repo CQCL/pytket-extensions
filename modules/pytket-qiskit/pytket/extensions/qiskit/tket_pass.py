@@ -69,7 +69,7 @@ class TketAutoPass(TketPass):
     """The tket compiler to be plugged in to the Qiskit compilation sequence"""
 
     _aer_backend_map = {
-        "QasmSimulator": AerBackend,
+        "AerSimulator": AerBackend,
         "StatevectorSimulator": AerStateBackend,
         "UnitarySimulator": AerUnitaryBackend,
     }

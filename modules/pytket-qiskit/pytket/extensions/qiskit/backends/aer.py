@@ -376,7 +376,7 @@ class AerBackend(_AerBaseBackend):
          for available values. Defaults to "automatic".
         :type simulation_method: str
         """
-        super().__init__("qasm_simulator")
+        super().__init__("aer_simulator")
 
         if not noise_model or all(
             value == [] for value in noise_model.to_dict().values()
