@@ -368,6 +368,7 @@ class AerBackend(_AerBaseBackend):
     _supports_shots = True
     _supports_counts = True
     _supports_expectation = True
+    _expectation_allows_nonhermitian = False
 
     def __init__(
         self,
