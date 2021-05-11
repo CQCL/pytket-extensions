@@ -69,9 +69,9 @@ class TketAutoPass(TketPass):
     """The tket compiler to be plugged in to the Qiskit compilation sequence"""
 
     _aer_backend_map = {
-        "AerSimulator": AerBackend,
-        "StatevectorSimulator": AerStateBackend,
-        "UnitarySimulator": AerUnitaryBackend,
+        "aer_simulator": AerBackend,
+        "aer_simulator_statevector": AerStateBackend,
+        "aer_simulator_unitary": AerUnitaryBackend,
     }
 
     def __init__(
@@ -90,7 +90,7 @@ class TketAutoPass(TketPass):
         :type optimisation_level: int, optional
         """
         if isinstance(backend._provider, AerProvider):
-            tk_backend = self._aer_backend_map[type(backend).__name__]()
+            tk_backend = self._aer_backend_map[backend.name()]()
         elif isinstance(backend._provider, AccountProvider):
             tk_backend = IBMQBackend(backend.name())
         else:
