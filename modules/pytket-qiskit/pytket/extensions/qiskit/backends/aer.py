@@ -53,9 +53,11 @@ from pytket.extensions.qiskit.result_convert import qiskit_result_to_backendresu
 from pytket.routing import Architecture, NoiseAwarePlacement  # type: ignore
 from pytket.utils.operators import QubitPauliOperator
 from pytket.utils.results import KwargTypes, permute_basis_indexing
-from qiskit import Aer
-from qiskit.opflow.primitive_ops import PauliSumOp
-from qiskit.providers.aer.library import save_expectation_value
+from qiskit import Aer  # type: ignore
+from qiskit.opflow.primitive_ops import PauliSumOp  # type: ignore
+from qiskit.providers.aer.library import (  # type: ignore # pylint: disable=unused-import
+    save_expectation_value,
+)
 from qiskit.providers.aer.noise import NoiseModel  # type: ignore
 
 from .ibm_utils import _STATUS_MAP
