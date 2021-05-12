@@ -53,7 +53,7 @@ jobs:
         dotnet iqsharp install --user
     - name: Install docs dependencies
       run: |
-        pip install --pre -r docs/requirements.txt
+        pip install -r docs/requirements.txt
 
     - name: Test building docs
       timeout-minutes: 20
