@@ -442,7 +442,6 @@ def append_tk_command_to_qiskit(
 
     if optype == OpType.CU3:
         params = [param_to_qiskit(p, symb_map) for p in op.params] + [0]
-        params.append(0)
         return qcirc.append(qiskit_gates.CUGate(*params), qargs=qargs)
 
     # others are direct translations
