@@ -76,8 +76,8 @@ def get_test_circuit(measure: bool, reset: bool = True) -> QuantumCircuit:
     qc.cry(pi / 4, qr[0], qr[1])
     qc.crz(pi / 4, qr[1], qr[2])
     qc.cswap(qr[1], qr[2], qr[3])
-    qc.cu1(pi / 5, qr[2], qr[3])
-    qc.cu3(pi / 4, pi / 5, pi / 6, qr[3], qr[0])
+    qc.cp(pi / 5, qr[2], qr[3])
+    qc.cu(pi / 4, pi / 5, pi / 6, 0, qr[3], qr[0])
     qc.cy(qr[0], qr[1])
     qc.cz(qr[1], qr[2])
     qc.i(qr[2])
@@ -96,9 +96,9 @@ def get_test_circuit(measure: bool, reset: bool = True) -> QuantumCircuit:
     qc.t(qr[3])
     qc.tdg(qr[0])
     qc.u(pi / 3, pi / 4, pi / 5, qr[0])
-    qc.u1(pi / 2, qr[1])
-    qc.u2(pi / 2, pi / 3, qr[2])
-    qc.u3(pi / 2, pi / 3, pi / 4, qr[3])
+    qc.p(pi / 2, qr[1])
+    qc.u(pi / 2, pi / 2, pi / 3, qr[2])
+    qc.u(pi / 2, pi / 3, pi / 4, qr[3])
     qc.x(qr[0])
     qc.y(qr[1])
 
@@ -112,15 +112,19 @@ def get_test_circuit(measure: bool, reset: bool = True) -> QuantumCircuit:
 
 def test_convert() -> None:
     qc = get_test_circuit(False)
-    backend = Aer.get_backend("statevector_simulator")
-    job = execute([qc], backend)
-    state0 = job.result().get_statevector(qc)
     tkc = qiskit_to_tk(qc)
     assert qc.name == tkc.name
-    qc = tk_to_qiskit(tkc)
-    assert qc.name == tkc.name
+    qc1 = tk_to_qiskit(tkc)
+    assert qc1.name == tkc.name
+
+    backend = Aer.get_backend("aer_simulator_statevector")
+
+    qc.save_state()
     job = execute([qc], backend)
-    state1 = job.result().get_statevector(qc)
+    state0 = job.result().get_statevector(qc)
+    qc1.save_state()
+    job1 = execute([qc1], backend)
+    state1 = job1.result().get_statevector(qc1)
     assert np.allclose(state0, state1, atol=1e-10)
 
 
@@ -138,9 +142,10 @@ def test_symbolic() -> None:
     assert tkc2.free_symbols() == {pi2, pi3, pi0}
     tkc2.symbol_substitution({pi2: pi / 2, pi3: pi / 3, pi0: 0.1})
 
-    backend = Aer.get_backend("statevector_simulator")
+    backend = Aer.get_backend("aer_simulator_statevector")
     qc = tk_to_qiskit(tkc2)
     assert qc.name == tkc.name
+    qc.save_state()
     job = execute([qc], backend)
     state1 = job.result().get_statevector(qc)
     state0 = np.array(
@@ -160,7 +165,7 @@ def test_symbolic() -> None:
 
 def test_measures() -> None:
     qc = get_test_circuit(True)
-    backend = Aer.get_backend("qasm_simulator")
+    backend = Aer.get_backend("aer_simulator")
     job = execute([qc], backend, seed_simulator=7)
     counts0 = job.result().get_counts(qc)
     tkc = qiskit_to_tk(qc)
@@ -201,7 +206,8 @@ def test_Unitary2qBox() -> None:
     # Convert to qiskit
     qc = tk_to_qiskit(c)
     # Verify that unitary from simulator is correct
-    back = Aer.get_backend("unitary_simulator")
+    back = Aer.get_backend("aer_simulator_unitary")
+    qc.save_unitary()
     job = execute(qc, back).result()
     a = job.get_unitary(qc)
     assert np.allclose(a, u)
@@ -210,18 +216,18 @@ def test_Unitary2qBox() -> None:
 def test_tketpass() -> None:
     qc = get_test_circuit(False, False)
     tkpass = FullPeepholeOptimise()
-    back = Aer.get_backend("unitary_simulator")
+    back = Aer.get_backend("aer_simulator_unitary")
     for _ in range(12):
         tkc = qiskit_to_tk(qc)
-        print(tkc.phase)
         tkpass.apply(tkc)
-        print(tkc.phase)
     qc1 = tk_to_qiskit(tkc)
+    qc1.save_unitary()
     res = execute(qc1, back).result()
     u1 = res.get_unitary(qc1)
     qispass = TketPass(tkpass)
     pm = PassManager(qispass)
     qc2 = pm.run(qc)
+    qc2.save_unitary()
     res = execute(qc2, back).result()
     u2 = res.get_unitary(qc2)
     assert np.allclose(u1, u2)
@@ -229,9 +235,9 @@ def test_tketpass() -> None:
 
 def test_tketautopass() -> None:
     backends = [
-        Aer.get_backend("statevector_simulator"),
-        Aer.get_backend("qasm_simulator"),
-        Aer.get_backend("unitary_simulator"),
+        Aer.get_backend("aer_simulator_statevector"),
+        Aer.get_backend("aer_simulator"),
+        Aer.get_backend("aer_simulator_unitary"),
     ]
     if not skip_remote_tests:
         if not IBMQ.active_account():
@@ -363,9 +369,10 @@ def test_customgate() -> None:
     correct_circ = Circuit(3).Rx(0.1, 0).Rx(0.4, 2).CZ(0, 1).Rx(0.2, 1)
     correct_qc = tk_to_qiskit(correct_circ)
 
-    backend = Aer.get_backend("statevector_simulator")
+    backend = Aer.get_backend("aer_simulator_statevector")
     states = []
     for qc in (qc1, qc2, correct_qc):
+        qc.save_state()
         job = execute([qc], backend)
         states.append(job.result().get_statevector(qc))
 
@@ -384,8 +391,10 @@ def test_convert_result() -> None:
     qc.x(qr2[1])
 
     # check statevector
-    simulator = Aer.get_backend("statevector_simulator")
-    qisk_result = execute(qc, simulator, shots=10).result()
+    simulator = Aer.get_backend("aer_simulator_statevector")
+    qc1 = qc.copy()
+    qc1.save_state()
+    qisk_result = execute(qc1, simulator, shots=10).result()
 
     tk_res = next(qiskit_result_to_backendresult(qisk_result))
 
@@ -398,7 +407,7 @@ def test_convert_result() -> None:
     qc.measure(qr1[0], cr[0])
     qc.measure(qr2[1], cr2[0])
 
-    simulator = Aer.get_backend("qasm_simulator")
+    simulator = Aer.get_backend("aer_simulator")
     qisk_result = execute(qc, simulator, shots=10).result()
 
     tk_res = next(qiskit_result_to_backendresult(qisk_result))
@@ -500,9 +509,14 @@ def assert_equivalence(
     assert len(names) == len(circuits)
     assert_tket_circuits_identical(tk_circuits)
 
-    backend = Aer.get_backend("unitary_simulator")
-    job = execute(circuits, backend)
-    unitaries = [job.result().get_unitary(circ) for circ in circuits]
+    backend = Aer.get_backend("aer_simulator_unitary")
+    unitaries = []
+    for circ in circuits:
+        assert isinstance(circ, QuantumCircuit)
+        circ1 = circ.copy()
+        circ1.save_unitary()
+        job = execute(circ1, backend)
+        unitaries.append(job.result().get_unitary(circ1))
     for nn in range(1, len(circuits)):
         # Default np.allclose is very lax here, so use strict tolerances
         assert np.allclose(unitaries[0], unitaries[nn], atol=1e-14, rtol=0.0)

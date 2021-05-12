@@ -26,8 +26,7 @@ from pytket.extensions.qiskit.result_convert import (
 from pytket.utils import prepare_circuit
 from pytket.utils.results import KwargTypes
 
-from qiskit.compiler import assemble  # type: ignore
-from qiskit.providers.aer import QasmSimulator  # type: ignore
+from qiskit.providers.aer import AerSimulator  # type: ignore
 from qiskit.providers.aer.noise.noise_model import NoiseModel  # type: ignore
 
 from .aer import AerBackend
@@ -66,9 +65,9 @@ class IBMQEmulatorBackend(AerBackend):
         """
 
         self._ibmq = IBMQBackend(backend_name, hub, group, project)
-        qasm_sim = QasmSimulator.from_backend(self._ibmq._backend)
-        super().__init__(noise_model=NoiseModel.from_backend(qasm_sim))
-        self._backend = qasm_sim
+        aer_sim = AerSimulator.from_backend(self._ibmq._backend)
+        super().__init__(noise_model=NoiseModel.from_backend(aer_sim))
+        self._backend = aer_sim
 
         # cache of results keyed by job id and circuit index
         self._ibm_res_cache: Dict[Tuple[str, int], ExperimentResult] = dict()
@@ -116,8 +115,13 @@ class IBMQEmulatorBackend(AerBackend):
                 c0, ppcirc_rep = tkc, None
             qcs.append(tk_to_qiskit(c0))
             ppcirc_strs.append(json.dumps(ppcirc_rep))
-        qobj = assemble(qcs, shots=n_shots, memory=self._memory, seed_simulator=seed)
-        job = self._backend.run(qobj, noise_model=self._noise_model)
+        job = self._backend.run(
+            qcs,
+            shots=n_shots,
+            memory=self._memory,
+            seed_simulator=seed,
+            noise_model=self._noise_model,
+        )
         jobid = job.job_id()
         handle_list = [
             ResultHandle(jobid, i, ppcirc_strs[i]) for i in range(len(circuit_list))

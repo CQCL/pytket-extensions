@@ -33,7 +33,6 @@ from warnings import warn
 from sympy import Expr  # type: ignore
 import qiskit  # type: ignore
 from qiskit import IBMQ
-from qiskit.compiler import assemble  # type: ignore
 from qiskit.qobj import QobjExperimentHeader  # type: ignore
 from qiskit.providers.ibmq.exceptions import IBMQBackendApiError  # type: ignore
 from qiskit.providers.ibmq.job import IBMQJob  # type: ignore
@@ -391,7 +390,6 @@ class IBMQBackend(Backend):
                     c0, ppcirc_rep = tkc, None
                 qcs.append(tk_to_qiskit(c0))
                 ppcirc_strs.append(json.dumps(ppcirc_rep))
-            qobj = assemble(qcs, shots=n_shots, memory=self._config.memory)
             if self._MACHINE_DEBUG:
                 handle_list += [
                     ResultHandle(
@@ -402,7 +400,7 @@ class IBMQBackend(Backend):
                     for i, c in enumerate(filtchunk)
                 ]
             else:
-                job = self._backend.run(qobj)
+                job = self._backend.run(qcs, shots=n_shots, memory=self._config.memory)
                 jobid = job.job_id()
                 handle_list += [
                     ResultHandle(jobid, i, ppcirc_strs[i])
