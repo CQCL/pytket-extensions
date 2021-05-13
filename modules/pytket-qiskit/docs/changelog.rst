@@ -2,7 +2,7 @@ Changelog
 ~~~~~~~~~
 
 0.12.0 (unreleased)
------------------
+-------------------
 
 * Qiskit version updated to 0.26.
 * Code rewrites to avoid use of deprecated qiskit methods.
