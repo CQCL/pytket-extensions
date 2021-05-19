@@ -3,7 +3,7 @@ name: Pytket Extensions Docs
 on:
   push:
     branches:
-      - 'docs/**'
+      - 'yao_test/**'
   schedule:
     # 04:00 every weekday morning
     - cron: '0 4 * * 1-5'
@@ -56,7 +56,6 @@ jobs:
     - name: Install docs dependencies
       run: |
         pip install -r docs/requirements.txt
-
     - name: Test building docs
       timeout-minutes: 20
       run: |
