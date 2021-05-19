@@ -1,2 +1,2 @@
-sphinx
+git+git://github.com/yao-cqc/sphinx.git@ignore-mutated-finders-in-autodoc
 sphinx_rtd_theme
