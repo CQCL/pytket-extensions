@@ -32,6 +32,7 @@ from sympy import pi  # type: ignore
 cirq_common = cirq.ops.common_gates
 cirq_pauli = cirq.ops.pauli_gates
 
+cirq_CH = cirq_common.H.controlled(1)
 
 # map cirq common gates to pytket gates
 _cirq2ops_mapping = {
@@ -52,7 +53,7 @@ _cirq2ops_mapping = {
     cirq.ops.I: OpType.noop,
     cirq_common.CZPowGate: OpType.CU1,
     cirq_common.CZ: OpType.CZ,
-    cirq_common.H.controlled(1): OpType.CH,
+    cirq_CH: OpType.CH,
     cirq.ops.CSwapGate: OpType.CSWAP,
     cirq_common.ISwapPowGate: OpType.ISWAP,
     cirq_common.ISWAP: OpType.ISWAPMax,
@@ -77,6 +78,7 @@ _constant_gates = (
     cirq_pauli.Y,
     cirq_pauli.Z,
     cirq_common.CZ,
+    cirq_CH,
     cirq_common.ISWAP,
     cirq_google.SYC,
     cirq.ops.I,
