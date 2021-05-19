@@ -5,7 +5,7 @@ Changelog
 -------------------
 
 * Required cirq version updated to 0.11.
-* Add CH gate in conversion from cirq to qiskit
+* Add CH gate to allowed gates for cirq to pytket conversion methods
 
 0.10.1 (May 2021)
 -----------------
