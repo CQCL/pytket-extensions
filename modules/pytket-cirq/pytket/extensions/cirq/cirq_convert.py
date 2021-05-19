@@ -52,6 +52,7 @@ _cirq2ops_mapping = {
     cirq.ops.I: OpType.noop,
     cirq_common.CZPowGate: OpType.CU1,
     cirq_common.CZ: OpType.CZ,
+    cirq_common.H.controlled(1): OpType.CH,
     cirq.ops.CSwapGate: OpType.CSWAP,
     cirq_common.ISwapPowGate: OpType.ISWAP,
     cirq_common.ISWAP: OpType.ISWAPMax,
