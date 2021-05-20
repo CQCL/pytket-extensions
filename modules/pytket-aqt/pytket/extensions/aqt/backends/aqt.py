@@ -20,11 +20,11 @@ from typing import Dict, Iterable, List, Optional, Sequence, Tuple, Union, cast
 from requests import put
 from pytket.backends import Backend, CircuitStatus, ResultHandle, StatusEnum
 from pytket.backends.backend import KwargTypes
+from pytket.backends.backendinfo import BackendInfo, fully_connected_backendinfo
 from pytket.backends.backendresult import BackendResult
 from pytket.backends.resulthandle import _ResultIdTuple
 from pytket.backends.backend_exceptions import CircuitNotRunError
-from pytket.circuit import Circuit, OpType, Qubit  # type: ignore
-from pytket.device import Device  # type: ignore
+from pytket.circuit import Circuit, Node, OpType, Qubit  # type: ignore
 
 
 from pytket.passes import (  # type: ignore
@@ -63,12 +63,13 @@ _DEBUG_HANDLE_PREFIX = "_MACHINE_DEBUG_"
 
 # Hard-coded for now as there is no API to retrieve these.
 # All devices are fully connected.
-device_info = {
+_DEVICE_INFO = {
     AQT_DEVICE_QC: {"max_n_qubits": 4},
     AQT_DEVICE_SIM: {"max_n_qubits": 10},
     AQT_DEVICE_NOISY_SIM: {"max_n_qubits": 10},
 }
 
+_GATE_SET = {OpType.Rx, OpType.Ry, OpType.XXPhase, OpType.Measure, OpType.Barrier}
 
 AQTResult = Tuple[int, List[int]]  # (n_qubits, list of readouts)
 
@@ -127,19 +128,23 @@ class AQTBackend(Backend):
             raise AqtAuthenticationError()
 
         self._header = {"Ocp-Apim-Subscription-Key": access_token, "SDK": "pytket"}
-        if device_name in device_info:
-            self._max_n_qubits: Optional[int] = device_info[device_name]["max_n_qubits"]
-            self._device = FullyConnected(self._max_n_qubits)
-            self._qm = {Qubit(i): node for i, node in enumerate(self._device.nodes)}
-        else:
-            self._max_n_qubits = None
-            self._device = None
-            self._qm = {}
+        self._backend_info: Optional[BackendInfo] = None
+        self._qm: Dict[Qubit, Node] = {}
+        if device_name in _DEVICE_INFO:
+            self._backend_info = fully_connected_backendinfo(
+                device_name,
+                "VERSION",
+                _DEVICE_INFO[device_name]["max_n_qubits"],
+                _GATE_SET,
+            )
+            self._qm = {
+                Qubit(i): node for i, node in enumerate(self._backend_info.nodes)
+            }
         self._MACHINE_DEBUG = False
 
     @property
-    def device(self) -> Optional[Device]:
-        return self._device
+    def backend_info(self) -> Optional[BackendInfo]:
+        return self._backend_info
 
     @property
     def required_predicates(self) -> List[Predicate]:
@@ -148,12 +153,10 @@ class AQTBackend(Backend):
             NoFastFeedforwardPredicate(),
             NoMidMeasurePredicate(),
             NoSymbolsPredicate(),
-            GateSetPredicate(
-                {OpType.Rx, OpType.Ry, OpType.XXPhase, OpType.Measure, OpType.Barrier}
-            ),
+            GateSetPredicate(_GATE_SET),
         ]
-        if self._max_n_qubits is not None:
-            preds.append(MaxNQubitsPredicate(self._max_n_qubits))
+        if self._backend_info is not None:
+            preds.append(MaxNQubitsPredicate(self._backend_info.n_nodes))
         return preds
 
     def default_compilation_pass(self, optimisation_level: int = 1) -> BasePass:
