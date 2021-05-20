@@ -26,10 +26,11 @@ from pytket.backends import Backend, ResultHandle, CircuitStatus, StatusEnum
 from requests.models import Response
 from pytket.backends.backend import KwargTypes
 from pytket.backends.resulthandle import _ResultIdTuple
+from pytket.backends.backendinfo import BackendInfo, fully_connected_backendinfo
 from pytket.backends.backendresult import BackendResult
 from pytket.backends.backend_exceptions import CircuitNotRunError
 from pytket.circuit import Circuit, OpType, Bit  # type: ignore
-from pytket.device import Device  # type: ignore
+from pytket.extensions.honeywell._metadata import __extension_version__
 from pytket.qasm import circuit_to_qasm_str
 from pytket.passes import (  # type: ignore
     BasePass,
@@ -117,7 +118,7 @@ class HoneywellBackend(Backend):
         self._device_name = device_name
         self._label = label
 
-        self._device = None
+        self._backend_info: Optional[BackendInfo] = None
         if machine_debug:
             self._api_handler = None
         else:
@@ -159,13 +160,15 @@ class HoneywellBackend(Backend):
         jr = res.json()
         return jr  # type: ignore
 
-    def _retrieve_device(self, machine: str) -> Device:
+    def _retrieve_backendinfo(self, machine: str) -> BackendInfo:
         jr = self.available_devices(self._api_handler)
         try:
             self._machine_info = next(entry for entry in jr if entry["name"] == machine)
         except StopIteration:
             raise RuntimeError(f"Device {machine} is not available.")
-        return Device(FullyConnected(self._machine_info["n_qubits"]))
+        return fully_connected_backendinfo(
+            machine, __extension_version__, self._machine_info["n_qubits"], _GATE_SET
+        )
 
     @classmethod
     def device_state(
@@ -195,10 +198,10 @@ class HoneywellBackend(Backend):
         return str(jr["state"])
 
     @property
-    def device(self) -> Optional[Device]:
-        if self._device is None and not self._MACHINE_DEBUG:
-            self._device = self._retrieve_device(self._device_name)
-        return self._device
+    def backend_info(self) -> Optional[BackendInfo]:
+        if self._backend_info is None and not self._MACHINE_DEBUG:
+            self._backend_info = self._retrieve_backendinfo(self._device_name)
+        return self._backend_info
 
     @property
     def required_predicates(self) -> List[Predicate]:
@@ -207,8 +210,8 @@ class HoneywellBackend(Backend):
             GateSetPredicate(_GATE_SET),
         ]
         if not self._MACHINE_DEBUG:
-            assert self.device is not None
-            preds.append(MaxNQubitsPredicate(len(self.device.nodes)))
+            assert self.backend_info is not None
+            preds.append(MaxNQubitsPredicate(self.backend_info.n_nodes))
         return preds
 
     def default_compilation_pass(self, optimisation_level: int = 1) -> BasePass:
