@@ -11,6 +11,9 @@ set -evu
 # Environment variables used:
 # - MODULES_TO_TEST: space-separated list of modules to test
 # - GITHUB_WORKSPACE: workspace directory
+#
+# WARNING: running this locally will delete any local files that
+# aren't strictly part of the git tree, including gitignored files!
 
 MYPY=$1
 
