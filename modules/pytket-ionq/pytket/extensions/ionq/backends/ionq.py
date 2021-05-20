@@ -19,10 +19,12 @@ from ast import literal_eval
 from requests import post, get, put
 from pytket.backends import Backend, ResultHandle, CircuitStatus, StatusEnum
 from pytket.backends.backend import KwargTypes
+from pytket.backends.backendinfo import BackendInfo, fully_connected_backendinfo
 from pytket.backends.resulthandle import _ResultIdTuple
 from pytket.backends.backendresult import BackendResult
 from pytket.backends.backend_exceptions import CircuitNotRunError
 from pytket.circuit import Circuit, Qubit  # type: ignore
+from pytket.extensions.ionq._metadata import __extension_version__
 from pytket.passes import (  # type: ignore
     BasePass,
     SequencePass,
@@ -46,7 +48,6 @@ from pytket.predicates import (  # type: ignore
 from pytket.routing import FullyConnected  # type: ignore
 from pytket.utils import prepare_circuit
 from pytket.utils.outcomearray import OutcomeArray
-from pytket.device import Device  # type: ignore
 from .ionq_convert import ionq_pass, ionq_gates, ionq_singleqs, tk_to_ionq
 from .config import IonQConfig
 
@@ -87,7 +88,7 @@ class IonQBackend(Backend):
 
     def __init__(
         self,
-        device_name: Optional[str] = "qpu",
+        device_name: str = "qpu",
         api_key: Optional[str] = None,
         label: Optional[str] = "job",
     ):
@@ -104,7 +105,6 @@ class IonQBackend(Backend):
         """
         super().__init__()
         self._url = IONQ_JOBS_URL
-        self._device_name = device_name
         self._label = label
         config = IonQConfig.from_default_config_file()
 
@@ -114,14 +114,15 @@ class IonQBackend(Backend):
             raise IonQAuthenticationError()
 
         self._header = {"Authorization": f"apiKey {api_key}"}
-        self._max_n_qubits = IONQ_N_QUBITS
-        self._device = Device(FullyConnected(self._max_n_qubits))
-        self._qm = {Qubit(i): node for i, node in enumerate(self._device.nodes)}
+        self._backend_info = fully_connected_backendinfo(
+            device_name, __extension_version__, IONQ_N_QUBITS, ionq_gates
+        )
+        self._qm = {Qubit(i): node for i, node in enumerate(self._backend_info.nodes)}
         self._MACHINE_DEBUG = False
 
     @property
-    def device(self) -> Optional[Device]:
-        return self._device
+    def backend_info(self) -> Optional[BackendInfo]:
+        return self._backend_info
 
     @property
     def required_predicates(self) -> List[Predicate]:
@@ -131,7 +132,7 @@ class IonQBackend(Backend):
             NoMidMeasurePredicate(),
             NoSymbolsPredicate(),
             GateSetPredicate(ionq_gates),
-            MaxNQubitsPredicate(self._max_n_qubits),
+            MaxNQubitsPredicate(self._backend_info.n_nodes),
         ]
         return preds
 
@@ -200,7 +201,7 @@ class IonQBackend(Backend):
         basebody = {
             "lang": "json",
             "body": None,
-            "target": self._device_name,
+            "target": self._backend_info.name,
             "shots": n_shots,
         }
         handles = []
