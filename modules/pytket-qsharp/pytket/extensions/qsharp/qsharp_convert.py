@@ -102,7 +102,7 @@ def operation_body(c: Circuit, sim: bool = True) -> List[str]:
     else:
         lines.append("    mutable r = new Result[0];")
 
-    lines.append("    using (q = Qubit[{}]) {{".format(n_q))
+    lines.append("    use q = Qubit[{}] {{".format(n_q))
     # devices don't support reset yet
     if sim:
         lines.append("        ResetAll(q);")
