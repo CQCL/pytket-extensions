@@ -77,4 +77,6 @@ def test_postprocess() -> None:
     counts = r.get_counts()
     # The ionq simulator is deterministic, and returns the (scaled, rounded) probability
     # distribution.
-    assert counts == Counter({(0, 0): 2, (0, 1): 2, (1, 0): 2, (1, 1): 2})
+    assert sum(counts.values()) == 8
+    if not skip_remote_tests:
+        assert counts == Counter({(0, 0): 2, (0, 1): 2, (1, 0): 2, (1, 1): 2})
