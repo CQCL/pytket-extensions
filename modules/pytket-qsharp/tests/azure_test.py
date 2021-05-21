@@ -64,14 +64,19 @@ def test_azure_backend() -> None:
 def test_postprocess() -> None:
     b = AzureBackend("ionq.simulator", machine_debug=skip_remote_tests)
     assert b.supports_contextual_optimisation
+    assert b.supports_counts
     c = Circuit(2, 2)
     c.Rx(0.5, 0).Rx(0.5, 1).CZ(0, 1).X(0).X(1).measure_all()
     b.compile_circuit(c)
-    h = b.process_circuit(c, n_shots=10, postprocess=True)
+    h = b.process_circuit(c, n_shots=8, postprocess=True)
     ppcirc = Circuit.from_dict(json.loads(cast(str, h[2])))
     ppcmds = ppcirc.get_commands()
     assert len(ppcmds) > 0
     assert all(ppcmd.op.type == OpType.ClassicalTransform for ppcmd in ppcmds)
     r = b.get_result(h)
-    shots = r.get_shots()
-    assert len(shots) == 10
+    counts = r.get_counts()
+    # The ionq simulator is deterministic, and returns the (scaled, rounded) probability
+    # distribution.
+    assert sum(counts.values()) == 8
+    if not skip_remote_tests:
+        assert counts == Counter({(0, 0): 2, (0, 1): 2, (1, 0): 2, (1, 1): 2})
