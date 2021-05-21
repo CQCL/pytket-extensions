@@ -45,6 +45,7 @@ def get_match_circuit() -> cirq.Circuit:
             zz(qubits[3], qubits[4]),
             px(qubits[6]),
             cirq.CZ(qubits[2], qubits[3]),
+            cirq.H.controlled(1)(qubits[0], qubits[1]),
             cirq.ISWAP(qubits[4], qubits[5]),
             cirq.FSimGate(1.4, 0.7)(qubits[6], qubits[7]),
             cirq_google.SYC(qubits[3], qubits[0]),
