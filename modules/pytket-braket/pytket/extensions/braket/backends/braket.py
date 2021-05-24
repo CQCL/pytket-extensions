@@ -220,7 +220,8 @@ class BraketBackend(Backend):
             default: "quantum-simulator"
         :param provider: provider name from device ARN (e.g. "ionq", "rigetti", ...),
             default: "amazon"
-        :param aws_session: braket AwsSession object, to pass credentials in
+        :param aws_session: braket AwsSession object, to pass credentials in if not
+            configured on local machine
         """
         super().__init__()
         # load config
