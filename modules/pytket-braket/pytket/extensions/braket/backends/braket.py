@@ -62,7 +62,7 @@ from pytket.utils import prepare_circuit
 from pytket.utils.operators import QubitPauliOperator
 from pytket.utils.outcomearray import OutcomeArray
 import braket  # type: ignore
-from braket.aws import AwsDevice  # type: ignore
+from braket.aws import AwsDevice, AwsSession  # type: ignore
 from braket.aws.aws_device import AwsDeviceType  # type: ignore
 from braket.aws.aws_quantum_task import AwsQuantumTask  # type: ignore
 import braket.circuits  # type: ignore
@@ -197,6 +197,7 @@ class BraketBackend(Backend):
         s3_folder: Optional[str] = None,
         device_type: Optional[str] = None,
         provider: Optional[str] = None,
+        aws_session: Optional[AwsSession] = None,
     ):
         """
         Construct a new braket backend.
@@ -219,6 +220,7 @@ class BraketBackend(Backend):
             default: "quantum-simulator"
         :param provider: provider name from device ARN (e.g. "ionq", "rigetti", ...),
             default: "amazon"
+        :param aws_session: braket AwsSession object, to pass credentials in
         """
         super().__init__()
         # load config
@@ -240,13 +242,19 @@ class BraketBackend(Backend):
         if device is None:
             device = "sv1"
 
+        # set up AwsSession to use; if it's None, braket will create sessions as needed
+        self._aws_session = aws_session
+
         if local:
             self._device = LocalSimulator()
             self._device_type = _DeviceType.LOCAL
         else:
             self._device = AwsDevice(
                 "arn:aws:braket:::"
-                + "/".join(["device", device_type, provider, device])
+                + "/".join(
+                    ["device", device_type, provider, device],
+                ),
+                aws_session=self._aws_session,
             )
             self._s3_dest = (s3_bucket, s3_folder)
             aws_device_type = self._device.type
@@ -532,7 +540,7 @@ class BraketBackend(Backend):
         task_id, want_state, ppcirc_str = handle
         ppcirc_rep = json.loads(ppcirc_str)
         ppcirc = Circuit.from_dict(ppcirc_rep) if ppcirc_rep is not None else None
-        task = AwsQuantumTask(task_id)
+        task = AwsQuantumTask(task_id, aws_session=self._aws_session)
         state = task.state()
         if state == "FAILED":
             result = task.result()
@@ -828,6 +836,6 @@ class BraketBackend(Backend):
         if self._device_type == _DeviceType.LOCAL:
             raise NotImplementedError("Circuits on local device cannot be cancelled")
         task_id = handle[0]
-        task = AwsQuantumTask(task_id)
+        task = AwsQuantumTask(task_id, aws_session=self._aws_session)
         if task.state() != "COMPLETED":
             task.cancel()
