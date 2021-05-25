@@ -21,8 +21,8 @@ from typing import List, Dict, FrozenSet, cast, Any
 import cmath
 from logging import warning
 from cirq.devices import LineQubit, GridQubit
-from cirq.google import XmonDevice
 import cirq.ops
+import cirq_google
 from pytket.circuit import Circuit, OpType, Qubit, Bit, Node  # type: ignore
 from pytket.device import QubitErrorContainer  # type: ignore
 from pytket.routing import Architecture  # type: ignore
@@ -32,6 +32,7 @@ from sympy import pi  # type: ignore
 cirq_common = cirq.ops.common_gates
 cirq_pauli = cirq.ops.pauli_gates
 
+cirq_CH = cirq_common.H.controlled(1)
 
 # map cirq common gates to pytket gates
 _cirq2ops_mapping = {
@@ -52,11 +53,12 @@ _cirq2ops_mapping = {
     cirq.ops.I: OpType.noop,
     cirq_common.CZPowGate: OpType.CU1,
     cirq_common.CZ: OpType.CZ,
+    cirq_CH: OpType.CH,
     cirq.ops.CSwapGate: OpType.CSWAP,
     cirq_common.ISwapPowGate: OpType.ISWAP,
     cirq_common.ISWAP: OpType.ISWAPMax,
     cirq.ops.FSimGate: OpType.FSim,
-    cirq.google.SYC: OpType.Sycamore,
+    cirq_google.SYC: OpType.Sycamore,
     cirq.ops.parity_gates.ZZPowGate: OpType.ZZPhase,
     cirq.ops.parity_gates.XXPowGate: OpType.XXPhase,
     cirq.ops.parity_gates.YYPowGate: OpType.YYPhase,
@@ -76,8 +78,9 @@ _constant_gates = (
     cirq_pauli.Y,
     cirq_pauli.Z,
     cirq_common.CZ,
+    cirq_CH,
     cirq_common.ISWAP,
-    cirq.google.SYC,
+    cirq_google.SYC,
     cirq.ops.I,
 )
 _rotation_types = (
@@ -274,7 +277,7 @@ def _sort_row_col(qubits: FrozenSet[GridQubit]) -> List[GridQubit]:
     return sorted(qubits, key=lambda x: (x.row, x.col))
 
 
-def process_characterisation(xmon: XmonDevice) -> dict:
+def process_characterisation(xmon: cirq_google.XmonDevice) -> dict:
     """Generates a tket dictionary containing device characteristics for a Cirq
     :py:class:`XmonDevice`.
 

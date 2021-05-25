@@ -17,8 +17,7 @@ from pytket.routing import Architecture  # type: ignore
 from pytket.device import Device  # type: ignore
 
 import cirq
-
-from cirq.google import Foxtail
+import cirq_google
 from cirq.circuits import InsertStrategy
 
 
@@ -46,9 +45,10 @@ def get_match_circuit() -> cirq.Circuit:
             zz(qubits[3], qubits[4]),
             px(qubits[6]),
             cirq.CZ(qubits[2], qubits[3]),
+            cirq.H.controlled(1)(qubits[0], qubits[1]),
             cirq.ISWAP(qubits[4], qubits[5]),
             cirq.FSimGate(1.4, 0.7)(qubits[6], qubits[7]),
-            cirq.google.SYC(qubits[3], qubits[0]),
+            cirq_google.SYC(qubits[3], qubits[0]),
             cirq.PhasedISwapPowGate(phase_exponent=0.7, exponent=0.8)(
                 qubits[3], qubits[4]
             ),
@@ -79,7 +79,7 @@ def test_conversions() -> None:
 
 
 def test_device() -> None:
-    fox = Foxtail
+    fox = cirq_google.Foxtail
     char = process_characterisation(fox)
     dev = Device(
         char.get("NodeErrors", {}),

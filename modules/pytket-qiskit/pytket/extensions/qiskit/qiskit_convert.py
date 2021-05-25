@@ -28,6 +28,7 @@ from typing import (
     TYPE_CHECKING,
 )
 from inspect import signature
+from uuid import UUID
 import sympy  # type: ignore
 import qiskit.circuit.library.standard_gates as qiskit_gates  # type: ignore
 from qiskit import (
@@ -58,6 +59,7 @@ from pytket.circuit import (  # type: ignore
     UnitType,
     CustomGateDef,
     Bit,
+    Qubit,
 )
 from pytket._tket.circuit import _TEMP_BIT_NAME  # type: ignore
 from pytket.device import QubitErrorContainer  # type: ignore
@@ -100,6 +102,7 @@ _qiskit_gates_2q = {
     qiskit_gates.CHGate: OpType.CH,
     qiskit_gates.CPhaseGate: OpType.CU1,
     qiskit_gates.CRZGate: OpType.CRz,
+    qiskit_gates.CUGate: OpType.CU3,
     qiskit_gates.CU1Gate: OpType.CU1,
     qiskit_gates.CU3Gate: OpType.CU3,
     qiskit_gates.CXGate: OpType.CX,
@@ -111,8 +114,6 @@ _qiskit_gates_2q = {
     qiskit_gates.RZZGate: OpType.ZZPhase,
     qiskit_gates.SwapGate: OpType.SWAP,
 }
-# Not included in the above list:
-# qiskit_gates.CUGate != OpType.CU3 : CUGate has an extra phase parameter
 
 _qiskit_gates_other = {
     # Exact equivalents (same signature except for factor of pi in each parameter):
@@ -204,16 +205,20 @@ class CircuitBuilder:
     ):
         self.qregs = qregs
         self.cregs = [] if cregs is None else cregs
+        self.qbmap = {}
+        self.cbmap = {}
         self.tkc = Circuit(name=name)
         self.tkc.add_phase(phase)
-        self.qregmap = {}
         for reg in qregs:
             tk_reg = self.tkc.add_q_register(reg.name, len(reg))
-            self.qregmap.update({reg: tk_reg})
+            for i, qb in enumerate(reg):
+                self.qbmap[qb] = Qubit(reg.name, i)
         self.cregmap = {}
         for reg in self.cregs:
             tk_reg = self.tkc.add_c_register(reg.name, len(reg))
             self.cregmap.update({reg: tk_reg})
+            for i, cb in enumerate(reg):
+                self.cbmap[cb] = Bit(reg.name, i)
 
     def circuit(self) -> Circuit:
         return self.tkc
@@ -239,9 +244,8 @@ class CircuitBuilder:
                     )
             else:
                 optype = _known_qiskit_gate[type(i)]
-
-            qubits = [self.qregmap[qbit.register][qbit.index] for qbit in qargs]
-            bits = [self.cregmap[bit.register][bit.index] for bit in cargs]
+            qubits = [self.qbmap[qbit] for qbit in qargs]
+            bits = [self.cbmap[bit] for bit in cargs]
 
             if optype == OpType.Unitary2qBox:
                 u = i.to_matrix()
@@ -270,23 +274,46 @@ class CircuitBuilder:
                         i.name, subc, list(subc.free_symbols())
                     )
                     self.tkc.add_custom_gate(gate_def, params, qubits + bits)
+            elif optype == OpType.CU3 and type(i) == qiskit_gates.CUGate:
+                if i.params[-1] == 0:
+                    self.tkc.add_gate(
+                        optype,
+                        [param_to_tk(p) for p in i.params[:-1]],
+                        qubits,
+                        **condition_kwargs,
+                    )
+                else:
+                    raise NotImplementedError("CUGate with nonzero phase")
             else:
                 params = [param_to_tk(p) for p in i.params]
                 self.tkc.add_gate(optype, params, qubits + bits, **condition_kwargs)
 
 
-def qiskit_to_tk(qcirc: QuantumCircuit) -> Circuit:
+def qiskit_to_tk(qcirc: QuantumCircuit, preserve_param_uuid: bool = False) -> Circuit:
     """Convert a :py:class:`qiskit.QuantumCircuit` to a :py:class:`Circuit`.
 
     :param qcirc: A circuit to be converted
     :type qcirc: QuantumCircuit
+    :param preserve_param_uuid: Whether to preserve symbolic Parameter uuids
+        by appending them to the tket Circuit symbol names as "_UUID:<uuid>".
+        This can be useful if you want to reassign Parameters after conversion
+        to tket and back, as it is necessary for Parameter object equality
+        to be preserved.
+    :type preserve_param_uuid: bool
     :return: The converted circuit
     :rtype: Circuit
     """
+    circ_name = qcirc.name
+    # Parameter uses a hidden _uuid for equality check
+    # we optionally preserve this in parameter name for later use
+    if preserve_param_uuid:
+        updates = {p: Parameter(f"{p.name}_UUID:{p._uuid}") for p in qcirc.parameters}
+        qcirc = cast(QuantumCircuit, qcirc.assign_parameters(updates))
+
     builder = CircuitBuilder(
         qregs=qcirc.qregs,
         cregs=qcirc.cregs,
-        name=qcirc.name,
+        name=circ_name,
         phase=param_to_tk(qcirc.global_phase),
     )
     builder.add_qiskit_data(qcirc.data)
@@ -413,6 +440,10 @@ def append_tk_command_to_qiskit(
         qcirc.append(new_gate, qargs)
         return qcirc
 
+    if optype == OpType.CU3:
+        params = [param_to_qiskit(p, symb_map) for p in op.params] + [0]
+        return qcirc.append(qiskit_gates.CUGate(*params), qargs=qargs)
+
     # others are direct translations
     try:
         gatetype = _known_qiskit_gate_rev[optype]
@@ -468,6 +499,17 @@ def tk_to_qiskit(tkcirc: Circuit) -> QuantumCircuit:
             command.op, command.args, qcirc, qregmap, cregmap, symb_map, range_preds
         )
     qcirc.global_phase += param_to_qiskit(tkc.phase, symb_map)
+
+    # if UUID stored in name, set parameter uuids accordingly (see qiskit_to_tk)
+    updates = dict()
+    for p in qcirc.parameters:
+        name_spl = p.name.split("_UUID:", 2)
+        if len(name_spl) == 2:
+            p_name, uuid = name_spl
+            new_p = Parameter.__new__(Parameter, p_name, UUID(uuid))
+            new_p.__init__(p_name)
+            updates[p] = new_p
+    qcirc.assign_parameters(updates, inplace=True)
     return qcirc
 
 

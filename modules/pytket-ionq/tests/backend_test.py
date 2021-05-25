@@ -12,28 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 from collections import Counter
 from typing import cast
 import os
 from hypothesis import given, strategies
 import numpy as np
 import pytest
-from pytket.circuit import Circuit  # type: ignore
+from pytket.circuit import Circuit, OpType  # type: ignore
 from pytket.backends.backend_exceptions import CircuitNotValidError
 from pytket.extensions.ionq import IonQBackend
 
-skip_remote_tests: bool = os.getenv("PYTKET_RUN_REMOTE_TESTS") is None or not os.getenv(
-    "IONQ_AUTH"
-)
+skip_remote_tests: bool = os.getenv("PYTKET_RUN_REMOTE_TESTS") is None
+REASON = "PYTKET_RUN_REMOTE_TESTS not set (requires configuration of IoNQ API key)"
 
 
-@pytest.mark.skipif(
-    skip_remote_tests,
-    reason="requires environment variable IONQ_AUTH to be a valid IonQ credential",
-)
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_small_circuit_ionq() -> None:
-    token = cast(str, os.getenv("IONQ_AUTH"))
-    backend = IonQBackend(api_key=token, device_name="simulator", label="test 1")
+    backend = IonQBackend(device_name="simulator", label="test 1")
     # backend = IonQBackend("invalid", device_name="simulator", label="test 5")
     # backend._MACHINE_DEBUG = True
 
@@ -52,13 +48,9 @@ def test_small_circuit_ionq() -> None:
     assert sum(counts.values()) == 1000
 
 
-@pytest.mark.skipif(
-    skip_remote_tests,
-    reason="requires environment variable IONQ_AUTH to be a valid IonQ credential",
-)
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_big_circuit_ionq() -> None:
-    token = cast(str, os.getenv("IONQ_AUTH"))
-    backend = IonQBackend(api_key=token, device_name="simulator", label="test 2")
+    backend = IonQBackend(device_name="simulator", label="test 2")
     circ = Circuit(4)
     circ.X(0).Y(0).Z(0).H(1).S(1).Sdg(1).H(1).T(2).Tdg(2).V(3).Vdg(3)
     circ.SWAP(0, 1)
@@ -80,13 +72,9 @@ def test_invalid_token() -> None:
         assert "Invalid key provided" in str(excinfo.value)
 
 
-@pytest.mark.skipif(
-    skip_remote_tests,
-    reason="requires environment variable IONQ_AUTH to be a valid IonQ credential",
-)
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_invalid_request() -> None:
-    token = cast(str, os.getenv("IONQ_AUTH"))
-    b = IonQBackend(api_key=token, device_name="simulator", label="test 4")
+    b = IonQBackend(device_name="simulator", label="test 4")
     c = Circuit(2, 2).H(0).CZ(0, 1)
     c.measure_all()
     with pytest.raises(CircuitNotValidError) as excinfo:
@@ -106,13 +94,9 @@ def test_machine_debug() -> None:
     assert counts[(0, 0)] == n_shots
 
 
-@pytest.mark.skipif(
-    skip_remote_tests,
-    reason="requires environment variable IONQ_AUTH to be a valid IonQ credential",
-)
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_cancellation() -> None:
-    token = cast(str, os.getenv("IONQ_AUTH"))
-    b = IonQBackend(api_key=token, device_name="simulator", label="test 6")
+    b = IonQBackend(device_name="simulator", label="test 6")
 
     qc = Circuit(3, 3)
     qc.H(0)
@@ -138,6 +122,26 @@ def test_default_pass() -> None:
         comp_pass.apply(c)
         for pred in b.required_predicates:
             assert pred.verify(c)
+
+
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
+def test_postprocess() -> None:
+    b = IonQBackend(device_name="simulator", label="test 7")
+    assert b.supports_contextual_optimisation
+    c = Circuit(2, 2)
+    c.Rx(0.1, 0)
+    c.Ry(0.1, 1)
+    c.CX(0, 1)
+    c.measure_all()
+    b.compile_circuit(c)
+    h = b.process_circuit(c, n_shots=10, postprocess=True)
+    ppcirc = Circuit.from_dict(json.loads(cast(str, h[3])))
+    ppcmds = ppcirc.get_commands()
+    assert len(ppcmds) > 0
+    assert all(ppcmd.op.type == OpType.ClassicalTransform for ppcmd in ppcmds)
+    r = b.get_result(h)
+    counts = r.get_counts()
+    assert sum(counts.values()) == 10
 
 
 @given(

@@ -34,6 +34,8 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-pip-${{ matrix.python-version }}-
           ${{ runner.os }}-pip-
+    - name: Upgrade pip and install wheel
+      run: pip install --upgrade pip wheel
     - name: Install pytket extensions
       run: |
         for path in modules/*/
@@ -49,12 +51,11 @@ jobs:
         sudo apt-get update
         sudo apt-get install dotnet-sdk-3.1
         echo "~/.dotnet/tools" >> $GITHUB_PATH
-        # Note: iqsharp version 0.14 suffers from a performance issue that can freeze the CI.
-        dotnet tool install --version 0.13.20102604 -g Microsoft.Quantum.IQSharp
+        dotnet tool install -g Microsoft.Quantum.IQSharp
         dotnet iqsharp install --user
     - name: Install docs dependencies
       run: |
-        pip install --pre -r docs/requirements.txt
+        pip install -r docs/requirements.txt
 
     - name: Test building docs
       timeout-minutes: 20

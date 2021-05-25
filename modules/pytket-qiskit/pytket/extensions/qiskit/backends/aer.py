@@ -18,7 +18,6 @@ from logging import warning
 from typing import Dict, Iterable, List, Optional, Tuple, cast, TYPE_CHECKING, Set
 
 import numpy as np
-import qiskit.providers.aer.extensions.snapshot_expectation_value  # type: ignore # pylint: disable=unused-import
 from pytket.backends import Backend, CircuitNotRunError, CircuitStatus, ResultHandle
 from pytket.backends.backendresult import BackendResult
 from pytket.backends.resulthandle import _ResultIdTuple
@@ -35,7 +34,7 @@ from pytket.passes import (  # type: ignore
     SequencePass,
     SynthesiseIBM,
 )
-from pytket.pauli import Pauli, QubitPauliString  # type: ignore
+from pytket.pauli import QubitPauliString  # type: ignore
 from pytket.predicates import (  # type: ignore
     ConnectivityPredicate,
     GateSetPredicate,
@@ -54,10 +53,12 @@ from pytket.extensions.qiskit.result_convert import qiskit_result_to_backendresu
 from pytket.routing import Architecture, NoiseAwarePlacement  # type: ignore
 from pytket.utils.operators import QubitPauliOperator
 from pytket.utils.results import KwargTypes, permute_basis_indexing
-from qiskit import Aer
-from qiskit.compiler import assemble  # type: ignore
+from qiskit import Aer  # type: ignore
+from qiskit.opflow.primitive_ops import PauliSumOp  # type: ignore
+from qiskit.providers.aer.library import (  # type: ignore # pylint: disable=unused-import
+    save_expectation_value,
+)
 from qiskit.providers.aer.noise import NoiseModel  # type: ignore
-from qiskit.quantum_info.operators import Pauli as qk_Pauli  # type: ignore
 
 from .ibm_utils import _STATUS_MAP
 
@@ -91,6 +92,7 @@ class _AerBaseBackend(Backend):
 
     def __init__(self, backend_name: str):
         super().__init__()
+        self._backend_name = backend_name
         self._backend: "QiskitAerBackend" = Aer.get_backend(backend_name)
         self._gate_set: Set[OpType] = {
             _gate_str_2_optype[gate_str]
@@ -138,9 +140,20 @@ class _AerBaseBackend(Backend):
             self._check_all_circuits(circuit_list)
 
         qcs = [tk_to_qiskit(tkc) for tkc in circuit_list]
+        if self._backend_name == "aer_simulator_statevector":
+            for qc in qcs:
+                qc.save_state()
+        elif self._backend_name == "aer_simulator_unitary":
+            for qc in qcs:
+                qc.save_unitary()
         seed = cast(Optional[int], kwargs.get("seed"))
-        qobj = assemble(qcs, shots=n_shots, memory=self._memory, seed_simulator=seed)
-        job = self._backend.run(qobj, noise_model=self._noise_model)
+        job = self._backend.run(
+            qcs,
+            shots=n_shots,
+            memory=self._memory,
+            seed_simulator=seed,
+            noise_model=self._noise_model,
+        )
         jobid = job.job_id()
         handle_list = [ResultHandle(jobid, i) for i in range(len(circuit_list))]
         for handle in handle_list:
@@ -179,7 +192,7 @@ class _AerBaseBackend(Backend):
     def _snapshot_expectation_value(
         self,
         circuit: Circuit,
-        hamiltonian: List[Tuple[complex, qk_Pauli]],
+        hamiltonian: PauliSumOp,
         valid_check: bool = True,
     ) -> complex:
         if valid_check:
@@ -193,12 +206,11 @@ class _AerBaseBackend(Backend):
                 + f" onwards. Circuit qubits were: {circ_qbs}"
             )
         qc = tk_to_qiskit(circuit)
-        qc.snapshot_expectation_value("snap", hamiltonian, qc.qubits)
-        qobj = assemble(qc)
-        job = self._backend.run(qobj)
+        qc.save_expectation_value(hamiltonian, qc.qubits, "snap")
+        job = self._backend.run(qc)
         return cast(
             complex,
-            job.result().data(qc)["snapshots"]["expectation_value"]["snap"][0]["value"],
+            job.result().data(qc)["snap"],
         )
 
     def get_pauli_expectation_value(
@@ -225,7 +237,9 @@ class _AerBaseBackend(Backend):
         if not self._supports_expectation:
             raise NotImplementedError("Cannot get expectation value from this backend")
 
-        operator = [(1 + 0j, _sparse_to_qiskit_pauli(pauli, state_circuit.n_qubits))]
+        operator = PauliSumOp.from_list(
+            [(_qiskit_label(pauli, state_circuit.n_qubits), 1)]
+        )
         return self._snapshot_expectation_value(state_circuit, operator, valid_check)
 
     def get_operator_expectation_value(
@@ -252,11 +266,13 @@ class _AerBaseBackend(Backend):
         if not self._supports_expectation:
             raise NotImplementedError("Cannot get expectation value from this backend")
 
-        q_operator = []
-        for term, coeff in operator._dict.items():
-            q_operator.append(
-                (coeff, _sparse_to_qiskit_pauli(term, state_circuit.n_qubits))
-            )
+        n_qubits = state_circuit.n_qubits
+        q_operator = PauliSumOp.from_list(
+            [
+                (_qiskit_label(pauli, n_qubits), coeff)
+                for pauli, coeff in operator._dict.items()
+            ]
+        )
         return self._snapshot_expectation_value(state_circuit, q_operator, valid_check)
 
 
@@ -354,6 +370,7 @@ class AerBackend(_AerBaseBackend):
     _supports_shots = True
     _supports_counts = True
     _supports_expectation = True
+    _expectation_allows_nonhermitian = False
 
     def __init__(
         self,
@@ -365,11 +382,11 @@ class AerBackend(_AerBaseBackend):
         :param noise_model: Noise model to apply during simulation. Defaults to None.
         :type noise_model: Optional[NoiseModel], optional
         :param simulation_method: Simulation method, see
-         https://qiskit.org/documentation/stubs/qiskit.providers.aer.QasmSimulator.html
+         https://qiskit.org/documentation/stubs/qiskit.providers.aer.AerSimulator.html
          for available values. Defaults to "automatic".
         :type simulation_method: str
         """
-        super().__init__("qasm_simulator")
+        super().__init__("aer_simulator")
 
         if not noise_model or all(
             value == [] for value in noise_model.to_dict().values()
@@ -447,9 +464,7 @@ class AerBackend(_AerBaseBackend):
         Supported kwargs: `seed`.
         """
         if n_shots is None or n_shots < 1:
-            raise ValueError(
-                "Parameter n_shots is required for this backend for this backend."
-            )
+            raise ValueError("Parameter n_shots is required for this backend.")
         return super().process_circuits(circuits, n_shots, valid_check, **kwargs)
 
     def get_pauli_expectation_value(
@@ -523,7 +538,7 @@ class AerStateBackend(_AerStateBaseBackend):
 
     def __init__(self) -> None:
         """Backend for running simulations on the Qiskit Aer Statevector simulator."""
-        super().__init__("statevector_simulator")
+        super().__init__("aer_simulator_statevector")
 
 
 class AerUnitaryBackend(_AerStateBaseBackend):
@@ -531,7 +546,7 @@ class AerUnitaryBackend(_AerStateBaseBackend):
 
     def __init__(self) -> None:
         """Backend for running simulations on the Qiskit Aer Unitary simulator."""
-        super().__init__("unitary_simulator")
+        super().__init__("aer_simulator_unitary")
 
     def get_unitary(
         self,
@@ -663,11 +678,9 @@ def _process_model(noise_model: NoiseModel, gate_set: Set[OpType]) -> dict:
     return characterisation
 
 
-def _sparse_to_qiskit_pauli(pauli: QubitPauliString, n_qubits: int) -> qk_Pauli:
-    x = [False] * n_qubits
-    z = [False] * n_qubits
+def _qiskit_label(pauli: QubitPauliString, n_qubits: int) -> str:
+    labels = ["I"] * n_qubits
     for q, p in pauli.to_dict().items():
-        i = _default_q_index(q)
-        z[i] = p in (Pauli.Z, Pauli.Y)
-        x[i] = p in (Pauli.X, Pauli.Y)
-    return qk_Pauli((z, x))
+        labels[_default_q_index(q)] = p.name
+    labels.reverse()
+    return "".join(labels)

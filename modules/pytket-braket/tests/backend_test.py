@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 from collections import Counter
 from typing import cast
 import os
@@ -27,23 +28,17 @@ from pytket.utils.expectations import (
 )
 from pytket.utils.operators import QubitPauliOperator
 
-# To test on AWS backends, first set up auth using boto3, then set the environment
-# variables USE_AWS, S3_BUCKET and S3_FOLDER. See:
+# To test on AWS backends, first set up auth using boto3, then set the S3 bucket and
+# folder in pytket config. See:
 # https://github.com/aws/amazon-braket-sdk-python
 # Otherwise, all tests are run on a local simulator.
-skip_remote_tests: bool = os.getenv("PYTKET_RUN_REMOTE_TESTS") is None or not os.getenv(
-    "USE_AWS"
-)
-if not skip_remote_tests:
-    S3_BUCKET = cast(str, os.getenv("S3_BUCKET"))
-    S3_FOLDER = cast(str, os.getenv("S3_FOLDER"))
+skip_remote_tests: bool = os.getenv("PYTKET_RUN_REMOTE_TESTS") is None
+REASON = "PYTKET_RUN_REMOTE_TESTS not set (requires configuration of AWS storage)"
 
 
-@pytest.mark.skipif(skip_remote_tests, reason="Not running AWS tests")
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_simulator() -> None:
     b = BraketBackend(
-        s3_bucket=S3_BUCKET,
-        s3_folder=S3_FOLDER,
         device_type="quantum-simulator",
         provider="amazon",
         device="sv1",
@@ -74,11 +69,9 @@ def test_simulator() -> None:
     assert readout[1] == readout[2]
 
 
-@pytest.mark.skipif(skip_remote_tests, reason="Not running AWS tests")
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_ionq() -> None:
     b = BraketBackend(
-        s3_bucket=S3_BUCKET,
-        s3_folder=S3_FOLDER,
         device_type="qpu",
         provider="ionq",
         device="ionQdevice",
@@ -125,11 +118,9 @@ def test_ionq() -> None:
     b.cancel(h)
 
 
-@pytest.mark.skipif(skip_remote_tests, reason="Not running AWS tests")
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_rigetti() -> None:
     b = BraketBackend(
-        s3_bucket=S3_BUCKET,
-        s3_folder=S3_FOLDER,
         device_type="qpu",
         provider="rigetti",
         device="Aspen-9",
@@ -165,12 +156,10 @@ def test_rigetti() -> None:
     b.cancel(h)
 
 
-@pytest.mark.skipif(skip_remote_tests, reason="Not running AWS tests")
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_rigetti_with_rerouting() -> None:
     # A circuit that requires rerouting to a non-fully-connected architecture
     b = BraketBackend(
-        s3_bucket=S3_BUCKET,
-        s3_folder=S3_FOLDER,
         device_type="qpu",
         provider="rigetti",
         device="Aspen-9",
@@ -348,3 +337,37 @@ def test_shots_bits_edgecases(n_shots, n_bits) -> None:
     assert np.array_equal(braket_backend.get_shots(c, n_shots), correct_shots)
     assert braket_backend.get_shots(c, n_shots).shape == correct_shape
     assert braket_backend.get_counts(c, n_shots) == correct_counts
+
+
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
+def test_postprocess_sim() -> None:
+    b = BraketBackend(
+        device_type="quantum-simulator",
+        provider="amazon",
+        device="sv1",
+    )
+    assert b.supports_contextual_optimisation
+    c = Circuit(2).H(0).CX(0, 1).Y(0)
+    b.compile_circuit(c)
+    h = b.process_circuit(c, n_shots=10, postprocess=True)
+    r = b.get_result(h)
+    shots = r.get_shots()
+    assert all(shot[0] != shot[1] for shot in shots)
+
+
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
+def test_postprocess_ionq() -> None:
+    b = BraketBackend(
+        device_type="qpu",
+        provider="ionq",
+        device="ionQdevice",
+    )
+    assert b.supports_contextual_optimisation
+    c = Circuit(2).H(0).CX(0, 1).Y(0)
+    b.compile_circuit(c)
+    h = b.process_circuit(c, n_shots=10, postprocess=True)
+    ppcirc = Circuit.from_dict(json.loads(cast(str, h[2])))
+    ppcmds = ppcirc.get_commands()
+    assert len(ppcmds) > 0
+    assert all(ppcmd.op.type == OpType.ClassicalTransform for ppcmd in ppcmds)
+    b.cancel(h)

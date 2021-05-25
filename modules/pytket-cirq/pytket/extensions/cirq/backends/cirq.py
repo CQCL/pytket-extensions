@@ -429,7 +429,7 @@ class CirqCliffordSimBackend(_CirqSimBackend):
         )
         all_backres = [
             BackendResult(
-                state=cast(CliffordSimulatorStepResult, run).state.state_vector(),
+                state=cast(CliffordSimulatorStepResult, run).state.state_vector(),  # type: ignore
                 q_bits=q_bits,
             )
             for run in moments
