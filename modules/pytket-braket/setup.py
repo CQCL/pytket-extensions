@@ -37,7 +37,7 @@ setup(
     license="Apache 2",
     packages=find_namespace_packages(include=["pytket.*"]),
     include_package_data=True,
-    install_requires=["pytket ~= 0.10.1", "amazon-braket-sdk ~= 1.0"],
+    install_requires=["pytket ~= 0.11.0", "amazon-braket-sdk ~= 1.0"],
     classifiers=[
         "Environment :: Console",
         "Programming Language :: Python :: 3.7",
