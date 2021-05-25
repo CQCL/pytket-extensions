@@ -24,9 +24,9 @@ def get_changed_modules(ref_before: str, ref_now: str) -> list:
 
     pat = re.compile(r"modules\/([\w-]+)\/.*")
 
-    found_mods = [
-        m for m in set(pat.findall(output)) if os.path.isdir("modules/{}".format(m))
-    ]
+    found_mods = sorted(
+        [m for m in set(pat.findall(output)) if os.path.isdir("modules/{}".format(m))]
+    )
 
     return found_mods
 
