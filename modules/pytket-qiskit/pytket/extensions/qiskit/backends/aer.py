@@ -16,11 +16,14 @@ import itertools
 from collections import defaultdict
 from logging import warning
 from typing import (
+    Any,
+    Callable,
     Dict,
+    Iterable,
     List,
     Optional,
-    Sequence,
     Tuple,
+    TypeVar,
     Union,
     cast,
     TYPE_CHECKING,
@@ -29,10 +32,10 @@ from typing import (
 
 import numpy as np
 from pytket.backends import Backend, CircuitNotRunError, CircuitStatus, ResultHandle
+from pytket.backends.backendinfo import BackendInfo
 from pytket.backends.backendresult import BackendResult
 from pytket.backends.resulthandle import _ResultIdTuple
 from pytket.circuit import BasisOrder, Circuit, Node, OpType, Qubit  # type: ignore
-from pytket.device import Device, QubitErrorContainer  # type: ignore
 from pytket.passes import (  # type: ignore
     BasePass,
     CliffordSimp,
@@ -58,8 +61,10 @@ from pytket.extensions.qiskit.qiskit_convert import (
     _qiskit_gates_1q,
     _qiskit_gates_2q,
     _gate_str_2_optype,
+    get_avg_characterisation,
 )
 from pytket.extensions.qiskit.result_convert import qiskit_result_to_backendresult
+from pytket.extensions.qiskit._metadata import __extension_version__
 from pytket.routing import Architecture, NoiseAwarePlacement  # type: ignore
 from pytket.utils.operators import QubitPauliOperator
 from pytket.utils.results import KwargTypes, permute_basis_indexing
@@ -104,24 +109,32 @@ class _AerBaseBackend(Backend):
         super().__init__()
         self._backend_name = backend_name
         self._backend: "QiskitAerBackend" = Aer.get_backend(backend_name)
-        self._gate_set: Set[OpType] = {
+
+        gate_set: Set[OpType] = {
             _gate_str_2_optype[gate_str]
             for gate_str in self._backend.configuration().basis_gates
             if gate_str in _gate_str_2_optype
         }
-        if not self._gate_set >= _required_gates:
+        if not gate_set >= _required_gates:
             raise NotImplementedError(
-                f"Gate set {self._gate_set} missing at least one of {_required_gates}"
+                f"Gate set {gate_set} missing at least one of {_required_gates}"
             )
-        self._noise_model: Optional[NoiseModel] = None
-        self._characterisation: Optional[dict] = None
-        self._device: Optional[Device] = None
+        self._backend_info = BackendInfo(
+            backend_name,
+            __extension_version__,
+            Architecture([]),
+            gate_set,
+            supports_midcircuit_measurement=True,  # is this correct?
+            misc={"characterisation": None},
+        )
+
         self._memory = False
+        self._noise_model: Optional[NoiseModel] = None
 
         self._rebase_pass = RebaseCustom(
-            self._gate_set & _2q_gates,
+            gate_set & _2q_gates,
             Circuit(2).CX(0, 1),
-            self._gate_set & _1q_gates,
+            gate_set & _1q_gates,
             _tk1_to_u,
         )
 
@@ -130,12 +143,13 @@ class _AerBaseBackend(Backend):
         return (str, int)
 
     @property
-    def characterisation(self) -> Optional[dict]:
-        return self._characterisation
+    def characterisation(self) -> Optional[Dict[str, Any]]:
+        char = self._backend_info.get_misc("characterisation")
+        return cast(Dict[str, Any], char) if char else None
 
     @property
-    def device(self) -> Optional[Device]:
-        return self._device
+    def backend_info(self) -> BackendInfo:
+        return self._backend_info
 
     def process_circuits(
         self,
@@ -162,10 +176,10 @@ class _AerBaseBackend(Backend):
 
         for (n_shots, batch), indices in zip(circuit_batches, batch_order):
             qcs = [tk_to_qiskit(tkc) for tkc in batch]
-            if self._backend_name == "aer_simulator_statevector":
+            if self._backend_info.name == "aer_simulator_statevector":
                 for qc in qcs:
                     qc.save_state()
-            elif self._backend_name == "aer_simulator_unitary":
+            elif self._backend_info.name == "aer_simulator_unitary":
                 for qc in qcs:
                     qc.save_unitary()
             seed = cast(Optional[int], kwargs.get("seed"))
@@ -301,7 +315,7 @@ class _AerBaseBackend(Backend):
 
 
 class _AerStateBaseBackend(_AerBaseBackend):
-    def __init__(self, *args: str, **kwargs: KwargTypes):
+    def __init__(self, *args: str):
         self._qlists: Dict[ResultHandle, Tuple[int, ...]] = {}
         super().__init__(*args)
 
@@ -311,7 +325,7 @@ class _AerStateBaseBackend(_AerBaseBackend):
             NoClassicalControlPredicate(),
             NoFastFeedforwardPredicate(),
             GateSetPredicate(
-                self._gate_set.union(
+                self._backend_info.gateset.union(
                     {
                         OpType.noop,
                         OpType.Unitary1qBox,
@@ -418,13 +432,22 @@ class AerBackend(_AerBaseBackend):
             self._noise_model = None
         else:
             self._noise_model = noise_model
-            self._characterisation = _process_model(noise_model, self._gate_set)
+            characterisation = _process_model(noise_model, self._backend_info.gateset)
+            characterisation_keys = [
+                "NodeErrors",
+                "EdgeErrors",
+                "ReadoutErrors",
+                "GenericOneQubitQErrors",
+                "GenericTwoQubitQErrors",
+            ]
+            arch = characterisation["Architecture"]
+            # filter entries to keep
+            characterisation = {
+                k: v for k, v in characterisation.items() if k in characterisation_keys
+            }
 
-            self._device = Device(
-                self._characterisation.get("NodeErrors", {}),
-                self._characterisation.get("EdgeErrors", {}),
-                self._characterisation.get("Architecture", Architecture([])),
-            )
+            self._backend_info.architecture = arch
+            self._backend_info.misc["characterisation"] = characterisation
         self._memory = True
 
         self._backend.set_options(method=simulation_method)
@@ -434,7 +457,7 @@ class AerBackend(_AerBaseBackend):
         pred_list = [
             NoSymbolsPredicate(),
             GateSetPredicate(
-                self._gate_set.union(
+                self._backend_info.gateset.union(
                     {
                         OpType.Measure,
                         OpType.Reset,
@@ -446,8 +469,10 @@ class AerBackend(_AerBaseBackend):
                 )
             ),
         ]
-        if self._noise_model and self._device:
-            pred_list.append(ConnectivityPredicate(self._device))
+        arch = self._backend_info.architecture
+        if arch.coupling:
+            # architecture is non-trivial
+            pred_list.append(ConnectivityPredicate(arch))
         return pred_list
 
     def default_compilation_pass(self, optimisation_level: int = 1) -> BasePass:
@@ -459,11 +484,15 @@ class AerBackend(_AerBaseBackend):
             passlist.append(SynthesiseIBM())
         else:
             passlist.append(FullPeepholeOptimise())
-        if self._noise_model and self._device:
+        arch = self._backend_info.architecture
+        if arch.coupling and self.characterisation:
+            # architecture is non-trivial
             passlist.append(
                 CXMappingPass(
-                    self._device,
-                    NoiseAwarePlacement(self._device),
+                    arch,
+                    NoiseAwarePlacement(
+                        arch, **get_avg_characterisation(self.characterisation)
+                    ),
                     directed_cx=True,
                     delay_measures=False,
                 )
@@ -624,16 +653,16 @@ def _process_model(noise_model: NoiseModel, gate_set: Set[OpType]) -> dict:
         for e in noise_model.to_dict()["errors"]
         if e["type"] == "qerror" or e["type"] == "roerror"
     ]
-    link_ers_dict: dict = {}
-    node_ers_dict: dict = defaultdict(
-        lambda: QubitErrorContainer(supported_single_optypes)
-    )
-    readout_errors_dict: dict = {}
-    generic_single_qerrors_dict: dict = defaultdict(lambda: list())
-    generic_2q_qerrors_dict: dict = defaultdict(lambda: list())
 
-    node_ers_qubits: set = set()
-    link_ers_qubits: set = set()
+    link_errors: dict = defaultdict(dict)
+    node_errors: dict = defaultdict(dict)
+    readout_errors: dict = {}
+
+    generic_single_qerrors_dict: dict = defaultdict(list)
+    generic_2q_qerrors_dict: dict = defaultdict(list)
+
+    # remember which qubits have explicit link errors
+    link_errors_qubits: set = set()
 
     coupling_map = []
     for error in errors:
@@ -651,59 +680,60 @@ def _process_model(noise_model: NoiseModel, gate_set: Set[OpType]) -> dict:
         name = name[0]
 
         qubits = error["gate_qubits"][0]
-        node_ers_qubits.add(qubits[0])
         gate_fid = error["probabilities"][-1]
         if len(qubits) == 1:
+            [q] = qubits
+            optype = _gate_str_2_optype[name]
             if error["type"] == "qerror":
-                node_ers_dict[qubits[0]].add_error(
-                    (_gate_str_2_optype[name], 1 - gate_fid)
-                )
-                generic_single_qerrors_dict[qubits[0]].append(
+                node_errors[q].update({optype: 1 - gate_fid})
+                generic_single_qerrors_dict[q].append(
                     (error["instructions"], error["probabilities"])
                 )
             elif error["type"] == "roerror":
-                node_ers_dict[qubits[0]].add_readout(error["probabilities"][0][1])
-                readout_errors_dict[qubits[0]] = error["probabilities"]
+                readout_errors[q] = error["probabilities"]
             else:
                 raise RuntimeWarning("Error type not 'qerror' or 'roerror'.")
         elif len(qubits) == 2:
             # note that if multiple multi-qubit errors are added to the CX gate,
             #  the resulting noise channel is composed and reflected in probabilities
-            error_cont = QubitErrorContainer({_gate_str_2_optype[name]: 1 - gate_fid})
-            link_ers_qubits.add(qubits[0])
-            link_ers_qubits.add(qubits[1])
-            link_ers_dict[tuple(qubits)] = error_cont
+            [q0, q1] = qubits
+            optype = _gate_str_2_optype[name]
+            link_errors[(q0, q1)].update({optype: 1 - gate_fid})
+            link_errors_qubits.add(q0)
+            link_errors_qubits.add(q1)
             # to simulate a worse reverse direction square the fidelity
-            rev_error_cont = QubitErrorContainer(
-                {_gate_str_2_optype[name]: 1 - gate_fid ** 2}
-            )
-            link_ers_dict[tuple(qubits[::-1])] = rev_error_cont
-            generic_2q_qerrors_dict[tuple(qubits)].append(
+            link_errors[(q1, q0)].update({optype: 1 - gate_fid ** 2})
+            generic_2q_qerrors_dict[(q0, q1)].append(
                 (error["instructions"], error["probabilities"])
             )
             coupling_map.append(qubits)
 
-    free_qubits = node_ers_qubits - link_ers_qubits
+    # free qubits (ie qubits with no link errors) have full connectivity
+    free_qubits = set(node_errors) - link_errors_qubits
 
     for q in free_qubits:
-        for lq in link_ers_qubits:
+        for lq in link_errors_qubits:
             coupling_map.append([q, lq])
             coupling_map.append([lq, q])
 
     for pair in itertools.permutations(free_qubits, 2):
         coupling_map.append(pair)
 
+    # map type (k1 -> k2) -> v[k1] -> v[k2]
+    K1 = TypeVar("K1")
+    K2 = TypeVar("K2")
+    V = TypeVar("V")
+    convert_keys_t = Callable[[Callable[[K1], K2], Dict[K1, V]], Dict[K2, V]]
     # convert qubits to architecture Nodes
-    characterisation = {}
-    node_ers_dict = {Node(q_index): ers for q_index, ers in node_ers_dict.items()}
-    link_ers_dict = {
-        (Node(q_indices[0]), Node(q_indices[1])): ers
-        for q_indices, ers in link_ers_dict.items()
-    }
+    convert_keys: convert_keys_t = lambda f, d: {f(k): v for k, v in d.items()}
+    node_errors = convert_keys(lambda q: Node(q), node_errors)
+    link_errors = convert_keys(lambda p: (Node(p[0]), Node(p[1])), link_errors)
+    readout_errors = convert_keys(lambda q: Node(q), readout_errors)
 
-    characterisation["NodeErrors"] = node_ers_dict
-    characterisation["EdgeErrors"] = link_ers_dict
-    characterisation["ReadoutErrors"] = readout_errors_dict
+    characterisation = {}
+    characterisation["NodeErrors"] = node_errors
+    characterisation["EdgeErrors"] = link_errors
+    characterisation["ReadoutErrors"] = readout_errors
     characterisation["GenericOneQubitQErrors"] = generic_single_qerrors_dict
     characterisation["GenericTwoQubitQErrors"] = generic_2q_qerrors_dict
     characterisation["Architecture"] = Architecture(coupling_map)
