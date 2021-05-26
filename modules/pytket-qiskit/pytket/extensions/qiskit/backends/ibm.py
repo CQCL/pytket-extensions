@@ -41,10 +41,14 @@ from qiskit.tools.monitor import job_monitor  # type: ignore
 
 from pytket.circuit import Circuit, OpType  # type: ignore
 from pytket.backends import Backend, CircuitNotRunError, CircuitStatus, ResultHandle
+from pytket.backends.backendinfo import BackendInfo
 from pytket.backends.backendresult import BackendResult
 from pytket.backends.resulthandle import _ResultIdTuple
-from pytket.extensions.qiskit.qiskit_convert import process_characterisation
-from pytket.device import Device  # type: ignore
+from pytket.extensions.qiskit.qiskit_convert import (
+    process_characterisation,
+    get_avg_characterisation,
+)
+from pytket.extensions.qiskit._metadata import __extension_version__
 from pytket.passes import (  # type: ignore
     BasePass,
     RebaseCustom,
@@ -261,36 +265,50 @@ class IBMQBackend(Backend):
             )
             raise err
         self._backend: "_QiskIBMQBackend" = provider.get_backend(backend_name)
-        self._config: "QasmBackendConfiguration" = self._backend.configuration()
-        self._gate_set: Set[OpType]
+        self._config = self._backend.configuration()
+        self._max_per_job = getattr(self._config, "max_experiments", 1)
+
+        # gather and store device specifics in BackendInfo
+        characterisation = process_characterisation(self._backend)
+        characterisation_keys = [
+            "NodeErrors",
+            "EdgeErrors",
+            "ReadoutErrors",
+            "GenericOneQubitQErrors",
+            "GenericTwoQubitQErrors",
+        ]
+        arch = characterisation["Architecture"]
+        # filter entries to keep
+        characterisation = {
+            k: v for k, v in characterisation.items() if k in characterisation_keys
+        }
+        supports_mid_measure = self._config.simulator or self._config.multi_meas_enabled
+        supports_fastfeedback = supports_mid_measure
         # simulator i.e. "ibmq_qasm_simulator" does not have `supported_instructions`
         # attribute
-        self._gate_set = _tk_gate_set(self._backend)
+        gate_set = _tk_gate_set(self._backend)
 
-        self._mid_measure = self._config.simulator or self._config.multi_meas_enabled
+        self._backend_info = BackendInfo(
+            backend_name,
+            __extension_version__,
+            arch,
+            gate_set,
+            supports_midcircuit_measurement=supports_mid_measure,
+            supports_fastfeedback=supports_fastfeedback,
+            misc={"characterisation": characterisation},
+        )
 
-        self._legacy_gateset = OpType.SX not in self._gate_set
+        self._legacy_gateset = OpType.SX not in gate_set
 
         if self._legacy_gateset:
-            if not self._gate_set >= {OpType.U1, OpType.U2, OpType.U3, OpType.CX}:
-                raise NotImplementedError(f"Gate set {self._gate_set} unsupported")
+            if not gate_set >= {OpType.U1, OpType.U2, OpType.U3, OpType.CX}:
+                raise NotImplementedError(f"Gate set {gate_set} unsupported")
             self._rebase_pass = RebaseIBM()
         else:
-            if not self._gate_set >= {OpType.X, OpType.SX, OpType.Rz, OpType.CX}:
-                raise NotImplementedError(f"Gate set {self._gate_set} unsupported")
+            if not gate_set >= {OpType.X, OpType.SX, OpType.Rz, OpType.CX}:
+                raise NotImplementedError(f"Gate set {gate_set} unsupported")
             self._rebase_pass = _rebase_pass
 
-        if hasattr(self._config, "max_experiments"):
-            self._max_per_job = self._config.max_experiments
-        else:
-            self._max_per_job = 1
-
-        self._characterisation: Dict[str, Any] = process_characterisation(self._backend)
-        self._device = Device(
-            self._characterisation.get("NodeErrors", {}),
-            self._characterisation.get("EdgeErrors", {}),
-            self._characterisation.get("Architecture", Architecture([])),
-        )
         self._monitor = monitor
 
         # cache of results keyed by job id and circuit index
@@ -299,30 +317,35 @@ class IBMQBackend(Backend):
         self._MACHINE_DEBUG = False
 
     @property
-    def characterisation(self) -> Optional[Dict[str, Any]]:
-        return self._characterisation
+    def characterisation(self) -> Dict[str, Any]:
+        return cast(Dict[str, Any], self._backend_info.get_misc("characterisation"))
 
     @property
-    def device(self) -> Optional[Device]:
-        return self._device
+    def backend_info(self) -> BackendInfo:
+        return self._backend_info
 
     @property
     def required_predicates(self) -> List[Predicate]:
         predicates = [
             NoSymbolsPredicate(),
             GateSetPredicate(
-                self._gate_set.union(
+                self._backend_info.gateset.union(
                     {
                         OpType.Barrier,
                     }
                 )
             ),
         ]
-        if not self._mid_measure:
+        mid_measure = self._backend_info.supports_midcircuit_measurement
+        fast_feedback = self._backend_info.supports_fastfeedback
+        if not mid_measure:
             predicates = [
                 NoClassicalControlPredicate(),
-                NoFastFeedforwardPredicate(),
                 NoMidMeasurePredicate(),
+            ] + predicates
+        if not fast_feedback:
+            predicates = [
+                NoFastFeedforwardPredicate(),
             ] + predicates
         return predicates
 
@@ -335,12 +358,16 @@ class IBMQBackend(Backend):
             passlist.append(SynthesiseIBM())
         elif optimisation_level == 2:
             passlist.append(FullPeepholeOptimise())
+        arch = self._backend_info.architecture
+        mid_measure = self._backend_info.supports_midcircuit_measurement
         passlist.append(
             CXMappingPass(
-                self._device,
-                NoiseAwarePlacement(self._device),
+                arch,
+                NoiseAwarePlacement(
+                    arch, **get_avg_characterisation(self.characterisation)
+                ),
                 directed_cx=False,
-                delay_measures=(not self._mid_measure),
+                delay_measures=(mid_measure),
             )
         )
         if optimisation_level == 1:

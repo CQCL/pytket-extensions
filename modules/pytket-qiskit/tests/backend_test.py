@@ -15,18 +15,17 @@ import json
 import os
 import sys
 from collections import Counter
-from typing import Dict, Any, cast
+from typing import Dict, Any, Tuple, cast
 import math
 import cmath
 import pickle
 from hypothesis import given, strategies
 import numpy as np
-from pytket.circuit import Circuit, OpType, BasisOrder, Qubit, reg_eq  # type: ignore
+from pytket.circuit import Circuit, OpType, BasisOrder, Node, Qubit, reg_eq  # type: ignore
 from pytket.passes import CliffordSimp  # type: ignore
 from pytket.pauli import Pauli, QubitPauliString  # type: ignore
 from pytket.predicates import CompilationUnit, NoMidMeasurePredicate  # type: ignore
 from pytket.routing import Architecture, route  # type: ignore
-from pytket.device import Device  # type: ignore
 from pytket.transform import Transform  # type: ignore
 from pytket.backends import (
     ResultHandle,
@@ -190,15 +189,14 @@ def test_process_characterisation() -> None:
     back = provider.get_backend("ibmq_santiago")
 
     char = process_characterisation(back)
-    dev = Device(
-        char.get("NodeErrors", {}),
-        char.get("EdgeErrors", {}),
-        char.get("Architecture", Architecture([])),
-    )
+    arch: Architecture = (char.get("Architecture", Architecture([])),)
+    node_errors: dict = char.get("NodeErrors", {})
+    link_errors: dict = char.get("EdgeErrors", {})
 
-    assert len(dev.nodes) == 5
-    assert len(dev.errors_by_node) == 5
-    assert len(dev.coupling) == 8
+    assert len(arch.nodes) == 5
+    assert len(arch.coupling) == 8
+    assert len(node_errors) == 5
+    assert len(link_errors) == 8
 
 
 def test_process_characterisation_no_noise_model() -> None:
@@ -226,19 +224,14 @@ def test_process_characterisation_incomplete_noise_model() -> None:
     )
 
     back = AerBackend(my_noise_model)
-    char = cast(Dict[str, Any], back.characterisation)
 
     c = Circuit(4).CX(0, 1).H(2).CX(2, 1).H(3).CX(0, 3).H(1).X(0).measure_all()
     back.compile_circuit(c)
     assert back.valid_circuit(c)
 
-    dev = Device(
-        char.get("NodeErrors", {}),
-        char.get("EdgeErrors", {}),
-        char.get("Architecture", Architecture([])),
-    )
-    nodes = dev.nodes
-    assert set(dev.architecture.coupling) == set(
+    arch = back.backend_info.architecture
+    nodes = arch.nodes
+    assert set(arch.coupling) == set(
         [
             (nodes[0], nodes[1]),
             (nodes[0], nodes[2]),
@@ -307,11 +300,9 @@ def test_process_characterisation_complete_noise_model() -> None:
     back = AerBackend(my_noise_model)
     char = cast(Dict[str, Any], back.characterisation)
 
-    dev = Device(
-        char.get("NodeErrors", {}),
-        char.get("EdgeErrors", {}),
-        char.get("Architecture", Architecture([])),
-    )
+    node_errors = cast(Dict[Node, dict], char.get("NodeErrors", {}))
+    link_errors = cast(Dict[Tuple[Node, Node], dict], char.get("EdgeErrors", {}))
+    arch = back.backend_info.architecture
 
     assert char["GenericTwoQubitQErrors"][(0, 1)][0][1][0] == 0.0375
     assert char["GenericTwoQubitQErrors"][(0, 1)][0][1][15] == 0.4375
@@ -321,11 +312,11 @@ def test_process_characterisation_complete_noise_model() -> None:
     assert char["GenericOneQubitQErrors"][0][1][1][1] == 0.65
     assert char["GenericOneQubitQErrors"][0][2][1][0] == 0.35
     assert char["GenericOneQubitQErrors"][0][2][1][1] == 0.65
-    assert dev.get_error(OpType.U3, dev.nodes[0]) == 0.375
-    assert dev.get_error(OpType.CX, (dev.nodes[0], dev.nodes[1])) == 0.5625
-    assert dev.get_error(OpType.CX, (dev.nodes[1], dev.nodes[0])) == 0.80859375
-    assert char["ReadoutErrors"][0] == [[0.8, 0.2], [0.2, 0.8]]
-    assert char["ReadoutErrors"][1] == [[0.7, 0.3], [0.3, 0.7]]
+    assert node_errors[arch.nodes[0]][OpType.U3] == 0.375
+    assert link_errors[(arch.nodes[0], arch.nodes[1])][OpType.CX] == 0.5625
+    assert link_errors[(arch.nodes[1], arch.nodes[0])][OpType.CX] == 0.80859375
+    assert char["ReadoutErrors"][arch.nodes[0]] == [[0.8, 0.2], [0.2, 0.8]]
+    assert char["ReadoutErrors"][arch.nodes[1]] == [[0.7, 0.3], [0.3, 0.7]]
 
 
 def test_cancellation_aer() -> None:

@@ -13,9 +13,10 @@
 # limitations under the License.
 
 import json
-from typing import cast, Dict, Iterable, Optional, List, Tuple, TYPE_CHECKING
+from typing import cast, Any, Dict, Iterable, Optional, List, Tuple, TYPE_CHECKING
 
 from pytket.backends import CircuitNotRunError, ResultHandle
+from pytket.backends.backendinfo import BackendInfo
 from pytket.backends.backendresult import BackendResult
 from pytket.backends.resulthandle import _ResultIdTuple
 from pytket.circuit import Circuit  # type: ignore
@@ -33,7 +34,6 @@ from .aer import AerBackend
 from .ibm import IBMQBackend
 
 if TYPE_CHECKING:
-    from pytket.device import Device  # type: ignore
     from pytket.predicates import Predicate  # type: ignore
     from pytket.passes import BasePass  # type: ignore
     from qiskit.providers.aer import AerJob  # type: ignore
@@ -73,8 +73,12 @@ class IBMQEmulatorBackend(AerBackend):
         self._ibm_res_cache: Dict[Tuple[str, int], ExperimentResult] = dict()
 
     @property
-    def device(self) -> Optional["Device"]:
-        return self._ibmq._device
+    def characterisation(self) -> Optional[Dict[str, Any]]:
+        return self._ibmq.characterisation
+
+    @property
+    def backend_info(self) -> BackendInfo:
+        return self._ibmq.backend_info
 
     @property
     def required_predicates(self) -> List["Predicate"]:
