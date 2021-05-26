@@ -51,6 +51,7 @@ from pytket.predicates import (  # type: ignore
 )
 from pytket.backends import Backend, ResultHandle, CircuitStatus, StatusEnum
 from pytket.backends.backendresult import BackendResult
+from pytket.backends.backendinfo import BackendInfo
 from pytket.backends.resulthandle import _ResultIdTuple
 from pytket.utils.results import KwargTypes
 from pytket.extensions.cirq import tk_to_cirq
@@ -76,6 +77,14 @@ class _CirqBaseBackend(Backend):
             self._gate_set_predicate,
         ]
         return preds
+
+    @property
+    def backend_info(self) -> Optional[BackendInfo]:
+        return None
+
+    @property
+    def characterisation(self) -> Optional[dict]:
+        return None
 
     def default_compilation_pass(self, optimisation_level: int = 1) -> BasePass:
         assert optimisation_level in range(3)
