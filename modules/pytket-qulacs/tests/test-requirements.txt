@@ -1,1 +1,1 @@
-openfermion
+openfermion>=1.0.1
