@@ -18,11 +18,11 @@ from ast import literal_eval
 import json
 from typing import (
     cast,
-    Iterable,
     List,
     Optional,
     Dict,
     Any,
+    Sequence,
     TYPE_CHECKING,
     Set,
     Tuple,
@@ -73,7 +73,7 @@ from pytket.extensions.qiskit.result_convert import (
 from pytket.routing import NoiseAwarePlacement, Architecture  # type: ignore
 from pytket.utils import prepare_circuit
 from pytket.utils.results import KwargTypes
-from .ibm_utils import _STATUS_MAP
+from .ibm_utils import _STATUS_MAP, _batch_circuits
 from .config import QiskitConfig
 
 if TYPE_CHECKING:
@@ -361,8 +361,8 @@ class IBMQBackend(Backend):
 
     def process_circuits(
         self,
-        circuits: Iterable[Circuit],
-        n_shots: Optional[int] = None,
+        circuits: Sequence[Circuit],
+        n_shots: Optional[Union[int, Sequence[int]]] = None,
         valid_check: bool = True,
         **kwargs: KwargTypes,
     ) -> List[ResultHandle]:
@@ -370,45 +370,68 @@ class IBMQBackend(Backend):
         See :py:meth:`pytket.backends.Backend.process_circuits`.
         Supported kwargs: `postprocess`.
         """
-        if n_shots is None or n_shots < 1:
-            raise ValueError("Parameter n_shots is required for this backend")
-        handle_list = []
-        for chunk in itertools.zip_longest(*([iter(circuits)] * self._max_per_job)):
-            filtchunk = list(filter(lambda x: x is not None, chunk))
-
-            if valid_check:
-                self._check_all_circuits(filtchunk)
-
-            postprocess = kwargs.get("postprocess", False)
-
-            qcs, ppcirc_strs = [], []
-            for tkc in filtchunk:
-                if postprocess:
-                    c0, ppcirc = prepare_circuit(tkc, allow_classical=False)
-                    ppcirc_rep = ppcirc.to_dict()
-                else:
-                    c0, ppcirc_rep = tkc, None
-                qcs.append(tk_to_qiskit(c0))
-                ppcirc_strs.append(json.dumps(ppcirc_rep))
-            if self._MACHINE_DEBUG:
-                handle_list += [
-                    ResultHandle(
-                        _DEBUG_HANDLE_PREFIX + str((c.n_qubits, n_shots)),
-                        i,
-                        ppcirc_strs[i],
+        circuits = list(circuits)
+        n_shots_list: List[int] = []
+        if hasattr(n_shots, "__iter__"):
+            for n in cast(Sequence[Optional[int]], n_shots):
+                if n is None or n < 1:
+                    raise ValueError(
+                        "n_shots values are required for all circuits for this backend"
                     )
-                    for i, c in enumerate(filtchunk)
-                ]
-            else:
-                job = self._backend.run(qcs, shots=n_shots, memory=self._config.memory)
-                jobid = job.job_id()
-                handle_list += [
-                    ResultHandle(jobid, i, ppcirc_strs[i])
-                    for i in range(len(filtchunk))
-                ]
-                for handle in handle_list:
-                    self._cache[handle] = dict()
-        return handle_list
+                n_shots_list.append(n)
+            if len(n_shots_list) != len(circuits):
+                raise ValueError("The length of n_shots and circuits must match")
+        else:
+            if n_shots is None:
+                raise ValueError("Parameter n_shots is required for this backend")
+            # convert n_shots to a list
+            n_shots_list = [cast(int, n_shots)] * len(circuits)
+
+        handle_list: List[Optional[ResultHandle]] = [None] * len(circuits)
+        circuit_batches, batch_order = _batch_circuits(circuits, n_shots_list)
+
+        batch_id = 0  # identify batches for debug purposes only
+        for (n_shots, batch), indices in zip(circuit_batches, batch_order):
+            for chunk in itertools.zip_longest(
+                *([iter(zip(batch, indices))] * self._max_per_job)
+            ):
+                filtchunk = list(filter(lambda x: x is not None, chunk))
+                batch_chunk, indices_chunk = zip(*filtchunk)
+
+                if valid_check:
+                    self._check_all_circuits(batch_chunk)
+
+                postprocess = kwargs.get("postprocess", False)
+
+                qcs, ppcirc_strs = [], []
+                for tkc in batch_chunk:
+                    if postprocess:
+                        c0, ppcirc = prepare_circuit(tkc, allow_classical=False)
+                        ppcirc_rep = ppcirc.to_dict()
+                    else:
+                        c0, ppcirc_rep = tkc, None
+                    qcs.append(tk_to_qiskit(c0))
+                    ppcirc_strs.append(json.dumps(ppcirc_rep))
+                if self._MACHINE_DEBUG:
+                    for i, ind in enumerate(indices_chunk):
+                        handle_list[ind] = ResultHandle(
+                            _DEBUG_HANDLE_PREFIX
+                            + str((batch_chunk[i].n_qubits, n_shots, batch_id)),
+                            i,
+                            ppcirc_strs[i],
+                        )
+                else:
+                    job = self._backend.run(
+                        qcs, shots=n_shots, memory=self._config.memory
+                    )
+                    jobid = job.job_id()
+                    for i, ind in enumerate(indices_chunk):
+                        handle_list[ind] = ResultHandle(jobid, i, ppcirc_strs[i])
+            batch_id += 1
+        for handle in handle_list:
+            assert handle is not None
+            self._cache[handle] = dict()
+        return cast(List[ResultHandle], handle_list)
 
     def _retrieve_job(self, jobid: str) -> IBMQJob:
         return self._backend.retrieve_job(jobid)
@@ -444,7 +467,7 @@ class IBMQBackend(Backend):
             if self._MACHINE_DEBUG or jobid.startswith(_DEBUG_HANDLE_PREFIX):
                 shots: int
                 n_qubits: int
-                n_qubits, shots = literal_eval(jobid[len(_DEBUG_HANDLE_PREFIX) :])
+                n_qubits, shots, _ = literal_eval(jobid[len(_DEBUG_HANDLE_PREFIX) :])
                 res = _gen_debug_results(n_qubits, shots, index)
             else:
                 try:

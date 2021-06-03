@@ -29,7 +29,7 @@ def is_approx_0_mod_2(x: float, tol: float = 1e-10) -> bool:
 
 
 def toffoli_from_tk1(a: float, b: float, c: float) -> Circuit:
-    """ Only accept operations equivalent to I or X. """
+    """Only accept operations equivalent to I or X."""
     circ = Circuit(1)
     if is_approx_0_mod_2(b) and is_approx_0_mod_2(a + c):
         # identity

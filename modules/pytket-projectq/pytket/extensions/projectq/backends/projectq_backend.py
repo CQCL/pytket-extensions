@@ -15,7 +15,7 @@
 """Methods to allow tket circuits to be ran on ProjectQ simulator
 """
 
-from typing import TYPE_CHECKING, Iterable, List, Optional
+from typing import TYPE_CHECKING, List, Optional, Sequence, Union, cast
 from uuid import uuid4
 from logging import warning
 
@@ -140,8 +140,8 @@ class ProjectQBackend(Backend):
 
     def process_circuits(
         self,
-        circuits: Iterable[Circuit],
-        n_shots: Optional[int] = None,
+        circuits: Sequence[Circuit],
+        n_shots: Optional[Union[int, Sequence[int]]] = None,
         valid_check: bool = True,
         **kwargs: KwargTypes,
     ) -> List[ResultHandle]:
@@ -149,12 +149,20 @@ class ProjectQBackend(Backend):
         See :py:meth:`pytket.backends.Backend.process_circuits`.
         Supported kwargs: `seed`.
         """
-        circuit_list = list(circuits)
+        circuits = list(circuits)
+        if hasattr(n_shots, "__iter__"):
+            n_shots_list = list(cast(Sequence[Optional[int]], n_shots))
+            if len(n_shots_list) != len(circuits):
+                raise ValueError("The length of n_shots and circuits must match")
+        else:
+            # convert n_shots to a list
+            n_shots_list = [cast(Optional[int], n_shots)] * len(circuits)
+
         if valid_check:
-            self._check_all_circuits(circuit_list)
+            self._check_all_circuits(circuits)
 
         handle_list = []
-        for circuit in circuit_list:
+        for circuit, n_shots_circ in zip(circuits, n_shots_list):
             sim = Simulator(rnd_seed=kwargs.get("seed"))
             fwd = ForwarderEngine(sim)
             eng = MainEngine(backend=sim, engine_list=[fwd])
@@ -180,8 +188,8 @@ class ProjectQBackend(Backend):
                 implicit_perm[qb] for qb in sorted(circuit.qubits, reverse=True)
             ]
             measures = circuit.n_gates_of_type(OpType.Measure)
-            if measures == 0 and n_shots is not None:
-                backres = self.empty_result(circuit, n_shots=n_shots)
+            if measures == 0 and n_shots_circ is not None:
+                backres = self.empty_result(circuit, n_shots=n_shots_circ)
             else:
                 backres = BackendResult(q_bits=res_qubits, state=state)
             self._cache[handle] = {"result": backres}

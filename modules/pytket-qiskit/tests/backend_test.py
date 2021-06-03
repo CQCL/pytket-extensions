@@ -381,6 +381,35 @@ def test_machine_debug(santiago_backend: IBMQBackend) -> None:
         backend._MACHINE_DEBUG = False
 
 
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
+def test_nshots_batching(santiago_backend: IBMQBackend) -> None:
+    backend = santiago_backend
+    backend._MACHINE_DEBUG = True
+    try:
+        c1 = Circuit(2, 2).H(0).CX(0, 1).measure_all()
+        c2 = Circuit(2, 2).Rx(0.5, 0).CX(0, 1).measure_all()
+        c3 = Circuit(2, 2).H(1).CX(0, 1).measure_all()
+        c4 = Circuit(2, 2).Rx(0.5, 0).CX(0, 1).CX(1, 0).measure_all()
+        cs = [c1, c2, c3, c4]
+        n_shots = [10, 12, 10, 13]
+        for c in cs:
+            backend.compile_circuit(c)
+        handles = backend.process_circuits(cs, n_shots=n_shots)
+
+        from pytket.extensions.qiskit.backends.ibm import _DEBUG_HANDLE_PREFIX
+
+        assert all(
+            cast(str, hand[0]) == _DEBUG_HANDLE_PREFIX + suffix
+            for hand, suffix in zip(
+                handles,
+                [f"{(2, 10, 0)}", f"{(2, 12, 1)}", f"{(2, 10, 0)}", f"{(2, 13, 2)}"],
+            )
+        )
+    finally:
+        # ensure shared backend is reset for other tests
+        backend._MACHINE_DEBUG = False
+
+
 def test_pauli_statevector() -> None:
     c = Circuit(2)
     c.Rz(0.5, 0)

@@ -15,7 +15,7 @@
 """Methods to allow tket circuits to be ran on the Qulacs simulator
 """
 
-from typing import TYPE_CHECKING, Iterable, List, Optional
+from typing import TYPE_CHECKING, List, Optional, Sequence, Union, cast
 from logging import warning
 from uuid import uuid4
 import numpy as np
@@ -135,17 +135,25 @@ class QulacsBackend(Backend):
 
     def process_circuits(
         self,
-        circuits: Iterable[Circuit],
-        n_shots: Optional[int] = None,
+        circuits: Sequence[Circuit],
+        n_shots: Optional[Union[int, Sequence[int]]] = None,
         valid_check: bool = True,
         **kwargs: KwargTypes,
     ) -> List[ResultHandle]:
-        circuit_list = list(circuits)
+        circuits = list(circuits)
+        if hasattr(n_shots, "__iter__"):
+            n_shots_list = list(cast(Sequence[Optional[int]], n_shots))
+            if len(n_shots_list) != len(circuits):
+                raise ValueError("The length of n_shots and circuits must match")
+        else:
+            # convert n_shots to a list
+            n_shots_list = [cast(Optional[int], n_shots)] * len(circuits)
+
         if valid_check:
-            self._check_all_circuits(circuit_list, nomeasure_warn=False)
+            self._check_all_circuits(circuits, nomeasure_warn=False)
 
         handle_list = []
-        for circuit in circuit_list:
+        for circuit, n_shots_circ in zip(circuits, n_shots_list):
             qulacs_state = self._sim(circuit.n_qubits)
             qulacs_state.set_zero_state()
             qulacs_circ = tk_to_qulacs(circuit)
@@ -154,8 +162,7 @@ class QulacsBackend(Backend):
             qubits = sorted(circuit.qubits, reverse=True)
             shots = None
             bits = None
-            if n_shots:
-
+            if n_shots_circ is not None:
                 bits2index = list(
                     (com.bits[0], qubits.index(com.qubits[0]))
                     for com in circuit
@@ -163,11 +170,11 @@ class QulacsBackend(Backend):
                 )
                 if len(bits2index) == 0:
                     bits = circuit.bits
-                    shots = OutcomeArray.from_ints([0] * n_shots, len(bits))
+                    shots = OutcomeArray.from_ints([0] * n_shots_circ, len(bits))
                 else:
                     bits, choose_indices = zip(*bits2index)
 
-                    samples = qulacs_state.sampling(n_shots)
+                    samples = qulacs_state.sampling(n_shots_circ)
                     shots = OutcomeArray.from_ints(samples, circuit.n_qubits)
                     shots = shots.choose_indices(choose_indices)
             try:

@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from abc import abstractmethod
-from typing import Sequence, cast, Optional, Iterable, List, Union
+from typing import Sequence, cast, Optional, List, Sequence, Union
 from uuid import uuid4
 from cirq.sim import (
     CliffordSimulator,
@@ -141,20 +141,34 @@ class _CirqSampleBackend(_CirqBaseBackend):
 
     def process_circuits(
         self,
-        circuits: Iterable[Circuit],
-        n_shots: Optional[int] = None,
+        circuits: Sequence[Circuit],
+        n_shots: Optional[Union[int, Sequence[int]]] = None,
         valid_check: bool = True,
         **kwargs: KwargTypes,
     ) -> List[ResultHandle]:
-        if n_shots is None or n_shots < 1:
-            raise ValueError("Parameter n_shots is required for this backend")
+        circuits = list(circuits)
+        n_shots_list: List[int] = []
+        if hasattr(n_shots, "__iter__"):
+            for n in cast(Sequence[Optional[int]], n_shots):
+                if n is None or n < 1:
+                    raise ValueError(
+                        "n_shots values are required for all circuits for this backend"
+                    )
+                n_shots_list.append(n)
+            if len(n_shots_list) != len(circuits):
+                raise ValueError("The length of n_shots and circuits must match")
+        else:
+            if n_shots is None:
+                raise ValueError("Parameter n_shots is required for this backend")
+            # convert n_shots to a list
+            n_shots_list = [cast(int, n_shots)] * len(circuits)
+
         self._simulator = self.set_simulator(seed=kwargs.get("seed"))
-        circuit_list = list(circuits)
         if valid_check:
-            self._check_all_circuits(circuit_list)
+            self._check_all_circuits(circuits)
 
         handle_list = []
-        for i, circuit in enumerate(circuit_list):
+        for i, (circuit, n_shots) in enumerate(zip(circuits, n_shots_list)):
             handle = ResultHandle(str(uuid4()), i)
             handle_list.append(handle)
             backres = self.run_circuit(circuit, n_shots=n_shots)
@@ -217,19 +231,26 @@ class _CirqSimBackend(_CirqBaseBackend):
 
     def process_circuits(
         self,
-        circuits: Iterable[Circuit],
-        n_shots: Optional[int] = None,
+        circuits: Sequence[Circuit],
+        n_shots: Optional[Union[int, Sequence[int]]] = None,
         valid_check: bool = True,
         **kwargs: KwargTypes,
     ) -> List[ResultHandle]:
 
+        if hasattr(n_shots, "__iter__"):
+            n_shots_list = cast(List[Optional[int]], n_shots)
+            if len(n_shots_list) != len(circuits):
+                raise ValueError("The length of n_shots and circuits must match")
+        else:
+            # convert n_shots to a list
+            n_shots_list = [cast(int, n_shots)] * len(circuits)
+
         self._simulator = self.set_simulator(seed=kwargs.get("seed"))
-        circuit_list = list(circuits)
         if valid_check:
-            self._check_all_circuits(circuit_list)
+            self._check_all_circuits(circuits)
 
         handle_list = []
-        for i, circuit in enumerate(circuit_list):
+        for i, (circuit, n_shots) in enumerate(zip(circuits, n_shots_list)):
             handle = ResultHandle(str(uuid4()), i)
             handle_list.append(handle)
             backres = self.run_circuit(circuit, n_shots=n_shots)
@@ -276,7 +297,7 @@ class _CirqSimBackend(_CirqBaseBackend):
 
     def process_circuits_moments(
         self,
-        circuits: Iterable[Circuit],
+        circuits: Sequence[Circuit],
         valid_check: bool = True,
         **kwargs: KwargTypes,
     ) -> List[ResultHandle]:
@@ -302,12 +323,11 @@ class _CirqSimBackend(_CirqBaseBackend):
         """
 
         self._simulator = self.set_simulator(seed=kwargs.get("seed"))
-        circuit_list = list(circuits)
         if valid_check:
-            self._check_all_circuits(circuit_list)
+            self._check_all_circuits(circuits)
 
         handle_list = []
-        for i, circuit in enumerate(circuit_list):
+        for i, circuit in enumerate(circuits):
             handle = ResultHandle(str(uuid4()), i)
             handle_list.append(handle)
             backres = self.run_circuit_moments(circuit)
