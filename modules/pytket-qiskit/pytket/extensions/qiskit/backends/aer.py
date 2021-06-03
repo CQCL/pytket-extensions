@@ -535,6 +535,7 @@ class AerBackend(_AerBaseBackend):
 class AerStateBackend(_AerStateBaseBackend):
     _supports_state = True
     _supports_expectation = True
+    _expectation_allows_nonhermitian = False
 
     def __init__(self) -> None:
         """Backend for running simulations on the Qiskit Aer Statevector simulator."""
