@@ -250,6 +250,7 @@ class ForestBackend(Backend):
 class ForestStateBackend(Backend):
     _supports_state = True
     _supports_expectation = True
+    _expectation_allows_nonhermitian = False
     _persistent_handles = False
 
     def __init__(self) -> None:
