@@ -15,7 +15,17 @@
 import itertools
 from collections import defaultdict
 from logging import warning
-from typing import Dict, Iterable, List, Optional, Tuple, cast, TYPE_CHECKING, Set
+from typing import (
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+    cast,
+    TYPE_CHECKING,
+    Set,
+)
 
 import numpy as np
 from pytket.backends import Backend, CircuitNotRunError, CircuitStatus, ResultHandle
@@ -60,7 +70,7 @@ from qiskit.providers.aer.library import (  # type: ignore # pylint: disable=unu
 )
 from qiskit.providers.aer.noise import NoiseModel  # type: ignore
 
-from .ibm_utils import _STATUS_MAP
+from .ibm_utils import _STATUS_MAP, _batch_circuits
 
 if TYPE_CHECKING:
     from qiskit.providers.aer import AerJob  # type: ignore
@@ -129,36 +139,50 @@ class _AerBaseBackend(Backend):
 
     def process_circuits(
         self,
-        circuits: Iterable[Circuit],
-        n_shots: Optional[int] = None,
+        circuits: Sequence[Circuit],
+        n_shots: Optional[Union[int, Sequence[int]]] = None,
         valid_check: bool = True,
         **kwargs: KwargTypes,
     ) -> List[ResultHandle]:
-        circuit_list = list(circuits)
+        circuits = list(circuits)
+        n_shots_list: List[Optional[int]] = []
+        if hasattr(n_shots, "__iter__"):
+            n_shots_list = cast(List[Optional[int]], n_shots)
+            if len(n_shots_list) != len(circuits):
+                raise ValueError("The length of n_shots and circuits must match")
+        else:
+            # convert n_shots to a list
+            n_shots_list = [cast(int, n_shots)] * len(circuits)
 
         if valid_check:
-            self._check_all_circuits(circuit_list)
+            self._check_all_circuits(circuits)
 
-        qcs = [tk_to_qiskit(tkc) for tkc in circuit_list]
-        if self._backend_name == "aer_simulator_statevector":
-            for qc in qcs:
-                qc.save_state()
-        elif self._backend_name == "aer_simulator_unitary":
-            for qc in qcs:
-                qc.save_unitary()
-        seed = cast(Optional[int], kwargs.get("seed"))
-        job = self._backend.run(
-            qcs,
-            shots=n_shots,
-            memory=self._memory,
-            seed_simulator=seed,
-            noise_model=self._noise_model,
-        )
-        jobid = job.job_id()
-        handle_list = [ResultHandle(jobid, i) for i in range(len(circuit_list))]
+        handle_list: List[Optional[ResultHandle]] = [None] * len(circuits)
+        circuit_batches, batch_order = _batch_circuits(circuits, n_shots_list)
+
+        for (n_shots, batch), indices in zip(circuit_batches, batch_order):
+            qcs = [tk_to_qiskit(tkc) for tkc in batch]
+            if self._backend_name == "aer_simulator_statevector":
+                for qc in qcs:
+                    qc.save_state()
+            elif self._backend_name == "aer_simulator_unitary":
+                for qc in qcs:
+                    qc.save_unitary()
+            seed = cast(Optional[int], kwargs.get("seed"))
+            job = self._backend.run(
+                qcs,
+                shots=n_shots,
+                memory=self._memory,
+                seed_simulator=seed,
+                noise_model=self._noise_model,
+            )
+            jobid = job.job_id()
+            for i, ind in enumerate(indices):
+                handle_list[ind] = ResultHandle(jobid, i)
         for handle in handle_list:
+            assert handle is not None
             self._cache[handle] = {"job": job}
-        return handle_list
+        return cast(List[ResultHandle], handle_list)
 
     def cancel(self, handle: ResultHandle) -> None:
         job: "AerJob" = self._cache[handle]["job"]
@@ -307,8 +331,8 @@ class _AerStateBaseBackend(_AerBaseBackend):
 
     def process_circuits(
         self,
-        circuits: Iterable[Circuit],
-        n_shots: Optional[int] = None,
+        circuits: Sequence[Circuit],
+        n_shots: Optional[Union[int, Sequence[int]]] = None,
         valid_check: bool = True,
         **kwargs: KwargTypes,
     ) -> List[ResultHandle]:
@@ -454,8 +478,8 @@ class AerBackend(_AerBaseBackend):
 
     def process_circuits(
         self,
-        circuits: Iterable[Circuit],
-        n_shots: Optional[int] = None,
+        circuits: Sequence[Circuit],
+        n_shots: Optional[Union[int, Sequence[int]]] = None,
         valid_check: bool = True,
         **kwargs: KwargTypes,
     ) -> List[ResultHandle]:
@@ -463,8 +487,16 @@ class AerBackend(_AerBaseBackend):
         See :py:meth:`pytket.backends.Backend.process_circuits`.
         Supported kwargs: `seed`.
         """
-        if n_shots is None or n_shots < 1:
-            raise ValueError("Parameter n_shots is required for this backend.")
+        if hasattr(n_shots, "__iter__"):
+            n_shots_list = cast(Sequence[Optional[int]], n_shots)
+            if any(map(lambda n: n is None or n < 1, n_shots_list)):
+                raise ValueError(
+                    "n_shots values are required for all circuits for this backend"
+                )
+        else:
+            n_shots_int = cast(Optional[int], n_shots)
+            if n_shots_int is None or n_shots_int < 1:
+                raise ValueError("Parameter n_shots is required for this backend.")
         return super().process_circuits(circuits, n_shots, valid_check, **kwargs)
 
     def get_pauli_expectation_value(

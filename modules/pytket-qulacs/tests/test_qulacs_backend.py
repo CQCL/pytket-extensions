@@ -177,7 +177,7 @@ pauli_sym = {"I": Pauli.I, "X": Pauli.X, "Y": Pauli.Y, "Z": Pauli.Z}
 
 
 def qps_from_openfermion(paulis: QubitOperator) -> QubitPauliString:
-    """ Utility function to translate from openfermion format to a QubitPauliString """
+    """Utility function to translate from openfermion format to a QubitPauliString"""
     qlist = []
     plist = []
     for q, p in paulis:

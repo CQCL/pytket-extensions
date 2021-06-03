@@ -15,7 +15,7 @@
 import json
 import time
 from ast import literal_eval
-from typing import Iterable, List, Optional, Tuple, cast, Dict
+from typing import Dict, Iterable, List, Optional, Sequence, Tuple, Union, cast
 
 from requests import put
 from pytket.backends import Backend, CircuitStatus, ResultHandle, StatusEnum
@@ -203,8 +203,8 @@ class AQTBackend(Backend):
 
     def process_circuits(
         self,
-        circuits: Iterable[Circuit],
-        n_shots: Optional[int] = None,
+        circuits: Sequence[Circuit],
+        n_shots: Optional[Union[int, Sequence[int]]] = None,
         valid_check: bool = True,
         **kwargs: KwargTypes,
     ) -> List[ResultHandle]:
@@ -212,8 +212,22 @@ class AQTBackend(Backend):
         See :py:meth:`pytket.backends.Backend.process_circuits`.
         Supported kwargs: none.
         """
-        if n_shots is None or n_shots < 1:
-            raise ValueError("Parameter n_shots is required for this backend")
+        circuits = list(circuits)
+        n_shots_list: List[int] = []
+        if hasattr(n_shots, "__iter__"):
+            for n in cast(Sequence[Optional[int]], n_shots):
+                if n is None or n < 1:
+                    raise ValueError(
+                        "n_shots values are required for all circuits for this backend"
+                    )
+                n_shots_list.append(n)
+            if len(n_shots_list) != len(circuits):
+                raise ValueError("The length of n_shots and circuits must match")
+        else:
+            if n_shots is None:
+                raise ValueError("Parameter n_shots is required for this backend")
+            # convert n_shots to a list
+            n_shots_list = [cast(int, n_shots)] * len(circuits)
 
         if valid_check:
             self._check_all_circuits(circuits)
@@ -221,7 +235,7 @@ class AQTBackend(Backend):
         postprocess = kwargs.get("postprocess", False)
 
         handles = []
-        for i, c in enumerate(circuits):
+        for i, (c, n_shots) in enumerate(zip(circuits, n_shots_list)):
             if postprocess:
                 c0, ppcirc = prepare_circuit(c, allow_classical=False, xcirc=_xcirc)
                 ppcirc_rep = ppcirc.to_dict()

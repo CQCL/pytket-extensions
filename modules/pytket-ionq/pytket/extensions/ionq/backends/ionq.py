@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import cast, Optional, List, Iterable, Counter
+from typing import cast, Optional, List, Sequence, Union, Counter
 import json
 import time
 from ast import literal_eval
@@ -180,8 +180,8 @@ class IonQBackend(Backend):
 
     def process_circuits(
         self,
-        circuits: Iterable[Circuit],
-        n_shots: Optional[int] = None,
+        circuits: Sequence[Circuit],
+        n_shots: Optional[Union[int, Sequence[int]]] = None,
         valid_check: bool = True,
         **kwargs: KwargTypes,
     ) -> List[ResultHandle]:
@@ -189,22 +189,35 @@ class IonQBackend(Backend):
         See :py:meth:`pytket.backends.Backend.process_circuits`.
         Supported kwargs: none.
         """
-        if n_shots is None or n_shots < 1:
-            raise ValueError("Parameter n_shots is required for this backend")
+        circuits = list(circuits)
+        n_shots_list: List[int] = []
+        if hasattr(n_shots, "__iter__"):
+            for n in cast(Sequence[Optional[int]], n_shots):
+                if n is None or n < 1:
+                    raise ValueError(
+                        "n_shots values are required for all circuits for this backend"
+                    )
+                n_shots_list.append(n)
+            if len(n_shots_list) != len(circuits):
+                raise ValueError("The length of n_shots and circuits must match")
+        else:
+            if n_shots is None:
+                raise ValueError("Parameter n_shots is required for this backend")
+            # convert n_shots to a list
+            n_shots_list = [cast(int, n_shots)] * len(circuits)
 
         if valid_check:
             self._check_all_circuits(circuits)
 
         postprocess = kwargs.get("postprocess", False)
 
-        basebody = {
+        basebody: dict = {
             "lang": "json",
             "body": None,
             "target": self._device_name,
-            "shots": n_shots,
         }
         handles = []
-        for i, circ in enumerate(circuits):
+        for i, (circ, n_shots) in enumerate(zip(circuits, n_shots_list)):
             result = dict()
             bodycopy = basebody.copy()
             if postprocess:
@@ -217,6 +230,7 @@ class IonQBackend(Backend):
                 result["result"] = self.empty_result(circ, n_shots=n_shots)
             measures = json.dumps(meas)
             bodycopy["name"] = circ.name if circ.name else f"{self._label}_{i}"
+            bodycopy["shots"] = n_shots
             if self._MACHINE_DEBUG:
                 handle = ResultHandle(
                     _DEBUG_HANDLE_PREFIX + str(circ.n_qubits),

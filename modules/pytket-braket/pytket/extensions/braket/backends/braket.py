@@ -21,6 +21,7 @@ from typing import (
     Iterable,
     List,
     Optional,
+    Sequence,
     Union,
     Tuple,
 )
@@ -185,7 +186,7 @@ class _DeviceType(str, Enum):
 
 
 class BraketBackend(Backend):
-    """ Interface to Amazon Braket service """
+    """Interface to Amazon Braket service"""
 
     _persistent_handles = True
 
@@ -475,34 +476,46 @@ class BraketBackend(Backend):
 
     def process_circuits(
         self,
-        circuits: Iterable[Circuit],
-        n_shots: Optional[int] = None,
+        circuits: Sequence[Circuit],
+        n_shots: Optional[Union[int, Sequence[int]]] = None,
         valid_check: bool = True,
         **kwargs: KwargTypes,
     ) -> List[ResultHandle]:
         """
         Supported `kwargs`: none
         """
+        circuits = list(circuits)
+        n_shots_list: List[int] = []
+        if hasattr(n_shots, "__iter__"):
+            n_shots_list = [n or 0 for n in cast(Sequence[Optional[int]], n_shots)]
+        else:
+            # convert n_shots to a list
+            n_shots_list = [cast(Optional[int], n_shots) or 0] * len(circuits)
+
         if not self.supports_shots and not self.supports_state:
             raise RuntimeError("Backend does not support shots or state")
-        if n_shots is None:
-            n_shots = 0
-        want_state = n_shots == 0
-        if (not want_state) and (
-            n_shots < self._sample_min_shots or n_shots > self._sample_max_shots
+
+        if any(
+            map(
+                lambda n: n > 0
+                and (n < self._sample_min_shots or n > self._sample_max_shots),
+                n_shots_list,
+            )
         ):
             raise ValueError(
                 "For sampling, n_shots must be between "
                 f"{self._sample_min_shots} and {self._sample_max_shots}. "
                 "For statevector simulation, omit this parameter."
             )
+
         if valid_check:
             self._check_all_circuits(circuits, nomeasure_warn=False)
 
         postprocess = kwargs.get("postprocess", False)
 
         handles = []
-        for circ in circuits:
+        for circ, n_shots in zip(circuits, n_shots_list):
+            want_state = n_shots == 0
             if postprocess:
                 circ_measured = circ.copy()
                 circ_measured.measure_all()

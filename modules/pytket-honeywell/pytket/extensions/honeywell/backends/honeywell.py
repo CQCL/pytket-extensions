@@ -16,7 +16,7 @@
 from ast import literal_eval
 import json
 from http import HTTPStatus
-from typing import Dict, Iterable, List, Optional, Sequence, Any, cast
+from typing import Dict, List, Optional, Sequence, Union, Any, cast
 
 import numpy as np
 import requests
@@ -252,8 +252,8 @@ class HoneywellBackend(Backend):
 
     def process_circuits(
         self,
-        circuits: Iterable[Circuit],
-        n_shots: Optional[int] = None,
+        circuits: Sequence[Circuit],
+        n_shots: Optional[Union[int, Sequence[int]]] = None,
         valid_check: bool = True,
         **kwargs: KwargTypes,
     ) -> List[ResultHandle]:
@@ -261,23 +261,36 @@ class HoneywellBackend(Backend):
         See :py:meth:`pytket.backends.Backend.process_circuits`.
         Supported kwargs: none.
         """
-        if n_shots is None or n_shots < 1:
-            raise ValueError("Parameter n_shots is required for this backend")
+        circuits = list(circuits)
+        n_shots_list: List[int] = []
+        if hasattr(n_shots, "__iter__"):
+            for n in cast(Sequence[Optional[int]], n_shots):
+                if n is None or n < 1:
+                    raise ValueError(
+                        "n_shots values are required for all circuits for this backend"
+                    )
+                n_shots_list.append(n)
+            if len(n_shots_list) != len(circuits):
+                raise ValueError("The length of n_shots and circuits must match")
+        else:
+            if n_shots is None:
+                raise ValueError("Parameter n_shots is required for this backend")
+            # convert n_shots to a list
+            n_shots_list = [cast(int, n_shots)] * len(circuits)
 
         if valid_check:
             self._check_all_circuits(circuits)
 
         postprocess = kwargs.get("postprocess", False)
 
-        basebody = {
+        basebody: dict = {
             "machine": self._device_name,
             "language": "OPENQASM 2.0",
             "priority": "normal",
-            "count": n_shots,
             "options": None,
         }
         handle_list = []
-        for i, circ in enumerate(circuits):
+        for i, (circ, n_shots) in enumerate(zip(circuits, n_shots_list)):
             if postprocess:
                 c0, ppcirc = prepare_circuit(circ, allow_classical=False, xcirc=_xcirc)
                 ppcirc_rep = ppcirc.to_dict()
@@ -287,6 +300,7 @@ class HoneywellBackend(Backend):
             body = basebody.copy()
             body["name"] = circ.name if circ.name else f"{self._label}_{i}"
             body["program"] = honeywell_circ
+            body["count"] = n_shots
             if self._api_handler is None:
                 handle_list.append(
                     ResultHandle(

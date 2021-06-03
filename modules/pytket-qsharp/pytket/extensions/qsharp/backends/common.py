@@ -12,14 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import (
-    TYPE_CHECKING,
-    Iterable,
-    List,
-    MutableMapping,
-    Optional,
-    Union,
-)
+from typing import TYPE_CHECKING, List, MutableMapping, Optional, Sequence, Union, cast
 from uuid import uuid4
 
 from qsharp import compile as qscompile  # type: ignore
@@ -169,8 +162,8 @@ class _QsharpBaseBackend(Backend):
 
     def process_circuits(
         self,
-        circuits: Iterable[Circuit],
-        n_shots: Optional[int] = None,
+        circuits: Sequence[Circuit],
+        n_shots: Optional[Union[int, Sequence[int]]] = None,
         valid_check: bool = True,
         **kwargs: KwargTypes,
     ) -> List[ResultHandle]:
@@ -178,10 +171,19 @@ class _QsharpBaseBackend(Backend):
         See :py:meth:`pytket.backends.Backend.process_circuits`.
         Supported kwargs: none.
         """
+        circuits = list(circuits)
+        if hasattr(n_shots, "__iter__"):
+            n_shots_list = list(cast(Sequence[Optional[int]], n_shots))
+            if len(n_shots_list) != len(circuits):
+                raise ValueError("The length of n_shots and circuits must match")
+        else:
+            # convert n_shots to a list
+            n_shots_list = [cast(Optional[int], n_shots)] * len(circuits)
+
         if valid_check:
             self._check_all_circuits(circuits, nomeasure_warn=False)
         handles = []
-        for c in circuits:
+        for c, n_shots in zip(circuits, n_shots_list):
             qs = tk_to_qsharp(c)
             qc = qscompile(qs)
             results = self._calculate_results(qc, n_shots)

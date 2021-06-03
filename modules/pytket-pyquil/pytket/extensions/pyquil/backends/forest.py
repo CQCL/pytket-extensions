@@ -14,7 +14,7 @@
 
 import json
 from copy import copy
-from typing import cast, Iterable, List, Optional
+from typing import cast, Iterable, List, Optional, Sequence, Union
 from uuid import uuid4
 from logging import warning
 
@@ -162,8 +162,8 @@ class ForestBackend(Backend):
 
     def process_circuits(
         self,
-        circuits: Iterable[Circuit],
-        n_shots: Optional[int] = None,
+        circuits: Sequence[Circuit],
+        n_shots: Optional[Union[int, Sequence[int]]] = None,
         valid_check: bool = True,
         **kwargs: KwargTypes,
     ) -> List[ResultHandle]:
@@ -171,17 +171,30 @@ class ForestBackend(Backend):
         See :py:meth:`pytket.backends.Backend.process_circuits`.
         Supported kwargs: `seed`.
         """
-        if n_shots is None or n_shots < 1:
-            raise ValueError(
-                "Parameter n_shots is required for this backend for ForestBackend"
-            )
+        circuits = list(circuits)
+        n_shots_list: List[int] = []
+        if hasattr(n_shots, "__iter__"):
+            for n in cast(Sequence[Optional[int]], n_shots):
+                if n is None or n < 1:
+                    raise ValueError(
+                        "n_shots values are required for all circuits for this backend"
+                    )
+                n_shots_list.append(n)
+            if len(n_shots_list) != len(circuits):
+                raise ValueError("The length of n_shots and circuits must match")
+        else:
+            if n_shots is None:
+                raise ValueError("Parameter n_shots is required for this backend")
+            # convert n_shots to a list
+            n_shots_list = [cast(int, n_shots)] * len(circuits)
+
         if valid_check:
             self._check_all_circuits(circuits)
 
         postprocess = kwargs.get("postprocess", False)
 
         handle_list = []
-        for circuit in circuits:
+        for circuit, n_shots in zip(circuits, n_shots_list):
             if postprocess:
                 c0, ppcirc = prepare_circuit(circuit, allow_classical=False)
                 ppcirc_rep = ppcirc.to_dict()
