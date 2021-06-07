@@ -562,6 +562,7 @@ class BraketBackend(Backend):
     def characterisation(self) -> Optional[Dict]:
         return self._characteristics
 
+    @property
     def device(self) -> Optional[Device]:
         return self._tket_device
 
