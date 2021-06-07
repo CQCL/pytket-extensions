@@ -81,7 +81,7 @@ def test_ionq() -> None:
     assert not b.supports_state
 
     # Device is fully connected
-    dev = b.device()
+    dev = b.device
     assert dev is not None
     arch = dev.architecture
     n = len(arch.nodes)
