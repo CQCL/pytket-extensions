@@ -1,6 +1,11 @@
 Changelog
 ~~~~~~~~~
 
+0.8.1 (June 2021)
+-----------------
+
+* Make BracketBackend.device a property, in accordance with definition in base class.
+
 0.8.0 (May 2021)
 ----------------
 
