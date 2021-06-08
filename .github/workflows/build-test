@@ -49,7 +49,7 @@ for MODULE in $MODULES_TO_TEST; do
 
     cd ${MODULEDIR}/${MODULE}/tests
 
-    python -m pip install -r test-requirements.txt
+    python -m pip install --pre -r test-requirements.txt
 
     if [[ "${MODULE}" = "pytket-qsharp" && "${PLAT}" != "Darwin" ]]
     then
