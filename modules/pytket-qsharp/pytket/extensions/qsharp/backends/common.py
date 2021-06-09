@@ -12,7 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import TYPE_CHECKING, List, MutableMapping, Optional, Sequence, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Iterable,
+    List,
+    MutableMapping,
+    Optional,
+    Sequence,
+    Set,
+    Union,
+    cast,
+)
 from uuid import uuid4
 
 from qsharp import compile as qscompile  # type: ignore
@@ -25,6 +35,7 @@ from pytket.backends import (
 )
 from pytket.backends.backend import KwargTypes
 from pytket.backends.resulthandle import _ResultIdTuple
+from pytket.backends.backendinfo import BackendInfo
 from pytket.backends.backendresult import BackendResult
 from pytket.circuit import Circuit, OpType  # type: ignore
 from pytket.passes import (  # type: ignore
@@ -44,6 +55,8 @@ from pytket.predicates import (  # type: ignore
     NoMidMeasurePredicate,
     NoSymbolsPredicate,
 )
+from pytket.routing import Architecture  # type: ignore
+from pytket.extensions.qsharp._metadata import __extension_version__
 from pytket.extensions.qsharp.qsharp_convert import tk_to_qsharp
 
 if TYPE_CHECKING:
@@ -59,32 +72,13 @@ def _from_tk1(a: float, b: float, c: float) -> Circuit:
     return circ
 
 
-def qs_predicates() -> List[Predicate]:
+def qs_predicates(gate_set: Set[OpType]) -> List[Predicate]:
     return [
         NoMidMeasurePredicate(),
         NoSymbolsPredicate(),
         NoClassicalControlPredicate(),
         NoFastFeedforwardPredicate(),
-        GateSetPredicate(
-            {
-                OpType.CCX,
-                OpType.CX,
-                OpType.PauliExpBox,
-                OpType.H,
-                OpType.noop,
-                OpType.Rx,
-                OpType.Ry,
-                OpType.Rz,
-                OpType.S,
-                OpType.SWAP,
-                OpType.T,
-                OpType.X,
-                OpType.Y,
-                OpType.Z,
-                OpType.CnX,
-                OpType.Measure,
-            }
-        ),
+        GateSetPredicate(gate_set),
     ]
 
 
@@ -111,10 +105,34 @@ class _QsharpBaseBackend(Backend):
     """Shared base backend for Qsharp backends."""
 
     _persistent_handles = False
+    _GATE_SET: Set[OpType] = {
+        OpType.CCX,
+        OpType.CX,
+        OpType.PauliExpBox,
+        OpType.H,
+        OpType.noop,
+        OpType.Rx,
+        OpType.Ry,
+        OpType.Rz,
+        OpType.S,
+        OpType.SWAP,
+        OpType.T,
+        OpType.X,
+        OpType.Y,
+        OpType.Z,
+        OpType.CnX,
+        OpType.Measure,
+    }
+
+    def __init__(self, backend_name: str = "Qsharp Backend"):
+        super().__init__()
+        self._backend_info = BackendInfo(
+            backend_name, __extension_version__, Architecture([]), self._GATE_SET
+        )
 
     @property
     def required_predicates(self) -> List[Predicate]:
-        return qs_predicates()
+        return qs_predicates(self._GATE_SET)
 
     def default_compilation_pass(self, optimisation_level: int = 1) -> BasePass:
         assert optimisation_level in range(3)
@@ -147,8 +165,8 @@ class _QsharpBaseBackend(Backend):
         return (str,)
 
     @property
-    def device(self) -> Optional["Device"]:
-        return None
+    def backend_info(self) -> BackendInfo:
+        return self._backend_info
 
     def circuit_status(self, handle: ResultHandle) -> CircuitStatus:
         if handle in self._cache:
