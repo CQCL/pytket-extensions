@@ -15,13 +15,13 @@
 """Methods to allow tket circuits to be ran on ProjectQ simulator
 """
 
-from typing import TYPE_CHECKING, Iterable, List, Optional
+from typing import Iterable, List, Optional, Dict, Any
 from uuid import uuid4
 from logging import warning
 
 import numpy as np
 import projectq  # type: ignore
-from projectq import MainEngine
+from projectq import MainEngine  # type: ignore
 from projectq.backends import Simulator  # type: ignore
 from projectq.cengines import ForwarderEngine  # type: ignore
 from pytket.circuit import Circuit, OpType  # type: ignore
@@ -33,6 +33,7 @@ from pytket.backends import (
     CircuitStatus,
     StatusEnum,
 )
+from pytket.backends.backendinfo import BackendInfo
 from pytket.backends.resulthandle import _ResultIdTuple
 from pytket.backends.backendresult import BackendResult
 from pytket.passes import (  # type: ignore
@@ -54,12 +55,11 @@ from pytket.predicates import (  # type: ignore
     DefaultRegisterPredicate,
     Predicate,
 )
-from pytket.extensions.projectq.projectq_convert import tk_to_projectq
+from pytket.routing import Architecture  # type: ignore
+from pytket.extensions.projectq.projectq_convert import tk_to_projectq  # type: ignore
+from pytket.extensions.projectq._metadata import __extension_version__  # type: ignore
 from pytket.utils.operators import QubitPauliOperator
 from pytket.utils.results import KwargTypes
-
-if TYPE_CHECKING:
-    from pytket.device import Device  # type: ignore
 
 
 def _default_q_index(q: Qubit) -> int:
@@ -81,8 +81,35 @@ class ProjectQBackend(Backend):
         return (str,)
 
     @property
-    def device(self) -> "Optional[Device]":
-        return None
+    def characterisation(self) -> Dict[str, Any]:
+        return dict()
+
+    @property
+    def backend_info(self) -> BackendInfo:
+        _gate_set = {
+            OpType.SWAP,
+            OpType.CRz,
+            OpType.CX,
+            OpType.CZ,
+            OpType.H,
+            OpType.X,
+            OpType.Y,
+            OpType.Z,
+            OpType.S,
+            OpType.T,
+            OpType.V,
+            OpType.Rx,
+            OpType.Ry,
+            OpType.Rz,
+            OpType.Barrier,
+        }
+        backend_info = BackendInfo(
+            "project_q_backend",
+            __extension_version__,
+            Architecture([]),
+            _gate_set,
+        )
+        return backend_info
 
     @property
     def required_predicates(self) -> List[Predicate]:
@@ -196,7 +223,7 @@ class ProjectQBackend(Backend):
     def _expectation_value(
         self,
         circuit: Circuit,
-        hamiltonian: projectq.ops.QubitOperator,
+        hamiltonian: projectq.ops.QubitOperator,  # type: ignore
         valid_check: bool = True,
     ) -> complex:
         if valid_check and not self.valid_circuit(circuit):
@@ -236,7 +263,7 @@ class ProjectQBackend(Backend):
             (_default_q_index(q), p.name) for q, p in pauli.to_dict().items()
         )
         return self._expectation_value(
-            state_circuit, projectq.ops.QubitOperator(pauli_tuple), valid_check
+            state_circuit, projectq.ops.QubitOperator(pauli_tuple), valid_check  # type: ignore
         )
 
     def get_operator_expectation_value(
@@ -259,14 +286,14 @@ class ProjectQBackend(Backend):
         :return: :math:`\\left<\\psi | H | \\psi \\right>`
         :rtype: complex
         """
-        ham = projectq.ops.QubitOperator()
+        ham = projectq.ops.QubitOperator()  # type: ignore
         for term, coeff in operator._dict.items():
             if type(coeff) is complex and abs(coeff.imag) > 1e-12:
                 raise ValueError(
                     "Operator is not Hermitian and cannot be converted to "
                     "`projectq.ops.QubitOperator`."
                 )
-            ham += projectq.ops.QubitOperator(
+            ham += projectq.ops.QubitOperator(  # type: ignore
                 tuple((_default_q_index(q), p.name) for q, p in term.to_dict().items()),
                 float(coeff),
             )
