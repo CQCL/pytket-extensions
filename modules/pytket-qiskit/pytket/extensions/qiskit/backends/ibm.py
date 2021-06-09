@@ -342,7 +342,7 @@ class IBMQBackend(Backend):
         predicates = [
             NoSymbolsPredicate(),
             GateSetPredicate(
-                self._backend_info.gateset.union(
+                self._backend_info.gate_set.union(
                     {
                         OpType.Barrier,
                     }
