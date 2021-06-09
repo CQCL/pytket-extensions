@@ -100,7 +100,7 @@ class AzureBackend(_QsharpBaseBackend):
         :raises RuntimeError: Azure authentication error
         :raises ValueError: Target not available
         """
-        super().__init__()
+        super().__init__(backend_name=target_name)
         self._MACHINE_DEBUG = machine_debug
         if not self._MACHINE_DEBUG:
             try:

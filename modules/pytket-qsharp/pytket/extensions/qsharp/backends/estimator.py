@@ -27,7 +27,7 @@ ResourcesResult = Dict[str, int]
 
 
 class QsharpEstimatorBackend(_QsharpBaseBackend):
-    """ Backend for estimating resources of a circuit using the QDK. """
+    """Backend for estimating resources of a circuit using the QDK."""
 
     def _calculate_results(
         self, qscall: "QSharpCallable", n_shots: Optional[int] = None
