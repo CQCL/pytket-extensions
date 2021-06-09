@@ -130,7 +130,7 @@ class ForestBackend(Backend):
             NoClassicalControlPredicate(),
             NoFastFeedforwardPredicate(),
             NoMidMeasurePredicate(),
-            GateSetPredicate(self.backend_info.gateset),
+            GateSetPredicate(self.backend_info.gate_set),
             ConnectivityPredicate(self.backend_info.architecture),
         ]
 

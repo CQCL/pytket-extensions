@@ -310,7 +310,7 @@ class _AerStateBaseBackend(_AerBaseBackend):
             NoClassicalControlPredicate(),
             NoFastFeedforwardPredicate(),
             GateSetPredicate(
-                self._backend_info.gateset.union(
+                self._backend_info.gate_set.union(
                     {
                         OpType.noop,
                         OpType.Unitary1qBox,
@@ -417,7 +417,7 @@ class AerBackend(_AerBaseBackend):
             self._noise_model = None
         else:
             self._noise_model = noise_model
-            characterisation = _process_model(noise_model, self._backend_info.gateset)
+            characterisation = _process_model(noise_model, self._backend_info.gate_set)
             characterisation_keys = [
                 "NodeErrors",
                 "EdgeErrors",
@@ -442,7 +442,7 @@ class AerBackend(_AerBaseBackend):
         pred_list = [
             NoSymbolsPredicate(),
             GateSetPredicate(
-                self._backend_info.gateset.union(
+                self._backend_info.gate_set.union(
                     {
                         OpType.Measure,
                         OpType.Reset,
