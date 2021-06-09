@@ -29,9 +29,11 @@ from pytket.backends import (
     StatusEnum,
 )
 from pytket.backends.backend import KwargTypes
+from pytket.backends.backendinfo import BackendInfo
 from pytket.backends.backendresult import BackendResult
 from pytket.backends.resulthandle import _ResultIdTuple
 from pytket.circuit import Circuit, OpType  # type: ignore
+from pytket.extensions.qulacs._metadata import __extension_version__
 from pytket.passes import (  # type: ignore
     BasePass,
     SynthesiseIBM,
@@ -50,6 +52,7 @@ from pytket.predicates import (  # type: ignore
     DefaultRegisterPredicate,
     Predicate,
 )
+from pytket.routing import Architecture  # type: ignore
 from pytket.utils.operators import QubitPauliOperator
 from pytket.utils.outcomearray import OutcomeArray
 from pytket.extensions.qulacs.qulacs_convert import tk_to_qulacs
@@ -76,9 +79,35 @@ class QulacsBackend(Backend):
     _supports_expectation = True
     _expectation_allows_nonhermitian = False
     _persistent_handles = False
+    _GATE_SET = {
+        OpType.X,
+        OpType.Y,
+        OpType.Z,
+        OpType.H,
+        OpType.S,
+        OpType.Sdg,
+        OpType.T,
+        OpType.Tdg,
+        OpType.Rx,
+        OpType.Ry,
+        OpType.Rz,
+        OpType.CX,
+        OpType.CZ,
+        OpType.SWAP,
+        OpType.U1,
+        OpType.U2,
+        OpType.U3,
+        OpType.Measure,
+        OpType.Barrier,
+    }
 
     def __init__(self) -> None:
         super().__init__()
+        name = "qulacs state simulator"
+        self._backend_info = BackendInfo(
+            name, __extension_version__, Architecture([]), self._GATE_SET
+        )
+
         self._sim = QuantumState
 
     @property
@@ -86,7 +115,7 @@ class QulacsBackend(Backend):
         return (str,)
 
     @property
-    def device(self) -> Optional["Device"]:
+    def backend_info(self) -> Optional["Device"]:
         return None
 
     @property
@@ -96,29 +125,7 @@ class QulacsBackend(Backend):
             NoFastFeedforwardPredicate(),
             NoMidMeasurePredicate(),
             NoSymbolsPredicate(),
-            GateSetPredicate(
-                {
-                    OpType.X,
-                    OpType.Y,
-                    OpType.Z,
-                    OpType.H,
-                    OpType.S,
-                    OpType.Sdg,
-                    OpType.T,
-                    OpType.Tdg,
-                    OpType.Rx,
-                    OpType.Ry,
-                    OpType.Rz,
-                    OpType.CX,
-                    OpType.CZ,
-                    OpType.SWAP,
-                    OpType.U1,
-                    OpType.U2,
-                    OpType.U3,
-                    OpType.Measure,
-                    OpType.Barrier,
-                }
-            ),
+            GateSetPredicate(self._GATE_SET),
             DefaultRegisterPredicate(),
         ]
 
@@ -241,4 +248,6 @@ if _GPU_ENABLED:
 
         def __init__(self) -> None:
             super().__init__()
+
+            self._backend_info.name += " GPU"
             self._sim = QuantumStateGpu
