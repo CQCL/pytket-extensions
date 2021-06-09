@@ -26,7 +26,6 @@ from _pytest.fixtures import FixtureRequest
 
 from pytket.extensions.pyquil import ForestBackend, ForestStateBackend
 from pytket.circuit import BasisOrder, Circuit, OpType, Qubit, Node  # type: ignore
-from pytket.device import Device  # type: ignore
 from pytket.passes import CliffordSimp  # type: ignore
 from pytket.pauli import Pauli, QubitPauliString  # type: ignore
 from pytket.routing import Architecture  # type: ignore
@@ -144,12 +143,9 @@ def test_characterisation(qvm: None, quilc: None) -> None:
     b = ForestBackend("9q-square")
     char = b.characterisation
     assert char
-    dev = Device(
-        char.get("NodeErrors", {}),
-        char.get("EdgeErrors", {}),
-        char.get("Architecture", Architecture([])),
-    )
-    assert dev
+    assert len(char["NodeErrors"]) == 9
+    assert len(char["EdgeErrors"]) == 12
+    assert b.backend_info.architecture
 
 
 @pytest.mark.skipif(

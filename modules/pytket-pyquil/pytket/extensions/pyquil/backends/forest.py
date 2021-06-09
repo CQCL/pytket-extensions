@@ -14,7 +14,7 @@
 
 import json
 from copy import copy
-from typing import cast, Iterable, List, Optional
+from typing import cast, Any, Dict, Iterable, List, Optional
 from uuid import uuid4
 from logging import warning
 
@@ -34,9 +34,10 @@ from pytket.backends import (
     StatusEnum,
 )
 from pytket.backends.backend import KwargTypes
+from pytket.backends.backendinfo import BackendInfo
 from pytket.backends.backendresult import BackendResult
 from pytket.backends.resulthandle import _ResultIdTuple
-from pytket.device import Device  # type: ignore
+from pytket.extensions.pyquil._metadata import __extension_version__
 from pytket.passes import (  # type: ignore
     BasePass,
     EulerAngleReduction,
@@ -63,6 +64,7 @@ from pytket.predicates import (  # type: ignore
 )
 from pytket.extensions.pyquil.pyquil_convert import (
     process_characterisation,
+    get_avg_characterisation,
     tk_to_pyquil,
 )
 from pytket.routing import NoiseAwarePlacement, Architecture  # type: ignore
@@ -89,6 +91,7 @@ class ForestBackend(Backend):
     _supports_counts = True
     _supports_contextual_optimisation = True
     _persistent_handles = True
+    _GATE_SET = {OpType.CZ, OpType.Rx, OpType.Rz, OpType.Measure, OpType.Barrier}
 
     def __init__(self, qc_name: str, simulator: bool = True):
         """Backend for running circuits on a Rigetti QCS device or simulating with the
@@ -103,11 +106,22 @@ class ForestBackend(Backend):
         """
         super().__init__()
         self._qc: QuantumComputer = get_qc(qc_name, as_qvm=simulator)
-        self._characterisation: dict = process_characterisation(self._qc)
-        self._device: Device = Device(
-            self._characterisation.get("NodeErrors", {}),
-            self._characterisation.get("EdgeErrors", {}),
-            self._characterisation.get("Architecture", Architecture([])),
+
+        char_dict: dict = process_characterisation(self._qc)
+        arch = char_dict.get("Architecture", Architecture([]))
+        node_errors = char_dict.get("NodeErrors")
+        link_errors = char_dict.get("EdgeErrors")
+        self._backend_info = BackendInfo(
+            qc_name,
+            __extension_version__,
+            arch,
+            self._GATE_SET,
+            misc={
+                "characterisation": {
+                    "NodeErrors": node_errors,
+                    "EdgeErrors": link_errors,
+                }
+            },
         )
 
     @property
@@ -116,10 +130,8 @@ class ForestBackend(Backend):
             NoClassicalControlPredicate(),
             NoFastFeedforwardPredicate(),
             NoMidMeasurePredicate(),
-            GateSetPredicate(
-                {OpType.CZ, OpType.Rx, OpType.Rz, OpType.Measure, OpType.Barrier}
-            ),
-            ConnectivityPredicate(self._device),
+            GateSetPredicate(self.backend_info.gateset),
+            ConnectivityPredicate(self.backend_info.architecture),
         ]
 
     def default_compilation_pass(self, optimisation_level: int = 1) -> BasePass:
@@ -134,8 +146,11 @@ class ForestBackend(Backend):
             passlist.append(FullPeepholeOptimise())
         passlist.append(
             CXMappingPass(
-                self._device,
-                NoiseAwarePlacement(self._device),
+                self.backend_info.architecture,
+                NoiseAwarePlacement(
+                    self.backend_info.architecture,
+                    **get_avg_characterisation(self.characterisation),
+                ),
                 directed_cx=False,
                 delay_measures=True,
             )
@@ -239,12 +254,13 @@ class ForestBackend(Backend):
             return res
 
     @property
-    def characterisation(self) -> Optional[dict]:
-        return self._characterisation
+    def characterisation(self) -> Dict[str, Any]:
+        char = self._backend_info.get_misc("characterisation")
+        return cast(Dict[str, Any], char)
 
     @property
-    def device(self) -> Optional[Device]:
-        return self._device
+    def backend_info(self) -> BackendInfo:
+        return self._backend_info
 
 
 class ForestStateBackend(Backend):
@@ -252,6 +268,23 @@ class ForestStateBackend(Backend):
     _supports_expectation = True
     _expectation_allows_nonhermitian = False
     _persistent_handles = False
+    _GATE_SET = {
+        OpType.X,
+        OpType.Y,
+        OpType.Z,
+        OpType.H,
+        OpType.S,
+        OpType.T,
+        OpType.Rx,
+        OpType.Ry,
+        OpType.Rz,
+        OpType.CZ,
+        OpType.CX,
+        OpType.CCX,
+        OpType.CU1,
+        OpType.U1,
+        OpType.SWAP,
+    }
 
     def __init__(self) -> None:
         """Backend for running simulations on the Rigetti QVM Wavefunction Simulator."""
@@ -265,25 +298,7 @@ class ForestStateBackend(Backend):
             NoFastFeedforwardPredicate(),
             NoMidMeasurePredicate(),
             NoSymbolsPredicate(),
-            GateSetPredicate(
-                {
-                    OpType.X,
-                    OpType.Y,
-                    OpType.Z,
-                    OpType.H,
-                    OpType.S,
-                    OpType.T,
-                    OpType.Rx,
-                    OpType.Ry,
-                    OpType.Rz,
-                    OpType.CZ,
-                    OpType.CX,
-                    OpType.CCX,
-                    OpType.CU1,
-                    OpType.U1,
-                    OpType.SWAP,
-                }
-            ),
+            GateSetPredicate(self._GATE_SET),
             DefaultRegisterPredicate(),
         ]
 
@@ -344,10 +359,6 @@ class ForestStateBackend(Backend):
         if handle in self._cache:
             return CircuitStatus(StatusEnum.COMPLETED)
         raise CircuitNotRunError(handle)
-
-    @property
-    def device(self) -> Optional[Device]:
-        return None
 
     def _gen_PauliTerm(self, term: QubitPauliString, coeff: complex = 1.0) -> PauliTerm:
         pauli_term = ID() * coeff
