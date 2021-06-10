@@ -152,6 +152,15 @@ del _known_qiskit_gate_rev[OpType.CnRy]
 _known_qiskit_gate_rev[OpType.U3] = qiskit_gates.U3Gate
 
 
+# some gates are only equal up to global phase, support their conversion
+# from tket -> qiskit
+_known_gate_rev_phase = {
+    optype: (qgate, 0.0) for optype, qgate in _known_qiskit_gate_rev.items()
+}
+
+_known_gate_rev_phase[OpType.V] = (qiskit_gates.SXGate, -0.25)
+_known_gate_rev_phase[OpType.Vdg] = (qiskit_gates.SXdgGate, 0.25)
+
 # use minor signature hacks to figure out the string names of qiskit Gate objects
 _gate_str_2_optype: Dict[str, OpType] = dict()
 for gate, optype in _known_qiskit_gate.items():
@@ -179,7 +188,7 @@ _gate_str_2_optype_rev[OpType.Unitary1qBox] = "unitary"
 
 
 def _tk_gate_set(backend: BaseBackend) -> Set[OpType]:
-    """ Set of tket gate types supported by the qiskit backend """
+    """Set of tket gate types supported by the qiskit backend"""
     config = backend.configuration()
     if config.simulator:
         return {
@@ -446,13 +455,14 @@ def append_tk_command_to_qiskit(
 
     # others are direct translations
     try:
-        gatetype = _known_qiskit_gate_rev[optype]
+        gatetype, phase = _known_gate_rev_phase[optype]
     except KeyError as error:
         raise NotImplementedError(
             "Cannot convert tket Op to Qiskit gate: " + op.get_name()
         ) from error
     params = [param_to_qiskit(p, symb_map) for p in op.params]
     g = gatetype(*params)
+    qcirc.global_phase += phase * sympy.pi
     return qcirc.append(g, qargs=qargs)
 
 
