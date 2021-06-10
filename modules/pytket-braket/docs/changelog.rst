@@ -1,6 +1,11 @@
 Changelog
 ~~~~~~~~~
 
+0.8.2 (June 2021)
+-----------------
+
+* Make cache handling more robust.
+
 0.8.1 (June 2021)
 -----------------
 

@@ -1,2 +1,2 @@
-__extension_version__ = "0.8.1"
+__extension_version__ = "0.8.2"
 __extension_name__ = "pytket-braket"
