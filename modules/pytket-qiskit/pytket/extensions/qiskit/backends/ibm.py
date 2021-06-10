@@ -24,7 +24,6 @@ from typing import (
     Any,
     Sequence,
     TYPE_CHECKING,
-    Set,
     Tuple,
     Union,
 )
@@ -74,7 +73,7 @@ from pytket.extensions.qiskit.qiskit_convert import tk_to_qiskit, _tk_gate_set
 from pytket.extensions.qiskit.result_convert import (
     qiskit_experimentresult_to_backendresult,
 )
-from pytket.routing import NoiseAwarePlacement, Architecture  # type: ignore
+from pytket.routing import NoiseAwarePlacement  # type: ignore
 from pytket.utils import prepare_circuit
 from pytket.utils.results import KwargTypes
 from .ibm_utils import _STATUS_MAP, _batch_circuits

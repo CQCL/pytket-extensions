@@ -45,7 +45,6 @@ from pytket.predicates import (  # type: ignore
     NoSymbolsPredicate,
     Predicate,
 )
-from pytket.routing import FullyConnected  # type: ignore
 from pytket.utils import prepare_circuit
 from pytket.utils.outcomearray import OutcomeArray
 from .ionq_convert import ionq_pass, ionq_gates, ionq_singleqs, tk_to_ionq
