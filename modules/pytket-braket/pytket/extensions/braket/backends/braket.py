@@ -535,6 +535,14 @@ class BraketBackend(Backend):
             handles.append(handle)
         return handles
 
+    def _update_cache_result(
+        self, handle: ResultHandle, result_dict: Dict[str, BackendResult]
+    ) -> None:
+        if handle in self._cache:
+            self._cache[handle].update(result_dict)
+        else:
+            self._cache[handle] = result_dict
+
     def circuit_status(self, handle: ResultHandle) -> CircuitStatus:
         if self._device_type == _DeviceType.LOCAL:
             return CircuitStatus(StatusEnum.COMPLETED)
@@ -549,7 +557,7 @@ class BraketBackend(Backend):
         elif state == "CANCELLED":
             return CircuitStatus(StatusEnum.CANCELLED)
         elif state == "COMPLETED":
-            self._cache[handle].update(_get_result(task, want_state, ppcirc))
+            self._update_cache_result(handle, _get_result(task, want_state, ppcirc))
             return CircuitStatus(StatusEnum.COMPLETED)
         elif state == "QUEUED" or state == "CREATED":
             return CircuitStatus(StatusEnum.QUEUED)
