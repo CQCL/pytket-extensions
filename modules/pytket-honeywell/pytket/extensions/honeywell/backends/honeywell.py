@@ -50,7 +50,6 @@ from pytket.predicates import (  # type: ignore
     Predicate,
     NoSymbolsPredicate,
 )
-from pytket.routing import FullyConnected  # type: ignore
 from pytket.utils import prepare_circuit
 from pytket.utils.outcomearray import OutcomeArray
 

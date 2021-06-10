@@ -367,9 +367,6 @@ def get_avg_characterisation(
     )
 
     avg: Callable[[Dict[Any, float]], float] = lambda xs: sum(xs.values()) / len(xs)
-    avg_mat: Callable[[List[List[float]]], float] = (
-        lambda xs: (xs[0][1] + xs[1][0]) / 2.0
-    )
     avg_node_errors = map_values(avg, node_errors)
     avg_link_errors = map_values(avg, link_errors)
 

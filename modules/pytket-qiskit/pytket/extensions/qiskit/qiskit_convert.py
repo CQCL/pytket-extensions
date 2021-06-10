@@ -550,7 +550,6 @@ def process_characterisation(backend: BaseBackend) -> Dict[str, Any]:
     link_errors: dict = defaultdict(dict)
     node_errors: dict = defaultdict(dict)
     readout_errors: dict = {}
-    supported_single_optypes = gate_set.difference({OpType.CX})
 
     t1_times_dict = {}
     t2_times_dict = {}
@@ -565,7 +564,7 @@ def process_characterisation(backend: BaseBackend) -> Dict[str, Any]:
             # readout error as a symmetric 2x2 matrix
             offdiag = return_value_if_found(qubit_info, "readout_error")
             if offdiag:
-                diag = 1.0 - offidag
+                diag = 1.0 - offdiag
                 readout_errors[index] = [[diag, offdiag], [offdiag, diag]]
             else:
                 readout_errors[index] = None

@@ -28,7 +28,6 @@ from pytket.extensions.pyquil import ForestBackend, ForestStateBackend
 from pytket.circuit import BasisOrder, Circuit, OpType, Qubit, Node  # type: ignore
 from pytket.passes import CliffordSimp  # type: ignore
 from pytket.pauli import Pauli, QubitPauliString  # type: ignore
-from pytket.routing import Architecture  # type: ignore
 from pytket.utils.expectations import (
     get_operator_expectation_value,
     get_pauli_expectation_value,
