@@ -213,6 +213,21 @@ def test_Unitary2qBox() -> None:
     assert np.allclose(a, u)
 
 
+def test_gates_phase() -> None:
+    c = Circuit(4).SX(0).V(1).V(2).Vdg(3)
+    qc = tk_to_qiskit(c)
+
+    qr = QuantumRegister(4, "q")
+    qc_correct = QuantumCircuit(qr)
+    qc_correct.sx(qr[0])
+    qc_correct.sx(qr[1])
+    qc_correct.sx(qr[2])
+    qc_correct.sxdg(qr[3])
+    qc_correct.global_phase = -pi / 4
+
+    assert qc == qc_correct
+
+
 def test_tketpass() -> None:
     qc = get_test_circuit(False, False)
     tkpass = FullPeepholeOptimise()
