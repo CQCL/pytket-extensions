@@ -295,7 +295,7 @@ class IBMQBackend(Backend):
             k: v for k, v in characterisation.items() if k in characterisation_keys
         }
         supports_mid_measure = self._config.simulator or self._config.multi_meas_enabled
-        supports_fastfeedback = supports_mid_measure
+        supports_fast_feedforward = supports_mid_measure
         # simulator i.e. "ibmq_qasm_simulator" does not have `supported_instructions`
         # attribute
         gate_set = _tk_gate_set(self._backend)
@@ -306,7 +306,7 @@ class IBMQBackend(Backend):
             arch,
             gate_set,
             supports_midcircuit_measurement=supports_mid_measure,
-            supports_fastfeedback=supports_fastfeedback,
+            supports_fast_feedforward=supports_fast_feedforward,
             misc={"characterisation": characterisation},
         )
 
@@ -349,7 +349,7 @@ class IBMQBackend(Backend):
             ),
         ]
         mid_measure = self._backend_info.supports_midcircuit_measurement
-        fast_feedback = self._backend_info.supports_fastfeedback
+        fast_feedback = self._backend_info.supports_fast_feedforward
         if not mid_measure:
             predicates = [
                 NoClassicalControlPredicate(),
