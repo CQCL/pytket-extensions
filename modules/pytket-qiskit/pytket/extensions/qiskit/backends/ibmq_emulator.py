@@ -37,6 +37,7 @@ if TYPE_CHECKING:
     from pytket.predicates import Predicate  # type: ignore
     from pytket.passes import BasePass  # type: ignore
     from qiskit.providers.aer import AerJob  # type: ignore
+    from qiskit.providers.ibmq import AccountProvider  # type: ignore
     from qiskit.result.models import ExperimentResult  # type: ignore
 
 
@@ -58,13 +59,20 @@ class IBMQEmulatorBackend(AerBackend):
         hub: Optional[str] = None,
         group: Optional[str] = None,
         project: Optional[str] = None,
+        account_provider: Optional["AccountProvider"] = None,
     ):
         """Construct an IBMQEmulatorBackend. Identical to :py:class:`IBMQBackend`
         constructor, except there is no `monitor` parameter. See :py:class:`IBMQBackend`
         docs for more details.
         """
 
-        self._ibmq = IBMQBackend(backend_name, hub, group, project)
+        self._ibmq = IBMQBackend(
+            backend_name=backend_name,
+            hub=hub,
+            group=group,
+            project=project,
+            account_provider=account_provider,
+        )
         aer_sim = AerSimulator.from_backend(self._ibmq._backend)
         super().__init__(noise_model=NoiseModel.from_backend(aer_sim))
         self._backend = aer_sim

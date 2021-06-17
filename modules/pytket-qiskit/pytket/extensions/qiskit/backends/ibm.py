@@ -77,7 +77,10 @@ from .ibm_utils import _STATUS_MAP
 from .config import QiskitConfig
 
 if TYPE_CHECKING:
-    from qiskit.providers.ibmq import IBMQBackend as _QiskIBMQBackend  # type: ignore
+    from qiskit.providers.ibmq import (  # type: ignore
+        IBMQBackend as _QiskIBMQBackend,
+        AccountProvider,
+    )
     from qiskit.providers.models import QasmBackendConfiguration  # type: ignore
 
 _DEBUG_HANDLE_PREFIX = "_MACHINE_DEBUG_"
@@ -210,6 +213,7 @@ class IBMQBackend(Backend):
         group: Optional[str] = None,
         project: Optional[str] = None,
         monitor: bool = True,
+        account_provider: Optional["AccountProvider"] = None,
     ):
         """A backend for running circuits on remote IBMQ devices.
         The provider arguments of `hub`, `group` and `project` can
@@ -231,35 +235,44 @@ class IBMQBackend(Backend):
         :param monitor: Use the IBM job monitor. Defaults to True.
         :type monitor: bool, optional
         :raises ValueError: If no IBMQ account is loaded and none exists on the disk.
+        :param account_provider: An AccountProvider returned from IBMQ.enable_account.
+         Used to pass credentials in if not configured on local machine (as well as hub,
+         group and project). Defaults to None.
+        :type account_provider: Optional[AccountProvider]
         """
         super().__init__()
-        self._pytket_config = QiskitConfig.from_default_config_file()
-        if not IBMQ.active_account():
-            if IBMQ.stored_account():
-                IBMQ.load_account()
-            else:
-                if self._pytket_config.ibmq_api_token is not None:
-                    IBMQ.save_account(self._pytket_config.ibmq_api_token)
+        if account_provider is None:
+            self._pytket_config = QiskitConfig.from_default_config_file()
+            if not IBMQ.active_account():
+                if IBMQ.stored_account():
+                    IBMQ.load_account()
                 else:
-                    raise NoIBMQAccountError()
-        provider_kwargs = {}
-        provider_kwargs["hub"] = hub if hub else self._pytket_config.hub
-        provider_kwargs["group"] = group if group else self._pytket_config.group
-        provider_kwargs["project"] = project if project else self._pytket_config.project
-
-        try:
-            if any(x is not None for x in provider_kwargs.values()):
-                provider = IBMQ.get_provider(**provider_kwargs)
-            else:
-                provider = IBMQ.providers()[0]
-        except qiskit.providers.ibmq.exceptions.IBMQProviderError as err:
-            logging.warn(
-                (
-                    "Provider was not specified enough, specify hub,"
-                    "group and project correctly (check your IBMQ account)."
-                )
+                    if self._pytket_config.ibmq_api_token is not None:
+                        IBMQ.save_account(self._pytket_config.ibmq_api_token)
+                    else:
+                        raise NoIBMQAccountError()
+            provider_kwargs = {}
+            provider_kwargs["hub"] = hub if hub else self._pytket_config.hub
+            provider_kwargs["group"] = group if group else self._pytket_config.group
+            provider_kwargs["project"] = (
+                project if project else self._pytket_config.project
             )
-            raise err
+
+            try:
+                if any(x is not None for x in provider_kwargs.values()):
+                    provider = IBMQ.get_provider(**provider_kwargs)
+                else:
+                    provider = IBMQ.providers()[0]
+            except qiskit.providers.ibmq.exceptions.IBMQProviderError as err:
+                logging.warn(
+                    (
+                        "Provider was not specified enough, specify hub,"
+                        "group and project correctly (check your IBMQ account)."
+                    )
+                )
+                raise err
+        else:
+            provider = account_provider
         self._backend: "_QiskIBMQBackend" = provider.get_backend(backend_name)
         self._config: "QasmBackendConfiguration" = self._backend.configuration()
         self._gate_set: Set[OpType]
