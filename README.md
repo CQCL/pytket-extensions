@@ -56,7 +56,7 @@ To install an extension in editable mode, simply change to its subdirectory
 within the `modules` directory, and run:
 
 ```shell
-pip install -e ,
+pip install -e .
 ```
 
 If you wish to write your own backend extension for `pytket`, we recommend
