@@ -40,9 +40,11 @@ setup(
     install_requires=[
         "pytket ~= 0.11.0",
         "requests >= 2.2",
+        "types-requests",
         "websockets >= 7.0",
         "nest_asyncio >= 1.2",
         "pyjwt >= 1.7, < 2.0",
+        "types-jwt",
         "keyring >= 19.0",
     ],
     classifiers=[
