@@ -71,6 +71,7 @@ class AzureBackend(_QsharpBaseBackend):
 
     _supports_counts = True
     _supports_contextual_optimisation = True
+    _persistent_handles = True
 
     def __init__(
         self,
