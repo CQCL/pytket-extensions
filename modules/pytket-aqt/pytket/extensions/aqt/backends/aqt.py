@@ -15,7 +15,7 @@
 import json
 import time
 from ast import literal_eval
-from typing import Iterable, List, Optional, Tuple, cast
+from typing import Iterable, List, Optional, Tuple, cast, Dict
 
 from requests import put
 from pytket.backends import Backend, CircuitStatus, ResultHandle, StatusEnum
@@ -258,6 +258,14 @@ class AQTBackend(Backend):
             self._cache[handle] = dict()
         return handles
 
+    def _update_cache_result(
+        self, handle: ResultHandle, result_dict: Dict[str, BackendResult]
+    ) -> None:
+        if handle in self._cache:
+            self._cache[handle].update(result_dict)
+        else:
+            self._cache[handle] = result_dict
+
     def circuit_status(self, handle: ResultHandle) -> CircuitStatus:
         self._check_handle_type(handle)
         jobid = handle[0]
@@ -268,8 +276,8 @@ class AQTBackend(Backend):
         if self._MACHINE_DEBUG:
             n_qubits, n_shots = literal_eval(jobid[len(_DEBUG_HANDLE_PREFIX) :])  # type: ignore
             empty_ar = OutcomeArray.from_ints([0] * n_shots, n_qubits, big_endian=True)
-            self._cache[handle].update(
-                {"result": BackendResult(shots=empty_ar, ppcirc=ppcirc)}
+            self._update_cache_result(
+                handle, {"result": BackendResult(shots=empty_ar, ppcirc=ppcirc)}
             )
             statenum = StatusEnum.COMPLETED
         else:
@@ -283,8 +291,8 @@ class AQTBackend(Backend):
                     data["samples"], data["no_qubits"], big_endian=True
                 )
                 shots = shots.choose_indices(measure_permutations)
-                self._cache[handle].update(
-                    {"result": BackendResult(shots=shots, ppcirc=ppcirc)}
+                self._update_cache_result(
+                    handle, {"result": BackendResult(shots=shots, ppcirc=ppcirc)}
                 )
         return CircuitStatus(statenum, message)
 
