@@ -213,6 +213,14 @@ class AzureBackend(_QsharpBaseBackend):
             self._cache[handle] = dict()
         return handles
 
+    def _update_cache_result(
+        self, handle: ResultHandle, result_dict: Dict[str, BackendResult]
+    ) -> None:
+        if handle in self._cache:
+            self._cache[handle].update(result_dict)
+        else:
+            self._cache[handle] = result_dict
+
     def circuit_status(self, handle: ResultHandle) -> CircuitStatus:
         self._check_handle_type(handle)
         jobid = cast(str, handle[0])
@@ -223,7 +231,7 @@ class AzureBackend(_QsharpBaseBackend):
         if self._MACHINE_DEBUG:
             n_bits = literal_eval(jobid[len(_DEBUG_HANDLE_PREFIX) :])
             empty_ar = OutcomeArray.from_ints([0] * n_shots, n_bits, big_endian=True)
-            self._cache[handle].update({"result": BackendResult(shots=empty_ar)})
+            self._update_cache_result(handle, {"result": BackendResult(shots=empty_ar)})
             statenum = StatusEnum.COMPLETED
         else:
             job = qsharp.azure.status(jobid)
@@ -232,8 +240,8 @@ class AzureBackend(_QsharpBaseBackend):
             message = repr(job)
             if statenum is StatusEnum.COMPLETED:
                 output = qsharp.azure.output(jobid)
-                self._cache[handle].update(
-                    {"result": _convert_result(output, n_shots, ppcirc=ppcirc)}
+                self._update_cache_result(
+                    handle, {"result": _convert_result(output, n_shots, ppcirc=ppcirc)}
                 )
         return CircuitStatus(statenum, message)
 
