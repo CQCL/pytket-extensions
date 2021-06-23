@@ -15,7 +15,7 @@
 import json
 import time
 from ast import literal_eval
-from typing import Dict, Iterable, List, Optional, Sequence, Tuple, Union, cast
+from typing import Dict, List, Optional, Sequence, Tuple, Union, cast
 
 from requests import put
 from pytket.backends import Backend, CircuitStatus, ResultHandle, StatusEnum

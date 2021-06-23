@@ -87,11 +87,14 @@ def test_ionq() -> None:
 
     chars = b.characterisation
     assert chars is not None
-    fid = chars["fidelity"]
+    assert chars is not None
+    assert all(s in chars for s in ["NodeErrors", "EdgeErrors", "ReadoutErrors"])
+    assert b._characteristics is not None
+    fid = b._characteristics["fidelity"]
     assert "1Q" in fid
     assert "2Q" in fid
     assert "spam" in fid
-    tim = chars["timing"]
+    tim = b._characteristics["timing"]
     assert "T1" in tim
     assert "T2" in tim
 
@@ -129,9 +132,7 @@ def test_rigetti() -> None:
 
     chars = b.characterisation
     assert chars is not None
-    specs = chars["specs"]
-    assert "1Q" in specs
-    assert "2Q" in specs
+    assert all(s in chars for s in ["NodeErrors", "EdgeErrors", "ReadoutErrors"])
 
     c = (
         Circuit(3)

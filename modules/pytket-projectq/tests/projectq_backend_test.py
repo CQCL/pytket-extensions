@@ -194,6 +194,6 @@ def test_shots_bits_edgecases(n_shots, n_bits) -> None:
 def test_backend_info() -> None:
     projectq_backend = ProjectQBackend()
     backend_info = projectq_backend.backend_info
-    assert backend_info.name == "project_q_backend"
+    assert backend_info.name == "ProjectQBackend"
     assert len(backend_info.architecture.nodes) == 0
     assert projectq_backend.characterisation == dict()

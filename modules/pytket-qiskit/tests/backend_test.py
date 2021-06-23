@@ -189,7 +189,7 @@ def test_process_characterisation() -> None:
     back = provider.get_backend("ibmq_santiago")
 
     char = process_characterisation(back)
-    arch: Architecture = (char.get("Architecture", Architecture([])),)
+    arch: Architecture = char.get("Architecture", Architecture([]))
     node_errors: dict = char.get("NodeErrors", {})
     link_errors: dict = char.get("EdgeErrors", {})
 
@@ -824,7 +824,9 @@ def test_ibmq_mid_measure(santiago_backend: IBMQBackend) -> None:
     c.CX(1, 0).H(0).Measure(2, 2)
 
     b = santiago_backend
-    b.compile_circuit(c)
+    ps = b.default_compilation_pass(0)
+    ps.apply(c)
+    # b.compile_circuit(c)
     assert not NoMidMeasurePredicate().verify(c)
     assert b.valid_circuit(c)
 

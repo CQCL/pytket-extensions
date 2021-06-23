@@ -380,7 +380,7 @@ class IBMQBackend(Backend):
                     arch, **get_avg_characterisation(self.characterisation)
                 ),
                 directed_cx=False,
-                delay_measures=(mid_measure),
+                delay_measures=(not mid_measure),
             )
         )
         if optimisation_level == 1:

@@ -15,7 +15,15 @@
 """Methods to allow tket circuits to be ran on ProjectQ simulator
 """
 
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Union, TYPE_CHECKING
+from typing import (
+    Any,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Union,
+    cast,
+)
 from uuid import uuid4
 from logging import warning
 
@@ -68,6 +76,25 @@ def _default_q_index(q: Qubit) -> int:
     return int(q.index[0])
 
 
+_GATE_SET = {
+    OpType.SWAP,
+    OpType.CRz,
+    OpType.CX,
+    OpType.CZ,
+    OpType.H,
+    OpType.X,
+    OpType.Y,
+    OpType.Z,
+    OpType.S,
+    OpType.T,
+    OpType.V,
+    OpType.Rx,
+    OpType.Ry,
+    OpType.Rz,
+    OpType.Barrier,
+}
+
+
 class ProjectQBackend(Backend):
     """Backend for running statevector simulations on the ProjectQ simulator."""
 
@@ -86,29 +113,12 @@ class ProjectQBackend(Backend):
 
     @property
     def backend_info(self) -> BackendInfo:
-        _gate_set = {
-            OpType.SWAP,
-            OpType.CRz,
-            OpType.CX,
-            OpType.CZ,
-            OpType.H,
-            OpType.X,
-            OpType.Y,
-            OpType.Z,
-            OpType.S,
-            OpType.T,
-            OpType.V,
-            OpType.Rx,
-            OpType.Ry,
-            OpType.Rz,
-            OpType.Barrier,
-        }
         backend_info = BackendInfo(
             type(self).__name__,
             None,
             __extension_version__,
             Architecture([]),
-            _gate_set,
+            _GATE_SET,
         )
         return backend_info
 
@@ -119,25 +129,7 @@ class ProjectQBackend(Backend):
             NoFastFeedforwardPredicate(),
             NoSymbolsPredicate(),
             NoMidMeasurePredicate(),
-            GateSetPredicate(
-                {
-                    OpType.SWAP,
-                    OpType.CRz,
-                    OpType.CX,
-                    OpType.CZ,
-                    OpType.H,
-                    OpType.X,
-                    OpType.Y,
-                    OpType.Z,
-                    OpType.S,
-                    OpType.T,
-                    OpType.V,
-                    OpType.Rx,
-                    OpType.Ry,
-                    OpType.Rz,
-                    OpType.Barrier,
-                }
-            ),
+            GateSetPredicate(_GATE_SET),
             DefaultRegisterPredicate(),
         ]
 
