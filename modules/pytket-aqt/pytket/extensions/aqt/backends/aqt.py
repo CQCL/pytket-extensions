@@ -25,6 +25,7 @@ from pytket.backends.backendresult import BackendResult
 from pytket.backends.resulthandle import _ResultIdTuple
 from pytket.backends.backend_exceptions import CircuitNotRunError
 from pytket.circuit import Circuit, Node, OpType, Qubit  # type: ignore
+from pytket.extensions.aqt._metadata import __extension_version__
 
 
 from pytket.passes import (  # type: ignore
@@ -131,8 +132,9 @@ class AQTBackend(Backend):
         self._qm: Dict[Qubit, Node] = {}
         if device_name in _DEVICE_INFO:
             self._backend_info = fully_connected_backendinfo(
+                type(self).__name__,
                 device_name,
-                "VERSION",
+                __extension_version__,
                 _DEVICE_INFO[device_name]["max_n_qubits"],
                 _GATE_SET,
             )

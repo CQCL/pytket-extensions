@@ -103,9 +103,12 @@ class QulacsBackend(Backend):
 
     def __init__(self) -> None:
         super().__init__()
-        name = "qulacs state simulator"
         self._backend_info = BackendInfo(
-            name, __extension_version__, Architecture([]), self._GATE_SET
+            type(self).__name__,
+            None,
+            __extension_version__,
+            Architecture([]),
+            self._GATE_SET,
         )
 
         self._sim = QuantumState
@@ -248,6 +251,5 @@ if _GPU_ENABLED:
 
         def __init__(self) -> None:
             super().__init__()
-
-            self._backend_info.name += " GPU"
+            self._backend_info.name = type(self).__name__
             self._sim = QuantumStateGpu

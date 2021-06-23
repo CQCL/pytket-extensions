@@ -301,6 +301,7 @@ class IBMQBackend(Backend):
         gate_set = _tk_gate_set(self._backend)
 
         self._backend_info = BackendInfo(
+            type(self).__name__,
             backend_name,
             __extension_version__,
             arch,

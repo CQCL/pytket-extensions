@@ -104,7 +104,8 @@ class ProjectQBackend(Backend):
             OpType.Barrier,
         }
         backend_info = BackendInfo(
-            "project_q_backend",
+            type(self).__name__,
+            None,
             __extension_version__,
             Architecture([]),
             _gate_set,

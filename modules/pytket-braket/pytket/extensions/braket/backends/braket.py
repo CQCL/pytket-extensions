@@ -418,6 +418,7 @@ class BraketBackend(Backend):
             }
 
             self._backend_info = BackendInfo(
+                type(self).__name__,
                 device,
                 __extension_version__,
                 arch,
@@ -432,7 +433,11 @@ class BraketBackend(Backend):
             )
         else:
             self._backend_info = BackendInfo(
-                device, __extension_version__, arch, self._singleqs.union(self._multiqs)
+                type(self).__name__,
+                device,
+                __extension_version__,
+                arch,
+                self._singleqs.union(self._multiqs),
             )
 
         self._rebase_pass = RebaseCustom(

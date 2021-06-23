@@ -112,6 +112,7 @@ class ForestBackend(Backend):
         node_errors = char_dict.get("NodeErrors")
         link_errors = char_dict.get("EdgeErrors")
         self._backend_info = BackendInfo(
+            type(self).__name__,
             qc_name,
             __extension_version__,
             arch,

@@ -22,6 +22,7 @@ from typing import (
     Iterable,
     List,
     Optional,
+    Sequence,
     Tuple,
     TypeVar,
     Union,
@@ -107,7 +108,6 @@ class _AerBaseBackend(Backend):
 
     def __init__(self, backend_name: str):
         super().__init__()
-        self._backend_name = backend_name
         self._backend: "QiskitAerBackend" = Aer.get_backend(backend_name)
 
         gate_set: Set[OpType] = {
@@ -120,6 +120,7 @@ class _AerBaseBackend(Backend):
                 f"Gate set {gate_set} missing at least one of {_required_gates}"
             )
         self._backend_info = BackendInfo(
+            type(self).__name__,
             backend_name,
             __extension_version__,
             Architecture([]),
@@ -176,10 +177,10 @@ class _AerBaseBackend(Backend):
 
         for (n_shots, batch), indices in zip(circuit_batches, batch_order):
             qcs = [tk_to_qiskit(tkc) for tkc in batch]
-            if self._backend_info.name == "aer_simulator_statevector":
+            if self._backend_info.device_name == "aer_simulator_statevector":
                 for qc in qcs:
                     qc.save_state()
-            elif self._backend_info.name == "aer_simulator_unitary":
+            elif self._backend_info.device_name == "aer_simulator_unitary":
                 for qc in qcs:
                     qc.save_unitary()
             seed = cast(Optional[int], kwargs.get("seed"))

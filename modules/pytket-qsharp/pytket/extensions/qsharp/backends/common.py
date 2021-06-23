@@ -127,7 +127,11 @@ class _QsharpBaseBackend(Backend):
     def __init__(self, backend_name: str = "Qsharp Backend"):
         super().__init__()
         self._backend_info = BackendInfo(
-            backend_name, __extension_version__, Architecture([]), self._GATE_SET
+            type(self).__name__,
+            backend_name,
+            __extension_version__,
+            Architecture([]),
+            self._GATE_SET,
         )
 
     @property

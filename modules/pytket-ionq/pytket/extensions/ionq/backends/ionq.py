@@ -114,7 +114,11 @@ class IonQBackend(Backend):
 
         self._header = {"Authorization": f"apiKey {api_key}"}
         self._backend_info = fully_connected_backendinfo(
-            device_name, __extension_version__, IONQ_N_QUBITS, ionq_gates
+            type(self).__name__,
+            device_name,
+            __extension_version__,
+            IONQ_N_QUBITS,
+            ionq_gates,
         )
         self._qm = {Qubit(i): node for i, node in enumerate(self._backend_info.nodes)}
         self._MACHINE_DEBUG = False
@@ -214,7 +218,7 @@ class IonQBackend(Backend):
         basebody: dict = {
             "lang": "json",
             "body": None,
-            "target": self._backend_info.name,
+            "target": self._backend_info.device_name,
         }
         handles = []
         for i, (circ, n_shots) in enumerate(zip(circuits, n_shots_list)):

@@ -166,7 +166,11 @@ class HoneywellBackend(Backend):
         except StopIteration:
             raise RuntimeError(f"Device {machine} is not available.")
         return fully_connected_backendinfo(
-            machine, __extension_version__, self._machine_info["n_qubits"], _GATE_SET
+            type(self).__name__,
+            machine,
+            __extension_version__,
+            self._machine_info["n_qubits"],
+            _GATE_SET,
         )
 
     @classmethod
