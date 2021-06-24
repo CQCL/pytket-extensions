@@ -335,7 +335,7 @@ class ForestStateBackend(Backend):
     def process_circuits(
         self,
         circuits: Iterable[Circuit],
-        n_shots: Optional[int] = None,
+        n_shots: Optional[Union[int, Sequence[int]]] = None,
         valid_check: bool = True,
         **kwargs: KwargTypes,
     ) -> List[ResultHandle]:
