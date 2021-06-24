@@ -15,7 +15,9 @@
 
 """Methods to allow conversion between Qiskit and pytket circuit classes
 """
+from collections import defaultdict
 from typing import (
+    Callable,
     Dict,
     List,
     Optional,
@@ -25,6 +27,7 @@ from typing import (
     cast,
     Set,
     Tuple,
+    TypeVar,
     TYPE_CHECKING,
 )
 from inspect import signature
@@ -62,7 +65,6 @@ from pytket.circuit import (  # type: ignore
     Qubit,
 )
 from pytket._tket.circuit import _TEMP_BIT_NAME  # type: ignore
-from pytket.device import QubitErrorContainer  # type: ignore
 from pytket.routing import Architecture, FullyConnected  # type: ignore
 
 if TYPE_CHECKING:
@@ -552,15 +554,12 @@ def process_characterisation(backend: BaseBackend) -> Dict[str, Any]:
     if coupling_map is None:
         # Assume full connectivity
         arc = FullyConnected(n_qubits)
-        link_ers_dict = {}
     else:
         arc = Architecture(coupling_map)
-        link_ers_dict = {
-            tuple(pair): QubitErrorContainer({OpType.CX}) for pair in coupling_map
-        }
 
-    node_ers_dict = {}
-    supported_single_optypes = gate_set.difference({OpType.CX})
+    link_errors: dict = defaultdict(dict)
+    node_errors: dict = defaultdict(dict)
+    readout_errors: dict = {}
 
     t1_times_dict = {}
     t2_times_dict = {}
@@ -569,14 +568,16 @@ def process_characterisation(backend: BaseBackend) -> Dict[str, Any]:
 
     if properties is not None:
         for index, qubit_info in enumerate(properties.qubits):
-            error_cont = QubitErrorContainer(supported_single_optypes)
-            error_cont.add_readout(return_value_if_found(qubit_info, "readout_error"))
-
             t1_times_dict[index] = return_value_if_found(qubit_info, "T1")
             t2_times_dict[index] = return_value_if_found(qubit_info, "T2")
             frequencies_dict[index] = return_value_if_found(qubit_info, "frequency")
-
-            node_ers_dict[index] = error_cont
+            # readout error as a symmetric 2x2 matrix
+            offdiag = return_value_if_found(qubit_info, "readout_error")
+            if offdiag:
+                diag = 1.0 - offdiag
+                readout_errors[index] = [[diag, offdiag], [offdiag, diag]]
+            else:
+                readout_errors[index] = None
 
         for gate in properties.gates:
             name = gate.gate
@@ -590,25 +591,29 @@ def process_characterisation(backend: BaseBackend) -> Dict[str, Any]:
                 gate_times_dict[(optype, tuple(qubits))] = gate_length
                 # add gate fidelities to their relevant lists
                 if len(qubits) == 1:
-                    node_ers_dict[qubits[0]].add_error((optype, gate_error))
+                    node_errors[qubits[0]].update({optype: gate_error})
                 elif len(qubits) == 2:
-                    link_ers_dict[tuple(qubits)].add_error((optype, gate_error))
+                    link_errors[tuple(qubits)].update({optype: gate_error})
                     opposite_link = tuple(qubits[::-1])
                     if opposite_link not in coupling_map:
                         # to simulate a worse reverse direction square the fidelity
-                        link_ers_dict[opposite_link] = QubitErrorContainer({OpType.CX})
-                        link_ers_dict[opposite_link].add_error((optype, 2 * gate_error))
+                        link_errors[opposite_link].update({optype: 2 * gate_error})
 
+    # map type (k1 -> k2) -> v[k1] -> v[k2]
+    K1 = TypeVar("K1")
+    K2 = TypeVar("K2")
+    V = TypeVar("V")
+    convert_keys_t = Callable[[Callable[[K1], K2], Dict[K1, V]], Dict[K2, V]]
     # convert qubits to architecture Nodes
-    node_ers_dict = {Node(q_index): ers for q_index, ers in node_ers_dict.items()}
-    link_ers_dict = {
-        (Node(q_indices[0]), Node(q_indices[1])): ers
-        for q_indices, ers in link_ers_dict.items()
-    }
+    convert_keys: convert_keys_t = lambda f, d: {f(k): v for k, v in d.items()}
+    node_errors = convert_keys(lambda q: Node(q), node_errors)
+    link_errors = convert_keys(lambda p: (Node(p[0]), Node(p[1])), link_errors)
+    readout_errors = convert_keys(lambda q: Node(q), readout_errors)
 
     characterisation: Dict[str, Any] = dict()
-    characterisation["NodeErrors"] = node_ers_dict
-    characterisation["EdgeErrors"] = link_ers_dict
+    characterisation["NodeErrors"] = node_errors
+    characterisation["EdgeErrors"] = link_errors
+    characterisation["ReadoutErrors"] = readout_errors
     characterisation["Architecture"] = arc
     characterisation["t1times"] = t1_times_dict
     characterisation["t2times"] = t2_times_dict
@@ -616,3 +621,42 @@ def process_characterisation(backend: BaseBackend) -> Dict[str, Any]:
     characterisation["GateTimes"] = gate_times_dict
 
     return characterisation
+
+
+def get_avg_characterisation(
+    characterisation: Dict[str, Any]
+) -> Dict[str, Dict[Node, float]]:
+    """
+    Convert gate-specific characterisation into readout, one- and two-qubit errors
+
+    Used to convert a typical output from `process_characterisation` into an input
+    noise characterisation for NoiseAwarePlacement
+    """
+
+    K = TypeVar("K")
+    V1 = TypeVar("V1")
+    V2 = TypeVar("V2")
+    map_values_t = Callable[[Callable[[V1], V2], Dict[K, V1]], Dict[K, V2]]
+    map_values: map_values_t = lambda f, d: {k: f(v) for k, v in d.items()}
+
+    node_errors = cast(Dict[Node, Dict[OpType, float]], characterisation["NodeErrors"])
+    link_errors = cast(
+        Dict[Tuple[Node, Node], Dict[OpType, float]], characterisation["EdgeErrors"]
+    )
+    readout_errors = cast(
+        Dict[Node, List[List[float]]], characterisation["ReadoutErrors"]
+    )
+
+    avg: Callable[[Dict[Any, float]], float] = lambda xs: sum(xs.values()) / len(xs)
+    avg_mat: Callable[[List[List[float]]], float] = (
+        lambda xs: (xs[0][1] + xs[1][0]) / 2.0
+    )
+    avg_readout_errors = map_values(avg_mat, readout_errors)
+    avg_node_errors = map_values(avg, node_errors)
+    avg_link_errors = map_values(avg, link_errors)
+
+    return {
+        "node_errors": avg_node_errors,
+        "link_errors": avg_link_errors,
+        "readout_errors": avg_readout_errors,
+    }

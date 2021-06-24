@@ -15,13 +15,21 @@
 """Methods to allow tket circuits to be ran on ProjectQ simulator
 """
 
-from typing import TYPE_CHECKING, Iterable, List, Optional
+from typing import (
+    Any,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Union,
+    cast,
+)
 from uuid import uuid4
 from logging import warning
 
 import numpy as np
 import projectq  # type: ignore
-from projectq import MainEngine
+from projectq import MainEngine  # type: ignore
 from projectq.backends import Simulator  # type: ignore
 from projectq.cengines import ForwarderEngine  # type: ignore
 from pytket.circuit import Circuit, OpType  # type: ignore
@@ -33,6 +41,7 @@ from pytket.backends import (
     CircuitStatus,
     StatusEnum,
 )
+from pytket.backends.backendinfo import BackendInfo
 from pytket.backends.resulthandle import _ResultIdTuple
 from pytket.backends.backendresult import BackendResult
 from pytket.passes import (  # type: ignore
@@ -54,18 +63,36 @@ from pytket.predicates import (  # type: ignore
     DefaultRegisterPredicate,
     Predicate,
 )
-from pytket.extensions.projectq.projectq_convert import tk_to_projectq
+from pytket.routing import Architecture  # type: ignore
+from pytket.extensions.projectq.projectq_convert import tk_to_projectq  # type: ignore
+from pytket.extensions.projectq._metadata import __extension_version__  # type: ignore
 from pytket.utils.operators import QubitPauliOperator
 from pytket.utils.results import KwargTypes
-
-if TYPE_CHECKING:
-    from pytket.device import Device  # type: ignore
 
 
 def _default_q_index(q: Qubit) -> int:
     if q.reg_name != "q" or len(q.index) != 1:
         raise ValueError("Non-default qubit register")
     return int(q.index[0])
+
+
+_GATE_SET = {
+    OpType.SWAP,
+    OpType.CRz,
+    OpType.CX,
+    OpType.CZ,
+    OpType.H,
+    OpType.X,
+    OpType.Y,
+    OpType.Z,
+    OpType.S,
+    OpType.T,
+    OpType.V,
+    OpType.Rx,
+    OpType.Ry,
+    OpType.Rz,
+    OpType.Barrier,
+}
 
 
 class ProjectQBackend(Backend):
@@ -81,8 +108,19 @@ class ProjectQBackend(Backend):
         return (str,)
 
     @property
-    def device(self) -> "Optional[Device]":
-        return None
+    def characterisation(self) -> Dict[str, Any]:
+        return dict()
+
+    @property
+    def backend_info(self) -> BackendInfo:
+        backend_info = BackendInfo(
+            type(self).__name__,
+            None,
+            __extension_version__,
+            Architecture([]),
+            _GATE_SET,
+        )
+        return backend_info
 
     @property
     def required_predicates(self) -> List[Predicate]:
@@ -91,25 +129,7 @@ class ProjectQBackend(Backend):
             NoFastFeedforwardPredicate(),
             NoSymbolsPredicate(),
             NoMidMeasurePredicate(),
-            GateSetPredicate(
-                {
-                    OpType.SWAP,
-                    OpType.CRz,
-                    OpType.CX,
-                    OpType.CZ,
-                    OpType.H,
-                    OpType.X,
-                    OpType.Y,
-                    OpType.Z,
-                    OpType.S,
-                    OpType.T,
-                    OpType.V,
-                    OpType.Rx,
-                    OpType.Ry,
-                    OpType.Rz,
-                    OpType.Barrier,
-                }
-            ),
+            GateSetPredicate(_GATE_SET),
             DefaultRegisterPredicate(),
         ]
 
@@ -140,8 +160,8 @@ class ProjectQBackend(Backend):
 
     def process_circuits(
         self,
-        circuits: Iterable[Circuit],
-        n_shots: Optional[int] = None,
+        circuits: Sequence[Circuit],
+        n_shots: Optional[Union[int, Sequence[int]]] = None,
         valid_check: bool = True,
         **kwargs: KwargTypes,
     ) -> List[ResultHandle]:
@@ -149,12 +169,20 @@ class ProjectQBackend(Backend):
         See :py:meth:`pytket.backends.Backend.process_circuits`.
         Supported kwargs: `seed`.
         """
-        circuit_list = list(circuits)
+        circuits = list(circuits)
+        if hasattr(n_shots, "__iter__"):
+            n_shots_list = list(cast(Sequence[Optional[int]], n_shots))
+            if len(n_shots_list) != len(circuits):
+                raise ValueError("The length of n_shots and circuits must match")
+        else:
+            # convert n_shots to a list
+            n_shots_list = [cast(Optional[int], n_shots)] * len(circuits)
+
         if valid_check:
-            self._check_all_circuits(circuit_list)
+            self._check_all_circuits(circuits)
 
         handle_list = []
-        for circuit in circuit_list:
+        for circuit, n_shots_circ in zip(circuits, n_shots_list):
             sim = Simulator(rnd_seed=kwargs.get("seed"))
             fwd = ForwarderEngine(sim)
             eng = MainEngine(backend=sim, engine_list=[fwd])
@@ -180,8 +208,8 @@ class ProjectQBackend(Backend):
                 implicit_perm[qb] for qb in sorted(circuit.qubits, reverse=True)
             ]
             measures = circuit.n_gates_of_type(OpType.Measure)
-            if measures == 0 and n_shots is not None:
-                backres = self.empty_result(circuit, n_shots=n_shots)
+            if measures == 0 and n_shots_circ is not None:
+                backres = self.empty_result(circuit, n_shots=n_shots_circ)
             else:
                 backres = BackendResult(q_bits=res_qubits, state=state)
             self._cache[handle] = {"result": backres}
@@ -196,7 +224,7 @@ class ProjectQBackend(Backend):
     def _expectation_value(
         self,
         circuit: Circuit,
-        hamiltonian: projectq.ops.QubitOperator,
+        hamiltonian: projectq.ops.QubitOperator,  # type: ignore
         valid_check: bool = True,
     ) -> complex:
         if valid_check and not self.valid_circuit(circuit):
@@ -236,7 +264,7 @@ class ProjectQBackend(Backend):
             (_default_q_index(q), p.name) for q, p in pauli.to_dict().items()
         )
         return self._expectation_value(
-            state_circuit, projectq.ops.QubitOperator(pauli_tuple), valid_check
+            state_circuit, projectq.ops.QubitOperator(pauli_tuple), valid_check  # type: ignore
         )
 
     def get_operator_expectation_value(
@@ -259,14 +287,14 @@ class ProjectQBackend(Backend):
         :return: :math:`\\left<\\psi | H | \\psi \\right>`
         :rtype: complex
         """
-        ham = projectq.ops.QubitOperator()
+        ham = projectq.ops.QubitOperator()  # type: ignore
         for term, coeff in operator._dict.items():
             if type(coeff) is complex and abs(coeff.imag) > 1e-12:
                 raise ValueError(
                     "Operator is not Hermitian and cannot be converted to "
                     "`projectq.ops.QubitOperator`."
                 )
-            ham += projectq.ops.QubitOperator(
+            ham += projectq.ops.QubitOperator(  # type: ignore
                 tuple((_default_q_index(q), p.name) for q, p in term.to_dict().items()),
                 float(coeff),
             )

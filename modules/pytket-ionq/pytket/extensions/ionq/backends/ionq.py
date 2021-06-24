@@ -12,17 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import cast, Optional, List, Iterable, Counter
+from typing import cast, Optional, List, Sequence, Union, Counter
 import json
 import time
 from ast import literal_eval
 from requests import post, get, put
 from pytket.backends import Backend, ResultHandle, CircuitStatus, StatusEnum
 from pytket.backends.backend import KwargTypes
+from pytket.backends.backendinfo import BackendInfo, fully_connected_backendinfo
 from pytket.backends.resulthandle import _ResultIdTuple
 from pytket.backends.backendresult import BackendResult
 from pytket.backends.backend_exceptions import CircuitNotRunError
 from pytket.circuit import Circuit, Qubit  # type: ignore
+from pytket.extensions.ionq._metadata import __extension_version__
 from pytket.passes import (  # type: ignore
     BasePass,
     SequencePass,
@@ -43,10 +45,8 @@ from pytket.predicates import (  # type: ignore
     NoSymbolsPredicate,
     Predicate,
 )
-from pytket.routing import FullyConnected  # type: ignore
 from pytket.utils import prepare_circuit
 from pytket.utils.outcomearray import OutcomeArray
-from pytket.device import Device  # type: ignore
 from .ionq_convert import ionq_pass, ionq_gates, ionq_singleqs, tk_to_ionq
 from .config import IonQConfig
 
@@ -87,7 +87,7 @@ class IonQBackend(Backend):
 
     def __init__(
         self,
-        device_name: Optional[str] = "qpu",
+        device_name: str = "qpu",
         api_key: Optional[str] = None,
         label: Optional[str] = "job",
     ):
@@ -104,7 +104,6 @@ class IonQBackend(Backend):
         """
         super().__init__()
         self._url = IONQ_JOBS_URL
-        self._device_name = device_name
         self._label = label
         config = IonQConfig.from_default_config_file()
 
@@ -114,14 +113,19 @@ class IonQBackend(Backend):
             raise IonQAuthenticationError()
 
         self._header = {"Authorization": f"apiKey {api_key}"}
-        self._max_n_qubits = IONQ_N_QUBITS
-        self._device = Device(FullyConnected(self._max_n_qubits))
-        self._qm = {Qubit(i): node for i, node in enumerate(self._device.nodes)}
+        self._backend_info = fully_connected_backendinfo(
+            type(self).__name__,
+            device_name,
+            __extension_version__,
+            IONQ_N_QUBITS,
+            ionq_gates,
+        )
+        self._qm = {Qubit(i): node for i, node in enumerate(self._backend_info.nodes)}
         self._MACHINE_DEBUG = False
 
     @property
-    def device(self) -> Optional[Device]:
-        return self._device
+    def backend_info(self) -> Optional[BackendInfo]:
+        return self._backend_info
 
     @property
     def required_predicates(self) -> List[Predicate]:
@@ -131,7 +135,7 @@ class IonQBackend(Backend):
             NoMidMeasurePredicate(),
             NoSymbolsPredicate(),
             GateSetPredicate(ionq_gates),
-            MaxNQubitsPredicate(self._max_n_qubits),
+            MaxNQubitsPredicate(self._backend_info.n_nodes),
         ]
         return preds
 
@@ -180,8 +184,8 @@ class IonQBackend(Backend):
 
     def process_circuits(
         self,
-        circuits: Iterable[Circuit],
-        n_shots: Optional[int] = None,
+        circuits: Sequence[Circuit],
+        n_shots: Optional[Union[int, Sequence[int]]] = None,
         valid_check: bool = True,
         **kwargs: KwargTypes,
     ) -> List[ResultHandle]:
@@ -189,22 +193,35 @@ class IonQBackend(Backend):
         See :py:meth:`pytket.backends.Backend.process_circuits`.
         Supported kwargs: none.
         """
-        if n_shots is None or n_shots < 1:
-            raise ValueError("Parameter n_shots is required for this backend")
+        circuits = list(circuits)
+        n_shots_list: List[int] = []
+        if hasattr(n_shots, "__iter__"):
+            for n in cast(Sequence[Optional[int]], n_shots):
+                if n is None or n < 1:
+                    raise ValueError(
+                        "n_shots values are required for all circuits for this backend"
+                    )
+                n_shots_list.append(n)
+            if len(n_shots_list) != len(circuits):
+                raise ValueError("The length of n_shots and circuits must match")
+        else:
+            if n_shots is None:
+                raise ValueError("Parameter n_shots is required for this backend")
+            # convert n_shots to a list
+            n_shots_list = [cast(int, n_shots)] * len(circuits)
 
         if valid_check:
             self._check_all_circuits(circuits)
 
         postprocess = kwargs.get("postprocess", False)
 
-        basebody = {
+        basebody: dict = {
             "lang": "json",
             "body": None,
-            "target": self._device_name,
-            "shots": n_shots,
+            "target": self._backend_info.device_name,
         }
         handles = []
-        for i, circ in enumerate(circuits):
+        for i, (circ, n_shots) in enumerate(zip(circuits, n_shots_list)):
             result = dict()
             bodycopy = basebody.copy()
             if postprocess:
@@ -217,6 +234,7 @@ class IonQBackend(Backend):
                 result["result"] = self.empty_result(circ, n_shots=n_shots)
             measures = json.dumps(meas)
             bodycopy["name"] = circ.name if circ.name else f"{self._label}_{i}"
+            bodycopy["shots"] = n_shots
             if self._MACHINE_DEBUG:
                 handle = ResultHandle(
                     _DEBUG_HANDLE_PREFIX + str(circ.n_qubits),

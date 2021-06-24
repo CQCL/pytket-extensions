@@ -24,7 +24,7 @@ import numpy as np
 import pytest
 from pytket.backends.backend_exceptions import CircuitNotRunError
 from pytket.backends.status import StatusEnum
-from pytket.extensions.projectq import ProjectQBackend
+from pytket.extensions.projectq import ProjectQBackend  # type: ignore
 from pytket.backends.resulthandle import ResultHandle
 from pytket.circuit import BasisOrder, Circuit, Qubit, OpType  # type: ignore
 from pytket.passes import CliffordSimp  # type: ignore
@@ -189,3 +189,11 @@ def test_shots_bits_edgecases(n_shots, n_bits) -> None:
     assert np.array_equal(projectq_backend.get_shots(c, n_shots), correct_shots)
     assert projectq_backend.get_shots(c, n_shots).shape == correct_shape
     assert projectq_backend.get_counts(c, n_shots) == correct_counts
+
+
+def test_backend_info() -> None:
+    projectq_backend = ProjectQBackend()
+    backend_info = projectq_backend.backend_info
+    assert backend_info.name == "ProjectQBackend"
+    assert len(backend_info.architecture.nodes) == 0
+    assert projectq_backend.characterisation == dict()

@@ -18,13 +18,12 @@ from ast import literal_eval
 import json
 from typing import (
     cast,
-    Iterable,
     List,
     Optional,
     Dict,
     Any,
+    Sequence,
     TYPE_CHECKING,
-    Set,
     Tuple,
     Union,
 )
@@ -41,10 +40,14 @@ from qiskit.tools.monitor import job_monitor  # type: ignore
 
 from pytket.circuit import Circuit, OpType  # type: ignore
 from pytket.backends import Backend, CircuitNotRunError, CircuitStatus, ResultHandle
+from pytket.backends.backendinfo import BackendInfo
 from pytket.backends.backendresult import BackendResult
 from pytket.backends.resulthandle import _ResultIdTuple
-from pytket.extensions.qiskit.qiskit_convert import process_characterisation
-from pytket.device import Device  # type: ignore
+from pytket.extensions.qiskit.qiskit_convert import (
+    process_characterisation,
+    get_avg_characterisation,
+)
+from pytket.extensions.qiskit._metadata import __extension_version__
 from pytket.passes import (  # type: ignore
     BasePass,
     RebaseCustom,
@@ -70,10 +73,10 @@ from pytket.extensions.qiskit.qiskit_convert import tk_to_qiskit, _tk_gate_set
 from pytket.extensions.qiskit.result_convert import (
     qiskit_experimentresult_to_backendresult,
 )
-from pytket.routing import NoiseAwarePlacement, Architecture  # type: ignore
+from pytket.routing import NoiseAwarePlacement  # type: ignore
 from pytket.utils import prepare_circuit
 from pytket.utils.results import KwargTypes
-from .ibm_utils import _STATUS_MAP
+from .ibm_utils import _STATUS_MAP, _batch_circuits
 from .config import QiskitConfig
 
 if TYPE_CHECKING:
@@ -274,36 +277,51 @@ class IBMQBackend(Backend):
         else:
             provider = account_provider
         self._backend: "_QiskIBMQBackend" = provider.get_backend(backend_name)
-        self._config: "QasmBackendConfiguration" = self._backend.configuration()
-        self._gate_set: Set[OpType]
+        self._config = self._backend.configuration()
+        self._max_per_job = getattr(self._config, "max_experiments", 1)
+
+        # gather and store device specifics in BackendInfo
+        characterisation = process_characterisation(self._backend)
+        characterisation_keys = [
+            "NodeErrors",
+            "EdgeErrors",
+            "ReadoutErrors",
+            "GenericOneQubitQErrors",
+            "GenericTwoQubitQErrors",
+        ]
+        arch = characterisation["Architecture"]
+        # filter entries to keep
+        characterisation = {
+            k: v for k, v in characterisation.items() if k in characterisation_keys
+        }
+        supports_mid_measure = self._config.simulator or self._config.multi_meas_enabled
+        supports_fast_feedforward = supports_mid_measure
         # simulator i.e. "ibmq_qasm_simulator" does not have `supported_instructions`
         # attribute
-        self._gate_set = _tk_gate_set(self._backend)
+        gate_set = _tk_gate_set(self._backend)
 
-        self._mid_measure = self._config.simulator or self._config.multi_meas_enabled
+        self._backend_info = BackendInfo(
+            type(self).__name__,
+            backend_name,
+            __extension_version__,
+            arch,
+            gate_set,
+            supports_midcircuit_measurement=supports_mid_measure,
+            supports_fast_feedforward=supports_fast_feedforward,
+            misc={"characterisation": characterisation},
+        )
 
-        self._legacy_gateset = OpType.SX not in self._gate_set
+        self._legacy_gateset = OpType.SX not in gate_set
 
         if self._legacy_gateset:
-            if not self._gate_set >= {OpType.U1, OpType.U2, OpType.U3, OpType.CX}:
-                raise NotImplementedError(f"Gate set {self._gate_set} unsupported")
+            if not gate_set >= {OpType.U1, OpType.U2, OpType.U3, OpType.CX}:
+                raise NotImplementedError(f"Gate set {gate_set} unsupported")
             self._rebase_pass = RebaseIBM()
         else:
-            if not self._gate_set >= {OpType.X, OpType.SX, OpType.Rz, OpType.CX}:
-                raise NotImplementedError(f"Gate set {self._gate_set} unsupported")
+            if not gate_set >= {OpType.X, OpType.SX, OpType.Rz, OpType.CX}:
+                raise NotImplementedError(f"Gate set {gate_set} unsupported")
             self._rebase_pass = _rebase_pass
 
-        if hasattr(self._config, "max_experiments"):
-            self._max_per_job = self._config.max_experiments
-        else:
-            self._max_per_job = 1
-
-        self._characterisation: Dict[str, Any] = process_characterisation(self._backend)
-        self._device = Device(
-            self._characterisation.get("NodeErrors", {}),
-            self._characterisation.get("EdgeErrors", {}),
-            self._characterisation.get("Architecture", Architecture([])),
-        )
         self._monitor = monitor
 
         # cache of results keyed by job id and circuit index
@@ -312,30 +330,35 @@ class IBMQBackend(Backend):
         self._MACHINE_DEBUG = False
 
     @property
-    def characterisation(self) -> Optional[Dict[str, Any]]:
-        return self._characterisation
+    def characterisation(self) -> Dict[str, Any]:
+        return cast(Dict[str, Any], self._backend_info.get_misc("characterisation"))
 
     @property
-    def device(self) -> Optional[Device]:
-        return self._device
+    def backend_info(self) -> BackendInfo:
+        return self._backend_info
 
     @property
     def required_predicates(self) -> List[Predicate]:
         predicates = [
             NoSymbolsPredicate(),
             GateSetPredicate(
-                self._gate_set.union(
+                self._backend_info.gate_set.union(
                     {
                         OpType.Barrier,
                     }
                 )
             ),
         ]
-        if not self._mid_measure:
+        mid_measure = self._backend_info.supports_midcircuit_measurement
+        fast_feedforward = self._backend_info.supports_fast_feedforward
+        if not mid_measure:
             predicates = [
                 NoClassicalControlPredicate(),
-                NoFastFeedforwardPredicate(),
                 NoMidMeasurePredicate(),
+            ] + predicates
+        if not fast_feedforward:
+            predicates = [
+                NoFastFeedforwardPredicate(),
             ] + predicates
         return predicates
 
@@ -348,12 +371,16 @@ class IBMQBackend(Backend):
             passlist.append(SynthesiseIBM())
         elif optimisation_level == 2:
             passlist.append(FullPeepholeOptimise())
+        arch = self._backend_info.architecture
+        mid_measure = self._backend_info.supports_midcircuit_measurement
         passlist.append(
             CXMappingPass(
-                self._device,
-                NoiseAwarePlacement(self._device),
+                arch,
+                NoiseAwarePlacement(
+                    arch, **get_avg_characterisation(self.characterisation)
+                ),
                 directed_cx=False,
-                delay_measures=(not self._mid_measure),
+                delay_measures=(not mid_measure),
             )
         )
         if optimisation_level == 1:
@@ -374,8 +401,8 @@ class IBMQBackend(Backend):
 
     def process_circuits(
         self,
-        circuits: Iterable[Circuit],
-        n_shots: Optional[int] = None,
+        circuits: Sequence[Circuit],
+        n_shots: Optional[Union[int, Sequence[int]]] = None,
         valid_check: bool = True,
         **kwargs: KwargTypes,
     ) -> List[ResultHandle]:
@@ -383,45 +410,68 @@ class IBMQBackend(Backend):
         See :py:meth:`pytket.backends.Backend.process_circuits`.
         Supported kwargs: `postprocess`.
         """
-        if n_shots is None or n_shots < 1:
-            raise ValueError("Parameter n_shots is required for this backend")
-        handle_list = []
-        for chunk in itertools.zip_longest(*([iter(circuits)] * self._max_per_job)):
-            filtchunk = list(filter(lambda x: x is not None, chunk))
-
-            if valid_check:
-                self._check_all_circuits(filtchunk)
-
-            postprocess = kwargs.get("postprocess", False)
-
-            qcs, ppcirc_strs = [], []
-            for tkc in filtchunk:
-                if postprocess:
-                    c0, ppcirc = prepare_circuit(tkc, allow_classical=False)
-                    ppcirc_rep = ppcirc.to_dict()
-                else:
-                    c0, ppcirc_rep = tkc, None
-                qcs.append(tk_to_qiskit(c0))
-                ppcirc_strs.append(json.dumps(ppcirc_rep))
-            if self._MACHINE_DEBUG:
-                handle_list += [
-                    ResultHandle(
-                        _DEBUG_HANDLE_PREFIX + str((c.n_qubits, n_shots)),
-                        i,
-                        ppcirc_strs[i],
+        circuits = list(circuits)
+        n_shots_list: List[int] = []
+        if hasattr(n_shots, "__iter__"):
+            for n in cast(Sequence[Optional[int]], n_shots):
+                if n is None or n < 1:
+                    raise ValueError(
+                        "n_shots values are required for all circuits for this backend"
                     )
-                    for i, c in enumerate(filtchunk)
-                ]
-            else:
-                job = self._backend.run(qcs, shots=n_shots, memory=self._config.memory)
-                jobid = job.job_id()
-                handle_list += [
-                    ResultHandle(jobid, i, ppcirc_strs[i])
-                    for i in range(len(filtchunk))
-                ]
-                for handle in handle_list:
-                    self._cache[handle] = dict()
-        return handle_list
+                n_shots_list.append(n)
+            if len(n_shots_list) != len(circuits):
+                raise ValueError("The length of n_shots and circuits must match")
+        else:
+            if n_shots is None:
+                raise ValueError("Parameter n_shots is required for this backend")
+            # convert n_shots to a list
+            n_shots_list = [cast(int, n_shots)] * len(circuits)
+
+        handle_list: List[Optional[ResultHandle]] = [None] * len(circuits)
+        circuit_batches, batch_order = _batch_circuits(circuits, n_shots_list)
+
+        batch_id = 0  # identify batches for debug purposes only
+        for (n_shots, batch), indices in zip(circuit_batches, batch_order):
+            for chunk in itertools.zip_longest(
+                *([iter(zip(batch, indices))] * self._max_per_job)
+            ):
+                filtchunk = list(filter(lambda x: x is not None, chunk))
+                batch_chunk, indices_chunk = zip(*filtchunk)
+
+                if valid_check:
+                    self._check_all_circuits(batch_chunk)
+
+                postprocess = kwargs.get("postprocess", False)
+
+                qcs, ppcirc_strs = [], []
+                for tkc in batch_chunk:
+                    if postprocess:
+                        c0, ppcirc = prepare_circuit(tkc, allow_classical=False)
+                        ppcirc_rep = ppcirc.to_dict()
+                    else:
+                        c0, ppcirc_rep = tkc, None
+                    qcs.append(tk_to_qiskit(c0))
+                    ppcirc_strs.append(json.dumps(ppcirc_rep))
+                if self._MACHINE_DEBUG:
+                    for i, ind in enumerate(indices_chunk):
+                        handle_list[ind] = ResultHandle(
+                            _DEBUG_HANDLE_PREFIX
+                            + str((batch_chunk[i].n_qubits, n_shots, batch_id)),
+                            i,
+                            ppcirc_strs[i],
+                        )
+                else:
+                    job = self._backend.run(
+                        qcs, shots=n_shots, memory=self._config.memory
+                    )
+                    jobid = job.job_id()
+                    for i, ind in enumerate(indices_chunk):
+                        handle_list[ind] = ResultHandle(jobid, i, ppcirc_strs[i])
+            batch_id += 1
+        for handle in handle_list:
+            assert handle is not None
+            self._cache[handle] = dict()
+        return cast(List[ResultHandle], handle_list)
 
     def _retrieve_job(self, jobid: str) -> IBMQJob:
         return self._backend.retrieve_job(jobid)
@@ -457,7 +507,7 @@ class IBMQBackend(Backend):
             if self._MACHINE_DEBUG or jobid.startswith(_DEBUG_HANDLE_PREFIX):
                 shots: int
                 n_qubits: int
-                n_qubits, shots = literal_eval(jobid[len(_DEBUG_HANDLE_PREFIX) :])
+                n_qubits, shots, _ = literal_eval(jobid[len(_DEBUG_HANDLE_PREFIX) :])
                 res = _gen_debug_results(n_qubits, shots, index)
             else:
                 try:

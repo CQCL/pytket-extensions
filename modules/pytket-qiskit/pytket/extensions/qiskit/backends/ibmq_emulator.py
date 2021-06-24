@@ -13,9 +13,20 @@
 # limitations under the License.
 
 import json
-from typing import cast, Dict, Iterable, Optional, List, Tuple, TYPE_CHECKING
+from typing import (
+    cast,
+    Any,
+    Dict,
+    Optional,
+    List,
+    Sequence,
+    Tuple,
+    Union,
+    TYPE_CHECKING,
+)
 
 from pytket.backends import CircuitNotRunError, ResultHandle
+from pytket.backends.backendinfo import BackendInfo
 from pytket.backends.backendresult import BackendResult
 from pytket.backends.resulthandle import _ResultIdTuple
 from pytket.circuit import Circuit  # type: ignore
@@ -31,9 +42,9 @@ from qiskit.providers.aer.noise.noise_model import NoiseModel  # type: ignore
 
 from .aer import AerBackend
 from .ibm import IBMQBackend
+from .ibm_utils import _batch_circuits
 
 if TYPE_CHECKING:
-    from pytket.device import Device  # type: ignore
     from pytket.predicates import Predicate  # type: ignore
     from pytket.passes import BasePass  # type: ignore
     from qiskit.providers.aer import AerJob  # type: ignore
@@ -81,8 +92,12 @@ class IBMQEmulatorBackend(AerBackend):
         self._ibm_res_cache: Dict[Tuple[str, int], ExperimentResult] = dict()
 
     @property
-    def device(self) -> Optional["Device"]:
-        return self._ibmq._device
+    def characterisation(self) -> Optional[Dict[str, Any]]:
+        return self._ibmq.characterisation
+
+    @property
+    def backend_info(self) -> BackendInfo:
+        return self._ibmq.backend_info
 
     @property
     def required_predicates(self) -> List["Predicate"]:
@@ -97,8 +112,8 @@ class IBMQEmulatorBackend(AerBackend):
 
     def process_circuits(
         self,
-        circuits: Iterable[Circuit],
-        n_shots: Optional[int] = None,
+        circuits: Sequence[Circuit],
+        n_shots: Optional[Union[int, Sequence[int]]] = None,
         valid_check: bool = True,
         **kwargs: KwargTypes,
     ) -> List[ResultHandle]:
@@ -106,37 +121,48 @@ class IBMQEmulatorBackend(AerBackend):
         See :py:meth:`pytket.backends.Backend.process_circuits`.
         Supported kwargs: `seed`, `postprocess`.
         """
-        circuit_list = list(circuits)
+        circuits = list(circuits)
+        if hasattr(n_shots, "__iter__"):
+            n_shots_list = list(cast(Sequence[Optional[int]], n_shots))
+            if len(n_shots_list) != len(circuits):
+                raise ValueError("The length of n_shots and circuits must match")
+        else:
+            # convert n_shots to a list
+            n_shots_list = [cast(Optional[int], n_shots)] * len(circuits)
 
         if valid_check:
-            self._check_all_circuits(circuit_list)
+            self._check_all_circuits(circuits)
 
         postprocess = kwargs.get("postprocess", False)
         seed = cast(Optional[int], kwargs.get("seed"))
 
-        qcs, ppcirc_strs = [], []
-        for tkc in circuit_list:
-            if postprocess:
-                c0, ppcirc = prepare_circuit(tkc, allow_classical=False)
-                ppcirc_rep = ppcirc.to_dict()
-            else:
-                c0, ppcirc_rep = tkc, None
-            qcs.append(tk_to_qiskit(c0))
-            ppcirc_strs.append(json.dumps(ppcirc_rep))
-        job = self._backend.run(
-            qcs,
-            shots=n_shots,
-            memory=self._memory,
-            seed_simulator=seed,
-            noise_model=self._noise_model,
-        )
-        jobid = job.job_id()
-        handle_list = [
-            ResultHandle(jobid, i, ppcirc_strs[i]) for i in range(len(circuit_list))
-        ]
+        handle_list: List[Optional[ResultHandle]] = [None] * len(circuits)
+        circuit_batches, batch_order = _batch_circuits(circuits, n_shots_list)
+
+        for (n_shots, batch), indices in zip(circuit_batches, batch_order):
+            qcs, ppcirc_strs = [], []
+            for tkc in batch:
+                if postprocess:
+                    c0, ppcirc = prepare_circuit(tkc, allow_classical=False)
+                    ppcirc_rep = ppcirc.to_dict()
+                else:
+                    c0, ppcirc_rep = tkc, None
+                qcs.append(tk_to_qiskit(c0))
+                ppcirc_strs.append(json.dumps(ppcirc_rep))
+            job = self._backend.run(
+                qcs,
+                shots=n_shots,
+                memory=self._memory,
+                seed_simulator=seed,
+                noise_model=self._noise_model,
+            )
+            jobid = job.job_id()
+            for i, ind in enumerate(indices):
+                handle_list[ind] = ResultHandle(jobid, i, ppcirc_strs[i])
         for handle in handle_list:
+            assert handle is not None
             self._cache[handle] = {"job": job}
-        return handle_list
+        return cast(List[ResultHandle], handle_list)
 
     def get_result(self, handle: ResultHandle, **kwargs: KwargTypes) -> BackendResult:
         """

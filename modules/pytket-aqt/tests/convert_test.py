@@ -26,7 +26,7 @@ REASON = "PYTKET_RUN_REMOTE_TESTS not set (requires configuration of AQT access 
 
 
 def tk_to_aqt(circ: Circuit) -> Tuple[List[List], str]:
-    """ Convert a circuit to AQT list representation """
+    """Convert a circuit to AQT list representation"""
     c = circ.copy()
     AQTBackend(device_name="sim/noise-model-1").default_compilation_pass().apply(c)
     return _translate_aqt(c)

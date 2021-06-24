@@ -40,7 +40,7 @@ _IBM_GATES = {OpType.U1: gate.U1, OpType.U2: gate.U2, OpType.U3: gate.U3}
 
 
 def tk_to_qulacs(circuit: Circuit) -> QuantumCircuit:
-    """ Convert a pytket circuit to a qulacs circuit object. """
+    """Convert a pytket circuit to a qulacs circuit object."""
     qulacs_circ = QuantumCircuit(circuit.n_qubits)
     for com in circuit:
         optype = com.op.type

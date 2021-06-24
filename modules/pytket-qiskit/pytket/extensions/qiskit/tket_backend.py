@@ -73,12 +73,13 @@ class TketBackend(BaseBackend):
          before submitting to the :py:class:`Backend`, defaults to None
         :type comp_pass: Optional[BasePass], optional
         """
+        arch = backend.backend_info.architecture if backend.backend_info else None
         config = QasmBackendConfiguration(
             backend_name=("statevector_" if backend.supports_state else "")
             + "pytket/"
             + str(type(backend)),
             backend_version="0.0.1",
-            n_qubits=len(backend.device.nodes) if backend.device else 40,
+            n_qubits=len(arch.nodes) if arch and arch.nodes else 40,
             basis_gates=_extract_basis_gates(backend),
             gates=[],
             local=False,
@@ -92,8 +93,8 @@ class TketBackend(BaseBackend):
             open_pulse=False,
             memory=backend.supports_shots,
             max_shots=10000,
-            coupling_map=[[n.index[0], m.index[0]] for n, m in backend.device.coupling]
-            if backend.device
+            coupling_map=[[n.index[0], m.index[0]] for n, m in arch.coupling]
+            if arch
             else None,
             max_experiments=10000,
         )

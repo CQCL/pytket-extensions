@@ -14,7 +14,6 @@
 
 from pytket.extensions.cirq import cirq_to_tk, tk_to_cirq, process_characterisation
 from pytket.routing import Architecture  # type: ignore
-from pytket.device import Device  # type: ignore
 
 import cirq
 import cirq_google
@@ -81,10 +80,5 @@ def test_conversions() -> None:
 def test_device() -> None:
     fox = cirq_google.Foxtail
     char = process_characterisation(fox)
-    dev = Device(
-        char.get("NodeErrors", {}),
-        char.get("EdgeErrors", {}),
-        char.get("Architecture", Architecture([])),
-    )
-    arc = dev.architecture
+    arc = char.get("Architecture", Architecture([]))
     assert str(arc) == "<tket::Architecture, nodes=22>"

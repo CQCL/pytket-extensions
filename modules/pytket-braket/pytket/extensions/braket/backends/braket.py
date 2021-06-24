@@ -17,22 +17,30 @@ from enum import Enum
 import time
 from typing import (
     cast,
+    Any,
+    Callable,
     Dict,
     Iterable,
     List,
     Optional,
+    Sequence,
     Union,
     Tuple,
+    TYPE_CHECKING,
 )
 from uuid import uuid4
 from pytket.backends import Backend, CircuitStatus, ResultHandle, StatusEnum
 from pytket.backends.backend import KwargTypes
+from pytket.backends.backendinfo import BackendInfo
 from pytket.backends.backend_exceptions import CircuitNotRunError
 from pytket.backends.backendresult import BackendResult
 from pytket.backends.resulthandle import _ResultIdTuple
-from pytket.extensions.braket.braket_convert import tk_to_braket
+from pytket.extensions.braket.braket_convert import (
+    tk_to_braket,
+    get_avg_characterisation,
+)
+from pytket.extensions.braket._metadata import __extension_version__
 from pytket.circuit import Circuit, OpType  # type: ignore
-from pytket.device import Device, QubitErrorContainer  # type: ignore
 from pytket.passes import (  # type: ignore
     BasePass,
     CXMappingPass,
@@ -75,6 +83,9 @@ from braket.tasks.local_quantum_task import LocalQuantumTask  # type: ignore
 import numpy as np
 
 from .config import BraketConfig
+
+if TYPE_CHECKING:
+    from pytket.circuit import Node  # type: ignore
 
 # Known schemas for noise characteristics
 IONQ_SCHEMA = {
@@ -185,7 +196,7 @@ class _DeviceType(str, Enum):
 
 
 class BraketBackend(Backend):
-    """ Interface to Amazon Braket service """
+    """Interface to Amazon Braket service"""
 
     _persistent_handles = True
 
@@ -361,47 +372,73 @@ class BraketBackend(Backend):
             arch = Architecture(
                 [(k, v) for k, l in connectivity_graph.items() for v in l]
             )
+            self._req_preds.append(ConnectivityPredicate(arch))
         if self._device_type == _DeviceType.QPU:
             assert self._characteristics is not None
-            node_errs = {}
-            edge_errs = {}
             schema = self._characteristics["braketSchemaHeader"]
             if schema == IONQ_SCHEMA:
                 fid = self._characteristics["fidelity"]
-                mean_1q_err = 1 - fid["1Q"]["mean"]
-                mean_2q_err = 1 - fid["2Q"]["mean"]
-                err_1q_cont = QubitErrorContainer(self._singleqs)
-                for optype in self._singleqs:
-                    err_1q_cont.add_error((optype, mean_1q_err))
-                err_2q_cont = QubitErrorContainer(self._multiqs)
-                for optype in self._multiqs:
-                    err_2q_cont.add_error((optype, mean_2q_err))
-                for node in arch.nodes:
-                    node_errs[node] = err_1q_cont
-                for coupling in arch.coupling:
-                    edge_errs[coupling] = err_2q_cont
+                get_node_error: Callable[["Node"], float] = lambda n: 1.0 - cast(
+                    float, fid["1Q"]["mean"]
+                )
+                get_readout_error: Callable[["Node"], float] = lambda n: 0.0
+                get_link_error: Callable[
+                    ["Node", "Node"], float
+                ] = lambda n0, n1: 1.0 - cast(float, fid["2Q"]["mean"])
             elif schema == RIGETTI_SCHEMA:
                 specs = self._characteristics["specs"]
                 specs1q, specs2q = specs["1Q"], specs["2Q"]
-                for node in arch.nodes:
-                    nodespecs = specs1q[f"{node.index[0]}"]
-                    err_1q_cont = QubitErrorContainer(self._singleqs)
-                    for optype in self._singleqs:
-                        err_1q_cont.add_error((optype, 1 - nodespecs.get("f1QRB", 1)))
-                    err_1q_cont.add_readout(nodespecs.get("fRO", 1))
-                    node_errs[node] = err_1q_cont
-                for coupling in arch.coupling:
-                    node0, node1 = coupling
-                    n0, n1 = node0.index[0], node1.index[0]
-                    couplingspecs = specs2q[f"{min(n0,n1)}-{max(n0,n1)}"]
-                    err_2q_cont = QubitErrorContainer({OpType.CZ})
-                    err_2q_cont.add_error((OpType.CZ, 1 - couplingspecs.get("fCZ", 1)))
-                    edge_errs[coupling] = err_2q_cont
-            self._tket_device = Device(node_errs, edge_errs, arch)
-            if connectivity_graph is not None:
-                self._req_preds.append(ConnectivityPredicate(self._tket_device))
+                get_node_error = lambda n: 1.0 - cast(
+                    float, specs1q[f"{n.index[0]}"].get("f1QRB", 1.0)
+                )
+                get_readout_error = lambda n: cast(
+                    float, specs1q[f"{n.index[0]}"].get("fRO", 1.0)
+                )
+                get_link_error = lambda n0, n1: 1.0 - cast(
+                    float,
+                    specs2q[
+                        f"{min(n0.index[0],n1.index[0])}-{max(n0.index[0],n1.index[0])}"
+                    ].get("fCZ", 1.0),
+                )
+            # readout error as symmetric 2x2 matrix
+            to_sym_mat: Callable[[float], List[List[float]]] = lambda x: [
+                [1.0 - x, x],
+                [x, 1.0 - x],
+            ]
+            node_errors = {
+                node: {optype: get_node_error(node) for optype in self._singleqs}
+                for node in arch.nodes
+            }
+            readout_errors = {
+                node: to_sym_mat(get_readout_error(node)) for node in arch.nodes
+            }
+            link_errors = {
+                (n0, n1): {optype: get_link_error(n0, n1) for optype in self._multiqs}
+                for n0, n1 in arch.coupling
+            }
+
+            self._backend_info = BackendInfo(
+                type(self).__name__,
+                device,
+                __extension_version__,
+                arch,
+                self._singleqs.union(self._multiqs),
+                misc={
+                    "characterisation": {
+                        "NodeErrors": node_errors,
+                        "EdgeErrors": link_errors,
+                        "ReadoutErrors": readout_errors,
+                    }
+                },
+            )
         else:
-            self._tket_device = None
+            self._backend_info = BackendInfo(
+                type(self).__name__,
+                device,
+                __extension_version__,
+                arch,
+                self._singleqs.union(self._multiqs),
+            )
 
         self._rebase_pass = RebaseCustom(
             self._multiqs,
@@ -426,11 +463,14 @@ class BraketBackend(Backend):
         elif optimisation_level == 2:
             passes.append(FullPeepholeOptimise())
         passes.append(self._rebase_pass)
-        if self._device_type == _DeviceType.QPU:
+        if self._device_type == _DeviceType.QPU and self.characterisation is not None:
+            arch = self.backend_info.architecture
             passes.append(
                 CXMappingPass(
-                    self._tket_device,
-                    NoiseAwarePlacement(self._tket_device),
+                    arch,
+                    NoiseAwarePlacement(
+                        arch, **get_avg_characterisation(self.characterisation)
+                    ),
                     directed_cx=False,
                     delay_measures=True,
                 )
@@ -475,34 +515,46 @@ class BraketBackend(Backend):
 
     def process_circuits(
         self,
-        circuits: Iterable[Circuit],
-        n_shots: Optional[int] = None,
+        circuits: Sequence[Circuit],
+        n_shots: Optional[Union[int, Sequence[int]]] = None,
         valid_check: bool = True,
         **kwargs: KwargTypes,
     ) -> List[ResultHandle]:
         """
         Supported `kwargs`: none
         """
+        circuits = list(circuits)
+        n_shots_list: List[int] = []
+        if hasattr(n_shots, "__iter__"):
+            n_shots_list = [n or 0 for n in cast(Sequence[Optional[int]], n_shots)]
+        else:
+            # convert n_shots to a list
+            n_shots_list = [cast(Optional[int], n_shots) or 0] * len(circuits)
+
         if not self.supports_shots and not self.supports_state:
             raise RuntimeError("Backend does not support shots or state")
-        if n_shots is None:
-            n_shots = 0
-        want_state = n_shots == 0
-        if (not want_state) and (
-            n_shots < self._sample_min_shots or n_shots > self._sample_max_shots
+
+        if any(
+            map(
+                lambda n: n > 0
+                and (n < self._sample_min_shots or n > self._sample_max_shots),
+                n_shots_list,
+            )
         ):
             raise ValueError(
                 "For sampling, n_shots must be between "
                 f"{self._sample_min_shots} and {self._sample_max_shots}. "
                 "For statevector simulation, omit this parameter."
             )
+
         if valid_check:
             self._check_all_circuits(circuits, nomeasure_warn=False)
 
         postprocess = kwargs.get("postprocess", False)
 
         handles = []
-        for circ in circuits:
+        for circ, n_shots in zip(circuits, n_shots_list):
+            want_state = n_shots == 0
             if postprocess:
                 circ_measured = circ.copy()
                 circ_measured.measure_all()
@@ -567,12 +619,13 @@ class BraketBackend(Backend):
             return CircuitStatus(StatusEnum.ERROR, f"Unrecognized state '{state}'")
 
     @property
-    def characterisation(self) -> Optional[Dict]:
-        return self._characteristics
+    def characterisation(self) -> Optional[Dict[str, Any]]:
+        char = self._backend_info.get_misc("characterisation")
+        return cast(Dict[str, Any], char) if char else None
 
     @property
-    def device(self) -> Optional[Device]:
-        return self._tket_device
+    def backend_info(self) -> BackendInfo:
+        return self._backend_info
 
     def get_result(self, handle: ResultHandle, **kwargs: KwargTypes) -> BackendResult:
         """
