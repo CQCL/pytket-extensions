@@ -295,7 +295,7 @@ def test_state() -> None:
     h = b.process_circuit(c)
     res = b.get_result(h)
     v = res.get_state()
-    assert np.vdot(v, v) == pytest.approx(1)
+    assert np.vdot(v, v) == pytest.approx(1)  # type: ignore
 
 
 def test_default_pass() -> None:
