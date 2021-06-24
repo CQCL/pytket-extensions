@@ -24,7 +24,6 @@ from cirq.devices import LineQubit, GridQubit
 import cirq.ops
 import cirq_google
 from pytket.circuit import Circuit, OpType, Qubit, Bit, Node  # type: ignore
-from pytket.device import QubitErrorContainer  # type: ignore
 from pytket.routing import Architecture  # type: ignore
 from sympy import pi  # type: ignore
 
@@ -295,24 +294,7 @@ def process_characterisation(xmon: cirq_google.XmonDevice) -> dict:
             coupling_map.append((qb_map[qb], qb_map[x]))
     arc = Architecture(coupling_map)
 
-    node_ers_dict = {}
-    link_ers_dict = {}
-
-    for qb in xmon.qubits:
-        error_cont = QubitErrorContainer({OpType.PhasedX, OpType.Rz})
-        error_cont.add_error((OpType.PhasedX, 0.0))
-        error_cont.add_error((OpType.Rz, 0.0))
-        node_ers_dict[qb_map[qb]] = error_cont
-
-    for a, b in coupling_map:
-        error_cont = QubitErrorContainer({OpType.CZ})
-        error_cont.add_error((OpType.CZ, 0.0))
-        link_ers_dict[(a, b)] = error_cont
-        link_ers_dict[(b, a)] = error_cont
-
     characterisation = dict()
-    characterisation["NodeErrors"] = node_ers_dict
-    characterisation["EdgeErrors"] = link_ers_dict
     characterisation["Architecture"] = arc
 
     return characterisation

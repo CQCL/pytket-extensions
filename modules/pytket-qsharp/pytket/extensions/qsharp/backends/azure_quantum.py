@@ -16,7 +16,7 @@ import json
 import time
 from ast import literal_eval
 from collections import Counter
-from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, cast
+from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Union, cast
 
 import qsharp  # type: ignore
 import qsharp.azure  # type: ignore
@@ -71,6 +71,7 @@ class AzureBackend(_QsharpBaseBackend):
 
     _supports_counts = True
     _supports_contextual_optimisation = True
+    _persistent_handles = True
 
     def __init__(
         self,
@@ -100,7 +101,7 @@ class AzureBackend(_QsharpBaseBackend):
         :raises RuntimeError: Azure authentication error
         :raises ValueError: Target not available
         """
-        super().__init__()
+        super().__init__(backend_name=target_name)
         self._MACHINE_DEBUG = machine_debug
         if not self._MACHINE_DEBUG:
             try:
@@ -170,8 +171,8 @@ class AzureBackend(_QsharpBaseBackend):
 
     def process_circuits(
         self,
-        circuits: Iterable[Circuit],
-        n_shots: Optional[int] = None,
+        circuits: Sequence[Circuit],
+        n_shots: Optional[Union[int, Sequence[int]]] = None,
         valid_check: bool = True,
         **kwargs: KwargTypes,
     ) -> List[ResultHandle]:
@@ -179,8 +180,22 @@ class AzureBackend(_QsharpBaseBackend):
         See :py:meth:`pytket.backends.Backend.process_circuits`.
         Supported kwargs: `postprocess`.
         """
-        if n_shots is None or n_shots < 1:
-            raise ValueError("Parameter n_shots is required for this backend")
+        circuits = list(circuits)
+        n_shots_list: List[int] = []
+        if hasattr(n_shots, "__iter__"):
+            for n in cast(Sequence[Optional[int]], n_shots):
+                if n is None or n < 1:
+                    raise ValueError(
+                        "n_shots values are required for all circuits for this backend"
+                    )
+                n_shots_list.append(n)
+            if len(n_shots_list) != len(circuits):
+                raise ValueError("The length of n_shots and circuits must match")
+        else:
+            if n_shots is None:
+                raise ValueError("Parameter n_shots is required for this backend")
+            # convert n_shots to a list
+            n_shots_list = [cast(int, n_shots)] * len(circuits)
 
         if valid_check:
             self._check_all_circuits(circuits, nomeasure_warn=True)
@@ -188,7 +203,7 @@ class AzureBackend(_QsharpBaseBackend):
         postprocess = kwargs.get("postprocess", False)
 
         handles = []
-        for c in circuits:
+        for c, n_shots in zip(circuits, n_shots_list):
             if postprocess:
                 c0, ppcirc = prepare_circuit(c, allow_classical=False)
                 ppcirc_rep = ppcirc.to_dict()
@@ -212,6 +227,14 @@ class AzureBackend(_QsharpBaseBackend):
             self._cache[handle] = dict()
         return handles
 
+    def _update_cache_result(
+        self, handle: ResultHandle, result_dict: Dict[str, BackendResult]
+    ) -> None:
+        if handle in self._cache:
+            self._cache[handle].update(result_dict)
+        else:
+            self._cache[handle] = result_dict
+
     def circuit_status(self, handle: ResultHandle) -> CircuitStatus:
         self._check_handle_type(handle)
         jobid = cast(str, handle[0])
@@ -222,7 +245,7 @@ class AzureBackend(_QsharpBaseBackend):
         if self._MACHINE_DEBUG:
             n_bits = literal_eval(jobid[len(_DEBUG_HANDLE_PREFIX) :])
             empty_ar = OutcomeArray.from_ints([0] * n_shots, n_bits, big_endian=True)
-            self._cache[handle].update({"result": BackendResult(shots=empty_ar)})
+            self._update_cache_result(handle, {"result": BackendResult(shots=empty_ar)})
             statenum = StatusEnum.COMPLETED
         else:
             job = qsharp.azure.status(jobid)
@@ -231,8 +254,8 @@ class AzureBackend(_QsharpBaseBackend):
             message = repr(job)
             if statenum is StatusEnum.COMPLETED:
                 output = qsharp.azure.output(jobid)
-                self._cache[handle].update(
-                    {"result": _convert_result(output, n_shots, ppcirc=ppcirc)}
+                self._update_cache_result(
+                    handle, {"result": _convert_result(output, n_shots, ppcirc=ppcirc)}
                 )
         return CircuitStatus(statenum, message)
 

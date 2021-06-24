@@ -15,8 +15,9 @@
 """Methods to allow conversion between pyQuil and tket data types
 """
 
+from collections import defaultdict
 import math
-from typing import Union, Dict, List, Tuple, overload
+from typing import Any, Callable, Union, Dict, List, Tuple, TypeVar, cast, overload
 from typing_extensions import Literal
 
 from pyquil import Program
@@ -38,8 +39,6 @@ from pyquil.quilbase import Declare, Gate, Halt, Measurement, Pragma
 from sympy import pi, Expr, Symbol, sin, cos, Number, Add, Mul, Pow  # type: ignore
 
 from pytket.circuit import Circuit, Node, OpType, Qubit, Bit  # type: ignore
-
-from pytket.device import QubitErrorContainer  # type: ignore
 from pytket.routing import Architecture  # type: ignore
 
 _known_quil_gate = {
@@ -308,8 +307,9 @@ def process_characterisation(qc: QuantumComputer) -> dict:
         for ni, _ in neigh_dict.items()
     ]
 
-    node_ers_dict = {}
-    link_ers_dict = {}
+    link_errors: dict = defaultdict(dict)
+    node_errors: dict = defaultdict(dict)
+    readout_errors: dict = {}
     t1_times_dict = {}
     t2_times_dict = {}
 
@@ -320,27 +320,57 @@ def process_characterisation(qc: QuantumComputer) -> dict:
     device_t2s = specs.T2s()  # type: ignore
 
     for index in qc.qubits():
-        error_cont = QubitErrorContainer({OpType.Rx, OpType.Rz})
-        error_cont.add_readout(1 - device_fROs[index])  # type: ignore
+        node = Node(index)
+        readout_errors[node] = 1.0 - cast(float, device_fROs[index])
         t1_times_dict[index] = device_t1s[index]
         t2_times_dict[index] = device_t2s[index]
-        error_cont.add_error((OpType.Rx, 1 - device_node_fidelities[index]))  # type: ignore
+        node_errors[node].update(
+            {OpType.Rx: 1.0 - cast(float, device_node_fidelities[index])}
+        )
         # Rigetti use frame changes for Rz, so they effectively have no error.
-        node_ers_dict[Node(index)] = error_cont
+        node_errors[node].update({OpType.Rz: 0.0})
 
     for (a, b), fid in device_link_fidelities.items():
-        error_cont = QubitErrorContainer({OpType.CZ})
-        error_cont.add_error((OpType.CZ, 1 - fid))  # type: ignore
-        link_ers_dict[(Node(a), Node(b))] = error_cont
-        link_ers_dict[(Node(b), Node(a))] = error_cont
+        link_errors[(Node(a), Node(b))].update({OpType.CZ: 1.0 - cast(float, fid)})
 
     arc = Architecture(coupling_map)
 
     characterisation = dict()
-    characterisation["NodeErrors"] = node_ers_dict
-    characterisation["EdgeErrors"] = link_ers_dict
+    characterisation["NodeErrors"] = node_errors
+    characterisation["EdgeErrors"] = link_errors
     characterisation["Architecture"] = arc
     characterisation["t1times"] = t1_times_dict
     characterisation["t2times"] = t2_times_dict
 
     return characterisation
+
+
+def get_avg_characterisation(
+    characterisation: Dict[str, Any]
+) -> Dict[str, Dict[Node, float]]:
+    """
+    Convert gate-specific characterisation into readout, one- and two-qubit errors
+
+    Used to convert a typical output from `process_characterisation` into an input
+    noise characterisation for NoiseAwarePlacement
+    """
+
+    K = TypeVar("K")
+    V1 = TypeVar("V1")
+    V2 = TypeVar("V2")
+    map_values_t = Callable[[Callable[[V1], V2], Dict[K, V1]], Dict[K, V2]]
+    map_values: map_values_t = lambda f, d: {k: f(v) for k, v in d.items()}
+
+    node_errors = cast(Dict[Node, Dict[OpType, float]], characterisation["NodeErrors"])
+    link_errors = cast(
+        Dict[Tuple[Node, Node], Dict[OpType, float]], characterisation["EdgeErrors"]
+    )
+
+    avg: Callable[[Dict[Any, float]], float] = lambda xs: sum(xs.values()) / len(xs)
+    avg_node_errors = map_values(avg, node_errors)
+    avg_link_errors = map_values(avg, link_errors)
+
+    return {
+        "node_errors": avg_node_errors,
+        "link_errors": avg_link_errors,
+    }

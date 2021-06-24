@@ -15,10 +15,24 @@
 """ Conversion from tket to AQT
 """
 
-from typing import Iterable, Optional
+from typing import (
+    cast,
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    TypeVar,
+    TYPE_CHECKING,
+)
 from pytket.circuit import Circuit, OpType  # type: ignore
 from braket.circuits import Circuit as BK_Circuit  # type: ignore
 from numpy import pi
+
+if TYPE_CHECKING:
+    from pytket.circuit import Node  # type: ignore
 
 
 def tk_to_braket(tkcirc: Circuit, allqbs: Optional[Iterable[int]] = None) -> BK_Circuit:
@@ -197,3 +211,44 @@ def braket_to_tk(bkcirc: BK_Circuit) -> Circuit:
             # but not in general.
             raise NotImplementedError(f"Cannot convert {opname} to tket")
     return tkcirc
+
+
+def get_avg_characterisation(
+    characterisation: Dict[str, Any]
+) -> Dict[str, Dict["Node", float]]:
+    """
+    Convert gate-specific characterisation into readout, one- and two-qubit errors
+
+    Used to convert the stored full `characterisation` into an input
+    noise characterisation for NoiseAwarePlacement
+    """
+
+    K = TypeVar("K")
+    V1 = TypeVar("V1")
+    V2 = TypeVar("V2")
+    map_values_t = Callable[[Callable[[V1], V2], Dict[K, V1]], Dict[K, V2]]
+    map_values: map_values_t = lambda f, d: {k: f(v) for k, v in d.items()}
+
+    node_errors = cast(
+        Dict["Node", Dict[OpType, float]], characterisation["NodeErrors"]
+    )
+    link_errors = cast(
+        Dict[Tuple["Node", "Node"], Dict[OpType, float]], characterisation["EdgeErrors"]
+    )
+    readout_errors = cast(
+        Dict["Node", List[List[float]]], characterisation["ReadoutErrors"]
+    )
+
+    avg: Callable[[Dict[Any, float]], float] = lambda xs: sum(xs.values()) / len(xs)
+    avg_mat: Callable[[List[List[float]]], float] = (
+        lambda xs: (xs[0][1] + xs[1][0]) / 2.0
+    )
+    avg_readout_errors = map_values(avg_mat, readout_errors)
+    avg_node_errors = map_values(avg, node_errors)
+    avg_link_errors = map_values(avg, link_errors)
+
+    return {
+        "node_errors": avg_node_errors,
+        "link_errors": avg_link_errors,
+        "readout_errors": avg_readout_errors,
+    }

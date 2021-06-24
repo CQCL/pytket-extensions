@@ -16,7 +16,7 @@
 from ast import literal_eval
 import json
 from http import HTTPStatus
-from typing import Dict, Iterable, List, Optional, Sequence, Any, cast
+from typing import Dict, List, Optional, Sequence, Union, Any, cast
 
 import numpy as np
 import requests
@@ -26,10 +26,11 @@ from pytket.backends import Backend, ResultHandle, CircuitStatus, StatusEnum
 from requests.models import Response
 from pytket.backends.backend import KwargTypes
 from pytket.backends.resulthandle import _ResultIdTuple
+from pytket.backends.backendinfo import BackendInfo, fully_connected_backendinfo
 from pytket.backends.backendresult import BackendResult
 from pytket.backends.backend_exceptions import CircuitNotRunError
 from pytket.circuit import Circuit, OpType, Bit  # type: ignore
-from pytket.device import Device  # type: ignore
+from pytket.extensions.honeywell._metadata import __extension_version__
 from pytket.qasm import circuit_to_qasm_str
 from pytket.passes import (  # type: ignore
     BasePass,
@@ -49,7 +50,6 @@ from pytket.predicates import (  # type: ignore
     Predicate,
     NoSymbolsPredicate,
 )
-from pytket.routing import FullyConnected  # type: ignore
 from pytket.utils import prepare_circuit
 from pytket.utils.outcomearray import OutcomeArray
 
@@ -117,7 +117,7 @@ class HoneywellBackend(Backend):
         self._device_name = device_name
         self._label = label
 
-        self._device = None
+        self._backend_info: Optional[BackendInfo] = None
         if machine_debug:
             self._api_handler = None
         else:
@@ -159,13 +159,19 @@ class HoneywellBackend(Backend):
         jr = res.json()
         return jr  # type: ignore
 
-    def _retrieve_device(self, machine: str) -> Device:
+    def _retrieve_backendinfo(self, machine: str) -> BackendInfo:
         jr = self.available_devices(self._api_handler)
         try:
             self._machine_info = next(entry for entry in jr if entry["name"] == machine)
         except StopIteration:
             raise RuntimeError(f"Device {machine} is not available.")
-        return Device(FullyConnected(self._machine_info["n_qubits"]))
+        return fully_connected_backendinfo(
+            type(self).__name__,
+            machine,
+            __extension_version__,
+            self._machine_info["n_qubits"],
+            _GATE_SET,
+        )
 
     @classmethod
     def device_state(
@@ -195,10 +201,10 @@ class HoneywellBackend(Backend):
         return str(jr["state"])
 
     @property
-    def device(self) -> Optional[Device]:
-        if self._device is None and not self._MACHINE_DEBUG:
-            self._device = self._retrieve_device(self._device_name)
-        return self._device
+    def backend_info(self) -> Optional[BackendInfo]:
+        if self._backend_info is None and not self._MACHINE_DEBUG:
+            self._backend_info = self._retrieve_backendinfo(self._device_name)
+        return self._backend_info
 
     @property
     def required_predicates(self) -> List[Predicate]:
@@ -207,8 +213,8 @@ class HoneywellBackend(Backend):
             GateSetPredicate(_GATE_SET),
         ]
         if not self._MACHINE_DEBUG:
-            assert self.device is not None
-            preds.append(MaxNQubitsPredicate(len(self.device.nodes)))
+            assert self.backend_info is not None
+            preds.append(MaxNQubitsPredicate(self.backend_info.n_nodes))
         return preds
 
     def default_compilation_pass(self, optimisation_level: int = 1) -> BasePass:
@@ -252,8 +258,8 @@ class HoneywellBackend(Backend):
 
     def process_circuits(
         self,
-        circuits: Iterable[Circuit],
-        n_shots: Optional[int] = None,
+        circuits: Sequence[Circuit],
+        n_shots: Optional[Union[int, Sequence[int]]] = None,
         valid_check: bool = True,
         **kwargs: KwargTypes,
     ) -> List[ResultHandle]:
@@ -261,23 +267,36 @@ class HoneywellBackend(Backend):
         See :py:meth:`pytket.backends.Backend.process_circuits`.
         Supported kwargs: none.
         """
-        if n_shots is None or n_shots < 1:
-            raise ValueError("Parameter n_shots is required for this backend")
+        circuits = list(circuits)
+        n_shots_list: List[int] = []
+        if hasattr(n_shots, "__iter__"):
+            for n in cast(Sequence[Optional[int]], n_shots):
+                if n is None or n < 1:
+                    raise ValueError(
+                        "n_shots values are required for all circuits for this backend"
+                    )
+                n_shots_list.append(n)
+            if len(n_shots_list) != len(circuits):
+                raise ValueError("The length of n_shots and circuits must match")
+        else:
+            if n_shots is None:
+                raise ValueError("Parameter n_shots is required for this backend")
+            # convert n_shots to a list
+            n_shots_list = [cast(int, n_shots)] * len(circuits)
 
         if valid_check:
             self._check_all_circuits(circuits)
 
         postprocess = kwargs.get("postprocess", False)
 
-        basebody = {
+        basebody: dict = {
             "machine": self._device_name,
             "language": "OPENQASM 2.0",
             "priority": "normal",
-            "count": n_shots,
             "options": None,
         }
         handle_list = []
-        for i, circ in enumerate(circuits):
+        for i, (circ, n_shots) in enumerate(zip(circuits, n_shots_list)):
             if postprocess:
                 c0, ppcirc = prepare_circuit(circ, allow_classical=False, xcirc=_xcirc)
                 ppcirc_rep = ppcirc.to_dict()
@@ -287,6 +306,7 @@ class HoneywellBackend(Backend):
             body = basebody.copy()
             body["name"] = circ.name if circ.name else f"{self._label}_{i}"
             body["program"] = honeywell_circ
+            body["count"] = n_shots
             if self._api_handler is None:
                 handle_list.append(
                     ResultHandle(

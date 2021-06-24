@@ -131,7 +131,7 @@ class HoneywellQAPI:
         return _OverrideManger(self, timeout=timeout, retry_timeout=retry_timeout)
 
     def _request_tokens(self, body: dict) -> Tuple[Optional[int], Optional[Any]]:
-        """ Method to send login request to machine api and save tokens. """
+        """Method to send login request to machine api and save tokens."""
         try:
             # send request to login
             response = requests.post(
@@ -157,7 +157,7 @@ class HoneywellQAPI:
             return None, None
 
     def _get_credentials(self) -> Tuple[str, str]:
-        """ Method to ask for user's credentials """
+        """Method to ask for user's credentials"""
         if self.config.username is not None:
             pwd = keyring.get_password(  # type: ignore
                 self.keyring_service,
@@ -229,7 +229,10 @@ class HoneywellQAPI:
                     raise HQSAPIError("No message with BAD_REQUEST")
 
         if status_code != HTTPStatus.OK:
-            raise HQSAPIError(f"HTTP error while logging in: {status_code}")
+            raise HQSAPIError(
+                "HTTP error while logging in: "
+                f"{status_code} {'' if message is None else message}"
+            )
 
     def _get_token_parts(self, token_name: str) -> Iterable[str]:
         token_parts = (

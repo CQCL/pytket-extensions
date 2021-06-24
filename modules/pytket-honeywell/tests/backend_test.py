@@ -79,7 +79,7 @@ def test_honeywell() -> None:
     newcounts = backend.get_counts(c, 4)
     assert newcounts == correct_counts
     if skip_remote_tests:
-        assert backend.device is None
+        assert backend.backend_info is None
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
