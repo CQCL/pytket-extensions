@@ -350,13 +350,13 @@ class IBMQBackend(Backend):
             ),
         ]
         mid_measure = self._backend_info.supports_midcircuit_measurement
-        fast_feedback = self._backend_info.supports_fast_feedforward
+        fast_feedforward = self._backend_info.supports_fast_feedforward
         if not mid_measure:
             predicates = [
                 NoClassicalControlPredicate(),
                 NoMidMeasurePredicate(),
             ] + predicates
-        if not fast_feedback:
+        if not fast_feedforward:
             predicates = [
                 NoFastFeedforwardPredicate(),
             ] + predicates

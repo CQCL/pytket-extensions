@@ -1,2 +1,1 @@
 pytket-qiskit
-types-requests

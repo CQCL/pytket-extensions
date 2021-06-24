@@ -328,7 +328,7 @@ def process_characterisation(qc: QuantumComputer) -> dict:
             {OpType.Rx: 1.0 - cast(float, device_node_fidelities[index])}
         )
         # Rigetti use frame changes for Rz, so they effectively have no error.
-        node_errors[node].update({OpType.Rz: 1.0})
+        node_errors[node].update({OpType.Rz: 0.0})
 
     for (a, b), fid in device_link_fidelities.items():
         link_errors[(Node(a), Node(b))].update({OpType.CZ: 1.0 - cast(float, fid)})
