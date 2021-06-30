@@ -401,6 +401,23 @@ def test_nshots_batching(santiago_backend: IBMQBackend) -> None:
         backend._MACHINE_DEBUG = False
 
 
+def test_nshots_aer() -> None:
+    b = AerBackend()
+    circuit = Circuit(1)
+    n_shots = [1, 2, 3]
+    results = b.get_results(b.process_circuits([circuit] * 3, n_shots=n_shots))
+    assert [len(r.get_shots()) for r in results] == n_shots
+
+
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
+def test_nshots_ibmq_emulator() -> None:
+    b = IBMQEmulatorBackend("ibmq_santiago", hub="ibm-q", group="open", project="main")
+    circuit = Circuit(1)
+    n_shots = [1, 2, 3]
+    results = b.get_results(b.process_circuits([circuit] * 3, n_shots=n_shots))
+    assert [len(r.get_shots()) for r in results] == n_shots
+
+
 def test_pauli_statevector() -> None:
     c = Circuit(2)
     c.Rz(0.5, 0)

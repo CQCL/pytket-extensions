@@ -170,3 +170,13 @@ def test_shots_bits_edgecases(n_shots, n_bits) -> None:
     assert np.array_equal(ionq_backend.get_shots(c, n_shots), correct_shots)
     assert ionq_backend.get_shots(c, n_shots).shape == correct_shape
     assert ionq_backend.get_counts(c, n_shots) == correct_counts
+
+
+def test_nshots_ionq() -> None:
+    b = IonQBackend(api_key="invalid", device_name="simulator", label="test 8")
+    b._MACHINE_DEBUG = True
+    circuit = Circuit(1)
+    n_shots = [1, 2, 3]
+    handles = b.process_circuits([circuit] * 3, n_shots=n_shots)
+    get_nshots = lambda h: h._identifiers[1]
+    assert [get_nshots(h) for h in handles] == n_shots
