@@ -262,8 +262,7 @@ class IonQBackend(Backend):
                 job_id = resp["id"]
                 handle = ResultHandle(job_id, n_shots, measures, json.dumps(ppcirc_rep))
                 handles.append(handle)
-        for handle in handles:
-            self._cache[handle] = result
+                self._cache[handle] = result
         return handles
 
     def cancel(self, handle: ResultHandle) -> None:

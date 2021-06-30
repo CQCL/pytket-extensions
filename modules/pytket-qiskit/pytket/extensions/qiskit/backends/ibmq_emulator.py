@@ -158,10 +158,9 @@ class IBMQEmulatorBackend(AerBackend):
             )
             jobid = job.job_id()
             for i, ind in enumerate(indices):
-                handle_list[ind] = ResultHandle(jobid, i, ppcirc_strs[i])
-        for handle in handle_list:
-            assert handle is not None
-            self._cache[handle] = {"job": job}
+                handle = ResultHandle(jobid, i, ppcirc_strs[i])
+                handle_list[ind] = handle
+                self._cache[handle] = {"job": job}
         return cast(List[ResultHandle], handle_list)
 
     def get_result(self, handle: ResultHandle, **kwargs: KwargTypes) -> BackendResult:

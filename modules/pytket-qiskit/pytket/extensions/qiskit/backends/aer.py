@@ -192,10 +192,9 @@ class _AerBaseBackend(Backend):
             )
             jobid = job.job_id()
             for i, ind in enumerate(indices):
-                handle_list[ind] = ResultHandle(jobid, i)
-        for handle in handle_list:
-            assert handle is not None
-            self._cache[handle] = {"job": job}
+                handle = ResultHandle(jobid, i)
+                handle_list[ind] = handle
+                self._cache[handle] = {"job": job}
         return cast(List[ResultHandle], handle_list)
 
     def cancel(self, handle: ResultHandle) -> None:
