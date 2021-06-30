@@ -242,7 +242,6 @@ class IonQBackend(Backend):
                     measures,
                     json.dumps(ppcirc_rep),
                 )
-                handles.append(handle)
             else:
                 header = self._header.copy()
                 header["Content-Type"] = "application/json"
@@ -261,8 +260,8 @@ class IonQBackend(Backend):
                 # extract job ID from response
                 job_id = resp["id"]
                 handle = ResultHandle(job_id, n_shots, measures, json.dumps(ppcirc_rep))
-                handles.append(handle)
-                self._cache[handle] = result
+            handles.append(handle)
+            self._cache[handle] = result
         return handles
 
     def cancel(self, handle: ResultHandle) -> None:

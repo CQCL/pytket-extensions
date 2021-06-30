@@ -175,7 +175,7 @@ def test_shots_bits_edgecases(n_shots, n_bits) -> None:
 def test_nshots_ionq() -> None:
     b = IonQBackend(api_key="invalid", device_name="simulator", label="test 8")
     b._MACHINE_DEBUG = True
-    circuit = Circuit(1)
+    circuit = Circuit(1, 1).Measure(0, 0)
     n_shots = [1, 2, 3]
     handles = b.process_circuits([circuit] * 3, n_shots=n_shots)
     get_nshots = lambda h: h._identifiers[1]
