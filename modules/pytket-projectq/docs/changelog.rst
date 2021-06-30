@@ -1,6 +1,11 @@
 Changelog
 ~~~~~~~~~
 
+0.11.1 (unreleased)
+-------------------
+
+* Updated projectq version requirement to 0.6.
+
 0.11.0 (June 2021)
 ------------------
 
