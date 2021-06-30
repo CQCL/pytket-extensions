@@ -14,7 +14,7 @@
 
 import json
 from collections import Counter
-from typing import cast
+from typing import cast, TYPE_CHECKING
 import os
 from hypothesis import given, strategies
 import numpy as np
@@ -22,6 +22,9 @@ import pytest
 from pytket.circuit import Circuit, OpType  # type: ignore
 from pytket.backends.backend_exceptions import CircuitNotValidError
 from pytket.extensions.ionq import IonQBackend
+
+if TYPE_CHECKING:
+    from pytket.backends import ResultHandle
 
 skip_remote_tests: bool = os.getenv("PYTKET_RUN_REMOTE_TESTS") is None
 REASON = "PYTKET_RUN_REMOTE_TESTS not set (requires configuration of IoNQ API key)"
@@ -178,5 +181,8 @@ def test_nshots_ionq() -> None:
     circuit = Circuit(1, 1).Measure(0, 0)
     n_shots = [1, 2, 3]
     handles = b.process_circuits([circuit] * 3, n_shots=n_shots)
-    get_nshots = lambda h: h._identifiers[1]
+
+    def get_nshots(h: "ResultHandle") -> int:
+        return cast(int, h._identifiers[1])
+
     assert [get_nshots(h) for h in handles] == n_shots
