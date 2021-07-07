@@ -1,6 +1,11 @@
 Changelog
 ~~~~~~~~~
 
+0.15.1 (July 2021)
+------------------
+
+* Fixed bug in backends when n_shots argument was passed as list.
+
 0.15.0 (June 2021)
 ------------------
 
