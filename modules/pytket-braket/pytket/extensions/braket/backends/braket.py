@@ -516,7 +516,7 @@ class BraketBackend(Backend):
     def process_circuits(
         self,
         circuits: Sequence[Circuit],
-        n_shots: Optional[Union[int, Sequence[int]]] = None,
+        n_shots: Union[None, int, Sequence[Optional[int]]] = None,
         valid_check: bool = True,
         **kwargs: KwargTypes,
     ) -> List[ResultHandle]:
@@ -524,12 +524,9 @@ class BraketBackend(Backend):
         Supported `kwargs`: none
         """
         circuits = list(circuits)
-        n_shots_list: List[int] = []
-        if hasattr(n_shots, "__iter__"):
-            n_shots_list = [n or 0 for n in cast(Sequence[Optional[int]], n_shots)]
-        else:
-            # convert n_shots to a list
-            n_shots_list = [cast(Optional[int], n_shots) or 0] * len(circuits)
+        n_shots_list = Backend._get_n_shots_as_list(
+            n_shots, len(circuits), optional=True, set_zero=True
+        )
 
         if not self.supports_shots and not self.supports_state:
             raise RuntimeError("Backend does not support shots or state")

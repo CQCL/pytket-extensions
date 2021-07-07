@@ -154,19 +154,16 @@ class _AerBaseBackend(Backend):
     def process_circuits(
         self,
         circuits: Sequence[Circuit],
-        n_shots: Optional[Union[int, Sequence[int]]] = None,
+        n_shots: Union[None, int, Sequence[Optional[int]]] = None,
         valid_check: bool = True,
         **kwargs: KwargTypes,
     ) -> List[ResultHandle]:
         circuits = list(circuits)
-        n_shots_list: List[Optional[int]] = []
-        if hasattr(n_shots, "__iter__"):
-            n_shots_list = cast(List[Optional[int]], n_shots)
-            if len(n_shots_list) != len(circuits):
-                raise ValueError("The length of n_shots and circuits must match")
-        else:
-            # convert n_shots to a list
-            n_shots_list = [cast(int, n_shots)] * len(circuits)
+        n_shots_list = Backend._get_n_shots_as_list(
+            n_shots,
+            len(circuits),
+            optional=True,
+        )
 
         if valid_check:
             self._check_all_circuits(circuits)
