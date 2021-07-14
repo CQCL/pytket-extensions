@@ -73,7 +73,7 @@ from pytket.extensions.qiskit.qiskit_convert import tk_to_qiskit, _tk_gate_set
 from pytket.extensions.qiskit.result_convert import (
     qiskit_experimentresult_to_backendresult,
 )
-from pytket.routing import NoiseAwarePlacement  # type: ignore
+from pytket.routing import NoiseAwarePlacement # type: ignore
 from pytket.utils import prepare_circuit
 from pytket.utils.results import KwargTypes
 from .ibm_utils import _STATUS_MAP, _batch_circuits
@@ -282,16 +282,16 @@ class IBMQBackend(Backend):
 
         # gather and store device specifics in BackendInfo
         characterisation = process_characterisation(self._backend)
+        averaged_errors = get_avg_characterisation(characterisation)
         characterisation_keys = [
-            "NodeErrors",
-            "EdgeErrors",
-            "ReadoutErrors",
-            "GenericOneQubitQErrors",
-            "GenericTwoQubitQErrors",
+            "t1times",
+            "t2times",
+            "Frequencies",
+            "GateTimes",
         ]
         arch = characterisation["Architecture"]
         # filter entries to keep
-        characterisation = {
+        filtered_characterisation = {
             k: v for k, v in characterisation.items() if k in characterisation_keys
         }
         supports_mid_measure = self._config.simulator or self._config.multi_meas_enabled
@@ -308,7 +308,13 @@ class IBMQBackend(Backend):
             gate_set,
             supports_midcircuit_measurement=supports_mid_measure,
             supports_fast_feedforward=supports_fast_feedforward,
-            misc={"characterisation": characterisation},
+            all_node_gate_errors=characterisation["NodeErrors"],
+            all_edge_gate_errors=characterisation["EdgeErrors"],
+            all_readout_errors=characterisation["ReadoutErrors"],
+            averaged_node_errors=averaged_errors["node_errors"],
+            averaged_edge_errors=averaged_errors["edge_errors"],
+            averaged_readout_errors=averaged_errors["readout_errors"],
+            misc={"characterisation": filtered_characterisation},
         )
 
         self._legacy_gateset = OpType.SX not in gate_set
@@ -377,7 +383,10 @@ class IBMQBackend(Backend):
             CXMappingPass(
                 arch,
                 NoiseAwarePlacement(
-                    arch, **get_avg_characterisation(self.characterisation)
+                    arch, 
+                    self._backend_info.averaged_node_gate_errors,
+                    self._backend_info.averaged_edge_gate_errors,
+                    self._backend_info.averaged_readout_errors,
                 ),
                 directed_cx=False,
                 delay_measures=(not mid_measure),

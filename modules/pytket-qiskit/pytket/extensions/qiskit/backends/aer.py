@@ -433,10 +433,17 @@ class AerBackend(_AerBaseBackend):
         else:
             self._noise_model = noise_model
             characterisation = _process_model(noise_model, self._backend_info.gate_set)
+
+            arch = characterisation["Architecture"]
+            self._backend_info.architecture = arch
+            self._backend_info.all_node_gate_errors=characterisation["NodeErrors"],
+            self._backend_info.all_edge_gate_errors=characterisation["EdgeErrors"],
+            self._backend_info.all_readout_errors=characterisation["ReadoutErrors"],
+            self._backend_info.averaged_node_errors=averaged_errors["node_errors"],
+            self._backend_info.averaged_edge_errors=averaged_errors["edge_errors"],
+            self._backend_info.averaged_readout_errors=averaged_errors["readout_errors"]
+
             characterisation_keys = [
-                "NodeErrors",
-                "EdgeErrors",
-                "ReadoutErrors",
                 "GenericOneQubitQErrors",
                 "GenericTwoQubitQErrors",
             ]
@@ -445,9 +452,8 @@ class AerBackend(_AerBaseBackend):
             characterisation = {
                 k: v for k, v in characterisation.items() if k in characterisation_keys
             }
-
-            self._backend_info.architecture = arch
             self._backend_info.misc["characterisation"] = characterisation
+
         self._memory = True
 
         self._backend.set_options(method=simulation_method)
@@ -491,7 +497,10 @@ class AerBackend(_AerBaseBackend):
                 CXMappingPass(
                     arch,
                     NoiseAwarePlacement(
-                        arch, **get_avg_characterisation(self.characterisation)
+                        arch,
+                        self._backend_info.averaged_node_gate_errors,
+                        self._backend_info.averaged_edge_gate_errors,
+                        self._backend_info.averaged_readout_errors,
                     ),
                     directed_cx=True,
                     delay_measures=False,
