@@ -117,12 +117,8 @@ class ForestBackend(Backend):
             __extension_version__,
             arch,
             self._GATE_SET,
-            misc={
-                "characterisation": {
-                    "NodeErrors": node_errors,
-                    "EdgeErrors": link_errors,
-                }
-            },
+            all_node_gate_errors=node_errors,
+            all_edge_gate_errors=link_errors,
         )
 
     @property
