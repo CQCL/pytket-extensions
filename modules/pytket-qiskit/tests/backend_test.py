@@ -15,13 +15,13 @@ import json
 import os
 import sys
 from collections import Counter
-from typing import Dict, Any, Tuple, cast
+from typing import Dict, Any, cast
 import math
 import cmath
 import pickle
 from hypothesis import given, strategies
 import numpy as np
-from pytket.circuit import Circuit, OpType, BasisOrder, Node, Qubit, reg_eq  # type: ignore
+from pytket.circuit import Circuit, OpType, BasisOrder, Qubit, reg_eq  # type: ignore
 from pytket.passes import CliffordSimp  # type: ignore
 from pytket.pauli import Pauli, QubitPauliString  # type: ignore
 from pytket.predicates import CompilationUnit, NoMidMeasurePredicate  # type: ignore
