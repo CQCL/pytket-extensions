@@ -111,6 +111,7 @@ class ForestBackend(Backend):
         arch = char_dict.get("Architecture", Architecture([]))
         node_errors = char_dict.get("NodeErrors")
         link_errors = char_dict.get("EdgeErrors")
+        averaged_errors = get_avg_characterisation(char_dict)
         self._backend_info = BackendInfo(
             type(self).__name__,
             qc_name,
@@ -119,6 +120,8 @@ class ForestBackend(Backend):
             self._GATE_SET,
             all_node_gate_errors=node_errors,
             all_edge_gate_errors=link_errors,
+            averaged_node_errors=averaged_errors["node_errors"],
+            averaged_edge_errors=averaged_errors["edge_errors"],
         )
 
     @property

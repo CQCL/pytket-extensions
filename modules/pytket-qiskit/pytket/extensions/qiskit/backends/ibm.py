@@ -73,7 +73,7 @@ from pytket.extensions.qiskit.qiskit_convert import tk_to_qiskit, _tk_gate_set
 from pytket.extensions.qiskit.result_convert import (
     qiskit_experimentresult_to_backendresult,
 )
-from pytket.routing import NoiseAwarePlacement # type: ignore
+from pytket.routing import NoiseAwarePlacement  # type: ignore
 from pytket.utils import prepare_circuit
 from pytket.utils.results import KwargTypes
 from .ibm_utils import _STATUS_MAP, _batch_circuits
@@ -383,7 +383,7 @@ class IBMQBackend(Backend):
             CXMappingPass(
                 arch,
                 NoiseAwarePlacement(
-                    arch, 
+                    arch,
                     self._backend_info.averaged_node_gate_errors,
                     self._backend_info.averaged_edge_gate_errors,
                     self._backend_info.averaged_readout_errors,

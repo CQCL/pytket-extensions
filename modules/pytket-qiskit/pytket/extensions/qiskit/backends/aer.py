@@ -436,14 +436,15 @@ class AerBackend(_AerBaseBackend):
 
             arch = characterisation["Architecture"]
             self._backend_info.architecture = arch
-            self._backend_info.all_node_gate_errors=characterisation["NodeErrors"]
-            self._backend_info.all_edge_gate_errors=characterisation["EdgeErrors"]
-            self._backend_info.all_readout_errors=characterisation["ReadoutErrors"]
+            self._backend_info.all_node_gate_errors = characterisation["NodeErrors"]
+            self._backend_info.all_edge_gate_errors = characterisation["EdgeErrors"]
+            self._backend_info.all_readout_errors = characterisation["ReadoutErrors"]
 
-            self._backend_info.averaged_node_errors=averaged_errors["node_errors"]
-            self._backend_info.averaged_edge_errors=averaged_errors["edge_errors"]
-            self._backend_info.averaged_readout_errors=averaged_errors["readout_errors"]
-
+            self._backend_info.averaged_node_errors = averaged_errors["node_errors"]
+            self._backend_info.averaged_edge_errors = averaged_errors["edge_errors"]
+            self._backend_info.averaged_readout_errors = averaged_errors[
+                "readout_errors"
+            ]
 
             characterisation_keys = [
                 "GenericOneQubitQErrors",
