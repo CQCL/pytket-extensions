@@ -1,1 +1,2 @@
 include _metadata.py
+include pytket/extensions/pyquil/py.typed

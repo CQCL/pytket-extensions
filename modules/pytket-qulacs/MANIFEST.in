@@ -1,1 +1,2 @@
 include _metadata.py
+include pytket/extensions/qulacs/py.typed
