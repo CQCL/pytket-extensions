@@ -300,8 +300,10 @@ def test_process_characterisation_complete_noise_model() -> None:
     back = AerBackend(my_noise_model)
     char = cast(Dict[str, Any], back.characterisation)
 
-    node_errors = cast(Dict[Node, dict], char.get("NodeErrors", {}))
-    link_errors = cast(Dict[Tuple[Node, Node], dict], char.get("EdgeErrors", {}))
+    # node_errors = cast(Dict[Node, dict], char.get("NodeErrors", {}))
+    # link_errors = cast(Dict[Tuple[Node, Node], dict], char.get("EdgeErrors", {}))
+    node_errors = back.backend_info.all_node_gate_errors
+    link_errors = back.backend_info.all_edge_gate_errors
     arch = back.backend_info.architecture
 
     assert char["GenericTwoQubitQErrors"][(0, 1)][0][1][0] == 0.0375
@@ -315,8 +317,8 @@ def test_process_characterisation_complete_noise_model() -> None:
     assert node_errors[arch.nodes[0]][OpType.U3] == 0.375
     assert link_errors[(arch.nodes[0], arch.nodes[1])][OpType.CX] == 0.5625
     assert link_errors[(arch.nodes[1], arch.nodes[0])][OpType.CX] == 0.80859375
-    assert char["ReadoutErrors"][arch.nodes[0]] == [[0.8, 0.2], [0.2, 0.8]]
-    assert char["ReadoutErrors"][arch.nodes[1]] == [[0.7, 0.3], [0.3, 0.7]]
+    assert back.backend_info.all_readout_errors[arch.nodes[0]] == [[0.8, 0.2], [0.2, 0.8]]
+    assert back.backend_info.all_readout_errors[arch.nodes[1]] == [[0.7, 0.3], [0.3, 0.7]]
 
 
 def test_cancellation_aer() -> None:
