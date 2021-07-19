@@ -1,1 +1,3 @@
-git+git://github.com/quantumlib/OpenFermion@086073666d275de736861b41ed535a9fe75e63ac#egg=openfermion
+hypothesis==6.14.3
+pytest==6.2.4
+openfermion==1.0.0
