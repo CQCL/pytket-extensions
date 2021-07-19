@@ -232,11 +232,11 @@ class QulacsBackend(Backend):
             if qps != QubitPauliString():
                 for qubit, pauli in qps.to_dict().items():
                     if pauli == Pauli.X:
-                        _items.append('X')
+                        _items.append("X")
                     elif pauli == Pauli.Y:
-                        _items.append('Y')
+                        _items.append("Y")
                     elif pauli == Pauli.Z:
-                        _items.append('Z')
+                        _items.append("Z")
                     _items.append(str(qubit.index[0]))
 
             qulacs_qps = " ".join(_items)
