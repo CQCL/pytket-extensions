@@ -24,6 +24,7 @@ subdirectory of the `modules` directory:
 * `pytket-qiskit`
 * `pytket-qsharp`
 * `pytket-qulacs`
+* `pytket-stim`
 
 See the individual `README` files for descriptions.
 
