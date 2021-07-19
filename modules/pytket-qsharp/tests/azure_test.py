@@ -40,7 +40,7 @@ def test_azure_backend() -> None:
         # assumed environment is authenticated and
         # resourceId in config file
         b = AzureBackend("ionq.simulator")
-    b.compile_circuit(c)
+    c = b.get_compiled_circuit(c)
     h = b.process_circuit(c, 10)
     assert b.circuit_status(h).status in (
         StatusEnum.SUBMITTED,
@@ -67,7 +67,7 @@ def test_postprocess() -> None:
     assert b.supports_counts
     c = Circuit(2, 2)
     c.Rx(0.5, 0).Rx(0.5, 1).CZ(0, 1).X(0).X(1).measure_all()
-    b.compile_circuit(c)
+    c = b.get_compiled_circuit(c)
     h = b.process_circuit(c, n_shots=8, postprocess=True)
     ppcirc = Circuit.from_dict(json.loads(cast(str, h[2])))
     ppcmds = ppcirc.get_commands()

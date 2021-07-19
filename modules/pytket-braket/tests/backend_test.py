@@ -45,7 +45,7 @@ def test_simulator() -> None:
     )
     assert b.supports_shots
     c = Circuit(2).H(0).CX(0, 1)
-    b.compile_circuit(c)
+    c = b.get_compiled_circuit(c)
     n_shots = 100
     h0, h1 = b.process_circuits([c, c], n_shots)
     res0 = b.get_result(h0)
@@ -62,7 +62,7 @@ def test_simulator() -> None:
 
     # Circuit with unused qubits
     c = Circuit(3).H(1).CX(1, 2)
-    b.compile_circuit(c)
+    c = b.get_compiled_circuit(c)
     h = b.process_circuit(c, 1)
     res = b.get_result(h)
     readout = res.get_shots()[0]
@@ -106,7 +106,7 @@ def test_ionq() -> None:
         .add_gate(OpType.CCX, [0, 1, 2])
     )
     assert not b.valid_circuit(c)
-    b.compile_circuit(c)
+    c = b.get_compiled_circuit(c)
     assert b.valid_circuit(c)
     h = b.process_circuit(c, 1)
     _ = b.circuit_status(h)
@@ -114,7 +114,7 @@ def test_ionq() -> None:
 
     # Circuit with unused qubits
     c = Circuit(11).H(9).CX(9, 10)
-    b.compile_circuit(c)
+    c = b.get_compiled_circuit(c)
     h = b.process_circuit(c, 1)
     b.cancel(h)
 
@@ -142,7 +142,7 @@ def test_rigetti() -> None:
         .add_gate(OpType.XXPhase, 0.5, [1, 2])
     )
     assert not b.valid_circuit(c)
-    b.compile_circuit(c)
+    c = b.get_compiled_circuit(c)
     assert b.valid_circuit(c)
     h = b.process_circuit(c, 10)  # min shots = 10 for Rigetti
     _ = b.circuit_status(h)
@@ -150,7 +150,7 @@ def test_rigetti() -> None:
 
     # Circuit with unused qubits
     c = Circuit(11).H(9).CX(9, 10)
-    b.compile_circuit(c)
+    c = b.get_compiled_circuit(c)
     h = b.process_circuit(c, 10)
     b.cancel(h)
 
@@ -164,7 +164,7 @@ def test_rigetti_with_rerouting() -> None:
         device="Aspen-9",
     )
     c = Circuit(4).CX(0, 1).CX(0, 2).CX(0, 3).CX(1, 2).CX(1, 3).CX(2, 3)
-    b.compile_circuit(c)
+    c = b.get_compiled_circuit(c)
     h = b.process_circuit(c, 10)
     b.cancel(h)
 
@@ -174,7 +174,7 @@ def test_local_simulator() -> None:
     assert b.supports_shots
     assert b.supports_counts
     c = Circuit(2).H(0).CX(0, 1)
-    b.compile_circuit(c)
+    c = b.get_compiled_circuit(c)
     n_shots = 100
     h = b.process_circuit(c, n_shots)
     res = b.get_result(h)
@@ -291,7 +291,7 @@ def test_amplitudes() -> None:
 def test_state() -> None:
     b = BraketBackend(local=True)
     c = Circuit(3).V(0).V(1).CX(1, 0).S(1).CCX(0, 1, 2)
-    b.compile_circuit(c)
+    c = b.get_compiled_circuit(c)
     h = b.process_circuit(c)
     res = b.get_result(h)
     v = res.get_state()
@@ -347,7 +347,7 @@ def test_postprocess_sim() -> None:
     )
     assert b.supports_contextual_optimisation
     c = Circuit(2).H(0).CX(0, 1).Y(0)
-    b.compile_circuit(c)
+    c = b.get_compiled_circuit(c)
     h = b.process_circuit(c, n_shots=10, postprocess=True)
     r = b.get_result(h)
     shots = r.get_shots()
@@ -363,7 +363,7 @@ def test_postprocess_ionq() -> None:
     )
     assert b.supports_contextual_optimisation
     c = Circuit(2).H(0).CX(0, 1).Y(0)
-    b.compile_circuit(c)
+    c = b.get_compiled_circuit(c)
     h = b.process_circuit(c, n_shots=10, postprocess=True)
     ppcirc = Circuit.from_dict(json.loads(cast(str, h[2])))
     ppcmds = ppcirc.get_commands()
