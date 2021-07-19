@@ -97,7 +97,7 @@ def test_get_state() -> None:
         ]
     )
     for b in backends:
-        b.compile_circuit(qulacs_circ)
+        qulacs_circ = b.get_compiled_circuit(qulacs_circ)
         qulacs_state = b.get_state(qulacs_circ)
         assert np.allclose(qulacs_state, correct_state)
 
@@ -106,7 +106,7 @@ def test_statevector_phase() -> None:
     for b in backends:
         circ = Circuit(2)
         circ.H(0).CX(0, 1)
-        b.compile_circuit(circ)
+        circ = b.get_compiled_circuit(circ)
         state = b.get_state(circ)
         assert np.allclose(state, [math.sqrt(0.5), 0, 0, math.sqrt(0.5)], atol=1e-10)
         circ.add_phase(0.5)
@@ -123,7 +123,7 @@ def test_swaps_basisorder() -> None:
         c.CX(1, 0)
         CliffordSimp(True).apply(c)
         assert c.n_gates_of_type(OpType.CX) == 1
-        b.compile_circuit(c)
+        c = b.get_compiled_circuit(c)
         s_ilo = b.get_state(c, basis=BasisOrder.ilo)
         s_dlo = b.get_state(c, basis=BasisOrder.dlo)
         correct_ilo = np.zeros((16,))
@@ -153,7 +153,7 @@ def test_statevector_expectation() -> None:
     target = eigenspectrum(hamiltonian)[0]
     circ = h2_3q_circ(PARAM)
     for b in backends:
-        b.compile_circuit(circ)
+        circ = b.get_compiled_circuit(circ)
         energy = b.get_operator_expectation_value(
             circ, QubitPauliOperator.from_OpenFermion(hamiltonian)
         )
@@ -223,7 +223,7 @@ def test_no_measure_shots() -> None:
         c = Circuit(2, 2)
         c.H(0).CX(0, 1)
         # Note, no measurements
-        b.compile_circuit(c)
+        c = b.get_compiled_circuit(c)
         handle = b.process_circuit(c, n_shots=10)
         counts = b.get_result(handle).get_counts()
         assert counts == {(0, 0): 10}

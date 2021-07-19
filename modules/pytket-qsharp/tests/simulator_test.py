@@ -26,7 +26,7 @@ def test_bell() -> None:
     c.H(0)
     c.CX(0, 1)
     c.measure_all()
-    b.compile_circuit(c)
+    c = b.get_compiled_circuit(c)
     n_shots = 10
     counts = b.get_counts(c, n_shots)
     assert all(m[0] == m[1] for m in counts.keys())
@@ -41,7 +41,7 @@ def test_rotations() -> None:
     c = Circuit(1)
     c.Rz(0.5, 0)
     c.measure_all()
-    b.compile_circuit(c)
+    c = b.get_compiled_circuit(c)
     n_shots = 10
     shots = b.get_shots(c, n_shots)
     assert all(shots[i, 0] == 0 for i in range(n_shots))
@@ -54,7 +54,7 @@ def test_rebase() -> None:
     b = QsharpSimulatorBackend()
     c = Circuit(2)
     c.CY(0, 1)
-    b.compile_circuit(c)
+    c = b.get_compiled_circuit(c)
 
 
 def test_cnx() -> None:
@@ -66,7 +66,7 @@ def test_cnx() -> None:
     c.X(0).X(1).X(2)
     c.add_gate(OpType.CnX, [0, 1, 2, 3])
     c.measure_all()
-    b.compile_circuit(c)
+    c = b.get_compiled_circuit(c)
     n_shots = 3
     shots = b.get_shots(c, n_shots)
     assert all(shots[i, 3] == 1 for i in range(n_shots))
@@ -78,7 +78,7 @@ def test_handles() -> None:
     c.X(0).X(1).X(2)
     c.add_gate(OpType.CnX, [0, 1, 2, 3])
     c.measure_all()
-    b.compile_circuit(c)
+    c = b.get_compiled_circuit(c)
     n_shots = 3
     shots = b.get_shots(c, n_shots=n_shots)
     assert all(shots[i, 3] == 1 for i in range(n_shots))
@@ -112,7 +112,7 @@ def test_nondefault_registers() -> None:
     c.Measure(qreg[0], creg2[0])
 
     b = QsharpSimulatorBackend()
-    b.compile_circuit(c)
+    c = b.get_compiled_circuit(c)
     counts = b.get_result(b.process_circuit(c, 10)).get_counts()
 
     assert counts == {(0, 1, 0, 1, 0, 0): 10}

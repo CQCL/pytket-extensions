@@ -40,7 +40,7 @@ def test_aqt() -> None:
     c.ZZPhase(0.1, 2, 0)
     c.Tdg(3)
     c.measure_all()
-    b.compile_circuit(c)
+    c = b.get_compiled_circuit(c)
     n_shots = 10
     shots = b.get_shots(c, n_shots, seed=1, timeout=30)
     counts = b.get_counts(c, n_shots)
@@ -56,7 +56,7 @@ def test_bell() -> None:
     c.H(0)
     c.CX(0, 1)
     c.measure_all()
-    b.compile_circuit(c)
+    c = b.get_compiled_circuit(c)
     n_shots = 10
     counts = b.get_counts(c, n_shots, timeout=30)
     assert all(q[0] == q[1] for q in counts)
@@ -67,7 +67,7 @@ def test_invalid_cred() -> None:
     b = AQTBackend(device_name="sim", access_token=token, label="test 3")
     c = Circuit(2, 2).H(0).CX(0, 1)
     c.measure_all()
-    b.compile_circuit(c)
+    c = b.get_compiled_circuit(c)
     with pytest.raises(RuntimeError) as excinfo:
         b.process_circuits([c], 1)
         assert "Access denied" in str(excinfo.value)
@@ -78,7 +78,7 @@ def test_invalid_request() -> None:
     b = AQTBackend(device_name="sim", label="test 4")
     c = Circuit(2, 2).H(0).CX(0, 1)
     c.measure_all()
-    b.compile_circuit(c)
+    c = b.get_compiled_circuit(c)
     with pytest.raises(RuntimeError) as excinfo:
         b.process_circuits([c], 1000000)
         assert "1000000" in str(excinfo.value)
@@ -91,7 +91,7 @@ def test_handles() -> None:
     c.H(0)
     c.CX(0, 1)
     c.measure_all()
-    b.compile_circuit(c)
+    c = b.get_compiled_circuit(c)
     n_shots = 5
     shots = b.get_shots(c, n_shots=n_shots, timeout=30)
     assert len(shots) == n_shots
@@ -110,7 +110,7 @@ def test_machine_debug() -> None:
     c.H(0)
     c.CX(0, 1)
     c.measure_all()
-    b.compile_circuit(c)
+    c = b.get_compiled_circuit(c)
     n_shots = 10
     counts = b.get_counts(c, n_shots=n_shots, timeout=30)
     assert counts == {(0, 0): n_shots}
@@ -139,7 +139,7 @@ def test_postprocess() -> None:
     c.H(0)
     c.CX(0, 1)
     c.measure_all()
-    b.compile_circuit(c)
+    c = b.get_compiled_circuit(c)
     h = b.process_circuit(c, n_shots=100, postprocess=True)
     r = b.get_result(h)
     shots = r.get_shots()

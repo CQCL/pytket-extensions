@@ -37,11 +37,11 @@ def test_statevector() -> None:
     circ.Rz(0.3333, 1)
     zxcirc = tk_to_pyzx(circ)
     assert zxcirc.name == circ.name
-    b.compile_circuit(circ)
+    circ = b.get_compiled_circuit(circ)
     state = b.get_state(circ)
     circ2 = pyzx_to_tk(zxcirc)
     assert circ2.name == circ.name
-    b.compile_circuit(circ2)
+    circ2 = b.get_compiled_circuit(circ2)
     state2 = b.get_state(circ2)
     assert np.allclose(state, state2, atol=1e-10)
 

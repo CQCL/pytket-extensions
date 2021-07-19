@@ -125,7 +125,7 @@ def test_swaps_basisorder() -> None:
     c.CX(1, 0)
     CliffordSimp(True).apply(c)
     assert c.n_gates_of_type(OpType.CX) == 1
-    b.compile_circuit(c)
+    c = b.get_compiled_circuit(c)
     s_ilo = b.get_state(c, basis=BasisOrder.ilo)
     s_dlo = b.get_state(c, basis=BasisOrder.dlo)
     correct_ilo = np.zeros((16,))
