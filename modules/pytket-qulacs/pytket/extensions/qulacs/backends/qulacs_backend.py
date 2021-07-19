@@ -51,7 +51,7 @@ from pytket.predicates import (  # type: ignore
     DefaultRegisterPredicate,
     Predicate,
 )
-from pytket.circuit import Pauli, Qubit  # type: ignore
+from pytket.circuit import Pauli  # type: ignore
 from pytket.pauli import QubitPauliString  # type: ignore
 from pytket.routing import Architecture  # type: ignore
 from pytket.utils.operators import QubitPauliOperator
