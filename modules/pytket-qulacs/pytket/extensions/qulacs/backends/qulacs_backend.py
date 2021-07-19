@@ -231,7 +231,6 @@ class QulacsBackend(Backend):
         for (qps, coeff) in operator._dict.items():
             _items = []
             if qps != QubitPauliString():
-                print(qps)
                 for qubit, pauli in qps.to_dict().items():
                     if pauli == Pauli.X:
                         _items.append('X')
