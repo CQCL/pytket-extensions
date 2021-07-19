@@ -1,1 +1,1 @@
-git+git://github.com/quantumlib/OpenFermion@086073666d275de736861b41ed535a9fe75e63ac#egg=openfermion
+openfermion~=1.0.0
