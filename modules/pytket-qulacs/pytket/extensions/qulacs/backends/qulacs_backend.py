@@ -20,7 +20,6 @@ from logging import warning
 from uuid import uuid4
 import numpy as np
 from qulacs import Observable, QuantumState  # type: ignore
-from qulacs.observable import create_observable_from_openfermion_text  # type: ignore
 from pytket.backends import (
     Backend,
     CircuitNotRunError,
