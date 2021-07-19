@@ -218,7 +218,10 @@ class CircuitBuilder:
         self.cregs = [] if cregs is None else cregs
         self.qbmap = {}
         self.cbmap = {}
-        self.tkc = Circuit(name=name)
+        if name is not None:
+            self.tkc = Circuit(name=name)
+        else:
+            self.tkc = Circuit()
         self.tkc.add_phase(phase)
         for reg in qregs:
             tk_reg = self.tkc.add_q_register(reg.name, len(reg))
