@@ -65,10 +65,6 @@ except ImportError:
     _GPU_ENABLED = False
 
 
-if TYPE_CHECKING:
-    from pytket.device import Device  # type: ignore
-
-
 class QulacsBackend(Backend):
     """
     Backend for running simulations on the Qulacs simulator
@@ -119,7 +115,7 @@ class QulacsBackend(Backend):
         return (str,)
 
     @property
-    def backend_info(self) -> Optional["Device"]:
+    def backend_info(self) -> Optional["BackendInfo"]:
         return None
 
     @property
