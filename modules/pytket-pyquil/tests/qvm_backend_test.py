@@ -18,7 +18,7 @@ from collections import Counter
 from shutil import which
 import platform
 
-from typing import cast
+from typing import cast, Dict
 import docker  # type: ignore
 import numpy as np
 import pytest
@@ -141,9 +141,12 @@ def test_pauli_statevector(qvm: None, quilc: None) -> None:
 def test_backendinfo(qvm: None, quilc: None) -> None:
     b = ForestBackend("9q-square")
     bi = b.backend_info
+    node_gate_errors = cast(Dict, bi.all_node_gate_errors)
+    edge_gate_errors = cast(Dict, bi.all_edge_gate_errors)
+
     assert bi
-    assert len(bi.all_node_gate_errors) == 9
-    assert len(bi.all_edge_gate_errors) == 12
+    assert len(node_gate_errors) == 9
+    assert len(edge_gate_errors) == 12
     assert b.backend_info.architecture
 
 
