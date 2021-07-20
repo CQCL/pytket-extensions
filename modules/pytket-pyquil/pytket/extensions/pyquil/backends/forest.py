@@ -148,8 +148,9 @@ class ForestBackend(Backend):
             CXMappingPass(
                 self.backend_info.architecture,
                 NoiseAwarePlacement(
-                    self.backend_info.architecture,
-                    **get_avg_characterisation(self.characterisation),
+                    self._backend_info.architecture,
+                    self._backend_info.averaged_node_gate_errors,
+                    self._backend_info.averaged_edge_gate_errors,
                 ),
                 directed_cx=False,
                 delay_measures=True,
@@ -265,11 +266,6 @@ class ForestBackend(Backend):
             )
             self._cache[handle].update({"result": res})
             return res
-
-    @property
-    def characterisation(self) -> Dict[str, Any]:
-        char = self._backend_info.get_misc("characterisation")
-        return cast(Dict[str, Any], char)
 
     @property
     def backend_info(self) -> BackendInfo:
