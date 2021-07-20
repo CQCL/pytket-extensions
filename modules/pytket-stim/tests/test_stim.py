@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from pytket.circuit import Bit, Circuit, OpType, Qubit
+from pytket.circuit import Bit, Circuit, OpType, Qubit  # type: ignore
 from pytket.extensions.stim import StimBackend
 import pytest
 

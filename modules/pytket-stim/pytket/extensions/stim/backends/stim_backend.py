@@ -23,8 +23,8 @@ from pytket.backends import (
 )
 from pytket.backends.backendresult import BackendResult
 from pytket.backends.resulthandle import _ResultIdTuple
-from pytket.circuit import Circuit, OpType
-from pytket.passes import (
+from pytket.circuit import Circuit, OpType  # type: ignore
+from pytket.passes import (  # type: ignore
     BasePass,
     DecomposeBoxes,
     FlattenRegisters,
@@ -32,7 +32,7 @@ from pytket.passes import (
     RemoveRedundancies,
     SequencePass,
 )
-from pytket.predicates import (
+from pytket.predicates import (  # type: ignore
     DefaultRegisterPredicate,
     GateSetPredicate,
     NoClassicalControlPredicate,
