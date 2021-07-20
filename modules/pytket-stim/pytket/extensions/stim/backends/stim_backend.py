@@ -41,7 +41,7 @@ from pytket.predicates import (  # type: ignore
 from pytket.utils.outcomearray import OutcomeArray
 from pytket.utils.results import KwargTypes
 import numpy as np
-import stim
+import stim  # type: ignore
 
 _gate = {
     OpType.noop: "I",
@@ -75,18 +75,18 @@ def _int_double(x: float) -> int:
 def _tk1_to_cliff(a: float, b: float, c: float) -> Circuit:
     # Convert Clifford tk1(a, b, c) to a circuit composed of H and S gates
     n_a, n_b, n_c = _int_double(a), _int_double(b), _int_double(c)
-    c = Circuit(1)
+    circ = Circuit(1)
     for _ in range(n_c):
-        c.S(0)
+        circ.S(0)
     for _ in range(n_b):
-        c.H(0).S(0).H(0)
+        circ.H(0).S(0).H(0)
     for _ in range(n_a):
-        c.S(0)
-    c.add_phase(-0.25 * (n_a + n_b + n_c))
-    return c
+        circ.S(0)
+    circ.add_phase(-0.25 * (n_a + n_b + n_c))
+    return circ
 
 
-def _process_one_circuit(circ: Circuit, n_shots: int) -> ResultHandle:
+def _process_one_circuit(circ: Circuit, n_shots: int) -> BackendResult:
     qubits = circ.qubits
     bits = circ.bits
     c = stim.Circuit()
@@ -155,7 +155,7 @@ class StimBackend(Backend):
         **kwargs: KwargTypes,
     ) -> List[ResultHandle]:
         circuits = list(circuits)
-        n_shots_list: List[Optional[int]] = []
+        n_shots_list: List[int] = []
         if hasattr(n_shots, "__iter__"):
             n_shots_list = cast(List[Optional[int]], n_shots)
             if len(n_shots_list) != len(circuits):
