@@ -78,7 +78,7 @@ def circuit_gen(measure: bool = False) -> Circuit:
     return c
 
 
-def get_test_circuit(measure: bool) -> QuantumRegister:
+def get_test_circuit(measure: bool) -> QuantumCircuit:
     qr = QuantumRegister(5)
     cr = ClassicalRegister(5)
     qc = QuantumCircuit(qr, cr)
@@ -150,7 +150,7 @@ def test_noise() -> None:
     c.measure_all()
     b = AerBackend(noise_model)
     n_shots = 50
-    b.compile_circuit(c)
+    c = b.get_compiled_circuit(c)
     shots = b.get_shots(c, n_shots, seed=4)
     zer_exp = []
     one_exp = []
@@ -175,7 +175,7 @@ def test_noise() -> None:
         .measure_all()
     )
 
-    b.compile_circuit(c2)
+    c2 = b.get_compiled_circuit(c2)
     shots = b.get_shots(c2, 10, seed=5)
     assert shots.shape == (10, 4)
 
@@ -205,7 +205,7 @@ def test_process_characterisation_no_noise_model() -> None:
     assert back.characterisation is None
 
     c = Circuit(4).CX(0, 1).H(2).CX(2, 1).H(3).CX(0, 3).H(1).X(0)
-    back.compile_circuit(c)
+    c = back.get_compiled_circuit(c)
     assert back.valid_circuit(c)
 
 
@@ -226,7 +226,7 @@ def test_process_characterisation_incomplete_noise_model() -> None:
     back = AerBackend(my_noise_model)
 
     c = Circuit(4).CX(0, 1).H(2).CX(2, 1).H(3).CX(0, 3).H(1).X(0).measure_all()
-    back.compile_circuit(c)
+    c = back.get_compiled_circuit(c)
     assert back.valid_circuit(c)
 
     arch = back.backend_info.architecture
@@ -264,7 +264,7 @@ def test_circuit_compilation_complete_noise_model() -> None:
     back = AerBackend(my_noise_model)
 
     c = Circuit(4).CX(0, 1).H(2).CX(2, 1).H(3).CX(0, 3).H(1).X(0).measure_all()
-    back.compile_circuit(c)
+    c = back.get_compiled_circuit(c)
     assert back.valid_circuit(c)
 
 
@@ -330,7 +330,7 @@ def test_process_characterisation_complete_noise_model() -> None:
 def test_cancellation_aer() -> None:
     b = AerBackend()
     c = circuit_gen(True)
-    b.compile_circuit(c)
+    c = b.get_compiled_circuit(c)
     h = b.process_circuit(c, 10)
     b.cancel(h)
     print(b.circuit_status(h))
@@ -340,7 +340,7 @@ def test_cancellation_aer() -> None:
 def test_cancellation_ibmq(santiago_backend: IBMQBackend) -> None:
     b = santiago_backend
     c = circuit_gen(True)
-    b.compile_circuit(c)
+    c = b.get_compiled_circuit(c)
     h = b.process_circuit(c, 10)
     b.cancel(h)
     print(b.circuit_status(h))
@@ -355,7 +355,7 @@ def test_machine_debug(santiago_backend: IBMQBackend) -> None:
         with pytest.raises(CircuitNotValidError) as errorinfo:
             handles = backend.process_circuits([c, c.copy()], n_shots=2)
         assert "in submitted does not satisfy GateSetPredicate" in str(errorinfo.value)
-        backend.compile_circuit(c)
+        c = backend.get_compiled_circuit(c)
         handles = backend.process_circuits([c, c.copy()], n_shots=4)
         from pytket.extensions.qiskit.backends.ibm import _DEBUG_HANDLE_PREFIX
 
@@ -392,7 +392,7 @@ def test_nshots_batching(santiago_backend: IBMQBackend) -> None:
         cs = [c1, c2, c3, c4]
         n_shots = [10, 12, 10, 13]
         for c in cs:
-            backend.compile_circuit(c)
+            c = backend.get_compiled_circuit(c)
         handles = backend.process_circuits(cs, n_shots=n_shots)
 
         from pytket.extensions.qiskit.backends.ibm import _DEBUG_HANDLE_PREFIX
@@ -560,8 +560,7 @@ def test_swaps_basisorder() -> None:
     c1 = cu.circuit
     assert c1.n_gates_of_type(OpType.CX) == 2
 
-    b.compile_circuit(c)
-    b.compile_circuit(c1)
+    c, c1 = b.get_compiled_circuits([c, c1])
 
     handles = b.process_circuits([c, c1])
     s_ilo = b.get_state(c1, basis=BasisOrder.ilo)
@@ -600,7 +599,7 @@ def test_pauli() -> None:
     for b in [AerBackend(), AerStateBackend()]:
         c = Circuit(2)
         c.Rz(0.5, 0)
-        b.compile_circuit(c)
+        c = b.get_compiled_circuit(c)
         zi = QubitPauliString(Qubit(0), Pauli.Z)
         assert cmath.isclose(get_pauli_expectation_value(c, zi, b), 1)
         c.X(0)
@@ -667,7 +666,7 @@ def test_aerstate_result_handle() -> None:
 def test_cache() -> None:
     b = AerBackend()
     c = circuit_gen()
-    b.compile_circuit(c)
+    c = b.get_compiled_circuit(c)
     h = b.process_circuits([c], 2)[0]
     b.get_result(h).get_shots()
     assert h in b._cache
@@ -691,7 +690,7 @@ def test_mixed_circuit() -> None:
     c.X(qr[1], condition=reg_eq(ar, 0))
     c.Measure(qr[1], br[0])
     backend = AerBackend()
-    backend.compile_circuit(c)
+    c = backend.get_compiled_circuit(c)
     counts = backend.get_counts(c, 1024)
     for key in counts.keys():
         assert key in {(0, 1), (1, 0)}
@@ -753,12 +752,12 @@ def test_ibmq_emulator() -> None:
             assert all(pred.verify(c_cop) for pred in bac.required_predicates)
 
         c_cop_2 = c.copy()
-        b_aer.compile_circuit(c_cop_2, ol)
+        c_cop_2 = b_aer.get_compiled_circuit(c_cop_2, ol)
         if ol == 0:
             assert not all(pred.verify(c_cop_2) for pred in b_emu.required_predicates)
 
     circ = Circuit(2, 2).H(0).CX(0, 1).measure_all()
-    b_emu.compile_circuit(circ)
+    circ = b_emu.get_compiled_circuit(circ)
     b_noi = AerBackend(noise_model=b_emu._noise_model)
     emu_shots = b_emu.get_shots(circ, 10, seed=10)
     aer_shots = b_noi.get_shots(circ, 10, seed=10)
@@ -849,7 +848,7 @@ def test_ibmq_mid_measure(santiago_backend: IBMQBackend) -> None:
     b = santiago_backend
     ps = b.default_compilation_pass(0)
     ps.apply(c)
-    # b.compile_circuit(c)
+    # c = b.get_compiled_circuit(c)
     assert not NoMidMeasurePredicate().verify(c)
     assert b.valid_circuit(c)
 
@@ -861,7 +860,7 @@ def test_compile_x(santiago_backend: IBMQBackend) -> None:
     c = Circuit(1).X(0)
     for ol in range(3):
         c1 = c.copy()
-        b.compile_circuit(c1, optimisation_level=ol)
+        c1 = b.get_compiled_circuit(c1, optimisation_level=ol)
         assert c1.n_gates == 1
 
 
@@ -971,7 +970,7 @@ def test_postprocess(santiago_backend: IBMQBackend) -> None:
     assert b.supports_contextual_optimisation
     c = Circuit(2, 2)
     c.SX(0).SX(1).CX(0, 1).measure_all()
-    b.compile_circuit(c)
+    c = b.get_compiled_circuit(c)
     h = b.process_circuit(c, n_shots=10, postprocess=True)
     ppcirc = Circuit.from_dict(json.loads(cast(str, h[2])))
     ppcmds = ppcirc.get_commands()
@@ -986,7 +985,7 @@ def test_postprocess_emu() -> None:
     assert b.supports_contextual_optimisation
     c = Circuit(2, 2)
     c.SX(0).SX(1).CX(0, 1).measure_all()
-    b.compile_circuit(c)
+    c = b.get_compiled_circuit(c)
     h = b.process_circuit(c, n_shots=10, postprocess=True)
     ppcirc = Circuit.from_dict(json.loads(cast(str, h[2])))
     ppcmds = ppcirc.get_commands()

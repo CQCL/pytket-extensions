@@ -42,7 +42,7 @@ def test_small_circuit_ionq() -> None:
     qc.Measure(0, 1)
     qc.Measure(1, 0)
     qc.Measure(2, 2)
-    backend.compile_circuit(qc)
+    qc = backend.get_compiled_circuit(qc)
     counts = backend.get_counts(qc, 1000)
     # note that we are rebuilding counts from probabilities, which are
     # floats, and therefore count number is not always preserved!
@@ -69,7 +69,7 @@ def test_invalid_token() -> None:
     b = IonQBackend(api_key=token, device_name="simulator", label="test 3")
     c = Circuit(2, 2).H(0).CX(0, 1)
     c.measure_all()
-    b.compile_circuit(c)
+    c = b.get_compiled_circuit(c)
     with pytest.raises(RuntimeError) as excinfo:
         b.process_circuits([c], 1)
         assert "Invalid key provided" in str(excinfo.value)
@@ -107,7 +107,7 @@ def test_cancellation() -> None:
     qc.Measure(0, 1)
     qc.Measure(1, 0)
     qc.Measure(2, 2)
-    b.compile_circuit(qc)
+    qc = b.get_compiled_circuit(qc)
     h = b.process_circuit(qc, n_shots=100)
     b.cancel(h)
 
@@ -136,7 +136,7 @@ def test_postprocess() -> None:
     c.Ry(0.1, 1)
     c.CX(0, 1)
     c.measure_all()
-    b.compile_circuit(c)
+    c = b.get_compiled_circuit(c)
     h = b.process_circuit(c, n_shots=10, postprocess=True)
     ppcirc = Circuit.from_dict(json.loads(cast(str, h[3])))
     ppcmds = ppcirc.get_commands()
