@@ -311,8 +311,8 @@ class IBMQBackend(Backend):
             all_node_gate_errors=characterisation["NodeErrors"],
             all_edge_gate_errors=characterisation["EdgeErrors"],
             all_readout_errors=characterisation["ReadoutErrors"],
-            averaged_node_errors=averaged_errors["node_errors"],
-            averaged_edge_errors=averaged_errors["edge_errors"],
+            averaged_node_gate_errors=averaged_errors["node_errors"],
+            averaged_edge_gate_errors=averaged_errors["edge_errors"],
             averaged_readout_errors=averaged_errors["readout_errors"],
             misc={"characterisation": filtered_characterisation},
         )
