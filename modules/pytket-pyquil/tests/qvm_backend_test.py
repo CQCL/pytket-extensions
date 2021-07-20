@@ -138,12 +138,12 @@ def test_pauli_statevector(qvm: None, quilc: None) -> None:
 @pytest.mark.skipif(
     skip_qvm_tests, reason="Can only run Rigetti QVM if docker is installed"
 )
-def test_characterisation(qvm: None, quilc: None) -> None:
+def test_backendinfo(qvm: None, quilc: None) -> None:
     b = ForestBackend("9q-square")
-    char = b.characterisation
-    assert char
-    assert len(char["NodeErrors"]) == 9
-    assert len(char["EdgeErrors"]) == 12
+    bi = b.backend_info
+    assert bi
+    assert len(bi.all_node_gate_errors) == 9
+    assert len(bi.all_edge_gate_errors) == 12
     assert b.backend_info.architecture
 
 
