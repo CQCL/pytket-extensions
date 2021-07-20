@@ -65,7 +65,7 @@ _gate = {
 def _int_double(x: float) -> int:
     # return (2x) mod 8 if x is close to a half-integer, otherwise error
     y = 2 * x
-    n = int(np.round(y))  # nearest integer to 2x
+    n = int(np.round(y))  # type: ignore
     if np.isclose(y, n):
         return n % 8
     else:
@@ -157,7 +157,7 @@ class StimBackend(Backend):
         circuits = list(circuits)
         n_shots_list: List[int] = []
         if hasattr(n_shots, "__iter__"):
-            n_shots_list = cast(List[Optional[int]], n_shots)
+            n_shots_list = cast(List[int], n_shots)
             if len(n_shots_list) != len(circuits):
                 raise ValueError("The length of n_shots and circuits must match")
         else:
