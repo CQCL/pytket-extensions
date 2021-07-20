@@ -507,7 +507,7 @@ class AerBackend(_AerBaseBackend):
                         arch,
                         self._backend_info.averaged_node_gate_errors,
                         self._backend_info.averaged_edge_gate_errors,
-                        self._backend_info.averaged_readout_gate_errors,
+                        self._backend_info.averaged_readout_errors,
                     ),
                     directed_cx=True,
                     delay_measures=False,
