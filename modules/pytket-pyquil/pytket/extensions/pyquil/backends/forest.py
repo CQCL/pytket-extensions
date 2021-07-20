@@ -120,8 +120,8 @@ class ForestBackend(Backend):
             self._GATE_SET,
             all_node_gate_errors=node_errors,
             all_edge_gate_errors=link_errors,
-            averaged_node_errors=averaged_errors["node_errors"],
-            averaged_edge_errors=averaged_errors["link_errors"],
+            averaged_node_gate_errors=averaged_errors["node_errors"],
+            averaged_edge_gate_errors=averaged_errors["link_errors"],
         )
 
     @property
