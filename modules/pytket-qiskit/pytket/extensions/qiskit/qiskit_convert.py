@@ -336,7 +336,11 @@ def qiskit_to_tk(qcirc: QuantumCircuit, preserve_param_uuid: bool = False) -> Ci
 
 def param_to_tk(p: Union[float, ParameterExpression]) -> sympy.Expr:
     if isinstance(p, ParameterExpression):
-        return p._symbol_expr / sympy.pi
+        symexpr = p._symbol_expr
+        try:
+            return symexpr._sympy_() / sympy.pi
+        except AttributeError:
+            return symexpr / sympy.pi
     else:
         return p / sympy.pi
 
