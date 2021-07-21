@@ -39,7 +39,6 @@ from typing import Any, Dict, List, Optional
 
 # Mappings for broken hyperlinks that intersphinx cannot resolve
 external_url_mapping = {
-    "Device": urljoin(pytketdoc_base, "device.html#pytket.device.Device"),
     "BasePass": urljoin(pytketdoc_base, "passes.html#pytket.passes.BasePass"),
     "Predicate": urljoin(pytketdoc_base, "predicates.html#pytket.predicates.Predicate"),
     "ResultHandle": urljoin(

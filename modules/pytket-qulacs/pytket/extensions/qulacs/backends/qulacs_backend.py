@@ -15,7 +15,7 @@
 """Methods to allow tket circuits to be ran on the Qulacs simulator
 """
 
-from typing import TYPE_CHECKING, List, Optional, Sequence, Union, cast
+from typing import List, Optional, Sequence, Union, cast
 from logging import warning
 from uuid import uuid4
 import numpy as np
@@ -63,10 +63,6 @@ try:
     from qulacs import QuantumStateGpu
 except ImportError:
     _GPU_ENABLED = False
-
-
-if TYPE_CHECKING:
-    from pytket.device import Device  # type: ignore
 
 
 class QulacsBackend(Backend):
@@ -119,7 +115,7 @@ class QulacsBackend(Backend):
         return (str,)
 
     @property
-    def backend_info(self) -> Optional["Device"]:
+    def backend_info(self) -> Optional["BackendInfo"]:
         return None
 
     @property

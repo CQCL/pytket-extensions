@@ -15,13 +15,13 @@ import json
 import os
 import sys
 from collections import Counter
-from typing import Dict, Any, Tuple, cast
+from typing import Dict, Any, cast
 import math
 import cmath
 import pickle
 from hypothesis import given, strategies
 import numpy as np
-from pytket.circuit import Circuit, OpType, BasisOrder, Node, Qubit, reg_eq  # type: ignore
+from pytket.circuit import Circuit, OpType, BasisOrder, Qubit, reg_eq  # type: ignore
 from pytket.passes import CliffordSimp  # type: ignore
 from pytket.pauli import Pauli, QubitPauliString  # type: ignore
 from pytket.predicates import CompilationUnit, NoMidMeasurePredicate  # type: ignore
@@ -300,23 +300,32 @@ def test_process_characterisation_complete_noise_model() -> None:
     back = AerBackend(my_noise_model)
     char = cast(Dict[str, Any], back.characterisation)
 
-    node_errors = cast(Dict[Node, dict], char.get("NodeErrors", {}))
-    link_errors = cast(Dict[Tuple[Node, Node], dict], char.get("EdgeErrors", {}))
+    node_errors = cast(Dict, back.backend_info.all_node_gate_errors)
+    link_errors = cast(Dict, back.backend_info.all_edge_gate_errors)
     arch = back.backend_info.architecture
 
-    assert char["GenericTwoQubitQErrors"][(0, 1)][0][1][0] == 0.0375
-    assert char["GenericTwoQubitQErrors"][(0, 1)][0][1][15] == 0.4375
-    assert char["GenericOneQubitQErrors"][0][0][1][0] == 0.125
-    assert char["GenericOneQubitQErrors"][0][0][1][3] == 0.625
-    assert char["GenericOneQubitQErrors"][0][1][1][0] == 0.35
-    assert char["GenericOneQubitQErrors"][0][1][1][1] == 0.65
-    assert char["GenericOneQubitQErrors"][0][2][1][0] == 0.35
-    assert char["GenericOneQubitQErrors"][0][2][1][1] == 0.65
+    gqe2 = cast(Dict, char["GenericTwoQubitQErrors"])
+    gqe1 = cast(Dict, char["GenericOneQubitQErrors"])
+    assert gqe2[(0, 1)][0][1][0] == 0.0375
+    assert gqe2[(0, 1)][0][1][15] == 0.4375
+    assert gqe1[0][0][1][0] == 0.125
+    assert gqe1[0][0][1][3] == 0.625
+    assert gqe1[0][1][1][0] == 0.35
+    assert gqe1[0][1][1][1] == 0.65
+    assert gqe1[0][2][1][0] == 0.35
+    assert gqe1[0][2][1][1] == 0.65
     assert node_errors[arch.nodes[0]][OpType.U3] == 0.375
     assert link_errors[(arch.nodes[0], arch.nodes[1])][OpType.CX] == 0.5625
     assert link_errors[(arch.nodes[1], arch.nodes[0])][OpType.CX] == 0.80859375
-    assert char["ReadoutErrors"][arch.nodes[0]] == [[0.8, 0.2], [0.2, 0.8]]
-    assert char["ReadoutErrors"][arch.nodes[1]] == [[0.7, 0.3], [0.3, 0.7]]
+    readout_errors = cast(Dict, back.backend_info.all_readout_errors)
+    assert readout_errors[arch.nodes[0]] == [
+        [0.8, 0.2],
+        [0.2, 0.8],
+    ]
+    assert readout_errors[arch.nodes[1]] == [
+        [0.7, 0.3],
+        [0.3, 0.7],
+    ]
 
 
 def test_cancellation_aer() -> None:
