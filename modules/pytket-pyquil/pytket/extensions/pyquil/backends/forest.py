@@ -14,7 +14,7 @@
 
 import json
 from copy import copy
-from typing import cast, Any, Dict, Iterable, List, Optional, Sequence, Union
+from typing import cast, Iterable, List, Optional, Sequence, Union
 from uuid import uuid4
 from logging import warning
 
@@ -111,18 +111,17 @@ class ForestBackend(Backend):
         arch = char_dict.get("Architecture", Architecture([]))
         node_errors = char_dict.get("NodeErrors")
         link_errors = char_dict.get("EdgeErrors")
+        averaged_errors = get_avg_characterisation(char_dict)
         self._backend_info = BackendInfo(
             type(self).__name__,
             qc_name,
             __extension_version__,
             arch,
             self._GATE_SET,
-            misc={
-                "characterisation": {
-                    "NodeErrors": node_errors,
-                    "EdgeErrors": link_errors,
-                }
-            },
+            all_node_gate_errors=node_errors,
+            all_edge_gate_errors=link_errors,
+            averaged_node_gate_errors=averaged_errors["node_errors"],
+            averaged_edge_gate_errors=averaged_errors["link_errors"],
         )
 
     @property
@@ -149,8 +148,9 @@ class ForestBackend(Backend):
             CXMappingPass(
                 self.backend_info.architecture,
                 NoiseAwarePlacement(
-                    self.backend_info.architecture,
-                    **get_avg_characterisation(self.characterisation),
+                    self._backend_info.architecture,
+                    self._backend_info.averaged_node_gate_errors,
+                    self._backend_info.averaged_edge_gate_errors,
                 ),
                 directed_cx=False,
                 delay_measures=True,
@@ -266,11 +266,6 @@ class ForestBackend(Backend):
             )
             self._cache[handle].update({"result": res})
             return res
-
-    @property
-    def characterisation(self) -> Dict[str, Any]:
-        char = self._backend_info.get_misc("characterisation")
-        return cast(Dict[str, Any], char)
 
     @property
     def backend_info(self) -> BackendInfo:

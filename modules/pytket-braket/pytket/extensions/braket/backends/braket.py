@@ -423,13 +423,9 @@ class BraketBackend(Backend):
                 __extension_version__,
                 arch,
                 self._singleqs.union(self._multiqs),
-                misc={
-                    "characterisation": {
-                        "NodeErrors": node_errors,
-                        "EdgeErrors": link_errors,
-                        "ReadoutErrors": readout_errors,
-                    }
-                },
+                all_node_gate_errors=node_errors,
+                all_edge_gate_errors=link_errors,
+                all_readout_errors=readout_errors,
             )
         else:
             self._backend_info = BackendInfo(
