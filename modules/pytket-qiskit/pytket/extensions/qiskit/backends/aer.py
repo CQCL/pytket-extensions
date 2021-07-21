@@ -725,7 +725,7 @@ def _process_model(noise_model: NoiseModel, gate_set: Set[OpType]) -> dict:
             coupling_map.append(qubits)
 
     # free qubits (ie qubits with no link errors) have full connectivity
-    free_qubits = set(node_errors) - link_errors_qubits
+    free_qubits = set(node_errors).union(set(readout_errors)) - link_errors_qubits
 
     for q in free_qubits:
         for lq in link_errors_qubits:
