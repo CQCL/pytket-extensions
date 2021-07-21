@@ -37,6 +37,7 @@ from qiskit.providers.ibmq.exceptions import IBMQBackendApiError  # type: ignore
 from qiskit.providers.ibmq.job import IBMQJob  # type: ignore
 from qiskit.result import Result, models  # type: ignore
 from qiskit.tools.monitor import job_monitor  # type: ignore
+from qiskit.providers.ibmq.utils.utils import api_status_to_job_status  # type: ignore
 
 from pytket.circuit import Circuit, OpType  # type: ignore
 from pytket.backends import Backend, CircuitNotRunError, CircuitStatus, ResultHandle
@@ -276,7 +277,8 @@ class IBMQBackend(Backend):
                 raise err
         else:
             provider = account_provider
-        self._backend: "_QiskIBMQBackend" = provider.get_backend(backend_name)
+        self._provider = provider
+        self._backend: "_QiskIBMQBackend" = self._provider.get_backend(backend_name)
         self._config = self._backend.configuration()
         self._max_per_job = getattr(self._config, "max_experiments", 1)
 
@@ -495,7 +497,9 @@ class IBMQBackend(Backend):
 
     def circuit_status(self, handle: ResultHandle) -> CircuitStatus:
         self._check_handle_type(handle)
-        ibmstatus = self._retrieve_job(cast(str, handle[0])).status()
+        jobid = cast(str, handle[0])
+        apistatus = self._provider._api_client.job_status(jobid)["status"]
+        ibmstatus = api_status_to_job_status(apistatus)
         return CircuitStatus(_STATUS_MAP[ibmstatus], ibmstatus.value)
 
     def get_result(self, handle: ResultHandle, **kwargs: KwargTypes) -> BackendResult:
