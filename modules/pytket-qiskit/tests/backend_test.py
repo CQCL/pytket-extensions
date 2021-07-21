@@ -392,8 +392,7 @@ def test_nshots_batching(santiago_backend: IBMQBackend) -> None:
         c4 = Circuit(2, 2).Rx(0.5, 0).CX(0, 1).CX(1, 0).measure_all()
         cs = [c1, c2, c3, c4]
         n_shots = [10, 12, 10, 13]
-        for c in cs:
-            c = backend.get_compiled_circuit(c)
+        cs = backend.get_compiled_circuits(cs)
         handles = backend.process_circuits(cs, n_shots=n_shots)
 
         from pytket.extensions.qiskit.backends.ibm import _DEBUG_HANDLE_PREFIX
