@@ -53,6 +53,7 @@ from qiskit import IBMQ  # type: ignore
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.circuit import Parameter  # type: ignore
 from qiskit.providers.aer.noise.noise_model import NoiseModel  # type: ignore
+from qiskit.providers.aer.noise import ReadoutError
 from qiskit.providers.aer.noise.errors import depolarizing_error, pauli_error  # type: ignore
 import pytest
 
@@ -326,6 +327,33 @@ def test_process_characterisation_complete_noise_model() -> None:
         [0.7, 0.3],
         [0.3, 0.7],
     ]
+
+
+def test_process_model() -> None:
+    noise_model = NoiseModel()
+    # add readout error to qubits 0, 1, 2
+    error_ro = ReadoutError([[0.8, 0.2], [0.2, 0.8]])
+    for i in range(3):
+        noise_model.add_readout_error(error_ro, [i])
+    # add depolarizing error to qubits 3, 4, 5
+    error_dp_sq = depolarizing_error(0.5, 1)
+    for i in range(3, 6):
+        noise_model.add_quantum_error(error_dp_sq, ["u3"], [i])
+    error_dp_mq = depolarizing_error(0.6, 2)
+    # add coupling errors
+    noise_model.add_quantum_error(error_dp_mq, ["cx"], [0, 7])
+    noise_model.add_quantum_error(error_dp_mq, ["cx"], [1, 2])
+    noise_model.add_quantum_error(error_dp_mq, ["cx"], [8, 9])
+
+    # check basic information has been captured
+    b = AerBackend(noise_model)
+    nodes = b.backend_info.architecture.nodes
+    assert len(nodes) == 9
+    assert "characterisation" in b.backend_info.misc
+    assert "GenericOneQubitQErrors" in b.backend_info.misc["characterisation"]
+    assert "GenericTwoQubitQErrors" in b.backend_info.misc["characterisation"]
+    assert nodes[3] in b.backend_info.all_node_gate_errors
+    assert (nodes[7], nodes[8]) in b.backend_info.all_edge_gate_errors
 
 
 def test_cancellation_aer() -> None:
