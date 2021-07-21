@@ -352,8 +352,10 @@ def test_process_model() -> None:
     assert "characterisation" in b.backend_info.misc
     assert "GenericOneQubitQErrors" in b.backend_info.misc["characterisation"]
     assert "GenericTwoQubitQErrors" in b.backend_info.misc["characterisation"]
-    assert nodes[3] in b.backend_info.all_node_gate_errors
-    assert (nodes[7], nodes[8]) in b.backend_info.all_edge_gate_errors
+    node_gate_errors = cast(Dict, b.backend_info.all_node_gate_errors)
+    assert nodes[3] in node_gate_errors
+    edge_gate_errors = cast(Dict, b.backend_info.all_edge_gate_errors)
+    assert (nodes[7], nodes[8]) in edge_gate_errors
 
 
 def test_cancellation_aer() -> None:
