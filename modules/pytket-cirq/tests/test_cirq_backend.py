@@ -144,7 +144,7 @@ def test_shots_counts_cirq_state_sample_simulator() -> None:
     b = CirqStateSampleBackend()
     assert b.supports_shots
     c = Circuit(2).H(0).CX(0, 1).measure_all()
-    b.compile_circuit(c)
+    c = b.get_compiled_circuit(c)
     n_shots = 100
     h0, h1 = b.process_circuits([c, c], n_shots)
     res0 = b.get_result(h0)
@@ -157,7 +157,7 @@ def test_shots_counts_cirq_state_sample_simulator() -> None:
 
     # Circuit with unused qubits
     c = Circuit(3, 2).H(1).CX(1, 2).measure_all()
-    b.compile_circuit(c)
+    c = b.get_compiled_circuit(c)
     h = b.process_circuit(c, 1)
     res = b.get_result(h)
     readout = res.get_shots()[0]
@@ -169,7 +169,7 @@ def test_shots_counts_cirq_dm_sample_simulator() -> None:
 
     assert b.supports_shots
     c = Circuit(2).H(0).CX(0, 1).measure_all()
-    b.compile_circuit(c)
+    c = b.get_compiled_circuit(c)
     n_shots = 100
     h0, h1 = b.process_circuits([c, c], n_shots)
     res0 = b.get_result(h0)
@@ -182,7 +182,7 @@ def test_shots_counts_cirq_dm_sample_simulator() -> None:
 
     # Circuit with unused qubits
     c = Circuit(3, 2).H(1).CX(1, 2).measure_all()
-    b.compile_circuit(c)
+    c = b.get_compiled_circuit(c)
     h = b.process_circuit(c, 1)
     res = b.get_result(h)
     readout = res.get_shots()[0]
@@ -194,7 +194,7 @@ def test_shots_counts_cirq_clifford_sample_simulator() -> None:
 
     assert b.supports_shots
     c = Circuit(2).H(0).CX(0, 1).measure_all()
-    b.compile_circuit(c)
+    c = b.get_compiled_circuit(c)
     assert b.valid_circuit(c)
     n_shots = 100
     h0, h1 = b.process_circuits([c, c], n_shots)
@@ -208,7 +208,7 @@ def test_shots_counts_cirq_clifford_sample_simulator() -> None:
 
     # Circuit with unused qubits
     c = Circuit(3, 2).H(1).CX(1, 2).measure_all()
-    b.compile_circuit(c)
+    c = b.get_compiled_circuit(c)
     h = b.process_circuit(c, 1)
     res = b.get_result(h)
     readout = res.get_shots()[0]
@@ -218,10 +218,10 @@ def test_shots_counts_cirq_clifford_sample_simulator() -> None:
 def test_clifford_compilation() -> None:
     b = CirqCliffordSimBackend()
     c = Circuit(3).H(0).X(1).Y(2).CX(0, 1).CX(2, 1).H(0).X(0).H(1).Z(2)
-    b.compile_circuit(c)
+    c = b.get_compiled_circuit(c)
     assert b.valid_circuit(c)
     c.Rz(0.3, 0)
-    b.compile_circuit(c)
+    c = b.get_compiled_circuit(c)
     assert not b.valid_circuit(c)
 
 

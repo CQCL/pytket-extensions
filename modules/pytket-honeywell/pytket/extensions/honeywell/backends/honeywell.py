@@ -457,7 +457,7 @@ class HoneywellBackend(Backend):
         if not self.valid_circuit(circuit):
             raise ValueError(
                 "Circuit does not satisfy predicates of backend."
-                + " Try running `backend.compile_circuit` first"
+                + " Try running `backend.get_compiled_circuit` first"
             )
         gate_counts: Dict[OpType, int] = {
             g_type: circuit.n_gates_of_type(g_type) for g_type in _GATE_SET

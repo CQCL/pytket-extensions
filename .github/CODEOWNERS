@@ -9,3 +9,4 @@
 /modules/pytket-qiskit/ @ss2165
 /modules/pytket-qsharp/ @cqc-alec
 /modules/pytket-qulacs/ @Roland-djee
+/modules/pytket-stim/ @cqc-alec

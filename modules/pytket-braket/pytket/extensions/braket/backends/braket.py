@@ -423,13 +423,9 @@ class BraketBackend(Backend):
                 __extension_version__,
                 arch,
                 self._singleqs.union(self._multiqs),
-                misc={
-                    "characterisation": {
-                        "NodeErrors": node_errors,
-                        "EdgeErrors": link_errors,
-                        "ReadoutErrors": readout_errors,
-                    }
-                },
+                all_node_gate_errors=node_errors,
+                all_edge_gate_errors=link_errors,
+                all_readout_errors=readout_errors,
             )
         else:
             self._backend_info = BackendInfo(
@@ -620,8 +616,11 @@ class BraketBackend(Backend):
 
     @property
     def characterisation(self) -> Optional[Dict[str, Any]]:
-        char = self._backend_info.get_misc("characterisation")
-        return cast(Dict[str, Any], char) if char else None
+        return {
+            "NodeErrors": self._backend_info.all_node_gate_errors,
+            "EdgeErrors": self._backend_info.all_edge_gate_errors,
+            "ReadoutErrors": self._backend_info.all_readout_errors,
+        }
 
     @property
     def backend_info(self) -> BackendInfo:

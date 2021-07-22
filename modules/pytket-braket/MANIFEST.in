@@ -1,1 +1,2 @@
 include _metadata.py
+include pytket/extensions/braket/py.typed

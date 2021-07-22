@@ -1,0 +1,2 @@
+include _metadata.py
+include pytket/extensions/stim/py.typed
