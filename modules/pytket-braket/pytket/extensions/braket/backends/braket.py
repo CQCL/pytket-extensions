@@ -616,8 +616,11 @@ class BraketBackend(Backend):
 
     @property
     def characterisation(self) -> Optional[Dict[str, Any]]:
-        char = self._backend_info.get_misc("characterisation")
-        return cast(Dict[str, Any], char) if char else None
+        return {
+            "NodeErrors": self._backend_info.all_node_gate_errors,
+            "EdgeErrors": self._backend_info.all_edge_gate_errors,
+            "ReadoutErrors": self._backend_info.all_readout_errors,
+        }
 
     @property
     def backend_info(self) -> BackendInfo:
