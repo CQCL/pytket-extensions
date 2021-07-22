@@ -6,6 +6,7 @@ Changelog
 
 * Qiskit version updated to 0.28.
 * Use provider API client to check job status without retrieving job in IBMQBackend.
+* Updated pytket version requirement to 0.13.
 
 0.15.1 (July 2021)
 ------------------
