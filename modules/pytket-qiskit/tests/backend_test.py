@@ -647,6 +647,18 @@ def test_operator() -> None:
         assert cmath.isclose(get_operator_expectation_value(c, zz, b), -1.0)
 
 
+# TKET-1432 this was either too slow or consumed too much memory when bugged
+@pytest.mark.timeout(10)
+def test_expectation_bug() -> None:
+    backend = AerStateBackend()
+    # backend.compile_circuit(circuit)
+    circuit = Circuit(16)
+    with open("big_hamiltonian.pickle", "rb") as f:
+        hamiltonian = pickle.load(f)
+    exp = backend.get_operator_expectation_value(circuit, hamiltonian)
+    assert np.isclose(exp, 1.4325392)
+
+
 def test_aer_result_handle() -> None:
     c = Circuit(2, 2).H(0).CX(0, 1).measure_all()
 
