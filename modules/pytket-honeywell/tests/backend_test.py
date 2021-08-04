@@ -51,7 +51,7 @@ REASON = (
 
 def test_honeywell() -> None:
     backend = HoneywellBackend(
-        device_name="HQS-LT-1.0-APIVAL", machine_debug=skip_remote_tests
+        device_name="HQS-LT-S1-APIVAL", machine_debug=skip_remote_tests
     )
     c = Circuit(4, 4, "test 1")
     c.H(0)
@@ -63,7 +63,7 @@ def test_honeywell() -> None:
     c.ZZPhase(0.1, 2, 0)
     c.Tdg(3)
     c.measure_all()
-    backend.compile_circuit(c)
+    c = backend.get_compiled_circuit(c)
     n_shots = 4
     handle = backend.process_circuits([c], n_shots)[0]
     correct_shots = np.zeros((4, 4))
@@ -84,12 +84,12 @@ def test_honeywell() -> None:
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_bell() -> None:
-    b = HoneywellBackend(device_name="HQS-LT-1.0-APIVAL")
+    b = HoneywellBackend(device_name="HQS-LT-S1-APIVAL")
     c = Circuit(2, 2, "test 2")
     c.H(0)
     c.CX(0, 1)
     c.measure_all()
-    b.compile_circuit(c)
+    c = b.get_compiled_circuit(c)
     n_shots = 10
     shots = b.get_shots(c, n_shots)
     print(shots)
@@ -98,7 +98,7 @@ def test_bell() -> None:
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_multireg() -> None:
-    b = HoneywellBackend(device_name="HQS-LT-1.0-APIVAL", label="test 3")
+    b = HoneywellBackend(device_name="HQS-LT-S1-APIVAL", label="test 3")
     c = Circuit()
     q1 = Qubit("q1", 0)
     q2 = Qubit("q2", 0)
@@ -112,7 +112,7 @@ def test_multireg() -> None:
     c.CX(q1, q2)
     c.Measure(q1, c1)
     c.Measure(q2, c2)
-    b.compile_circuit(c)
+    c = b.get_compiled_circuit(c)
 
     n_shots = 10
     shots = b.get_shots(c, n_shots)
@@ -121,7 +121,7 @@ def test_multireg() -> None:
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_default_pass() -> None:
-    b = HoneywellBackend(device_name="HQS-LT-1.0-APIVAL")
+    b = HoneywellBackend(device_name="HQS-LT-S1-APIVAL")
     for ol in range(3):
         comp_pass = b.default_compilation_pass(ol)
         c = Circuit(3, 3)
@@ -137,9 +137,9 @@ def test_default_pass() -> None:
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_cancel() -> None:
-    b = HoneywellBackend(device_name="HQS-LT-1.0-APIVAL", label="test cancel")
+    b = HoneywellBackend(device_name="HQS-LT-S1-APIVAL", label="test cancel")
     c = Circuit(2, 2).H(0).CX(0, 1).measure_all()
-    b.compile_circuit(c)
+    c = b.get_compiled_circuit(c)
     handle = b.process_circuit(c, 10)
     try:
         # will raise HTTP error if job is already completed
@@ -195,7 +195,7 @@ def circuits(
 def test_cost_estimate(c: Circuit, n_shots: int) -> None:
 
     b = HoneywellBackend("HQS-LT-S1-APIVAL")
-    b.compile_circuit(c)
+    c = b.get_compiled_circuit(c)
     estimate = b.cost_estimate(c, n_shots)
     status = b.circuit_status(b.process_circuit(c, n_shots))
     status_msg = status.message
@@ -232,7 +232,7 @@ def test_classical() -> None:
 
     b = HoneywellBackend("HQS-LT-S1-APIVAL")
 
-    b.compile_circuit(c)
+    c = b.get_compiled_circuit(c)
     assert b.get_counts(c, 10)
 
 
@@ -245,7 +245,7 @@ def test_postprocess() -> None:
     c.add_gate(OpType.PhasedX, [1, 1], [1])
     c.add_gate(OpType.ZZMax, [0, 1])
     c.measure_all()
-    b.compile_circuit(c)
+    c = b.get_compiled_circuit(c)
     h = b.process_circuit(c, n_shots=10, postprocess=True)
     ppcirc = Circuit.from_dict(json.loads(cast(str, h[1])))
     ppcmds = ppcirc.get_commands()
@@ -262,7 +262,7 @@ def test_postprocess() -> None:
 )
 def test_shots_bits_edgecases(n_shots, n_bits) -> None:
 
-    honeywell_backend = HoneywellBackend("HQS-LT-1.0-APIVAL", machine_debug=True)
+    honeywell_backend = HoneywellBackend("HQS-LT-S1-APIVAL", machine_debug=True)
     c = Circuit(n_bits, n_bits)
 
     # TODO TKET-813 add more shot based backends and move to integration tests

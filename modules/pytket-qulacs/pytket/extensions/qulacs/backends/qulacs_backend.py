@@ -15,12 +15,11 @@
 """Methods to allow tket circuits to be ran on the Qulacs simulator
 """
 
-from typing import TYPE_CHECKING, List, Optional, Sequence, Union
+from typing import List, Optional, Sequence, Union
 from logging import warning
 from uuid import uuid4
 import numpy as np
 from qulacs import Observable, QuantumState  # type: ignore
-from qulacs.observable import create_observable_from_openfermion_text  # type: ignore
 from pytket.backends import (
     Backend,
     CircuitNotRunError,
@@ -52,6 +51,8 @@ from pytket.predicates import (  # type: ignore
     DefaultRegisterPredicate,
     Predicate,
 )
+from pytket.circuit import Pauli  # type: ignore
+from pytket.pauli import QubitPauliString  # type: ignore
 from pytket.routing import Architecture  # type: ignore
 from pytket.utils.operators import QubitPauliOperator
 from pytket.utils.outcomearray import OutcomeArray
@@ -62,10 +63,6 @@ try:
     from qulacs import QuantumStateGpu
 except ImportError:
     _GPU_ENABLED = False
-
-
-if TYPE_CHECKING:
-    from pytket.device import Device  # type: ignore
 
 
 class QulacsBackend(Backend):
@@ -118,7 +115,7 @@ class QulacsBackend(Backend):
         return (str,)
 
     @property
-    def backend_info(self) -> Optional["Device"]:
+    def backend_info(self) -> Optional["BackendInfo"]:
         return None
 
     @property
@@ -222,9 +219,24 @@ class QulacsBackend(Backend):
     ) -> complex:
         if valid_check:
             self._check_all_circuits([state_circuit], nomeasure_warn=False)
-        observable = create_observable_from_openfermion_text(
-            str(operator.to_OpenFermion())
-        )
+
+        observable = Observable(state_circuit.n_qubits)
+        for (qps, coeff) in operator._dict.items():
+            _items = []
+            if qps != QubitPauliString():
+                for qubit, pauli in qps.to_dict().items():
+                    if pauli == Pauli.X:
+                        _items.append("X")
+                    elif pauli == Pauli.Y:
+                        _items.append("Y")
+                    elif pauli == Pauli.Z:
+                        _items.append("Z")
+                    _items.append(str(qubit.index[0]))
+
+            qulacs_qps = " ".join(_items)
+            qulacs_coeff = complex(coeff.evalf())
+            observable.add_operator(qulacs_coeff, qulacs_qps)
+
         expectation_value = self._expectation_value(state_circuit, observable)
         del observable
         return expectation_value.real

@@ -218,7 +218,10 @@ class CircuitBuilder:
         self.cregs = [] if cregs is None else cregs
         self.qbmap = {}
         self.cbmap = {}
-        self.tkc = Circuit(name=name)
+        if name is not None:
+            self.tkc = Circuit(name=name)
+        else:
+            self.tkc = Circuit()
         self.tkc.add_phase(phase)
         for reg in qregs:
             tk_reg = self.tkc.add_q_register(reg.name, len(reg))
@@ -333,7 +336,11 @@ def qiskit_to_tk(qcirc: QuantumCircuit, preserve_param_uuid: bool = False) -> Ci
 
 def param_to_tk(p: Union[float, ParameterExpression]) -> sympy.Expr:
     if isinstance(p, ParameterExpression):
-        return p._symbol_expr / sympy.pi
+        symexpr = p._symbol_expr
+        try:
+            return symexpr._sympy_() / sympy.pi
+        except AttributeError:
+            return symexpr / sympy.pi
     else:
         return p / sympy.pi
 
@@ -657,6 +664,6 @@ def get_avg_characterisation(
 
     return {
         "node_errors": avg_node_errors,
-        "link_errors": avg_link_errors,
+        "edge_errors": avg_link_errors,
         "readout_errors": avg_readout_errors,
     }

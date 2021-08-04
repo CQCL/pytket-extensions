@@ -18,7 +18,7 @@ from collections import Counter
 from shutil import which
 import platform
 
-from typing import cast
+from typing import cast, Dict
 import docker  # type: ignore
 import numpy as np
 import pytest
@@ -94,7 +94,7 @@ def test_statevector(qvm: None, quilc: None) -> None:
 def test_sim(qvm: None, quilc: None) -> None:
     c = circuit_gen(True)
     b = ForestBackend("9q-square")
-    b.compile_circuit(c)
+    c = b.get_compiled_circuit(c)
     _ = b.get_shots(c, 1024)
 
 
@@ -109,7 +109,7 @@ def test_measures(qvm: None, quilc: None) -> None:
         c.X(i)
     c.measure_all()
     b = ForestBackend("9q-square")
-    b.compile_circuit(c)
+    c = b.get_compiled_circuit(c)
     shots = b.get_shots(c, 10)
     all_ones = True
     all_zeros = True
@@ -138,12 +138,15 @@ def test_pauli_statevector(qvm: None, quilc: None) -> None:
 @pytest.mark.skipif(
     skip_qvm_tests, reason="Can only run Rigetti QVM if docker is installed"
 )
-def test_characterisation(qvm: None, quilc: None) -> None:
+def test_backendinfo(qvm: None, quilc: None) -> None:
     b = ForestBackend("9q-square")
-    char = b.characterisation
-    assert char
-    assert len(char["NodeErrors"]) == 9
-    assert len(char["EdgeErrors"]) == 12
+    bi = b.backend_info
+    node_gate_errors = cast(Dict, bi.all_node_gate_errors)
+    edge_gate_errors = cast(Dict, bi.all_edge_gate_errors)
+
+    assert bi
+    assert len(node_gate_errors) == 9
+    assert len(edge_gate_errors) == 12
     assert b.backend_info.architecture
 
 
@@ -200,7 +203,7 @@ def test_operator_sim(qvm: None, quilc: None) -> None:
 def test_counts(qvm: None, quilc: None) -> None:
     c = circuit_gen(True)
     b = ForestBackend("9q-square")
-    b.compile_circuit(c)
+    c = b.get_compiled_circuit(c)
     counts = b.get_counts(c, 10)
     assert all(x[0] == x[1] for x in counts.keys())
 
@@ -275,7 +278,7 @@ def test_swaps_basisorder() -> None:
     c.CX(1, 0)
     CliffordSimp(True).apply(c)
     assert c.n_gates_of_type(OpType.CX) == 1
-    b.compile_circuit(c)
+    c = b.get_compiled_circuit(c)
     s_ilo = b.get_state(c, basis=BasisOrder.ilo)
     s_dlo = b.get_state(c, basis=BasisOrder.dlo)
     correct_ilo = np.zeros((16,))
@@ -296,8 +299,8 @@ def test_handle() -> None:
     c1 = Circuit(1)
     c1.X(0)
     c1.measure_all()
-    b.compile_circuit(c0)
-    b.compile_circuit(c1)
+    c0 = b.get_compiled_circuit(c0)
+    c1 = b.get_compiled_circuit(c1)
     counts0 = b.get_counts(c0, n_shots=10)
     counts1 = b.get_counts(c1, n_shots=10)
     assert counts0 == {(0,): 10}
@@ -312,8 +315,8 @@ def test_state_handle() -> None:
     c0 = Circuit(1)
     c1 = Circuit(1)
     c1.X(0)
-    b.compile_circuit(c0)
-    b.compile_circuit(c1)
+    c0 = b.get_compiled_circuit(c0)
+    c1 = b.get_compiled_circuit(c1)
     state0 = b.get_state(c0)
     state1 = b.get_state(c1)
     assert np.allclose(state0, np.asarray([1.0, 0.0]))
@@ -334,7 +337,7 @@ def test_delay_measures() -> None:
     c.Measure(0, 0)
     c.Measure(1, 1)
     c.Measure(2, 2)
-    b.compile_circuit(c)
+    c = b.get_compiled_circuit(c)
     assert b.valid_circuit(c)
 
 
@@ -349,7 +352,7 @@ def test_shots_bits_edgecases(qvm: None, quilc: None) -> None:
             c = Circuit(n_bits, n_bits)
 
             # TODO TKET-813 add more shot based backends and move to integration tests
-            forest_backend.compile_circuit(c)
+            c = forest_backend.get_compiled_circuit(c)
             h = forest_backend.process_circuit(c, n_shots)
             res = forest_backend.get_result(h)
 
@@ -374,7 +377,7 @@ def test_postprocess() -> None:
     assert b.supports_contextual_optimisation
     c = Circuit(2, 2)
     c.Rx(0.5, 0).Rx(0.5, 1).CZ(0, 1).X(0).X(1).measure_all()
-    b.compile_circuit(c)
+    c = b.get_compiled_circuit(c)
     h = b.process_circuit(c, n_shots=10, postprocess=True)
     ppcirc = Circuit.from_dict(json.loads(cast(str, h[1])))
     ppcmds = ppcirc.get_commands()

@@ -31,13 +31,18 @@ setup(
     author_email="alec.edgington@cambridgequantum.com",
     python_requires=">=3.7",
     url="https://github.com/CQCL/pytket-extensions",
-    description="Extension for pytket, providing simulators from Microsoft QDK",
+    description="Extension for pytket, providing access to Azure devices and "
+    "simulators via Microsoft QDK",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
     license="Apache 2",
     packages=find_namespace_packages(include=["pytket.*"]),
     include_package_data=True,
-    install_requires=["pytket ~= 0.12.0", "qsharp ~= 0.17.2105"],
+    install_requires=[
+        "pytket ~= 0.13.0",
+        "qsharp ~= 0.18.2107",
+        "qsharp-core ~= 0.18.2107",
+    ],
     classifiers=[
         "Environment :: Console",
         "Programming Language :: Python :: 3.7",

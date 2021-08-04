@@ -29,7 +29,7 @@ ARTIFACTSDIR=${GITHUB_WORKSPACE}/wheelhouse
 
 rm -rf ${ARTIFACTSDIR} && mkdir ${ARTIFACTSDIR}
 
-python -m pip install --upgrade pip wheel pytest hypothesis
+python -m pip install --upgrade pip wheel pytest pytest-timeout hypothesis
 
 # Generate and install packages:
 for MODULE in $MODULES_TO_TEST; do

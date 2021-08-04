@@ -37,7 +37,7 @@ def test_estimates() -> None:
     c.Z(2)
     pbox = PauliExpBox([Pauli.X, Pauli.I, Pauli.Z], 0.25)
     c.add_pauliexpbox(pbox, [2, 0, 1])
-    b.compile_circuit(c, 0)
+    c = b.get_compiled_circuit(c, 0)
     resources = b.get_resources(c)
     assert resources["CNOT"] >= 1
     assert resources["QubitClifford"] >= 1
@@ -55,7 +55,7 @@ def test_ccx_resources() -> None:
     b = QsharpEstimatorBackend()
     c = Circuit(3)
     c.CCX(0, 1, 2)
-    b.compile_circuit(c, 0)
+    c = b.get_compiled_circuit(c, 0)
     resources = b.get_resources(c)
     assert resources["T"] >= 7
 
@@ -64,7 +64,7 @@ def test_handles() -> None:
     b = QsharpEstimatorBackend()
     c = Circuit(3)
     c.CCX(0, 1, 2)
-    b.compile_circuit(c, 0)
+    c = b.get_compiled_circuit(c, 0)
     handle = b.process_circuits([c])[0]
     resources = b.get_resources(handle)
     assert resources["T"] >= 7

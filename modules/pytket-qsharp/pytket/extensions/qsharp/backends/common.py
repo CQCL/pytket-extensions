@@ -59,7 +59,6 @@ from pytket.extensions.qsharp.qsharp_convert import tk_to_qsharp
 
 if TYPE_CHECKING:
     from qsharp.loader import QSharpCallable  # type: ignore
-    from pytket.device import Device  # type: ignore
 
 
 def _from_tk1(a: float, b: float, c: float) -> Circuit:
