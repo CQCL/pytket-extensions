@@ -336,7 +336,7 @@ class _AerStateBaseBackend(_AerBaseBackend):
     def process_circuits(
         self,
         circuits: Sequence[Circuit],
-        n_shots: Optional[Union[int, Sequence[int]]] = None,
+        n_shots: Union[None, int, Sequence[Optional[int]]] = None,
         valid_check: bool = True,
         **kwargs: KwargTypes,
     ) -> List[ResultHandle]:
@@ -515,7 +515,7 @@ class AerBackend(_AerBaseBackend):
     def process_circuits(
         self,
         circuits: Sequence[Circuit],
-        n_shots: Optional[Union[int, Sequence[int]]] = None,
+        n_shots: Union[None, int, Sequence[Optional[int]]] = None,
         valid_check: bool = True,
         **kwargs: KwargTypes,
     ) -> List[ResultHandle]:
@@ -523,16 +523,12 @@ class AerBackend(_AerBaseBackend):
         See :py:meth:`pytket.backends.Backend.process_circuits`.
         Supported kwargs: `seed`.
         """
-        if hasattr(n_shots, "__iter__"):
-            n_shots_list = cast(Sequence[Optional[int]], n_shots)
-            if any(map(lambda n: n is None or n < 1, n_shots_list)):
-                raise ValueError(
-                    "n_shots values are required for all circuits for this backend"
-                )
-        else:
-            n_shots_int = cast(Optional[int], n_shots)
-            if n_shots_int is None or n_shots_int < 1:
-                raise ValueError("Parameter n_shots is required for this backend.")
+        # discard result but useful to validate n_shots
+        Backend._get_n_shots_as_list(
+            n_shots,
+            len(circuits),
+            optional=False,
+        )
         return super().process_circuits(circuits, n_shots, valid_check, **kwargs)
 
     def get_pauli_expectation_value(

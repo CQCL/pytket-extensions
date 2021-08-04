@@ -194,10 +194,13 @@ class IonQBackend(Backend):
         Supported kwargs: none.
         """
         circuits = list(circuits)
-        n_shots_list = Backend._get_n_shots_as_list(
-            n_shots,
-            len(circuits),
-            optional=False,
+        n_shots_list = cast(
+            Sequence[int],
+            Backend._get_n_shots_as_list(
+                n_shots,
+                len(circuits),
+                optional=False,
+            ),
         )
 
         if valid_check:

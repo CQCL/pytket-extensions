@@ -520,8 +520,11 @@ class BraketBackend(Backend):
         Supported `kwargs`: none
         """
         circuits = list(circuits)
-        n_shots_list = Backend._get_n_shots_as_list(
-            n_shots, len(circuits), optional=True, set_zero=True
+        n_shots_list = cast(
+            Sequence[int],
+            Backend._get_n_shots_as_list(
+                n_shots, len(circuits), optional=True, set_zero=True
+            ),
         )
 
         if not self.supports_shots and not self.supports_state:
