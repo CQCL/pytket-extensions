@@ -40,7 +40,7 @@ setup(
     include_package_data=True,
     install_requires=[
         "pytket ~= 0.13.0",
-        "pyquil ~= 2.28",
+        "pyquil ~= 3.0",
         "typing-extensions ~= 3.7",
     ],
     classifiers=[

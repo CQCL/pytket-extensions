@@ -16,12 +16,25 @@
 """
 
 from collections import defaultdict
+from logging import warning
 import math
-from typing import Any, Callable, Union, Dict, List, Tuple, TypeVar, cast, overload
+from typing import (
+    Any,
+    Callable,
+    Union,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    TypeVar,
+    cast,
+    overload,
+)
 from typing_extensions import Literal
 
 from pyquil import Program
 from pyquil.api import QuantumComputer
+from pyquil.external.rpcq import GateInfo, MeasureInfo
 from pyquil.quilatom import (
     Qubit as Qubit_,
     Expression,
@@ -299,39 +312,84 @@ def process_characterisation(qc: QuantumComputer) -> dict:
     :type qc: QuantumComputer
     :return: A dictionary containing Rigetti device characteristics
     """
-    specs = qc.device.get_specs()
+    isa = qc.quantum_processor.to_compiler_isa()
+    coupling_map = [[int(i) for i in e.ids] for e in isa.edges.values()]
 
-    coupling_map = [
-        [n, ni]
-        for n, neigh_dict in qc.qubit_topology().adjacency()
-        for ni, _ in neigh_dict.items()
-    ]
+    str_to_gate_1qb = {
+        "RX": {
+            "PI": OpType.X,
+            "PIHALF": OpType.V,
+            "-PIHALF": OpType.Vdg,
+            "-PI": OpType.X,
+            "ANY": OpType.Rx,
+        },
+        "RZ": {
+            "ANY": OpType.Rz,
+        },
+    }
+    str_to_gate_2qb = {"CZ": OpType.CZ, "XY": OpType.ISWAP}
 
-    link_errors: dict = defaultdict(dict)
-    node_errors: dict = defaultdict(dict)
+    link_errors: Dict[Tuple[Node, Node], Dict[OpType, float]] = defaultdict(dict)
+    node_errors: Dict[Node, Dict[OpType, float]] = defaultdict(dict)
     readout_errors: dict = {}
-    t1_times_dict = {}
-    t2_times_dict = {}
+    # T1s and T2s are currently left empty
+    t1_times_dict: dict = {}
+    t2_times_dict: dict = {}
 
-    device_node_fidelities = specs.f1QRBs()  # type: ignore
-    device_link_fidelities = specs.fCZs()  # type: ignore
-    device_fROs = specs.fROs()  # type: ignore
-    device_t1s = specs.T1s()  # type: ignore
-    device_t2s = specs.T2s()  # type: ignore
+    for q in isa.qubits.values():
+        node = Node(q.id)
+        for g in q.gates:
+            if g.fidelity is None:
+                g.fidelity = 1.0
+            print(g)
+            if isinstance(g, GateInfo) and g.operator in str_to_gate_1qb:
+                angle = _get_angle_type(g.parameters[0])
+                if angle is not None:
+                    try:
+                        optype = str_to_gate_1qb[g.operator][angle]
+                    except KeyError:
+                        warning(
+                            f"Ignoring unrecognised angle {g.parameters[0]} "
+                            f"for gate {g.operator}. This may mean that some "
+                            "hardware-supported gates won't be used."
+                        )
+                    if node in node_errors and optype in node_errors[node]:
+                        if abs(1.0 - g.fidelity - node_errors[node][optype]) > 1e-7:
+                            # fidelities for Rx(PI) and Rx(-PI) are given, hopefully
+                            # they are always identical
+                            warning(
+                                f"Found two differing fidelities for {optype} on node "
+                                f"{node}, using error = {node_errors[node][optype]}"
+                            )
+                    else:
+                        node_errors[node].update({optype: 1.0 - g.fidelity})
+            elif isinstance(g, MeasureInfo) and g.operator == "MEASURE":
+                # for some reason, there are typically two MEASURE entries,
+                # one with target="_", and one with target=Node
+                # in all pyquil code I have seen, both have the same value
+                if node in readout_errors:
+                    if abs(1.0 - g.fidelity - readout_errors[node]) > 1e-7:
+                        warning(
+                            f"Found two differing readout fidelities for node {node},"
+                            f" using RO error = {readout_errors[node]}"
+                        )
+                else:
+                    readout_errors[node] = 1.0 - g.fidelity
+            elif g.operator == "I":
+                continue
+            else:
+                warning(f"Ignoring fidelity for unknown operator {g.operator}")
 
-    for index in qc.qubits():
-        node = Node(index)
-        readout_errors[node] = 1.0 - cast(float, device_fROs[index])
-        t1_times_dict[index] = device_t1s[index]
-        t2_times_dict[index] = device_t2s[index]
-        node_errors[node].update(
-            {OpType.Rx: 1.0 - cast(float, device_node_fidelities[index])}
-        )
-        # Rigetti use frame changes for Rz, so they effectively have no error.
-        node_errors[node].update({OpType.Rz: 0.0})
-
-    for (a, b), fid in device_link_fidelities.items():
-        link_errors[(Node(a), Node(b))].update({OpType.CZ: 1.0 - cast(float, fid)})
+    for e in isa.edges.values():
+        n1, n2 = Node(e.ids[0]), Node(e.ids[1])
+        for g in e.gates:
+            if g.fidelity is None:
+                g.fidelity = 1.0
+            if g.operator in str_to_gate_2qb:
+                optype = str_to_gate_2qb[g.operator]
+                link_errors[(n1, n2)].update({optype: 1.0 - g.fidelity})
+            else:
+                warning(f"Ignoring fidelity for unknown operator {g.operator}")
 
     arc = Architecture(coupling_map)
 
@@ -343,6 +401,22 @@ def process_characterisation(qc: QuantumComputer) -> dict:
     characterisation["t2times"] = t2_times_dict
 
     return characterisation
+
+
+def _get_angle_type(angle: Union[float, str]) -> Optional[str]:
+    if angle == "theta":
+        return "ANY"
+    else:
+        angles = {pi: "PI", pi / 2: "PIHALF", 0: None, -pi / 2: "-PIHALF", -pi: "-PI"}
+        if not isinstance(angle, str):
+            for val, code in angles.items():
+                if abs(angle - val) < 1e-7:
+                    return code
+        warning(
+            f"Ignoring unrecognised angle {angle}. This may mean that some "
+            "hardware-supported gates won't be used."
+        )
+        return None
 
 
 def get_avg_characterisation(
