@@ -245,39 +245,12 @@ class IBMQBackend(Backend):
         :type account_provider: Optional[AccountProvider]
         """
         super().__init__()
-        if account_provider is None:
-            self._pytket_config = QiskitConfig.from_default_config_file()
-            if not IBMQ.active_account():
-                if IBMQ.stored_account():
-                    IBMQ.load_account()
-                else:
-                    if self._pytket_config.ibmq_api_token is not None:
-                        IBMQ.save_account(self._pytket_config.ibmq_api_token)
-                    else:
-                        raise NoIBMQAccountError()
-            provider_kwargs = {}
-            provider_kwargs["hub"] = hub if hub else self._pytket_config.hub
-            provider_kwargs["group"] = group if group else self._pytket_config.group
-            provider_kwargs["project"] = (
-                project if project else self._pytket_config.project
-            )
-
-            try:
-                if any(x is not None for x in provider_kwargs.values()):
-                    provider = IBMQ.get_provider(**provider_kwargs)
-                else:
-                    provider = IBMQ.providers()[0]
-            except qiskit.providers.ibmq.exceptions.IBMQProviderError as err:
-                logging.warn(
-                    (
-                        "Provider was not specified enough, specify hub,"
-                        "group and project correctly (check your IBMQ account)."
-                    )
-                )
-                raise err
-        else:
-            provider = account_provider
-        self._provider = provider
+        self._pytket_config = QiskitConfig.from_default_config_file()
+        self._provider = (
+            self._get_provider(hub, group, project)
+            if account_provider is None
+            else account_provider
+        )
         self._backend: "_QiskIBMQBackend" = self._provider.get_backend(backend_name)
         self._config = self._backend.configuration()
         self._max_per_job = getattr(self._config, "max_experiments", 1)
@@ -336,6 +309,38 @@ class IBMQBackend(Backend):
         self._ibm_res_cache: Dict[Tuple[str, int], models.ExperimentResult] = dict()
 
         self._MACHINE_DEBUG = False
+
+    def _get_provider(
+        self, hub: Optional[str], group: Optional[str], project: Optional[str]
+    ) -> "AccountProvider":
+        if not IBMQ.active_account():
+            if IBMQ.stored_account():
+                IBMQ.load_account()
+            else:
+                if self._pytket_config.ibmq_api_token is not None:
+                    IBMQ.save_account(self._pytket_config.ibmq_api_token)
+                else:
+                    raise NoIBMQAccountError()
+        provider_kwargs = {}
+        provider_kwargs["hub"] = hub if hub else self._pytket_config.hub
+        provider_kwargs["group"] = group if group else self._pytket_config.group
+        provider_kwargs["project"] = project if project else self._pytket_config.project
+
+        try:
+            if any(x is not None for x in provider_kwargs.values()):
+                provider = IBMQ.get_provider(**provider_kwargs)
+            else:
+                provider = IBMQ.providers()[0]
+        except qiskit.providers.ibmq.exceptions.IBMQProviderError as err:
+            logging.warn(
+                (
+                    "Provider was not specified enough, specify hub,"
+                    "group and project correctly (check your IBMQ account)."
+                )
+            )
+            raise err
+
+        return provider
 
     @property
     def characterisation(self) -> Dict[str, Any]:

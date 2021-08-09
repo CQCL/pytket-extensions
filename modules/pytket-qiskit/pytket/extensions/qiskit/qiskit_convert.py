@@ -52,7 +52,6 @@ from qiskit.circuit import (
 from qiskit.circuit.library import CRYGate, RYGate, MCMT  # type: ignore
 
 from qiskit.extensions.unitary import UnitaryGate  # type: ignore
-from qiskit.providers import BaseBackend  # type: ignore
 from pytket.circuit import (  # type: ignore
     CircBox,
     Circuit,
@@ -68,6 +67,7 @@ from pytket._tket.circuit import _TEMP_BIT_NAME  # type: ignore
 from pytket.routing import Architecture, FullyConnected  # type: ignore
 
 if TYPE_CHECKING:
+    from qiskit.providers.backend import BackendV1 as QiskitBackend
     from qiskit.providers.models.backendproperties import (  # type: ignore
         BackendProperties,
         Nduv,
@@ -189,7 +189,7 @@ _gate_str_2_optype_rev = {v: k for k, v in _gate_str_2_optype.items()}
 _gate_str_2_optype_rev[OpType.Unitary1qBox] = "unitary"
 
 
-def _tk_gate_set(backend: BaseBackend) -> Set[OpType]:
+def _tk_gate_set(backend: "QiskitBackend") -> Set[OpType]:
     """Set of tket gate types supported by the qiskit backend"""
     config = backend.configuration()
     if config.simulator:
@@ -532,12 +532,12 @@ def tk_to_qiskit(tkcirc: Circuit) -> QuantumCircuit:
     return qcirc
 
 
-def process_characterisation(backend: BaseBackend) -> Dict[str, Any]:
-    """Convert a :py:class:`qiskit.BaseBackend` to a dictionary
+def process_characterisation(backend: "QiskitBackend") -> Dict[str, Any]:
+    """Convert a :py:class:`qiskit.providers.backend.Backendv1` to a dictionary
      containing device Characteristics
 
     :param backend: A backend to be converted
-    :type backend: BaseBackend
+    :type backend: Backendv1
     :return: A dictionary containing device characteristics
     :rtype: dict
     """
