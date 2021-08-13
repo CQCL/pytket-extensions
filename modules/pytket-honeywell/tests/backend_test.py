@@ -37,6 +37,7 @@ from pytket.circuit import (  # type: ignore
 )
 from pytket.extensions.honeywell import HoneywellBackend
 from pytket.extensions.honeywell.backends.honeywell import (
+    GetResultFailed,
     _GATE_SET,
 )
 from pytket.extensions.honeywell import split_utf8
@@ -291,6 +292,45 @@ def test_split_utf8(utf_str: str, chunksize: int) -> None:
     split = list(split_utf8(utf_str, chunksize))
     assert max(len(i) for i in split) <= chunksize
     assert "".join(split) == utf_str
+
+
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
+def test_simulator() -> None:
+    circ = Circuit(2, name="sim_test").H(0).CX(0, 1).measure_all()
+    n_shots = 1000
+    state_backend = HoneywellBackend("HQS-LT-S1-SIM")
+    stabilizer_backend = HoneywellBackend("HQS-LT-S1-SIM", simulator="stabilizer")
+
+    circ = state_backend.get_compiled_circuit(circ)
+
+    noisy_handle = state_backend.process_circuit(circ, n_shots)
+    pure_handle = state_backend.process_circuit(circ, n_shots, noisy_simulation=False)
+    stab_handle = stabilizer_backend.process_circuit(
+        circ, n_shots, noisy_simulation=False
+    )
+
+    noisy_counts = state_backend.get_result(noisy_handle).get_counts()
+    assert sum(noisy_counts.values()) == n_shots
+    assert len(noisy_counts) > 2  # some noisy results likely
+
+    pure_counts = state_backend.get_result(pure_handle).get_counts()
+    assert sum(pure_counts.values()) == n_shots
+    assert len(pure_counts) == 2
+
+    stab_counts = stabilizer_backend.get_result(stab_handle).get_counts()
+    assert sum(stab_counts.values()) == n_shots
+    assert len(stab_counts) == 2
+
+    # test non-clifford circuit fails on stabilizer backend
+    # unfortunately the job is accepted, then fails, so have to check get_result
+    non_stab_circ = (
+        Circuit(2, name="non_stab_circ").H(0).Rz(0.1, 0).CX(0, 1).measure_all()
+    )
+    non_stab_circ = stabilizer_backend.get_compiled_circuit(non_stab_circ)
+    broken_handle = stabilizer_backend.process_circuit(non_stab_circ, n_shots)
+
+    with pytest.raises(GetResultFailed) as _:
+        _ = stabilizer_backend.get_result(broken_handle)
 
 
 # hard to run as it involves removing credentials
