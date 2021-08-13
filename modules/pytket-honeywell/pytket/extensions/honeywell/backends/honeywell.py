@@ -57,11 +57,7 @@ from .config import set_honeywell_config
 from .api_wrappers import HQSAPIError, HoneywellQAPI
 
 _DEBUG_HANDLE_PREFIX = "_MACHINE_DEBUG_"
-
-
 HONEYWELL_URL_PREFIX = "https://qapi.honeywell.com/v1/"
-
-HONEYWELL_DEVICE_APIVAL = "HQS-LT-1.0-APIVAL"
 
 _STATUS_MAP = {
     "queued": StatusEnum.QUEUED,
@@ -71,7 +67,6 @@ _STATUS_MAP = {
     "canceling": StatusEnum.CANCELLED,
     "canceled": StatusEnum.CANCELLED,
 }
-
 
 _GATE_SET = {
     OpType.Rz,
@@ -88,6 +83,10 @@ _GATE_SET = {
 }
 
 
+class GetResultFailed(Exception):
+    pass
+
+
 class HoneywellBackend(Backend):
     """
     Interface to a Honeywell device.
@@ -100,19 +99,25 @@ class HoneywellBackend(Backend):
 
     def __init__(
         self,
-        device_name: str = HONEYWELL_DEVICE_APIVAL,
+        device_name: str,
         label: Optional[str] = "job",
-        machine_debug: bool = False,
         login: bool = True,
+        simulator: str = "state-vector",
+        machine_debug: bool = False,
     ):
-        """
-        Construct a new Honeywell backend.
+        """Construct a new Honeywell backend.
 
-        :param      device_name:  device name  e.g. "HQS-LT-1.0"
-        :type       device_name:  string
-        :param      label:        label to apply to submitted jobs
-        :type       label:        string
+        :param device_name: Name of device, e.g. "HQS-LT-S1-APIVAL"
+        :type device_name: str
+        :param label: Job labels used if Circuits have no name, defaults to "job"
+        :type label: Optional[str], optional
+        :param login: Flag to attempt login on construction, defaults to True
+        :type login: bool, optional
+        :param simulator: Only applies to simulator devices, options are
+            "state-vector" or "stabilizer", defaults to "state-vector"
+        :type simulator: str, optional
         """
+
         super().__init__()
         self._device_name = device_name
         self._label = label
@@ -122,6 +127,8 @@ class HoneywellBackend(Backend):
             self._api_handler = None
         else:
             self._api_handler = HoneywellQAPI(machine=device_name, login=login)
+
+        self.simulator_type = simulator
 
     @property
     def _MACHINE_DEBUG(self) -> bool:
@@ -215,19 +222,18 @@ class HoneywellBackend(Backend):
         if not self._MACHINE_DEBUG:
             assert self.backend_info is not None
             preds.append(MaxNQubitsPredicate(self.backend_info.n_nodes))
+
         return preds
 
     def default_compilation_pass(self, optimisation_level: int = 1) -> BasePass:
         assert optimisation_level in range(3)
+        passlist = [DecomposeClassicalExp(), DecomposeBoxes()]
         if optimisation_level == 0:
-            return SequencePass(
-                [DecomposeClassicalExp(), DecomposeBoxes(), RebaseHQS()]
-            )
+            return SequencePass(passlist + [RebaseHQS()])
         elif optimisation_level == 1:
             return SequencePass(
-                [
-                    DecomposeClassicalExp(),
-                    DecomposeBoxes(),
+                passlist
+                + [
                     SynthesiseIBM(),
                     RebaseHQS(),
                     RemoveRedundancies(),
@@ -239,9 +245,8 @@ class HoneywellBackend(Backend):
             )
         else:
             return SequencePass(
-                [
-                    DecomposeClassicalExp(),
-                    DecomposeBoxes(),
+                passlist
+                + [
                     FullPeepholeOptimise(),
                     RebaseHQS(),
                     RemoveRedundancies(),
@@ -265,7 +270,15 @@ class HoneywellBackend(Backend):
     ) -> List[ResultHandle]:
         """
         See :py:meth:`pytket.backends.Backend.process_circuits`.
-        Supported kwargs: none.
+
+        Supported kwargs:
+        :param postprocess:  boolean flag to allow classical postprocessing.
+        :type postprocess: bool
+
+        :param noisy_simulation:  boolean flag to specify whether
+        the simulator should perform noisy simulation with an error model,
+        default value is True.
+        :type noisy_simulation: bool
         """
         circuits = list(circuits)
         n_shots_list: List[int] = []
@@ -288,13 +301,17 @@ class HoneywellBackend(Backend):
             self._check_all_circuits(circuits)
 
         postprocess = kwargs.get("postprocess", False)
-
-        basebody: dict = {
+        noisy_simulation = kwargs.get("noisy_simulation", True)
+        basebody: Dict[str, Any] = {
             "machine": self._device_name,
             "language": "OPENQASM 2.0",
             "priority": "normal",
-            "options": None,
+            "options": {
+                "simulator": self.simulator_type,
+                "error-model": noisy_simulation,
+            },
         }
+
         handle_list = []
         for i, (circ, n_shots) in enumerate(zip(circuits, n_shots_list)):
             if postprocess:
@@ -332,7 +349,8 @@ class HoneywellBackend(Backend):
                     )
 
                 # extract job ID from response
-                handle = ResultHandle(jobdict["job"], json.dumps(ppcirc_rep))
+                jobid = cast(str, jobdict["job"])
+                handle = ResultHandle(jobid, json.dumps(ppcirc_rep))
                 handle_list.append(handle)
                 self._cache[handle] = dict()
 
@@ -422,13 +440,13 @@ class HoneywellBackend(Backend):
             job_retrieve = self._retrieve_job(jobid, timeout, wait)
             circ_status = _parse_status(job_retrieve)
             if circ_status.status not in (StatusEnum.COMPLETED, StatusEnum.CANCELLED):
-                raise RuntimeError(
-                    f"Cannot retrieve results, job status is {circ_status.message}"
+                raise GetResultFailed(
+                    f"Cannot retrieve result; job status is {circ_status}"
                 )
             try:
                 res = job_retrieve["results"]
             except KeyError:
-                raise RuntimeError("Results missing.")
+                raise GetResultFailed("Results missing in device return data.")
 
             backres = _convert_result(res, ppcirc)
             self._update_cache_result(handle, backres)
