@@ -4,7 +4,7 @@ Changelog
 0.15.0 (XXXX 2021)
 ------------------
 
-* updated pyQuil version requirement to 3.0.0
+* Updated pyQuil version requirement to 3.0.0.
 
 0.14.0 (July 2021)
 ------------------
