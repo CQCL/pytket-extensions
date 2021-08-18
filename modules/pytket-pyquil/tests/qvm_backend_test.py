@@ -16,6 +16,7 @@ import json
 import math
 from collections import Counter
 from shutil import which
+from time import sleep
 import platform
 
 from typing import cast, Dict
@@ -49,6 +50,7 @@ def qvm(request: FixtureRequest) -> None:
     )
     # container = dock.containers.run(image="rigetti/qvm", command="-S", detach=True,
     # publish_all_ports=True, remove=True)
+    sleep(0.1)
     request.addfinalizer(container.stop)
     return None
 
@@ -63,6 +65,7 @@ def quilc(request: FixtureRequest) -> None:
         ports={5555: 5555},
         remove=True,
     )
+    sleep(0.1)
     request.addfinalizer(container.stop)
     return None
 
