@@ -341,7 +341,6 @@ def process_characterisation(qc: QuantumComputer) -> dict:
         for g in q.gates:
             if g.fidelity is None:
                 g.fidelity = 1.0
-            print(g)
             if isinstance(g, GateInfo) and g.operator in str_to_gate_1qb:
                 angle = _get_angle_type(g.parameters[0])
                 if angle is not None:
@@ -353,6 +352,7 @@ def process_characterisation(qc: QuantumComputer) -> dict:
                             f"for gate {g.operator}. This may mean that some "
                             "hardware-supported gates won't be used."
                         )
+                        continue
                     if node in node_errors and optype in node_errors[node]:
                         if abs(1.0 - g.fidelity - node_errors[node][optype]) > 1e-7:
                             # fidelities for Rx(PI) and Rx(-PI) are given, hopefully
