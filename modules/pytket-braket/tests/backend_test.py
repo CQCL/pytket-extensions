@@ -193,10 +193,10 @@ def test_expectation() -> None:
     zi = QubitPauliString(Qubit(0), Pauli.Z)
     iz = QubitPauliString(Qubit(1), Pauli.Z)
     op = QubitPauliOperator({zi: 0.3, iz: -0.1})
-    assert get_pauli_expectation_value(c, zi, b) == 1
+    assert get_pauli_expectation_value(c, zi, b) == pytest.approx(1.0)
     assert get_operator_expectation_value(c, op, b) == pytest.approx(0.2)
     c.X(0)
-    assert get_pauli_expectation_value(c, zi, b) == -1
+    assert get_pauli_expectation_value(c, zi, b) == pytest.approx(-1.0)
     assert get_operator_expectation_value(c, op, b) == pytest.approx(-0.4)
 
 
