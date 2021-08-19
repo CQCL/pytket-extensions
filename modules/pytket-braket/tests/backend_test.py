@@ -196,7 +196,7 @@ def test_expectation() -> None:
     assert get_pauli_expectation_value(c, zi, b) == pytest.approx(1.0)
     assert get_operator_expectation_value(c, op, b) == pytest.approx(0.2)
     c.X(0)
-    assert get_pauli_expectation_value(c, zi, b) == -1
+    assert get_pauli_expectation_value(c, zi, b) == pytest.approx(-1.0)
     assert get_operator_expectation_value(c, op, b) == pytest.approx(-0.4)
 
 
