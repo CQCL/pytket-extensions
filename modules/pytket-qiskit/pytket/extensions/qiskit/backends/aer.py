@@ -116,6 +116,8 @@ class _AerBaseBackend(Backend):
             for gate_str in self._backend.configuration().basis_gates
             if gate_str in _gate_str_2_optype
         }
+        # special case mapping TK1 to U
+        gate_set.add(OpType.TK1)
         if not gate_set >= _required_gates:
             raise NotImplementedError(
                 f"Gate set {gate_set} missing at least one of {_required_gates}"
