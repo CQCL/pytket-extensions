@@ -65,7 +65,7 @@ from pytket.circuit import (  # type: ignore
     Qubit,
 )
 from pytket._tket.circuit import _TEMP_BIT_NAME  # type: ignore
-from pytket.routing import Architecture, FullyConnected  # type: ignore
+from pytket.routing import Architecture  # type: ignore
 
 if TYPE_CHECKING:
     from qiskit.providers.backend import BackendV1 as QiskitBackend  # type: ignore
@@ -475,11 +475,12 @@ def append_tk_command_to_qiskit(
 
     if optype == OpType.TK1:
         params = _get_params(op, symb_map)
+        half = ParameterExpression(symb_map, sympy.pi / 2)
         qcirc.append(
-            qiskit_gates.UGate(params[1], params[0] - 0.5, params[2] + 0.5),
+            qiskit_gates.UGate(params[1], params[0] - half, params[2] + half),
             qargs=qargs,
         )
-        qcirc.global_phase += -(params[0] + params[2]) / 2
+        qcirc.global_phase += -params[0] / 2 - params[2] / 2
         return qcirc
     # others are direct translations
     try:
@@ -551,6 +552,24 @@ def tk_to_qiskit(tkcirc: Circuit) -> QuantumCircuit:
     return qcirc
 
 
+class FullyConnected2(Architecture):
+    """A replacement FullyConnected architecture that doesn't build the full
+    matrix.
+    For"""
+
+    def __init__(self, n_nodes: int) -> None:
+        super().__init__([])
+        self.n_nodes = n_nodes
+
+    @property
+    def nodes(self) -> List[Node]:
+        return [Node(i) for i in range(self.n_nodes)]
+
+    @property
+    def coupling(self) -> List[Tuple[Node, Node]]:
+        return list()
+
+
 def process_characterisation(backend: "QiskitBackend") -> Dict[str, Any]:
     """Convert a :py:class:`qiskit.providers.backend.Backendv1` to a dictionary
      containing device Characteristics
@@ -579,7 +598,7 @@ def process_characterisation(backend: "QiskitBackend") -> Dict[str, Any]:
     n_qubits = config.n_qubits
     if coupling_map is None:
         # Assume full connectivity
-        arc = FullyConnected(n_qubits)
+        arc = FullyConnected2(n_qubits)
     else:
         arc = Architecture(coupling_map)
 
