@@ -12,13 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Optional, List
-from qiskit.assembler import disassemble  # type: ignore
-from qiskit.providers import BaseBackend  # type: ignore
+from typing import Optional, List, Union, Any
+from qiskit.circuit.quantumcircuit import QuantumCircuit  # type: ignore
+from qiskit.providers.backend import BackendV1 as QiskitBackend  # type: ignore
 from qiskit.providers.models import QasmBackendConfiguration  # type: ignore
-from qiskit.qobj import QasmQobj  # type: ignore
+from qiskit.providers import Options  # type: ignore
 from pytket.extensions.qiskit.qiskit_convert import qiskit_to_tk, _gate_str_2_optype_rev
-from pytket.extensions.qiskit.tket_job import TketJob
+from pytket.extensions.qiskit.tket_job import TketJob, JobInfo
 from pytket.backends import Backend
 from pytket.passes import BasePass  # type: ignore
 from pytket.predicates import (  # type: ignore
@@ -39,7 +39,7 @@ def _extract_basis_gates(backend: Backend) -> List[str]:
     return []
 
 
-class TketBackend(BaseBackend):
+class TketBackend(QiskitBackend):
     """Wraps a :py:class:`Backend` as a :py:class:`qiskit.providers.BaseBackend` for use
     within the Qiskit software stack.
 
@@ -102,9 +102,18 @@ class TketBackend(BaseBackend):
         self._backend = backend
         self._comp_pass = comp_pass
 
-    def run(self, qobj: QasmQobj) -> TketJob:
-        module = disassemble(qobj)
-        circ_list = [qiskit_to_tk(qc) for qc in module[0]]
+    @classmethod
+    def _default_options(cls) -> Options:
+        return Options(shots=None, memory=False)
+
+    def run(
+        self, run_input: Union[QuantumCircuit, List[QuantumCircuit]], **options: Any
+    ) -> TketJob:
+        if isinstance(run_input, QuantumCircuit):
+            run_input = [run_input]
+        circ_list = [qiskit_to_tk(qc) for qc in run_input]
+        n_shots = options.get("shots", None)
+        jobinfos = [JobInfo(circ.qubits, circ.bits, n_shots) for circ in circ_list]
         if self._comp_pass:
             final_maps = []
             compiled_list = []
@@ -115,6 +124,7 @@ class TketBackend(BaseBackend):
                 final_maps.append(cu.final_map)
             circ_list = compiled_list
         else:
-            final_maps = [None for c in circ_list]
-        handles = self._backend.process_circuits(circ_list, n_shots=qobj.config.shots)
-        return TketJob(self, handles, qobj, final_maps)
+            final_maps = [None] * len(circ_list)
+        handles = self._backend.process_circuits(circ_list, n_shots=n_shots)
+
+        return TketJob(self, handles, jobinfos, final_maps)
