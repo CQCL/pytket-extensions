@@ -56,6 +56,7 @@ from pytket.circuit import (  # type: ignore
     CircBox,
     Circuit,
     Node,
+    Op,
     OpType,
     Unitary2qBox,
     UnitType,
@@ -67,7 +68,7 @@ from pytket._tket.circuit import _TEMP_BIT_NAME  # type: ignore
 from pytket.routing import Architecture, FullyConnected  # type: ignore
 
 if TYPE_CHECKING:
-    from qiskit.providers.backend import BackendV1 as QiskitBackend
+    from qiskit.providers.backend import BackendV1 as QiskitBackend  # type: ignore
     from qiskit.providers.models.backendproperties import (  # type: ignore
         BackendProperties,
         Nduv,
@@ -150,9 +151,12 @@ _known_qiskit_gate_rev = {v: k for k, v in _known_qiskit_gate.items()}
 # so treat as a special case.
 del _known_qiskit_gate_rev[OpType.CnRy]
 
-# Ensure U3 maps to U3Gate. (UGate not yet fully supported in Qiskit.)
+# Ensure U3 maps to UGate. (U3Gate deprecated in Qiskit but equivalent.)
 _known_qiskit_gate_rev[OpType.U3] = qiskit_gates.U3Gate
 
+# There is a bijective mapping, but requires some special parameter conversions
+# tk1(a, b, c) = U(b, a-1/2, c+1/2) + phase(-(a-c)/2)
+_known_qiskit_gate_rev[OpType.TK1] = qiskit_gates.UGate
 
 # some gates are only equal up to global phase, support their conversion
 # from tket -> qiskit
@@ -166,7 +170,7 @@ _known_gate_rev_phase[OpType.Vdg] = (qiskit_gates.SXdgGate, 0.25)
 # use minor signature hacks to figure out the string names of qiskit Gate objects
 _gate_str_2_optype: Dict[str, OpType] = dict()
 for gate, optype in _known_qiskit_gate.items():
-    if gate not in (
+    if gate in (
         UnitaryGate,
         Instruction,
         Gate,
@@ -175,12 +179,13 @@ for gate, optype in _known_qiskit_gate.items():
         qiskit_gates.MCXRecursive,
         qiskit_gates.MCXVChain,
     ):
-        sig = signature(gate.__init__)
-        # name is only a property of the instance, not the class
-        # so initialize with the correct number of dummy variables
-        n_params = len([p for p in sig.parameters.values() if p.default is p.empty]) - 1
-        name = gate(*([1] * n_params)).name
-        _gate_str_2_optype[name] = optype
+        continue
+    sig = signature(gate.__init__)
+    # name is only a property of the instance, not the class
+    # so initialize with the correct number of dummy variables
+    n_params = len([p for p in sig.parameters.values() if p.default is p.empty]) - 1
+    name = gate(*([1] * n_params)).name
+    _gate_str_2_optype[name] = optype
 
 # assumption that unitary will refer to unitary2qbox, even though it means any unitary
 _gate_str_2_optype["unitary"] = OpType.Unitary2qBox
@@ -355,6 +360,12 @@ def param_to_qiskit(
         return ParameterExpression(symb_map, ppi)
 
 
+def _get_params(
+    op: Op, symb_map: Dict[Parameter, sympy.Symbol]
+) -> List[Union[float, ParameterExpression]]:
+    return [param_to_qiskit(p, symb_map) for p in op.params]
+
+
 def append_tk_command_to_qiskit(
     op: "Op",
     args: List["UnitID"],
@@ -459,9 +470,17 @@ def append_tk_command_to_qiskit(
         return qcirc
 
     if optype == OpType.CU3:
-        params = [param_to_qiskit(p, symb_map) for p in op.params] + [0]
+        params = _get_params(op, symb_map) + [0]
         return qcirc.append(qiskit_gates.CUGate(*params), qargs=qargs)
 
+    if optype == OpType.TK1:
+        params = _get_params(op, symb_map)
+        qcirc.append(
+            qiskit_gates.UGate(params[1], params[0] - 0.5, params[2] + 0.5),
+            qargs=qargs,
+        )
+        qcirc.global_phase += -(params[0] + params[2]) / 2
+        return qcirc
     # others are direct translations
     try:
         gatetype, phase = _known_gate_rev_phase[optype]
@@ -469,7 +488,7 @@ def append_tk_command_to_qiskit(
         raise NotImplementedError(
             "Cannot convert tket Op to Qiskit gate: " + op.get_name()
         ) from error
-    params = [param_to_qiskit(p, symb_map) for p in op.params]
+    params = _get_params(op, symb_map)
     g = gatetype(*params)
     qcirc.global_phase += phase * sympy.pi
     return qcirc.append(g, qargs=qargs)
