@@ -1036,3 +1036,18 @@ def test_postprocess_emu() -> None:
     r = b.get_result(h)
     shots = r.get_shots()
     assert len(shots) == 10
+
+
+@pytest.mark.timeout(None)
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
+def test_cloud_stabiliser() -> None:
+    b = IBMQBackend("simulator_stabilizer", hub="ibm-q", group="open", project="main")
+    c = Circuit(2, 2)
+    c.H(0).SX(1).CX(0, 1).measure_all()
+    c = b.get_compiled_circuit(c, 0)
+    h = b.process_circuit(c, n_shots=10)
+    assert sum(b.get_result(h).get_counts().values()) == 10
+
+    c = Circuit(2, 2)
+    c.H(0).SX(1).Rz(0.1, 0).CX(0, 1).measure_all()
+    assert not b.valid_circuit(c)

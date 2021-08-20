@@ -43,9 +43,8 @@ from pytket.passes import (  # type: ignore
     DecomposeBoxes,
     FullPeepholeOptimise,
     RebaseCustom,
-    RebaseIBM,
     SequencePass,
-    SynthesiseIBM,
+    SynthesiseTket,
 )
 from pytket.pauli import Pauli, QubitPauliString  # type: ignore
 from pytket.predicates import (  # type: ignore
@@ -329,9 +328,9 @@ class _AerStateBaseBackend(_AerBaseBackend):
     def default_compilation_pass(self, optimisation_level: int = 1) -> BasePass:
         assert optimisation_level in range(3)
         if optimisation_level == 0:
-            return SequencePass([DecomposeBoxes(), RebaseIBM()])
+            return SequencePass([DecomposeBoxes(), self._rebase_pass])
         elif optimisation_level == 1:
-            return SequencePass([DecomposeBoxes(), SynthesiseIBM()])
+            return SequencePass([DecomposeBoxes(), SynthesiseTket()])
         else:
             return SequencePass([DecomposeBoxes(), FullPeepholeOptimise()])
 
@@ -487,7 +486,7 @@ class AerBackend(_AerBaseBackend):
         if optimisation_level == 0:
             passlist.append(self._rebase_pass)
         elif optimisation_level == 1:
-            passlist.append(SynthesiseIBM())
+            passlist.append(SynthesiseTket())
         else:
             passlist.append(FullPeepholeOptimise())
         arch = self._backend_info.architecture
@@ -509,9 +508,9 @@ class AerBackend(_AerBaseBackend):
             if optimisation_level == 0:
                 passlist.append(self._rebase_pass)
             elif optimisation_level == 1:
-                passlist.append(SynthesiseIBM())
+                passlist.append(SynthesiseTket())
             else:
-                passlist.extend([CliffordSimp(False), SynthesiseIBM()])
+                passlist.extend([CliffordSimp(False), SynthesiseTket()])
         return SequencePass(passlist)
 
     def process_circuits(
