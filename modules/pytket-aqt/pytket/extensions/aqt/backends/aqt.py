@@ -31,7 +31,7 @@ from pytket.extensions.aqt._metadata import __extension_version__
 from pytket.passes import (  # type: ignore
     BasePass,
     SequencePass,
-    SynthesiseIBM,
+    SynthesiseTket,
     FullPeepholeOptimise,
     FlattenRegisters,
     RebaseCustom,
@@ -176,7 +176,7 @@ class AQTBackend(Backend):
             return SequencePass(
                 [
                     DecomposeBoxes(),
-                    SynthesiseIBM(),
+                    SynthesiseTket(),
                     FlattenRegisters(),
                     RenameQubitsPass(self._qm),
                     _aqt_rebase(),

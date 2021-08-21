@@ -41,7 +41,7 @@ from pytket.passes import (  # type: ignore
     RebaseCustom,
     SequencePass,
     DecomposeBoxes,
-    SynthesiseIBM,
+    SynthesiseTket,
     FullPeepholeOptimise,
     FlattenRegisters,
 )
@@ -146,7 +146,7 @@ class _QsharpBaseBackend(Backend):
             return SequencePass(
                 [
                     DecomposeBoxes(),
-                    SynthesiseIBM(),
+                    SynthesiseTket(),
                     FlattenRegisters(),
                     qs_compilation_pass(),
                 ]
