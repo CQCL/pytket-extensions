@@ -37,7 +37,7 @@ from pytket.passes import (  # type: ignore
     SequencePass,
     RebaseCustom,
     SquashCustom,
-    SynthesiseIBM,
+    SynthesiseTket,
     DecomposeBoxes,
     FlattenRegisters,
     RemoveRedundancies,
@@ -547,7 +547,7 @@ regular_pass_1 = SequencePass(
     [
         FlattenRegisters(),
         DecomposeBoxes(),
-        SynthesiseIBM(),
+        SynthesiseTket(),
         RebaseCirq(),
         RemoveRedundancies(),
         _cirq_squash,
@@ -571,7 +571,7 @@ clifford_pass_1 = SequencePass(
     [
         FlattenRegisters(),
         DecomposeBoxes(),
-        SynthesiseIBM(),
+        SynthesiseTket(),
         RemoveRedundancies(),
         _partial_clifford_rebase,
     ]

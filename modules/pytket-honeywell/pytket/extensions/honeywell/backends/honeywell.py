@@ -35,7 +35,7 @@ from pytket.qasm import circuit_to_qasm_str
 from pytket.passes import (  # type: ignore
     BasePass,
     SequencePass,
-    SynthesiseIBM,
+    SynthesiseTket,
     RemoveRedundancies,
     RebaseHQS,
     SquashHQS,
@@ -234,7 +234,7 @@ class HoneywellBackend(Backend):
             return SequencePass(
                 passlist
                 + [
-                    SynthesiseIBM(),
+                    SynthesiseTket(),
                     RebaseHQS(),
                     RemoveRedundancies(),
                     SquashHQS(),

@@ -47,7 +47,7 @@ from pytket.passes import (  # type: ignore
     RebaseCustom,
     RemoveRedundancies,
     SequencePass,
-    SynthesiseIBM,
+    SynthesiseTket,
     FullPeepholeOptimise,
     CliffordSimp,
     SquashCustom,
@@ -455,7 +455,7 @@ class BraketBackend(Backend):
         assert optimisation_level in range(3)
         passes = [DecomposeBoxes()]
         if optimisation_level == 1:
-            passes.append(SynthesiseIBM())
+            passes.append(SynthesiseTket())
         elif optimisation_level == 2:
             passes.append(FullPeepholeOptimise())
         passes.append(self._rebase_pass)
@@ -479,7 +479,7 @@ class BraketBackend(Backend):
             passes.extend(
                 [
                     CliffordSimp(False),
-                    SynthesiseIBM(),
+                    SynthesiseTket(),
                     self._rebase_pass,
                     self._squash_pass,
                 ]

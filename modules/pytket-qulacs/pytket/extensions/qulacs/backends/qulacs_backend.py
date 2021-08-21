@@ -35,10 +35,10 @@ from pytket.circuit import Circuit, OpType  # type: ignore
 from pytket.extensions.qulacs._metadata import __extension_version__
 from pytket.passes import (  # type: ignore
     BasePass,
-    SynthesiseIBM,
+    SynthesiseTket,
     SequencePass,
     DecomposeBoxes,
-    RebaseIBM,
+    RebaseCustom,
     FullPeepholeOptimise,
     FlattenRegisters,
 )
@@ -56,13 +56,35 @@ from pytket.pauli import QubitPauliString  # type: ignore
 from pytket.routing import Architecture  # type: ignore
 from pytket.utils.operators import QubitPauliOperator
 from pytket.utils.outcomearray import OutcomeArray
-from pytket.extensions.qulacs.qulacs_convert import tk_to_qulacs
+from pytket.extensions.qulacs.qulacs_convert import (
+    tk_to_qulacs,
+    _IBM_GATES,
+    _MEASURE_GATES,
+    _ONE_QUBIT_GATES,
+    _TWO_QUBIT_GATES,
+    _ONE_QUBIT_ROTATIONS,
+)
 
 _GPU_ENABLED = True
 try:
     from qulacs import QuantumStateGpu
 except ImportError:
     _GPU_ENABLED = False
+
+
+def _tk1_to_u(a: float, b: float, c: float) -> Circuit:
+    circ = Circuit(1)
+    circ.add_gate(OpType.U3, [b, a - 0.5, c + 0.5], [0])
+    circ.add_phase(-0.5 * (a + c))
+    return circ
+
+
+_1Q_GATES = (
+    set(_ONE_QUBIT_ROTATIONS)
+    | set(_ONE_QUBIT_GATES)
+    | set(_MEASURE_GATES)
+    | set(_IBM_GATES)
+)
 
 
 class QulacsBackend(Backend):
@@ -77,24 +99,8 @@ class QulacsBackend(Backend):
     _expectation_allows_nonhermitian = False
     _persistent_handles = False
     _GATE_SET = {
-        OpType.X,
-        OpType.Y,
-        OpType.Z,
-        OpType.H,
-        OpType.S,
-        OpType.Sdg,
-        OpType.T,
-        OpType.Tdg,
-        OpType.Rx,
-        OpType.Ry,
-        OpType.Rz,
-        OpType.CX,
-        OpType.CZ,
-        OpType.SWAP,
-        OpType.U1,
-        OpType.U2,
-        OpType.U3,
-        OpType.Measure,
+        *_TWO_QUBIT_GATES.keys(),
+        *_1Q_GATES,
         OpType.Barrier,
     }
 
@@ -109,6 +115,12 @@ class QulacsBackend(Backend):
         )
 
         self._sim = QuantumState
+        self._rebase_pass = RebaseCustom(
+            set(_TWO_QUBIT_GATES),
+            Circuit(2).CX(0, 1),
+            _1Q_GATES,
+            _tk1_to_u,
+        )
 
     @property
     def _result_id_type(self) -> _ResultIdTuple:
@@ -132,12 +144,26 @@ class QulacsBackend(Backend):
     def default_compilation_pass(self, optimisation_level: int = 1) -> BasePass:
         assert optimisation_level in range(3)
         if optimisation_level == 0:
-            return SequencePass([DecomposeBoxes(), FlattenRegisters(), RebaseIBM()])
+            return SequencePass(
+                [DecomposeBoxes(), FlattenRegisters(), self._rebase_pass]
+            )
         elif optimisation_level == 1:
-            return SequencePass([DecomposeBoxes(), FlattenRegisters(), SynthesiseIBM()])
+            return SequencePass(
+                [
+                    DecomposeBoxes(),
+                    FlattenRegisters(),
+                    SynthesiseTket(),
+                    self._rebase_pass,
+                ]
+            )
         else:
             return SequencePass(
-                [DecomposeBoxes(), FlattenRegisters(), FullPeepholeOptimise()]
+                [
+                    DecomposeBoxes(),
+                    FlattenRegisters(),
+                    FullPeepholeOptimise(),
+                    self._rebase_pass,
+                ]
             )
 
     def process_circuits(
