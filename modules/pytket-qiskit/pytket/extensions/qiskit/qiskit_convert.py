@@ -155,7 +155,7 @@ del _known_qiskit_gate_rev[OpType.CnRy]
 _known_qiskit_gate_rev[OpType.U3] = qiskit_gates.U3Gate
 
 # There is a bijective mapping, but requires some special parameter conversions
-# tk1(a, b, c) = U(b, a-1/2, c+1/2) + phase(-(a-c)/2)
+# tk1(a, b, c) = U(b, a-1/2, c+1/2) + phase(-(a+c)/2)
 _known_qiskit_gate_rev[OpType.TK1] = qiskit_gates.UGate
 
 # some gates are only equal up to global phase, support their conversion
