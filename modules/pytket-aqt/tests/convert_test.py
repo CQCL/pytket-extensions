@@ -19,7 +19,6 @@ import numpy as np
 import pytest
 from pytket.circuit import Circuit, OpType  # type: ignore
 from pytket.extensions.aqt.backends.aqt import _translate_aqt, AQTBackend, _aqt_rebase
-from pytket.extensions.qiskit import AerUnitaryBackend
 
 skip_remote_tests: bool = os.getenv("PYTKET_RUN_REMOTE_TESTS") is None
 REASON = "PYTKET_RUN_REMOTE_TESTS not set (requires configuration of AQT access token)"
@@ -57,9 +56,8 @@ def test_rebase_CX() -> None:
 
     _aqt_rebase().apply(circ)
 
-    # TODO use tketsim for this test once available
-    u1 = AerUnitaryBackend().get_unitary(orig_circ)
-    u2 = AerUnitaryBackend().get_unitary(circ)
+    u1 = orig_circ.get_unitary()
+    u2 = circ.get_unitary()
 
     assert np.allclose(u1, u2)
 
@@ -72,9 +70,8 @@ def test_rebase_singleq() -> None:
 
     _aqt_rebase().apply(circ)
 
-    # TODO use tketsim for this test once available
-    u1 = AerUnitaryBackend().get_unitary(orig_circ)
-    u2 = AerUnitaryBackend().get_unitary(circ)
+    u1 = orig_circ.get_unitary()
+    u2 = circ.get_unitary()
 
     assert np.allclose(u1, u2)
 
@@ -89,8 +86,7 @@ def test_rebase_large() -> None:
 
     _aqt_rebase().apply(circ)
 
-    # TODO use tketsim for this test once available
-    u1 = AerUnitaryBackend().get_unitary(orig_circ)
-    u2 = AerUnitaryBackend().get_unitary(circ)
+    u1 = orig_circ.get_unitary()
+    u2 = circ.get_unitary()
 
     assert np.allclose(u1, u2)
