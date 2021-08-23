@@ -274,7 +274,6 @@ class IBMQBackend(Backend):
         # simulator i.e. "ibmq_qasm_simulator" does not have `supported_instructions`
         # attribute
         gate_set = _tk_gate_set(self._backend)
-        print(gate_set)
         self._backend_info = BackendInfo(
             type(self).__name__,
             backend_name,

@@ -152,7 +152,7 @@ _known_qiskit_gate_rev = {v: k for k, v in _known_qiskit_gate.items()}
 del _known_qiskit_gate_rev[OpType.CnRy]
 
 # Ensure U3 maps to UGate. (U3Gate deprecated in Qiskit but equivalent.)
-_known_qiskit_gate_rev[OpType.U3] = qiskit_gates.U3Gate
+_known_qiskit_gate_rev[OpType.U3] = qiskit_gates.UGate
 
 # There is a bijective mapping, but requires some special parameter conversions
 # tk1(a, b, c) = U(b, a-1/2, c+1/2) + phase(-(a+c)/2)
@@ -555,7 +555,7 @@ def tk_to_qiskit(tkcirc: Circuit) -> QuantumCircuit:
 class FullyConnected2(Architecture):
     """A replacement FullyConnected architecture that doesn't build the full
     matrix.
-    For"""
+    For use with large numbers of qubits, to avoid calculations/routing."""
 
     def __init__(self, n_nodes: int) -> None:
         super().__init__([])
@@ -567,7 +567,7 @@ class FullyConnected2(Architecture):
 
     @property
     def coupling(self) -> List[Tuple[Node, Node]]:
-        return list()
+        return NotImplemented
 
 
 def process_characterisation(backend: "QiskitBackend") -> Dict[str, Any]:
