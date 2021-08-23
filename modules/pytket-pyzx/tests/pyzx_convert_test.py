@@ -14,7 +14,6 @@
 
 from pytket.extensions.pyzx import tk_to_pyzx, pyzx_to_tk
 from pytket.circuit import Circuit, fresh_symbol  # type: ignore
-from pytket.extensions.qiskit import AerStateBackend  # type: ignore
 
 import numpy as np
 import pytest
@@ -22,7 +21,6 @@ import pytest
 
 @pytest.mark.filterwarnings("ignore:strict=False")
 def test_statevector() -> None:
-    b = AerStateBackend()
     circ = Circuit(3, name="test")
     circ.H(2)
     circ.X(0)
@@ -37,12 +35,10 @@ def test_statevector() -> None:
     circ.Rz(0.3333, 1)
     zxcirc = tk_to_pyzx(circ)
     assert zxcirc.name == circ.name
-    circ = b.get_compiled_circuit(circ)
-    state = b.get_state(circ)
+    state = circ.get_statevector()
     circ2 = pyzx_to_tk(zxcirc)
     assert circ2.name == circ.name
-    circ2 = b.get_compiled_circuit(circ2)
-    state2 = b.get_state(circ2)
+    state2 = circ2.get_statevector()
     assert np.allclose(state, state2, atol=1e-10)
 
 
