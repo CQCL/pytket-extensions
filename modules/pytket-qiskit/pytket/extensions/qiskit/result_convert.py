@@ -127,7 +127,7 @@ def backendresult_to_qiskit_resultdata(
     data: Dict[str, Any] = dict()
     if res.contains_state_results:
         qbits = _qiskit_ordered_uids(qbits)
-        qbits = sorted(qbits, reverse=True)
+        qbits.sort(reverse=True)
         if final_map:
             qbits = [final_map[q] for q in qbits]
         stored_res = res.get_result(qbits)
