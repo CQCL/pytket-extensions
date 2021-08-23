@@ -49,7 +49,7 @@ from pytket.extensions.qiskit.result_convert import (
     _gen_uids,
 )
 from sympy import Symbol  # type: ignore
-from pytket.passes import USquashIBM, DecomposeBoxes, FullPeepholeOptimise  # type: ignore
+from pytket.passes import RebaseTket, DecomposeBoxes, FullPeepholeOptimise  # type: ignore
 from pytket.utils.results import compare_statevectors
 
 skip_remote_tests: bool = (
@@ -135,7 +135,7 @@ def test_symbolic() -> None:
     pi0 = Symbol("pi0")
     tkc = Circuit(3, 3, name="test").Ry(pi2, 1).Rx(pi3, 1).CX(1, 0)
     tkc.add_phase(Symbol("pi0") * 2)
-    USquashIBM().apply(tkc)
+    RebaseTket().apply(tkc)
 
     qc = tk_to_qiskit(tkc)
     tkc2 = qiskit_to_tk(qc)
