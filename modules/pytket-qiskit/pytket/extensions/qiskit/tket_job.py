@@ -12,35 +12,51 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import List, Dict, Optional, Any
-from qiskit.providers import BaseJob, JobStatus, BaseBackend  # type: ignore
+from dataclasses import dataclass
+from typing import List, Dict, Optional, Any, TYPE_CHECKING, Union, cast
+from qiskit.providers import JobStatus, JobV1  # type: ignore
 from qiskit.result import Result  # type: ignore
-from qiskit.result.models import ExperimentResult  # type: ignore
-from qiskit.qobj import QasmQobj  # type: ignore
 from pytket.backends import ResultHandle, StatusEnum
-from pytket.backends.backend import KwargTypes
+from pytket.backends.backend import Backend, KwargTypes
 from pytket.circuit import UnitID  # type: ignore
-from pytket.extensions.qiskit.result_convert import backendresult_to_qiskit_resultdata
+from pytket.extensions.qiskit.result_convert import (
+    backendresult_to_qiskit_resultdata,
+    _get_header_info,
+)
+
+if TYPE_CHECKING:
+    from pytket.extensions.qiskit.tket_backend import TketBackend
 
 
-class TketJob(BaseJob):
+@dataclass
+class JobInfo:
+    qbits: List[UnitID]
+    cbits: List[UnitID]
+    n_shots: Optional[int]
+
+
+class TketJob(JobV1):
     """TketJob wraps a :py:class:`ResultHandle` list as a
-    :py:class:`qiskit.providers.BaseJob`"""
+    :py:class:`qiskit.providers.JobV1`"""
 
     def __init__(
         self,
-        backend: BaseBackend,
+        backend: "TketBackend",
         handles: List[ResultHandle],
-        qobj: QasmQobj,
-        final_maps: List[Optional[Dict[UnitID, UnitID]]],
+        jobinfos: List[JobInfo],
+        final_maps: Union[List[None], List[Dict[UnitID, UnitID]]],
     ):
         """Initializes the asynchronous job."""
 
         super().__init__(backend, str(handles[0]))
         self._handles = handles
-        self._qobj = qobj
+        self._jobinfos = jobinfos
         self._result: Optional[Result] = None
         self._final_maps = final_maps
+
+    @property
+    def _pytket_backend(self) -> Backend:
+        return cast("TketBackend", self._backend)._backend
 
     def submit(self) -> None:
         # Circuits have already been submitted before obtaining the job
@@ -50,33 +66,44 @@ class TketJob(BaseJob):
         if self._result is not None:
             return self._result
         result_list = []
-        for h, ex, fm in zip(self._handles, self._qobj.experiments, self._final_maps):
-            tk_result = self._backend._backend.get_result(h)
+        for h, jobinfo, fm in zip(self._handles, self._jobinfos, self._final_maps):
+            tk_result = self._pytket_backend.get_result(h)
+            creg_sizes, clbit_labels = _get_header_info(jobinfo.cbits)
+            qreg_sizes, qubit_labels = _get_header_info(jobinfo.qbits)
             result_list.append(
-                ExperimentResult(
-                    shots=self._qobj.config.shots,
-                    success=True,
-                    data=backendresult_to_qiskit_resultdata(tk_result, ex.header, fm),
-                    header=ex.header,
-                )
+                {
+                    "shots": jobinfo.n_shots,
+                    "success": True,
+                    "data": backendresult_to_qiskit_resultdata(
+                        tk_result, jobinfo.cbits, jobinfo.qbits, fm
+                    ),
+                    "header": {
+                        "creg_sizes": creg_sizes,
+                        "clbit_labels": clbit_labels,
+                        "qreg_sizes": qreg_sizes,
+                        "qubit_labels": qubit_labels,
+                    },
+                }
             )
-            self._backend._backend.pop_result(h)
-        self._result = Result(
-            backend_name=self._backend.name(),
-            backend_version=self._backend.version(),
-            qobj_id=self._qobj.qobj_id,
-            job_id=self.job_id(),
-            success=True,
-            results=result_list,
+            self._pytket_backend.pop_result(h)
+        self._result = Result.from_dict(
+            {
+                "results": result_list,
+                "backend_name": self._backend.configuration().backend_name,
+                "backend_version": self._backend.configuration().backend_version,
+                "job_id": self._job_id,
+                "qobj_id": ", ".join(str(hand) for hand in self._handles),
+                "success": True,
+            }
         )
         return self._result
 
     def cancel(self) -> None:
         for h in self._handles:
-            self._backend._backend.cancel(h)
+            self._pytket_backend.cancel(h)
 
     def status(self) -> Any:
-        status_list = [self._backend._backend.circuit_status(h) for h in self._handles]
+        status_list = [self._pytket_backend.circuit_status(h) for h in self._handles]
         if any((s.status == StatusEnum.RUNNING for s in status_list)):
             return JobStatus.RUNNING
         elif any((s.status == StatusEnum.ERROR for s in status_list)):

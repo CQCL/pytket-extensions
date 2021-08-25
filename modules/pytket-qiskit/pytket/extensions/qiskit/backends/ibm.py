@@ -45,6 +45,7 @@ from pytket.backends.backendinfo import BackendInfo
 from pytket.backends.backendresult import BackendResult
 from pytket.backends.resulthandle import _ResultIdTuple
 from pytket.extensions.qiskit.qiskit_convert import (
+    FullyConnected2,
     process_characterisation,
     get_avg_characterisation,
 )
@@ -53,9 +54,8 @@ from pytket.passes import (  # type: ignore
     BasePass,
     RebaseCustom,
     RemoveRedundancies,
-    RebaseIBM,
     SequencePass,
-    SynthesiseIBM,
+    SynthesiseTket,
     CXMappingPass,
     DecomposeBoxes,
     FullPeepholeOptimise,
@@ -245,39 +245,12 @@ class IBMQBackend(Backend):
         :type account_provider: Optional[AccountProvider]
         """
         super().__init__()
-        if account_provider is None:
-            self._pytket_config = QiskitConfig.from_default_config_file()
-            if not IBMQ.active_account():
-                if IBMQ.stored_account():
-                    IBMQ.load_account()
-                else:
-                    if self._pytket_config.ibmq_api_token is not None:
-                        IBMQ.save_account(self._pytket_config.ibmq_api_token)
-                    else:
-                        raise NoIBMQAccountError()
-            provider_kwargs = {}
-            provider_kwargs["hub"] = hub if hub else self._pytket_config.hub
-            provider_kwargs["group"] = group if group else self._pytket_config.group
-            provider_kwargs["project"] = (
-                project if project else self._pytket_config.project
-            )
-
-            try:
-                if any(x is not None for x in provider_kwargs.values()):
-                    provider = IBMQ.get_provider(**provider_kwargs)
-                else:
-                    provider = IBMQ.providers()[0]
-            except qiskit.providers.ibmq.exceptions.IBMQProviderError as err:
-                logging.warn(
-                    (
-                        "Provider was not specified enough, specify hub,"
-                        "group and project correctly (check your IBMQ account)."
-                    )
-                )
-                raise err
-        else:
-            provider = account_provider
-        self._provider = provider
+        self._pytket_config = QiskitConfig.from_default_config_file()
+        self._provider = (
+            self._get_provider(hub, group, project)
+            if account_provider is None
+            else account_provider
+        )
         self._backend: "_QiskIBMQBackend" = self._provider.get_backend(backend_name)
         self._config = self._backend.configuration()
         self._max_per_job = getattr(self._config, "max_experiments", 1)
@@ -301,7 +274,6 @@ class IBMQBackend(Backend):
         # simulator i.e. "ibmq_qasm_simulator" does not have `supported_instructions`
         # attribute
         gate_set = _tk_gate_set(self._backend)
-
         self._backend_info = BackendInfo(
             type(self).__name__,
             backend_name,
@@ -319,16 +291,7 @@ class IBMQBackend(Backend):
             misc={"characterisation": filtered_characterisation},
         )
 
-        self._legacy_gateset = OpType.SX not in gate_set
-
-        if self._legacy_gateset:
-            if not gate_set >= {OpType.U1, OpType.U2, OpType.U3, OpType.CX}:
-                raise NotImplementedError(f"Gate set {gate_set} unsupported")
-            self._rebase_pass = RebaseIBM()
-        else:
-            if not gate_set >= {OpType.X, OpType.SX, OpType.Rz, OpType.CX}:
-                raise NotImplementedError(f"Gate set {gate_set} unsupported")
-            self._rebase_pass = _rebase_pass
+        self._standard_gateset = gate_set >= {OpType.X, OpType.SX, OpType.Rz, OpType.CX}
 
         self._monitor = monitor
 
@@ -336,6 +299,38 @@ class IBMQBackend(Backend):
         self._ibm_res_cache: Dict[Tuple[str, int], models.ExperimentResult] = dict()
 
         self._MACHINE_DEBUG = False
+
+    def _get_provider(
+        self, hub: Optional[str], group: Optional[str], project: Optional[str]
+    ) -> "AccountProvider":
+        if not IBMQ.active_account():
+            if IBMQ.stored_account():
+                IBMQ.load_account()
+            else:
+                if self._pytket_config.ibmq_api_token is not None:
+                    IBMQ.save_account(self._pytket_config.ibmq_api_token)
+                else:
+                    raise NoIBMQAccountError()
+        provider_kwargs = {}
+        provider_kwargs["hub"] = hub if hub else self._pytket_config.hub
+        provider_kwargs["group"] = group if group else self._pytket_config.group
+        provider_kwargs["project"] = project if project else self._pytket_config.project
+
+        try:
+            if any(x is not None for x in provider_kwargs.values()):
+                provider = IBMQ.get_provider(**provider_kwargs)
+            else:
+                provider = IBMQ.providers()[0]
+        except qiskit.providers.ibmq.exceptions.IBMQProviderError as err:
+            logging.warn(
+                (
+                    "Provider was not specified enough, specify hub,"
+                    "group and project correctly (check your IBMQ account)."
+                )
+            )
+            raise err
+
+        return provider
 
     @property
     def characterisation(self) -> Dict[str, Any]:
@@ -374,32 +369,34 @@ class IBMQBackend(Backend):
         assert optimisation_level in range(3)
         passlist = [DecomposeBoxes()]
         if optimisation_level == 0:
-            passlist.append(self._rebase_pass)
+            if self._standard_gateset:
+                passlist.append(_rebase_pass)
         elif optimisation_level == 1:
-            passlist.append(SynthesiseIBM())
+            passlist.append(SynthesiseTket())
         elif optimisation_level == 2:
             passlist.append(FullPeepholeOptimise())
-        arch = self._backend_info.architecture
         mid_measure = self._backend_info.supports_midcircuit_measurement
-        passlist.append(
-            CXMappingPass(
-                arch,
-                NoiseAwarePlacement(
+        arch = self._backend_info.architecture
+        if not isinstance(arch, FullyConnected2):
+            passlist.append(
+                CXMappingPass(
                     arch,
-                    self._backend_info.averaged_node_gate_errors,
-                    self._backend_info.averaged_edge_gate_errors,
-                    self._backend_info.averaged_readout_errors,
-                ),
-                directed_cx=False,
-                delay_measures=(not mid_measure),
+                    NoiseAwarePlacement(
+                        arch,
+                        self._backend_info.averaged_node_gate_errors,
+                        self._backend_info.averaged_edge_gate_errors,
+                        self._backend_info.averaged_readout_errors,
+                    ),
+                    directed_cx=False,
+                    delay_measures=(not mid_measure),
+                )
             )
-        )
         if optimisation_level == 1:
-            passlist.append(SynthesiseIBM())
+            passlist.append(SynthesiseTket())
         if optimisation_level == 2:
-            passlist.extend([CliffordSimp(False), SynthesiseIBM()])
-        if not self._legacy_gateset:
-            passlist.extend([self._rebase_pass, RemoveRedundancies()])
+            passlist.extend([CliffordSimp(False), SynthesiseTket()])
+        if self._standard_gateset:
+            passlist.extend([_rebase_pass, RemoveRedundancies()])
         if optimisation_level > 0:
             passlist.append(
                 SimplifyInitial(allow_classical=False, create_all_qubits=True)

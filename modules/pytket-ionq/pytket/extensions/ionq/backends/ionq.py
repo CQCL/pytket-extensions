@@ -28,7 +28,7 @@ from pytket.extensions.ionq._metadata import __extension_version__
 from pytket.passes import (  # type: ignore
     BasePass,
     SequencePass,
-    SynthesiseIBM,
+    SynthesiseTket,
     FullPeepholeOptimise,
     SquashCustom,
     DecomposeBoxes,
@@ -154,7 +154,7 @@ class IonQBackend(Backend):
             return SequencePass(
                 [
                     DecomposeBoxes(),
-                    SynthesiseIBM(),
+                    SynthesiseTket(),
                     FlattenRegisters(),
                     RenameQubitsPass(self._qm),
                     ionq_pass,

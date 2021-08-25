@@ -43,7 +43,7 @@ from pytket.passes import (  # type: ignore
     CXMappingPass,
     RebaseQuil,
     SequencePass,
-    SynthesiseIBM,
+    SynthesiseTket,
     DecomposeBoxes,
     FullPeepholeOptimise,
     CliffordSimp,
@@ -148,7 +148,7 @@ class ForestBackend(Backend):
             FlattenRegisters(),
         ]
         if optimisation_level == 1:
-            passlist.append(SynthesiseIBM())
+            passlist.append(SynthesiseTket())
         elif optimisation_level == 2:
             passlist.append(FullPeepholeOptimise())
         passlist.append(
@@ -166,7 +166,7 @@ class ForestBackend(Backend):
         if optimisation_level == 2:
             passlist.append(CliffordSimp(False))
         if optimisation_level > 0:
-            passlist.append(SynthesiseIBM())
+            passlist.append(SynthesiseTket())
         passlist.append(RebaseQuil())
         if optimisation_level > 0:
             passlist.extend(
@@ -325,7 +325,7 @@ class ForestStateBackend(Backend):
         assert optimisation_level in range(3)
         passlist = [DecomposeBoxes(), FlattenRegisters()]
         if optimisation_level == 1:
-            passlist.append(SynthesiseIBM())
+            passlist.append(SynthesiseTket())
         elif optimisation_level == 2:
             passlist.append(FullPeepholeOptimise())
         passlist.append(RebaseQuil())

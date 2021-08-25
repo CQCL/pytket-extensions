@@ -47,7 +47,7 @@ from pytket.passes import (  # type: ignore
     BasePass,
     RebaseProjectQ,
     SequencePass,
-    SynthesiseIBM,
+    SynthesiseTket,
     FullPeepholeOptimise,
     DecomposeBoxes,
     FlattenRegisters,
@@ -143,7 +143,7 @@ class ProjectQBackend(Backend):
                 [
                     DecomposeBoxes(),
                     FlattenRegisters(),
-                    SynthesiseIBM(),
+                    SynthesiseTket(),
                     RebaseProjectQ(),
                 ]
             )
