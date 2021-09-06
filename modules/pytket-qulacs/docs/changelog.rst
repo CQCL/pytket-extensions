@@ -1,8 +1,8 @@
 Changelog
 ~~~~~~~~~
 
-0.11.0 (unreleased)
--------------------
+0.11.0 (September 2021)
+-----------------------
 
 * Updated qulacs version requirement to 0.3.
 
