@@ -1,10 +1,11 @@
 Changelog
 ~~~~~~~~~
 
-0.13.0 (XXXX 2021)
-------------------
+0.13.0 (unreleased)
+-------------------
 
 * Updated projectq version requirement to 0.7.
+* Updated pytket version requirement to 0.14.
 
 0.12.0 (July 2021)
 ------------------
