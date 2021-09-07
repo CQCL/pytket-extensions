@@ -40,8 +40,8 @@ setup(
     include_package_data=True,
     install_requires=[
         "pytket == 0.14.0",
-        "qsharp ==0.18.2108.160999",
-        "qsharp-core ==0.18.2108.160999",
+        "qsharp == 0.18.2107.153439",
+        "qsharp-core == 0.18.2107.153439",
     ],
     classifiers=[
         "Environment :: Console",
