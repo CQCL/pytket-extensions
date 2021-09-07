@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import json
-from copy import copy
 from typing import cast, Iterable, List, Optional, Sequence, Union
 from uuid import uuid4
 from logging import warning
@@ -44,7 +43,7 @@ from pytket.passes import (  # type: ignore
     CXMappingPass,
     RebaseQuil,
     SequencePass,
-    SynthesiseIBM,
+    SynthesiseTket,
     DecomposeBoxes,
     FullPeepholeOptimise,
     CliffordSimp,
@@ -71,6 +70,14 @@ from pytket.routing import NoiseAwarePlacement, Architecture  # type: ignore
 from pytket.utils import prepare_circuit
 from pytket.utils.operators import QubitPauliOperator
 from pytket.utils.outcomearray import OutcomeArray
+
+
+class PyQuilJobStatusUnavailable(Exception):
+    """Raised when trying to retrieve unknown job status."""
+
+    def __init__(self) -> None:
+        super().__init__("The job status cannot be retrieved.")
+
 
 _STATUS_MAP = {
     "done": StatusEnum.COMPLETED,
@@ -141,7 +148,7 @@ class ForestBackend(Backend):
             FlattenRegisters(),
         ]
         if optimisation_level == 1:
-            passlist.append(SynthesiseIBM())
+            passlist.append(SynthesiseTket())
         elif optimisation_level == 2:
             passlist.append(FullPeepholeOptimise())
         passlist.append(
@@ -159,7 +166,7 @@ class ForestBackend(Backend):
         if optimisation_level == 2:
             passlist.append(CliffordSimp(False))
         if optimisation_level > 0:
-            passlist.append(SynthesiseIBM())
+            passlist.append(SynthesiseTket())
         passlist.append(RebaseQuil())
         if optimisation_level > 0:
             passlist.extend(
@@ -179,7 +186,7 @@ class ForestBackend(Backend):
     def process_circuits(
         self,
         circuits: Sequence[Circuit],
-        n_shots: Optional[Union[int, Sequence[int]]] = None,
+        n_shots: Union[None, int, Sequence[Optional[int]]] = None,
         valid_check: bool = True,
         **kwargs: KwargTypes,
     ) -> List[ResultHandle]:
@@ -188,21 +195,10 @@ class ForestBackend(Backend):
         Supported kwargs: `seed`.
         """
         circuits = list(circuits)
-        n_shots_list: List[int] = []
-        if hasattr(n_shots, "__iter__"):
-            for n in cast(Sequence[Optional[int]], n_shots):
-                if n is None or n < 1:
-                    raise ValueError(
-                        "n_shots values are required for all circuits for this backend"
-                    )
-                n_shots_list.append(n)
-            if len(n_shots_list) != len(circuits):
-                raise ValueError("The length of n_shots and circuits must match")
-        else:
-            if n_shots is None:
-                raise ValueError("Parameter n_shots is required for this backend")
-            # convert n_shots to a list
-            n_shots_list = [cast(int, n_shots)] * len(circuits)
+        n_shots_list = cast(
+            Sequence[int],
+            Backend._get_n_shots_as_list(n_shots, len(circuits), optional=False),
+        )
 
         if valid_check:
             self._check_all_circuits(circuits)
@@ -219,30 +215,43 @@ class ForestBackend(Backend):
             p, bits = tk_to_pyquil(c0, return_used_bits=True)
             p.wrap_in_numshots_loop(n_shots)
             ex = self._qc.compiler.native_quil_to_executable(p)
-            qam = copy(self._qc.qam)
-            qam.load(ex)
+            qam = self._qc.qam
             qam.random_seed = kwargs.get("seed")  # type: ignore
-            qam.run()
+            pyquil_handle = qam.execute(ex)
             handle = ResultHandle(uuid4().int, json.dumps(ppcirc_rep))
             measures = circuit.n_gates_of_type(OpType.Measure)
             if measures == 0:
                 self._cache[handle] = {
-                    "qam": qam,
+                    "handle": pyquil_handle,
                     "c_bits": sorted(bits),
                     "result": self.empty_result(circuit, n_shots=n_shots),
                 }
             else:
-                self._cache[handle] = {"qam": qam, "c_bits": sorted(bits)}
+                self._cache[handle] = {"handle": pyquil_handle, "c_bits": sorted(bits)}
             handle_list.append(handle)
         return handle_list
 
     def circuit_status(self, handle: ResultHandle) -> CircuitStatus:
+        """
+        Return a CircuitStatus reporting the status of the circuit execution
+        corresponding to the ResultHandle.
+
+        This will throw an PyQuilJobStatusUnavailable exception if the results
+        have not been retrieved yet, as pyQuil does not currently support asynchronous
+        job status queries.
+
+        :param handle: The handle to the submitted job.
+        :type handle: ResultHandle
+        :returns: The status of the submitted job.
+        :raises PyQuilJobStatusUnavailable: Cannot retrieve job status.
+        :raises CircuitNotRunError: The handle does not correspond to a valid job.
+        """
         if handle in self._cache and "result" in self._cache[handle]:
             return CircuitStatus(StatusEnum.COMPLETED)
         if handle in self._cache:
-            qamstatus = self._cache[handle]["qam"].status
-            tkstat = _STATUS_MAP.get(qamstatus, StatusEnum.ERROR)
-            return CircuitStatus(tkstat, qamstatus)
+            # retrieving status is not supported yet
+            # see https://github.com/rigetti/pyquil/issues/1370
+            raise PyQuilJobStatusUnavailable()
         raise CircuitNotRunError(handle)
 
     def get_result(self, handle: ResultHandle, **kwargs: KwargTypes) -> BackendResult:
@@ -256,9 +265,11 @@ class ForestBackend(Backend):
             if handle not in self._cache:
                 raise CircuitNotRunError(handle)
 
-            qam = self._cache[handle]["qam"]
-            shots = qam.wait().read_memory(region_name="ro")
-            shots = OutcomeArray.from_readouts(shots)
+            pyquil_handle = self._cache[handle]["handle"]
+            raw_shots = self._qc.qam.get_result(pyquil_handle).readout_data["ro"]
+            if raw_shots is None:
+                raise ValueError("Could not read job results in memory")
+            shots = OutcomeArray.from_readouts(raw_shots.tolist())
             ppcirc_rep = json.loads(cast(str, handle[1]))
             ppcirc = Circuit.from_dict(ppcirc_rep) if ppcirc_rep is not None else None
             res = BackendResult(
@@ -315,7 +326,7 @@ class ForestStateBackend(Backend):
         assert optimisation_level in range(3)
         passlist = [DecomposeBoxes(), FlattenRegisters()]
         if optimisation_level == 1:
-            passlist.append(SynthesiseIBM())
+            passlist.append(SynthesiseTket())
         elif optimisation_level == 2:
             passlist.append(FullPeepholeOptimise())
         passlist.append(RebaseQuil())

@@ -16,6 +16,7 @@ import json
 import math
 from collections import Counter
 from shutil import which
+from time import sleep
 import platform
 
 from typing import cast, Dict
@@ -24,7 +25,11 @@ import numpy as np
 import pytest
 from _pytest.fixtures import FixtureRequest
 
-from pytket.extensions.pyquil import ForestBackend, ForestStateBackend
+from pytket.extensions.pyquil import (
+    ForestBackend,
+    ForestStateBackend,
+    process_characterisation,
+)
 from pytket.circuit import BasisOrder, Circuit, OpType, Qubit, Node  # type: ignore
 from pytket.passes import CliffordSimp  # type: ignore
 from pytket.pauli import Pauli, QubitPauliString  # type: ignore
@@ -45,6 +50,7 @@ def qvm(request: FixtureRequest) -> None:
     )
     # container = dock.containers.run(image="rigetti/qvm", command="-S", detach=True,
     # publish_all_ports=True, remove=True)
+    sleep(0.1)
     request.addfinalizer(container.stop)
     return None
 
@@ -59,6 +65,7 @@ def quilc(request: FixtureRequest) -> None:
         ports={5555: 5555},
         remove=True,
     )
+    sleep(0.1)
     request.addfinalizer(container.stop)
     return None
 
@@ -386,3 +393,45 @@ def test_postprocess() -> None:
     r = b.get_result(h)
     shots = r.get_shots()
     assert len(shots) == 10
+
+
+@pytest.mark.skipif(
+    skip_qvm_tests, reason="Can only run Rigetti QVM if docker is installed"
+)
+def test_process_characterisation(qvm: None, quilc: None) -> None:
+    backend = ForestBackend("9q-square")
+    char = process_characterisation(backend._qc)
+
+    assert "NodeErrors" in char
+    assert "EdgeErrors" in char
+    assert "Architecture" in char
+
+    node_errors = char["NodeErrors"]
+    assert len(node_errors) == 9
+    for i in range(9):
+        assert Node(i) in node_errors
+        errs = node_errors[Node(i)]
+        for op, err in errs.items():
+            assert isinstance(op, OpType)
+            assert isinstance(err, float)
+
+        assert OpType.X in errs
+        assert OpType.V in errs
+        assert OpType.Vdg in errs
+        assert OpType.Rz in errs
+
+    edge_errors = char["EdgeErrors"]
+    assert len(edge_errors) == 12
+    for (n1, n2), errs in edge_errors.items():
+        assert n1 in node_errors
+        assert n2 in node_errors
+        for op, err in errs.items():
+            assert isinstance(op, OpType)
+            assert isinstance(err, float)
+
+        assert OpType.CZ in errs
+        assert OpType.ISWAP in errs
+
+    arch = char["Architecture"]
+    assert len(arch.nodes) == 9
+    assert len(arch.coupling) == 12

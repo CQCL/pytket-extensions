@@ -46,9 +46,10 @@ from pytket.extensions.qiskit.tket_pass import TketPass, TketAutoPass
 from pytket.extensions.qiskit.result_convert import (
     qiskit_result_to_backendresult,
     backendresult_to_qiskit_resultdata,
+    _gen_uids,
 )
 from sympy import Symbol  # type: ignore
-from pytket.passes import USquashIBM, DecomposeBoxes, FullPeepholeOptimise  # type: ignore
+from pytket.passes import RebaseTket, DecomposeBoxes, FullPeepholeOptimise  # type: ignore
 from pytket.utils.results import compare_statevectors
 
 skip_remote_tests: bool = (
@@ -134,7 +135,7 @@ def test_symbolic() -> None:
     pi0 = Symbol("pi0")
     tkc = Circuit(3, 3, name="test").Ry(pi2, 1).Rx(pi3, 1).CX(1, 0)
     tkc.add_phase(Symbol("pi0") * 2)
-    USquashIBM().apply(tkc)
+    RebaseTket().apply(tkc)
 
     qc = tk_to_qiskit(tkc)
     tkc2 = qiskit_to_tk(qc)
@@ -432,11 +433,11 @@ def test_convert_result() -> None:
     assert tk_res.get_counts(one_bits) == Counter({(1, 1): 10})
     assert tk_res.get_counts(zero_bits) == Counter({(0, 0, 0, 0, 0): 10})
 
-    assert (
-        qisk_result.results[0].data.to_dict()
-        == backendresult_to_qiskit_resultdata(
-            tk_res, qisk_result.results[0].header, None
-        ).to_dict()
+    qbits = _gen_uids([(reg.name, reg.size) for reg in (qr1, qr2)], Qubit)
+    cbits = _gen_uids([(reg.name, reg.size) for reg in (cr, cr2)], Bit)
+
+    assert qisk_result.results[0].data.to_dict() == backendresult_to_qiskit_resultdata(
+        tk_res, cbits, qbits, None
     )
 
 

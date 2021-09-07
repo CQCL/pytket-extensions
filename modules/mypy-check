@@ -16,22 +16,13 @@ for MOD in $(ls -d "$MODULEDIR/../pytket-"*); do
 done
 export MYPYPATH="$MYPYPATH"
 
-# set arguments
-MYPYARGS="--config-file=../../mypy.ini"
-if [[ "${MODULEDIR}" =~ "pytket-pyquil" ]]
-then
-    # disable mypy cache because of ruamel dependency
-    # see https://github.com/python/mypy/issues/7276
-    MYPYARGS="$MYPYARGS --no-incremental"
-fi
-
 ROOT_INIT_FILE=$(python -c "from importlib.util import find_spec; print(find_spec('pytket').origin)")
 
 # remove pytket root init file
 mv "$ROOT_INIT_FILE" "$ROOT_INIT_FILE.ignore"
 
 set +e
-mypy $MYPYARGS -p pytket -p tests
+mypy --config-file=../../mypy.ini --no-incremental -p pytket -p tests
 STATUS=$?
 set -e
 

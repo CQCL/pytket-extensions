@@ -28,7 +28,7 @@ from pytket.extensions.ionq._metadata import __extension_version__
 from pytket.passes import (  # type: ignore
     BasePass,
     SequencePass,
-    SynthesiseIBM,
+    SynthesiseTket,
     FullPeepholeOptimise,
     SquashCustom,
     DecomposeBoxes,
@@ -154,7 +154,7 @@ class IonQBackend(Backend):
             return SequencePass(
                 [
                     DecomposeBoxes(),
-                    SynthesiseIBM(),
+                    SynthesiseTket(),
                     FlattenRegisters(),
                     RenameQubitsPass(self._qm),
                     ionq_pass,
@@ -185,7 +185,7 @@ class IonQBackend(Backend):
     def process_circuits(
         self,
         circuits: Sequence[Circuit],
-        n_shots: Optional[Union[int, Sequence[int]]] = None,
+        n_shots: Union[None, int, Sequence[Optional[int]]] = None,
         valid_check: bool = True,
         **kwargs: KwargTypes,
     ) -> List[ResultHandle]:
@@ -194,21 +194,14 @@ class IonQBackend(Backend):
         Supported kwargs: none.
         """
         circuits = list(circuits)
-        n_shots_list: List[int] = []
-        if hasattr(n_shots, "__iter__"):
-            for n in cast(Sequence[Optional[int]], n_shots):
-                if n is None or n < 1:
-                    raise ValueError(
-                        "n_shots values are required for all circuits for this backend"
-                    )
-                n_shots_list.append(n)
-            if len(n_shots_list) != len(circuits):
-                raise ValueError("The length of n_shots and circuits must match")
-        else:
-            if n_shots is None:
-                raise ValueError("Parameter n_shots is required for this backend")
-            # convert n_shots to a list
-            n_shots_list = [cast(int, n_shots)] * len(circuits)
+        n_shots_list = cast(
+            Sequence[int],
+            Backend._get_n_shots_as_list(
+                n_shots,
+                len(circuits),
+                optional=False,
+            ),
+        )
 
         if valid_check:
             self._check_all_circuits(circuits)

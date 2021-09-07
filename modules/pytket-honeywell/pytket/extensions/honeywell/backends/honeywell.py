@@ -35,7 +35,7 @@ from pytket.qasm import circuit_to_qasm_str
 from pytket.passes import (  # type: ignore
     BasePass,
     SequencePass,
-    SynthesiseIBM,
+    SynthesiseTket,
     RemoveRedundancies,
     RebaseHQS,
     SquashHQS,
@@ -234,7 +234,7 @@ class HoneywellBackend(Backend):
             return SequencePass(
                 passlist
                 + [
-                    SynthesiseIBM(),
+                    SynthesiseTket(),
                     RebaseHQS(),
                     RemoveRedundancies(),
                     SquashHQS(),
@@ -264,7 +264,7 @@ class HoneywellBackend(Backend):
     def process_circuits(
         self,
         circuits: Sequence[Circuit],
-        n_shots: Optional[Union[int, Sequence[int]]] = None,
+        n_shots: Union[None, int, Sequence[Optional[int]]] = None,
         valid_check: bool = True,
         **kwargs: KwargTypes,
     ) -> List[ResultHandle]:
@@ -281,21 +281,11 @@ class HoneywellBackend(Backend):
         :type noisy_simulation: bool
         """
         circuits = list(circuits)
-        n_shots_list: List[int] = []
-        if hasattr(n_shots, "__iter__"):
-            for n in cast(Sequence[Optional[int]], n_shots):
-                if n is None or n < 1:
-                    raise ValueError(
-                        "n_shots values are required for all circuits for this backend"
-                    )
-                n_shots_list.append(n)
-            if len(n_shots_list) != len(circuits):
-                raise ValueError("The length of n_shots and circuits must match")
-        else:
-            if n_shots is None:
-                raise ValueError("Parameter n_shots is required for this backend")
-            # convert n_shots to a list
-            n_shots_list = [cast(int, n_shots)] * len(circuits)
+        n_shots_list = Backend._get_n_shots_as_list(
+            n_shots,
+            len(circuits),
+            optional=False,
+        )
 
         if valid_check:
             self._check_all_circuits(circuits)
