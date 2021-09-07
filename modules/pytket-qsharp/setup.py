@@ -40,7 +40,7 @@ setup(
     include_package_data=True,
     install_requires=[
         "pytket == 0.14.0",
-        "qsharp ~=0.18.2107",
+        "qsharp ==0.18.2108160999",
         "qsharp-core ~=0.18.2107",
     ],
     classifiers=[
