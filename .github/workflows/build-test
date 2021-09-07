@@ -49,7 +49,9 @@ then
 fi
 for MODULE in $MODULES_TO_TEST; do
 
-    # FIXME see https://github.com/microsoft/iqsharp/issues/512
+    # FIXME see
+    # https://github.com/CQCL/pytket-extensions/issues/180 and 
+    # https://github.com/microsoft/iqsharp/issues/512
     if [[ "${MODULE}" != "pytket-qsharp" || "${PLAT}" != "Windows" ]]
     then
         echo "${MODULE}..."
