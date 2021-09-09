@@ -17,7 +17,7 @@ from typing import List
 import math
 from hypothesis import given, strategies
 import numpy as np
-from pytket.extensions.cirq.backends.cirq import (  # type: ignore
+from pytket.extensions.cirq.backends.cirq import (
     CirqDensityMatrixSampleBackend,
     CirqDensityMatrixSimBackend,
     CirqStateSampleBackend,

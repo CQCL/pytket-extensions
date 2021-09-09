@@ -55,7 +55,7 @@ from pytket.backends.resulthandle import _ResultIdTuple
 from pytket.utils.results import KwargTypes
 from pytket.extensions.cirq.cirq_convert import tk_to_cirq  # type: ignore
 from pytket.utils.outcomearray import OutcomeArray
-from .cirq_utils import _get_default_uids  # type: ignore
+from .cirq_utils import _get_default_uids
 
 
 class _CirqBaseBackend(Backend):
@@ -355,7 +355,6 @@ class CirqStateSimBackend(_CirqSimBackend):
         )
         all_backres = [
             BackendResult(
-                # state=cast(SparseSimulatorStep, run).state_vector(copy=True),
                 state=run.state_vector(copy=True),
                 q_bits=q_bits,
             )
