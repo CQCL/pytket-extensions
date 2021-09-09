@@ -230,8 +230,8 @@ def test_noisy_simulator_backends() -> None:
     sim_backend = CirqDensityMatrixSimBackend(noise_model=nm)  # type: ignore
     sample_backend = CirqDensityMatrixSampleBackend(noise_model=nm)  # type: ignore
 
-    assert cast(DensityMatrixSimulator, sim_backend._simulator).noise == nm
-    assert cast(DensityMatrixSimulator, sample_backend._simulator).noise == nm
+    assert sim_backend._simulator.noise == nm
+    assert sample_backend._simulator.noise == nm
 
 
 @given(
