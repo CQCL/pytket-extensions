@@ -14,7 +14,6 @@
 
 from abc import abstractmethod
 from typing import Sequence, cast, Optional, List, Union
-from numpy import complex64
 from uuid import uuid4
 from cirq.sim import (
     CliffordSimulator,
