@@ -17,20 +17,18 @@ from typing import List
 import math
 from hypothesis import given, strategies
 import numpy as np
-from pytket.extensions.cirq import (
+from pytket.extensions.cirq.backends.cirq import (  # type: ignore
     CirqDensityMatrixSampleBackend,
     CirqDensityMatrixSimBackend,
     CirqStateSampleBackend,
     CirqStateSimBackend,
     CirqCliffordSampleBackend,
     CirqCliffordSimBackend,
-)
-from pytket.extensions.cirq.backends.cirq import (
     _CirqSimBackend,
     _CirqBaseBackend,
 )
 from pytket.circuit import Circuit, Qubit, Bit  # type: ignore
-from cirq.contrib.noise_models import DepolarizingNoiseModel
+from cirq.contrib.noise_models import DepolarizingNoiseModel  # type: ignore
 
 
 def test_blank_wires() -> None:
