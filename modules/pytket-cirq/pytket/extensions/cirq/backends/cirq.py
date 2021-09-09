@@ -13,7 +13,8 @@
 # limitations under the License.
 
 from abc import abstractmethod
-from typing import Sequence, cast, Optional, List, Sequence, Union
+from typing import Sequence, cast, Optional, List, Union
+from numpy import complex64
 from uuid import uuid4
 from cirq.sim import (
     CliffordSimulator,
@@ -25,7 +26,6 @@ from cirq.sim import (
     StateVectorTrialResult,
 )
 
-# import cirq
 from cirq import ops
 from cirq.circuits import Circuit as CirqCircuit
 
@@ -162,7 +162,6 @@ class _CirqSampleBackend(_CirqBaseBackend):
             optional=False,
         )
 
-        self._simulator = self.set_simulator(seed=kwargs.get("seed"))
         if valid_check:
             self._check_all_circuits(circuits)
 
@@ -179,6 +178,10 @@ class _CirqSampleBackend(_CirqBaseBackend):
 class CirqStateSampleBackend(_CirqSampleBackend):
     """Backend for Cirq statevector simulator sampling."""
 
+    def __init__(self, **kwargs: KwargTypes) -> None:
+        super().__init__()
+        self._simulator = self.set_simulator(**kwargs)
+
     def set_simulator(self, **kwargs: KwargTypes) -> Simulator:
         return Simulator(seed=kwargs.get("seed"))
 
@@ -186,15 +189,23 @@ class CirqStateSampleBackend(_CirqSampleBackend):
 class CirqDensityMatrixSampleBackend(_CirqSampleBackend):
     """Backend for Cirq density matrix simulator sampling."""
 
+    def __init__(self, **kwargs: KwargTypes) -> None:
+        super().__init__()
+        self._simulator = self.set_simulator(**kwargs)
+
     def set_simulator(self, **kwargs: KwargTypes) -> DensityMatrixSimulator:
-        return DensityMatrixSimulator(seed=kwargs.get("seed"))
+        return DensityMatrixSimulator(
+            seed=kwargs.get("seed", None),
+            noise=kwargs.get("noise", None),
+        )
 
 
 class CirqCliffordSampleBackend(_CirqSampleBackend):
     """Backend for Cirq Clifford simulator sampling."""
 
-    def __init__(self) -> None:
+    def __init__(self, **kwargs: KwargTypes) -> None:
         super().__init__()
+        self._simulator = self.set_simulator(**kwargs)
         self._pass_0 = clifford_pass_0
         self._pass_1 = clifford_pass_1
         self._pass_2 = clifford_pass_2
@@ -244,7 +255,6 @@ class _CirqSimBackend(_CirqBaseBackend):
             # convert n_shots to a list
             n_shots_list = [cast(int, n_shots)] * len(circuits)
 
-        self._simulator = self.set_simulator(seed=kwargs.get("seed"))
         if valid_check:
             self._check_all_circuits(circuits)
 
@@ -321,7 +331,6 @@ class _CirqSimBackend(_CirqBaseBackend):
         :rtype: List[ResultHandle]
         """
 
-        self._simulator = self.set_simulator(seed=kwargs.get("seed"))
         if valid_check:
             self._check_all_circuits(circuits)
 
@@ -338,8 +347,9 @@ class _CirqSimBackend(_CirqBaseBackend):
 class CirqStateSimBackend(_CirqSimBackend):
     """Backend for Cirq statevector simulator state return."""
 
-    def __init__(self) -> None:
+    def __init__(self, **kwargs: KwargTypes) -> None:
         super().__init__()
+        self._simulator = self.set_simulator(**kwargs)
         self._supports_state = True
 
     def set_simulator(self, **kwargs: KwargTypes) -> Simulator:
@@ -381,12 +391,16 @@ class CirqStateSimBackend(_CirqSimBackend):
 class CirqDensityMatrixSimBackend(_CirqSimBackend):
     """Backend for Cirq density matrix simulator density_matrix return."""
 
-    def __init__(self) -> None:
+    def __init__(self, **kwargs: KwargTypes) -> None:
         super().__init__()
         self._supports_density_matrix = True
+        self._simulator = self.set_simulator(**kwargs)
 
     def set_simulator(self, **kwargs: KwargTypes) -> DensityMatrixSimulator:
-        return DensityMatrixSimulator(seed=kwargs.get("seed"))
+        return DensityMatrixSimulator(
+            seed=kwargs.get("seed", None),
+            noise=kwargs.get("noise", None),
+        )
 
     def package_result(
         self, circuit: CirqCircuit, q_bits: Sequence[Qubit]
@@ -412,16 +426,17 @@ class CirqDensityMatrixSimBackend(_CirqSimBackend):
 class CirqCliffordSimBackend(_CirqSimBackend):
     """Backend for Cirq Clifford simulator state return."""
 
-    def __init__(self) -> None:
+    def set_simulator(self, **kwargs: KwargTypes) -> CliffordSimulator:
+        return CliffordSimulator(seed=kwargs.get("seed"))
+
+    def __init__(self, **kwargs: KwargTypes) -> None:
         super().__init__()
         self._pass_0 = clifford_pass_0
         self._pass_1 = clifford_pass_1
         self._pass_2 = clifford_pass_2
         self._gate_set_predicate = _clifford_gate_set_predicate
         self._supports_state = True
-
-    def set_simulator(self, **kwargs: KwargTypes) -> CliffordSimulator:
-        return CliffordSimulator(seed=kwargs.get("seed"))
+        self._simulator = self.set_simulator(**kwargs)
 
     def package_result(
         self, circuit: CirqCircuit, q_bits: Sequence[Qubit]

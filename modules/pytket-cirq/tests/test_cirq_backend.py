@@ -30,6 +30,7 @@ from pytket.extensions.cirq.backends.cirq import (
     _CirqBaseBackend,
 )
 from pytket.circuit import Circuit, Qubit, Bit  # type: ignore
+from cirq.contrib.noise_models import DepolarizingNoiseModel
 
 
 def test_blank_wires() -> None:
@@ -223,6 +224,15 @@ def test_clifford_compilation() -> None:
     c.Rz(0.3, 0)
     c = b.get_compiled_circuit(c)
     assert not b.valid_circuit(c)
+
+
+def test_noisy_simulator_backends() -> None:
+    nm = DepolarizingNoiseModel(depol_prob=0.01)
+    sim_backend = CirqDensityMatrixSimBackend(noise=nm)
+    sample_backend = CirqDensityMatrixSampleBackend(noise=nm)
+
+    assert sim_backend._simulator.noise == nm
+    assert sample_backend._simulator.noise == nm
 
 
 @given(
