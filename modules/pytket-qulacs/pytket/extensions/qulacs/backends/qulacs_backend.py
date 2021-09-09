@@ -19,7 +19,7 @@ from typing import List, Optional, Sequence, Union
 from logging import warning
 from uuid import uuid4
 import numpy as np
-from sympy import Expr
+from sympy import Expr # type: ignore
 from qulacs import Observable, QuantumState  # type: ignore
 from pytket.backends import (
     Backend,
