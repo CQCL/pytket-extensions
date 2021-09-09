@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from collections import Counter
-from typing import List
+from typing import List, cast
 import math
 from hypothesis import given, strategies
 import numpy as np
@@ -28,6 +28,7 @@ from pytket.extensions.cirq.backends.cirq import (  # type: ignore
     _CirqBaseBackend,
 )
 from pytket.circuit import Circuit, Qubit, Bit  # type: ignore
+from cirq.sim import DensityMatrixSimulator  # type: ignore
 from cirq.contrib.noise_models import DepolarizingNoiseModel  # type: ignore
 
 
@@ -226,11 +227,11 @@ def test_clifford_compilation() -> None:
 
 def test_noisy_simulator_backends() -> None:
     nm = DepolarizingNoiseModel(depol_prob=0.01)
-    sim_backend = CirqDensityMatrixSimBackend(noise=nm)
-    sample_backend = CirqDensityMatrixSampleBackend(noise=nm)
+    sim_backend = CirqDensityMatrixSimBackend(noise_model=nm)  # type: ignore
+    sample_backend = CirqDensityMatrixSampleBackend(noise_model=nm)  # type: ignore
 
-    assert sim_backend._simulator.noise == nm
-    assert sample_backend._simulator.noise == nm
+    assert cast(DensityMatrixSimulator, sim_backend._simulator).noise == nm
+    assert cast(DensityMatrixSimulator, sample_backend._simulator).noise == nm
 
 
 @given(
