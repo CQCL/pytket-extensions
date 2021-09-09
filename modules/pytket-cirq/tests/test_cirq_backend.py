@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from collections import Counter
-from typing import List, cast
+from typing import List
 import math
 from hypothesis import given, strategies
 import numpy as np
@@ -28,7 +28,6 @@ from pytket.extensions.cirq.backends.cirq import (  # type: ignore
     _CirqBaseBackend,
 )
 from pytket.circuit import Circuit, Qubit, Bit  # type: ignore
-from cirq.sim import DensityMatrixSimulator  # type: ignore
 from cirq.contrib.noise_models import DepolarizingNoiseModel  # type: ignore
 
 
