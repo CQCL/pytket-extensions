@@ -61,7 +61,7 @@ class TketBackend(QiskitBackend):
     :py:class:`qiskit.transpiler.passes.Unroller`. For examples, see the `user manual
     <https://cqcl.github.io/pytket/build/html/manual_backend .html#embedding-into-
     qiskit>`_ or the `Qiskit integration example <ht
-    tps://github.com/CQCL/pytket/blob/master/examples/qiskit_integration. ipynb>`_.
+    tps://github.com/CQCL/pytket/blob/main/examples/qiskit_integration. ipynb>`_.
     """
 
     def __init__(self, backend: Backend, comp_pass: Optional[BasePass] = None):

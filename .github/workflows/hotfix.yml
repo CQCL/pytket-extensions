@@ -2,7 +2,7 @@ name: Hotfix
 on:
   push:
     branches:
-      - master
+      - main
 
 jobs:
 

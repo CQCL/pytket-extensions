@@ -3,7 +3,7 @@ name: Lint python projects
 on:
   pull_request:
     branches:
-      - master
+      - main
       - develop
 
 jobs:
