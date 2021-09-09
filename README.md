@@ -62,7 +62,7 @@ pip install -e .
 
 If you wish to write your own backend extension for `pytket`, we recommend
 looking at the example notebook
-[here](https://github.com/CQCL/pytket/blob/master/examples/creating_backends.ipynb)
+[here](https://github.com/CQCL/pytket/blob/main/examples/creating_backends.ipynb)
 which explains how to do so.
 
 If you would like to add it to this repo, please follow the existing code and
