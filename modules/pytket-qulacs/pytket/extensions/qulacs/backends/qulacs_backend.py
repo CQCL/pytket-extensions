@@ -19,6 +19,7 @@ from typing import List, Optional, Sequence, Union
 from logging import warning
 from uuid import uuid4
 import numpy as np
+from sympy import Expr  # type: ignore
 from qulacs import Observable, QuantumState  # type: ignore
 from pytket.backends import (
     Backend,
@@ -250,7 +251,7 @@ class QulacsBackend(Backend):
         for (qps, coeff) in operator._dict.items():
             _items = []
             if qps != QubitPauliString():
-                for qubit, pauli in qps.to_dict().items():
+                for qubit, pauli in qps.map.items():
                     if pauli == Pauli.X:
                         _items.append("X")
                     elif pauli == Pauli.Y:
@@ -260,7 +261,10 @@ class QulacsBackend(Backend):
                     _items.append(str(qubit.index[0]))
 
             qulacs_qps = " ".join(_items)
-            qulacs_coeff = complex(coeff.evalf())
+            if isinstance(coeff, Expr):
+                qulacs_coeff = complex(coeff.evalf())
+            else:
+                qulacs_coeff = complex(coeff)
             observable.add_operator(qulacs_coeff, qulacs_qps)
 
         expectation_value = self._expectation_value(state_circuit, observable)
