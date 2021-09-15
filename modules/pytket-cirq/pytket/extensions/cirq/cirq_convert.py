@@ -256,7 +256,12 @@ def tk_to_cirq(tkcirc: Circuit, copy_all_qubits: bool = False) -> cirq.circuits.
                 cirqop = gatetype(exponent=params[0])(*qids)
         oplst.append(cirqop)
     try:
+
         coeff = cmath.exp(float(tkcirc.phase) * cmath.pi * 1j)
+        if coeff.real < 1e-8:  # tolerance permitted by cirq for GlobalPhaseOperation
+            coeff = coeff.imag * 1j
+        if coeff.imag < 1e-8:
+            coeff = coeff.real
         if coeff != 1.0:
             oplst.append(cirq.ops.GlobalPhaseOperation(coeff))
     except ValueError:

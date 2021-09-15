@@ -17,19 +17,18 @@ from typing import List
 import math
 from hypothesis import given, strategies
 import numpy as np
-from pytket.extensions.cirq import (
+from pytket.extensions.cirq.backends.cirq import (
     CirqDensityMatrixSampleBackend,
     CirqDensityMatrixSimBackend,
     CirqStateSampleBackend,
     CirqStateSimBackend,
     CirqCliffordSampleBackend,
     CirqCliffordSimBackend,
-)
-from pytket.extensions.cirq.backends.cirq import (
     _CirqSimBackend,
     _CirqBaseBackend,
 )
 from pytket.circuit import Circuit, Qubit, Bit  # type: ignore
+from cirq.contrib.noise_models import DepolarizingNoiseModel  # type: ignore
 
 
 def test_blank_wires() -> None:
@@ -223,6 +222,15 @@ def test_clifford_compilation() -> None:
     c.Rz(0.3, 0)
     c = b.get_compiled_circuit(c)
     assert not b.valid_circuit(c)
+
+
+def test_noisy_simulator_backends() -> None:
+    nm = DepolarizingNoiseModel(depol_prob=0.01)
+    sim_backend = CirqDensityMatrixSimBackend(noise_model=nm)  # type: ignore
+    sample_backend = CirqDensityMatrixSampleBackend(noise_model=nm)  # type: ignore
+
+    assert sim_backend._simulator.noise == nm
+    assert sample_backend._simulator.noise == nm
 
 
 @given(
