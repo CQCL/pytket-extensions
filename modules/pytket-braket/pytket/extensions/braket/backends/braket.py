@@ -164,7 +164,7 @@ _observables = {
 
 def _obs_from_qps(pauli: QubitPauliString) -> Tuple[Observable, QubitSet]:
     obs, qbs = [], []
-    for q, p in pauli.to_dict().items():
+    for q, p in pauli.map.items():
         obs.append(_observables[p])
         qbs.append(q.index[0])
     return Observable.TensorProduct(obs), qbs
