@@ -364,7 +364,7 @@ def test_correction() -> None:
     )
     comp_pass = SequencePass([DecomposeBoxes(), RebaseTket()])
     comp_pass.apply(c)
-    qc = tk_to_qiskit(c)
+    tk_to_qiskit(c)
 
 
 def test_cnx() -> None:
