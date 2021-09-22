@@ -381,7 +381,7 @@ class ForestStateBackend(Backend):
 
     def _gen_PauliTerm(self, term: QubitPauliString, coeff: complex = 1.0) -> PauliTerm:
         pauli_term = ID() * coeff
-        for q, p in term.to_dict().items():
+        for q, p in term.map.items():
             pauli_term *= PauliTerm(p.name, _default_q_index(q))
         return pauli_term  # type: ignore
 
