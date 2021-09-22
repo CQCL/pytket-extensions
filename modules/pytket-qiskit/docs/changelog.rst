@@ -1,6 +1,11 @@
 Changelog
 ~~~~~~~~~
 
+0.18.0 (unreleased)
+-------------------
+
+* Qiskit version updated to 0.30.
+
 0.17.0 (September 2021)
 -----------------------
 
