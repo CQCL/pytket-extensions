@@ -49,7 +49,7 @@ from pytket.extensions.qiskit.result_convert import (
     _gen_uids,
 )
 from sympy import Symbol  # type: ignore
-from pytket.passes import RebaseTket, DecomposeBoxes, FullPeepholeOptimise  # type: ignore
+from pytket.passes import RebaseTket, DecomposeBoxes, FullPeepholeOptimise, SequencePass  # type: ignore
 from pytket.utils.results import compare_statevectors
 
 skip_remote_tests: bool = (
@@ -339,6 +339,32 @@ def test_condition_errors() -> None:
     assert "OpenQASM conditions must be an entire register in order" in str(
         errorinfo.value
     )
+
+
+def test_correction() -> None:
+    checked_x = Circuit(2, 1)
+    checked_x.CX(0, 1)
+    checked_x.X(0)
+    checked_x.CX(0, 1)
+    checked_x.Measure(1, 0)
+    x_box = CircBox(checked_x)
+    c = Circuit()
+    target = Qubit("t", 0)
+    ancilla = Qubit("a", 0)
+    success = Bit("s", 0)
+    c.add_qubit(target)
+    c.add_qubit(ancilla)
+    c.add_bit(success)
+    c.add_circbox(x_box, args=[target, ancilla, success])
+    c.add_circbox(
+        x_box,
+        args=[target, ancilla, success],
+        condition_bits=[success],
+        condition_value=0,
+    )
+    comp_pass = SequencePass([DecomposeBoxes(), RebaseTket()])
+    comp_pass.apply(c)
+    tk_to_qiskit(c)
 
 
 def test_cnx() -> None:
