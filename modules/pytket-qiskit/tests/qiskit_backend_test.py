@@ -13,24 +13,22 @@
 # limitations under the License.
 
 import os
-import numpy as np
-import pytest
-from typing import Optional, TYPE_CHECKING
+from typing import Optional
 from pytket.extensions.qiskit import (
     AerBackend,
     AerStateBackend,
     AerUnitaryBackend,
     IBMQEmulatorBackend,
 )
+import numpy as np
+import pytest
 from pytket.extensions.qiskit.tket_backend import TketBackend
 from qiskit import IBMQ, QuantumCircuit, execute  # type: ignore
-from qiskit.opflow import CircuitStateFn, CircuitSampler
+from qiskit.providers.ibmq import AccountProvider  # type: ignore
+from qiskit.opflow import CircuitStateFn, CircuitSampler  # type: ignore
 from qiskit.providers import JobStatus  # type: ignore
 from qiskit.providers.aer import Aer  # type: ignore
 from qiskit.utils import QuantumInstance  # type: ignore
-
-if TYPE_CHECKING:
-    from qiskit import AccountProvider
 
 skip_remote_tests: bool = (
     not IBMQ.stored_account() or os.getenv("PYTKET_RUN_REMOTE_TESTS") is None
@@ -111,7 +109,7 @@ def test_cancel() -> None:
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_qiskit_counts(provider) -> None:
+def test_qiskit_counts(provider: Optional[AccountProvider]) -> None:
     num_qubits = 2
     qc = QuantumCircuit(num_qubits)
     qc.h(0)
