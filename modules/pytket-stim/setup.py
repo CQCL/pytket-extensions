@@ -37,7 +37,7 @@ setup(
     license="Apache 2",
     packages=find_namespace_packages(include=["pytket.*"]),
     include_package_data=True,
-    install_requires=["pytket == 0.15.0rc5", "stim ~= 1.4"],
+    install_requires=["pytket ~= 0.15.0", "stim ~= 1.4"],
     classifiers=[
         "Environment :: Console",
         "Programming Language :: Python :: 3.7",
