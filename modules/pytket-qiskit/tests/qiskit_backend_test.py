@@ -12,17 +12,38 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import numpy as np
+import os
+from typing import Optional
 from pytket.extensions.qiskit import (
     AerBackend,
     AerStateBackend,
     AerUnitaryBackend,
+    IBMQEmulatorBackend,
 )
+import numpy as np
+import pytest
 from pytket.extensions.qiskit.tket_backend import TketBackend
-from qiskit import QuantumCircuit, execute  # type: ignore
+from qiskit import IBMQ, QuantumCircuit, execute  # type: ignore
+from qiskit.providers.ibmq import AccountProvider  # type: ignore
+from qiskit.opflow import CircuitStateFn, CircuitSampler  # type: ignore
 from qiskit.providers import JobStatus  # type: ignore
 from qiskit.providers.aer import Aer  # type: ignore
 from qiskit.utils import QuantumInstance  # type: ignore
+
+skip_remote_tests: bool = (
+    not IBMQ.stored_account() or os.getenv("PYTKET_RUN_REMOTE_TESTS") is None
+)
+REASON = "PYTKET_RUN_REMOTE_TESTS not set (requires IBMQ configuration)"
+
+
+@pytest.fixture
+def provider() -> Optional["AccountProvider"]:
+    if skip_remote_tests:
+        return None
+    else:
+        if not IBMQ.active_account():
+            IBMQ.load_account()
+        return IBMQ.providers(hub="ibm-q")[0]
 
 
 def circuit_gen(measure: bool = False) -> QuantumCircuit:
@@ -85,3 +106,22 @@ def test_cancel() -> None:
     job = execute(qc, tb)
     job.cancel()
     assert job.status() == JobStatus.CANCELLED
+
+
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
+def test_qiskit_counts(provider: Optional[AccountProvider]) -> None:
+    num_qubits = 2
+    qc = QuantumCircuit(num_qubits)
+    qc.h(0)
+    qc.cx(0, 1)
+    circfn = CircuitStateFn(qc)
+
+    b = IBMQEmulatorBackend("ibmq_belem", account_provider=provider)
+
+    s = CircuitSampler(TketBackend(b))
+
+    res = s.sample_circuits([circfn])
+
+    res_dictstatefn = res[id(circfn)][0]
+
+    assert res_dictstatefn.num_qubits == num_qubits
