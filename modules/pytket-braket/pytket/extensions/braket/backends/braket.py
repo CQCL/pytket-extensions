@@ -107,6 +107,7 @@ _gate_types = {
     "cswap": OpType.CSWAP,
     "cy": OpType.CY,
     "cz": OpType.CZ,
+    "end_verbatim_box": None,
     "h": OpType.H,
     "i": OpType.noop,
     "iswap": OpType.ISWAPMax,
@@ -117,6 +118,7 @@ _gate_types = {
     "rz": OpType.Rz,
     "s": OpType.S,
     "si": OpType.Sdg,
+    "start_verbatim_box": None,
     "swap": OpType.SWAP,
     "t": OpType.T,
     "ti": OpType.Tdg,
@@ -162,7 +164,7 @@ _observables = {
 
 def _obs_from_qps(pauli: QubitPauliString) -> Tuple[Observable, QubitSet]:
     obs, qbs = [], []
-    for q, p in pauli.to_dict().items():
+    for q, p in pauli.map.items():
         obs.append(_observables[p])
         qbs.append(q.index[0])
     return Observable.TensorProduct(obs), qbs
@@ -520,11 +522,8 @@ class BraketBackend(Backend):
         Supported `kwargs`: none
         """
         circuits = list(circuits)
-        n_shots_list = cast(
-            Sequence[int],
-            Backend._get_n_shots_as_list(
-                n_shots, len(circuits), optional=True, set_zero=True
-            ),
+        n_shots_list = Backend._get_n_shots_as_list(
+            n_shots, len(circuits), optional=True, set_zero=True
         )
 
         if not self.supports_shots and not self.supports_state:

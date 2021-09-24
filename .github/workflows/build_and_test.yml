@@ -3,7 +3,7 @@ name: Build and test
 on:
   pull_request:
     branches:
-      - master
+      - main
       - develop
   push:
     branches:
@@ -96,7 +96,7 @@ jobs:
   macos:
     if: github.event_name != 'release'
     name: Build and test (MacOS)
-    runs-on: macos-10.15
+    runs-on: macos-11
 
     steps:
 

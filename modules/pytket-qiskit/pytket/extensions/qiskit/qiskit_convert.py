@@ -481,7 +481,7 @@ def append_tk_command_to_qiskit(
             qargs=qargs,
         )
         qcirc.global_phase += -params[0] / 2 - params[2] / 2
-        return qcirc
+        return qcirc.to_instruction()
     # others are direct translations
     try:
         gatetype, phase = _known_gate_rev_phase[optype]

@@ -195,9 +195,8 @@ class ForestBackend(Backend):
         Supported kwargs: `seed`.
         """
         circuits = list(circuits)
-        n_shots_list = cast(
-            Sequence[int],
-            Backend._get_n_shots_as_list(n_shots, len(circuits), optional=False),
+        n_shots_list = Backend._get_n_shots_as_list(
+            n_shots, len(circuits), optional=False
         )
 
         if valid_check:
@@ -382,7 +381,7 @@ class ForestStateBackend(Backend):
 
     def _gen_PauliTerm(self, term: QubitPauliString, coeff: complex = 1.0) -> PauliTerm:
         pauli_term = ID() * coeff
-        for q, p in term.to_dict().items():
+        for q, p in term.map.items():
             pauli_term *= PauliTerm(p.name, _default_q_index(q))
         return pauli_term  # type: ignore
 

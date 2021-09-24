@@ -257,9 +257,7 @@ class ProjectQBackend(Backend):
         :return: :math:`\\left<\\psi | P | \\psi \\right>`
         :rtype: complex
         """
-        pauli_tuple = tuple(
-            (_default_q_index(q), p.name) for q, p in pauli.to_dict().items()
-        )
+        pauli_tuple = tuple((_default_q_index(q), p.name) for q, p in pauli.map.items())
         return self._expectation_value(
             state_circuit, projectq.ops.QubitOperator(pauli_tuple), valid_check  # type: ignore
         )
@@ -292,7 +290,7 @@ class ProjectQBackend(Backend):
                     "`projectq.ops.QubitOperator`."
                 )
             ham += projectq.ops.QubitOperator(  # type: ignore
-                tuple((_default_q_index(q), p.name) for q, p in term.to_dict().items()),
+                tuple((_default_q_index(q), p.name) for q, p in term.map.items()),
                 float(coeff),
             )
         return self._expectation_value(state_circuit, ham, valid_check)

@@ -750,7 +750,7 @@ def _sparse_to_zx_tup(
 ) -> Tuple[np.ndarray, np.ndarray]:
     x = np.zeros(n_qubits, dtype=np.bool8)
     z = np.zeros(n_qubits, dtype=np.bool8)
-    for q, p in pauli.to_dict().items():
+    for q, p in pauli.map.items():
         i = _default_q_index(q)
         z[i] = p in (Pauli.Z, Pauli.Y)
         x[i] = p in (Pauli.X, Pauli.Y)

@@ -70,6 +70,7 @@ class TketJob(JobV1):
             tk_result = self._pytket_backend.get_result(h)
             creg_sizes, clbit_labels = _get_header_info(jobinfo.cbits)
             qreg_sizes, qubit_labels = _get_header_info(jobinfo.qbits)
+            memory_slots = sum(size for _, size in creg_sizes)
             result_list.append(
                 {
                     "shots": jobinfo.n_shots,
@@ -79,6 +80,7 @@ class TketJob(JobV1):
                     ),
                     "header": {
                         "creg_sizes": creg_sizes,
+                        "memory_slots": memory_slots,
                         "clbit_labels": clbit_labels,
                         "qreg_sizes": qreg_sizes,
                         "qubit_labels": qubit_labels,
