@@ -1,6 +1,11 @@
 Changelog
 ~~~~~~~~~
 
+0.18.0 (unreleased)
+-------------------
+
+* Updated qsharp version requirement to 0.19.
+
 0.17.0 (September 2021)
 -----------------------
 
