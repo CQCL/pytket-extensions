@@ -636,7 +636,7 @@ class AerUnitaryBackend(_AerStateBaseBackend):
         :rtype: np.ndarray
         """
 
-        result, _ = self._process(circuit, valid_check=valid_check)
+        result, _ = self.run_circuit(circuit, valid_check=valid_check)
         q_bits = (
             sorted(result.q_bits.keys(), reverse=(basis is not BasisOrder.ilo))
             if result.q_bits

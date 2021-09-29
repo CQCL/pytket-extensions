@@ -117,12 +117,14 @@ def test_moment_backends() -> None:
 def test_state() -> None:
     c0 = Circuit(2).H(0).CX(0, 1)
     b = CirqStateSimBackend()
-    state0 = b.get_state(c0)
+    state0 = b.run_circuit(c0).get_state()
     assert np.allclose(state0, [math.sqrt(0.5), 0, 0, math.sqrt(0.5)], atol=1e-10)
     c0.add_phase(0.5)
-    state1 = b.get_state(c0)
+    state1 = b.run_circuit(c0).get_state()
     assert np.allclose(state1, state0 * 1j, atol=1e-10)
-    assert np.allclose(b.get_state(Circuit(2).X(1)), [0, 1.0, 0, 0], atol=1e-10)
+    assert np.allclose(
+        b.run_circuit(Circuit(2).X(1)).get_state(), [0, 1.0, 0, 0], atol=1e-10
+    )
 
 
 def test_density_matrix() -> None:
@@ -254,6 +256,10 @@ def test_shots_bits_edgecases(n_shots, n_bits) -> None:
     assert res.get_counts() == correct_counts
 
     # Direct
-    assert np.array_equal(cirq_backend.get_shots(c, n_shots), correct_shots)
-    assert cirq_backend.get_shots(c, n_shots).shape == correct_shape
-    assert cirq_backend.get_counts(c, n_shots) == correct_counts
+    assert np.array_equal(
+        cirq_backend.run_circuit(c, n_shots=n_shots).get_shots(), correct_shots
+    )
+    assert (
+        cirq_backend.run_circuit(c, n_shots=n_shots).get_shots().shape == correct_shape
+    )
+    assert cirq_backend.run_circuit(c, n_shots=n_shots).get_counts() == correct_counts

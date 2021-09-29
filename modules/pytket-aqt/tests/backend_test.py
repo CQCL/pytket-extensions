@@ -42,8 +42,8 @@ def test_aqt() -> None:
     c.measure_all()
     c = b.get_compiled_circuit(c)
     n_shots = 10
-    shots = b.get_shots(c, n_shots, seed=1, timeout=30)
-    counts = b.get_counts(c, n_shots)
+    shots = b.run_circuit(c, n_shots=n_shots, seed=1, timeout=30).get_shots()
+    counts = b.run_circuit(c, n_shots=n_shots).get_counts()
     assert len(shots) == n_shots
     assert sum(counts.values()) == n_shots
 
@@ -58,7 +58,7 @@ def test_bell() -> None:
     c.measure_all()
     c = b.get_compiled_circuit(c)
     n_shots = 10
-    counts = b.get_counts(c, n_shots, timeout=30)
+    counts = b.run_circuit(c, n_shots=n_shots, timeout=30).get_counts()
     assert all(q[0] == q[1] for q in counts)
 
 
@@ -93,9 +93,9 @@ def test_handles() -> None:
     c.measure_all()
     c = b.get_compiled_circuit(c)
     n_shots = 5
-    shots = b.get_shots(c, n_shots=n_shots, timeout=30)
+    shots = b.run_circuit(c, n_shots=n_shots, timeout=30).get_shots()
     assert len(shots) == n_shots
-    counts = b.get_counts(c, n_shots=n_shots)
+    counts = b.run_circuit(c, n_shots=n_shots).get_counts()
     assert sum(counts.values()) == n_shots
     handles = b.process_circuits([c, c], n_shots=n_shots)
     assert len(handles) == 2
@@ -112,7 +112,7 @@ def test_machine_debug() -> None:
     c.measure_all()
     c = b.get_compiled_circuit(c)
     n_shots = 10
-    counts = b.get_counts(c, n_shots=n_shots, timeout=30)
+    counts = b.run_circuit(c, n_shots=n_shots, timeout=30).get_counts()
     assert counts == {(0, 0): n_shots}
 
 
@@ -168,6 +168,10 @@ def test_shots_bits_edgecases(n_shots, n_bits) -> None:
     assert res.get_counts() == correct_counts
 
     # Direct
-    assert np.array_equal(aqt_backend.get_shots(c, n_shots), correct_shots)
-    assert aqt_backend.get_shots(c, n_shots).shape == correct_shape
-    assert aqt_backend.get_counts(c, n_shots) == correct_counts
+    assert np.array_equal(
+        aqt_backend.run_circuit(c, n_shots=n_shots).get_shots(), correct_shots
+    )
+    assert (
+        aqt_backend.run_circuit(c, n_shots=n_shots).get_shots().shape == correct_shape
+    )
+    assert aqt_backend.run_circuit(c, n_shots=n_shots).get_counts() == correct_counts

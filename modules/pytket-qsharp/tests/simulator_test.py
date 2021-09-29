@@ -28,7 +28,7 @@ def test_bell() -> None:
     c.measure_all()
     c = b.get_compiled_circuit(c)
     n_shots = 10
-    counts = b.get_counts(c, n_shots)
+    counts = b.run_circuit(c, n_shots=n_shots).get_counts()
     assert all(m[0] == m[1] for m in counts.keys())
     assert sum(counts.values()) == n_shots
 
@@ -43,7 +43,7 @@ def test_rotations() -> None:
     c.measure_all()
     c = b.get_compiled_circuit(c)
     n_shots = 10
-    shots = b.get_shots(c, n_shots)
+    shots = b.run_circuit(c, n_shots=n_shots).get_shots()
     assert all(shots[i, 0] == 0 for i in range(n_shots))
 
 
@@ -68,7 +68,7 @@ def test_cnx() -> None:
     c.measure_all()
     c = b.get_compiled_circuit(c)
     n_shots = 3
-    shots = b.get_shots(c, n_shots)
+    shots = b.run_circuit(c, n_shots=n_shots).get_shots()
     assert all(shots[i, 3] == 1 for i in range(n_shots))
 
 
@@ -80,7 +80,7 @@ def test_handles() -> None:
     c.measure_all()
     c = b.get_compiled_circuit(c)
     n_shots = 3
-    shots = b.get_shots(c, n_shots=n_shots)
+    shots = b.run_circuit(c, n_shots=n_shots).get_shots()
     assert all(shots[i, 3] == 1 for i in range(n_shots))
 
 

@@ -98,7 +98,7 @@ def test_get_state() -> None:
     )
     for b in backends:
         qulacs_circ = b.get_compiled_circuit(qulacs_circ)
-        qulacs_state = b.get_state(qulacs_circ)
+        qulacs_state = b.run_circuit(qulacs_circ).get_state()
         assert np.allclose(qulacs_state, correct_state)
 
 
@@ -107,10 +107,10 @@ def test_statevector_phase() -> None:
         circ = Circuit(2)
         circ.H(0).CX(0, 1)
         circ = b.get_compiled_circuit(circ)
-        state = b.get_state(circ)
+        state = b.run_circuit(circ).get_state()
         assert np.allclose(state, [math.sqrt(0.5), 0, 0, math.sqrt(0.5)], atol=1e-10)
         circ.add_phase(0.5)
-        state1 = b.get_state(circ)
+        state1 = b.run_circuit(circ).get_state()
         assert np.allclose(state1, state * 1j, atol=1e-10)
 
 
@@ -124,8 +124,8 @@ def test_swaps_basisorder() -> None:
         CliffordSimp(True).apply(c)
         assert c.n_gates_of_type(OpType.CX) == 1
         c = b.get_compiled_circuit(c)
-        s_ilo = b.get_state(c, basis=BasisOrder.ilo)
-        s_dlo = b.get_state(c, basis=BasisOrder.dlo)
+        s_ilo = b.run_circuit(c).get_state(basis=BasisOrder.ilo)
+        s_dlo = b.run_circuit(c).get_state(basis=BasisOrder.dlo)
         correct_ilo = np.zeros((16,))
         correct_ilo[4] = 1.0
         assert np.allclose(s_ilo, correct_ilo)
@@ -166,11 +166,13 @@ def test_basisorder() -> None:
         c = Circuit(2)
         c.X(1)
         b.process_circuit(c)
-        assert (b.get_state(c) == np.asarray([0, 1, 0, 0])).all()
-        assert (b.get_state(c, basis=BasisOrder.dlo) == np.asarray([0, 0, 1, 0])).all()
+        assert (b.run_circuit(c).get_state() == np.asarray([0, 1, 0, 0])).all()
+        assert (
+            b.run_circuit(c).get_state(basis=BasisOrder.dlo) == np.asarray([0, 0, 1, 0])
+        ).all()
         c.measure_all()
-        assert b.get_shots(c, n_shots=4, seed=4).shape == (4, 2)
-        assert b.get_counts(c, n_shots=4, seed=4) == {(0, 1): 4}
+        assert b.run_circuit(c, n_shots=4, seed=4).get_shots().shape == (4, 2)
+        assert b.run_circuit(c, n_shots=4, seed=4).get_counts() == {(0, 1): 4}
 
 
 pauli_sym = {"I": Pauli.I, "X": Pauli.X, "Y": Pauli.Y, "Z": Pauli.Z}
@@ -197,7 +199,7 @@ def test_measurement_mask() -> None:
         target_shots = [[1, 1], [1, 0], [0], [1, 0]]
 
         for i, circ in enumerate(circ_list):
-            shots = b.get_shots(circ, n_shots=n_shots)
+            shots = b.run_circuit(circ, n_shots=n_shots).get_shots()
             for sh in shots:
                 assert len(sh) == len(target_shots[i])
                 assert np.array_equal(sh, target_shots[i])
@@ -251,6 +253,14 @@ def test_shots_bits_edgecases(n_shots, n_bits) -> None:
         assert res.get_counts() == correct_counts
 
         # Direct
-        assert np.array_equal(qulacs_backend.get_shots(c, n_shots), correct_shots)
-        assert qulacs_backend.get_shots(c, n_shots).shape == correct_shape
-        assert qulacs_backend.get_counts(c, n_shots) == correct_counts
+        assert np.array_equal(
+            qulacs_backend.run_circuit(c, n_shots=n_shots).get_shots(), correct_shots
+        )
+        assert (
+            qulacs_backend.run_circuit(c, n_shots=n_shots).get_shots().shape
+            == correct_shape
+        )
+        assert (
+            qulacs_backend.run_circuit(c, n_shots=n_shots).get_counts()
+            == correct_counts
+        )
