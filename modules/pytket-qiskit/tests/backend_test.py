@@ -595,12 +595,14 @@ def test_swaps_basisorder() -> None:
     c, c1 = b.get_compiled_circuits([c, c1])
 
     handles = b.process_circuits([c, c1])
-    s_ilo = b.run_circuit(c1).get_state(basis=BasisOrder.ilo)
-    correct_ilo = b.run_circuit(c).get_state(basis=BasisOrder.ilo)
+    res_c = b.run_circuit(c)
+    res_c1 = b.run_circuit(c1)
+    s_ilo = res_c1.get_state(basis=BasisOrder.ilo)
+    correct_ilo = res_c.get_state(basis=BasisOrder.ilo)
 
     assert np.allclose(s_ilo, correct_ilo)
-    s_dlo = b.run_circuit(c1).get_state(basis=BasisOrder.dlo)
-    correct_dlo = b.run_circuit(c).get_state(basis=BasisOrder.dlo)
+    s_dlo = res_c1.get_state(basis=BasisOrder.dlo)
+    correct_dlo = res_c.get_state(basis=BasisOrder.dlo)
     assert np.allclose(s_dlo, correct_dlo)
 
     qbs = c.qubits
@@ -619,11 +621,13 @@ def test_swaps_basisorder() -> None:
         )
 
     bu = AerUnitaryBackend()
-    u_ilo = bu.run_circuit(c1).get_unitary(basis=BasisOrder.ilo)
-    correct_ilo = bu.run_circuit(c).get_unitary(basis=BasisOrder.ilo)
+    res_c = bu.run_circuit(c)
+    res_c1 = bu.run_circuit(c1)
+    u_ilo = res_c1.get_unitary(basis=BasisOrder.ilo)
+    correct_ilo = res_c.get_unitary(basis=BasisOrder.ilo)
     assert np.allclose(u_ilo, correct_ilo)
-    u_dlo = bu.run_circuit(c1).get_unitary(basis=BasisOrder.dlo)
-    correct_dlo = bu.run_circuit(c).get_unitary(basis=BasisOrder.dlo)
+    u_dlo = res_c1.get_unitary(basis=BasisOrder.dlo)
+    correct_dlo = res_c.get_unitary(basis=BasisOrder.dlo)
     assert np.allclose(u_dlo, correct_dlo)
 
 

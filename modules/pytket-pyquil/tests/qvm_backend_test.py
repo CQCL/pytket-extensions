@@ -372,10 +372,7 @@ def test_shots_bits_edgecases(qvm: None, quilc: None) -> None:
             assert res.get_counts() == correct_counts
             # Direct
             res = forest_backend.run_circuit(c, n_shots=n_shots)
-            assert np.array_equal(
-                res.get_shots(),
-                correct_shots,
-            )
+            assert np.array_equal(res.get_shots(), correct_shots)
             assert res.get_shots().shape == correct_shape
             assert res.get_counts() == correct_counts
 

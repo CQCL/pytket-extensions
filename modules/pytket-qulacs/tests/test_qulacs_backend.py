@@ -167,13 +167,13 @@ def test_basisorder() -> None:
         c = Circuit(2)
         c.X(1)
         b.process_circuit(c)
-        assert (b.run_circuit(c).get_state() == np.asarray([0, 1, 0, 0])).all()
-        assert (
-            b.run_circuit(c).get_state(basis=BasisOrder.dlo) == np.asarray([0, 0, 1, 0])
-        ).all()
+        res = b.run_circuit(c)
+        assert (res.get_state() == np.asarray([0, 1, 0, 0])).all()
+        assert (res.get_state(basis=BasisOrder.dlo) == np.asarray([0, 0, 1, 0])).all()
         c.measure_all()
-        assert b.run_circuit(c, n_shots=4, seed=4).get_shots().shape == (4, 2)
-        assert b.run_circuit(c, n_shots=4, seed=4).get_counts() == {(0, 1): 4}
+        res = b.run_circuit(c, n_shots=4, seed=4)
+        assert res.get_shots().shape == (4, 2)
+        assert res.get_counts() == {(0, 1): 4}
 
 
 pauli_sym = {"I": Pauli.I, "X": Pauli.X, "Y": Pauli.Y, "Z": Pauli.Z}
