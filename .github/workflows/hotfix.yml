@@ -42,15 +42,14 @@ jobs:
       run: |
         docker pull rigetti/quilc
         docker pull rigetti/qvm
-    - name: Install dotnet SDK and iqsharp
+    - name: Install dotnet SDK
       if: contains(env.MODULES_TO_TEST, 'pytket-qsharp')
-      run: |
-        curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
-        sudo apt-add-repository https://packages.microsoft.com/ubuntu/20.04/prod
-        sudo apt-get update
-        sudo apt-get install dotnet-sdk-3.1
-        echo "~/.dotnet/tools" >> $GITHUB_PATH
-        dotnet tool install -g Microsoft.Quantum.IQSharp
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '3.1.x'
+    - name: Install iqsharp
+      if: contains(env.MODULES_TO_TEST, 'pytket-qsharp')
+      run: dotnet tool install -g Microsoft.Quantum.IQSharp
 
     - name: Set up Python 3.9
       uses: actions/setup-python@v2
