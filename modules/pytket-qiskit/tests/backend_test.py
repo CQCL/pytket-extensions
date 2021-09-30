@@ -104,17 +104,17 @@ def get_test_circuit(measure: bool) -> QuantumCircuit:
 def test_statevector() -> None:
     c = circuit_gen()
     b = AerStateBackend()
-    state = b.get_state(c)
+    state = b.run_circuit(c).get_state()
     assert np.allclose(state, [math.sqrt(0.5), 0, 0, math.sqrt(0.5)], atol=1e-10)
     c.add_phase(0.5)
-    state1 = b.get_state(c)
+    state1 = b.run_circuit(c).get_state()
     assert np.allclose(state1, state * 1j, atol=1e-10)
 
 
 def test_sim() -> None:
     c = circuit_gen(True)
     b = AerBackend()
-    shots = b.get_shots(c, 1024)
+    shots = b.run_circuit(c, n_shots=1024).get_shots()
     print(shots)
 
 
@@ -126,7 +126,7 @@ def test_measures() -> None:
         c.X(i)
     c.measure_all()
     b = AerBackend()
-    shots = b.get_shots(c, 10)
+    shots = b.run_circuit(c, n_shots=10).get_shots()
     all_ones = True
     all_zeros = True
     for i in x_qbs:
@@ -152,7 +152,7 @@ def test_noise() -> None:
     b = AerBackend(noise_model)
     n_shots = 50
     c = b.get_compiled_circuit(c)
-    shots = b.get_shots(c, n_shots, seed=4)
+    shots = b.run_circuit(c, n_shots=n_shots, seed=4).get_shots()
     zer_exp = []
     one_exp = []
     for i in range(n_qbs):
@@ -177,7 +177,7 @@ def test_noise() -> None:
     )
 
     c2 = b.get_compiled_circuit(c2)
-    shots = b.get_shots(c2, 10, seed=5)
+    shots = b.run_circuit(c2, n_shots=10, seed=5).get_shots()
     assert shots.shape == (10, 4)
 
 
@@ -397,15 +397,14 @@ def test_machine_debug(santiago_backend: IBMQBackend) -> None:
         correct_shots = np.zeros((4, 2))
         correct_counts = {(0, 0): 4}
 
-        shots = backend.get_shots(c, n_shots=4)
-        assert np.all(shots == correct_shots)
-        counts = backend.get_counts(c, n_shots=4)
-        assert counts == correct_counts
+        res = backend.run_circuit(c, n_shots=4)
+        assert np.all(res.get_shots() == correct_shots)
+        assert res.get_counts() == correct_counts
 
-        newshots = backend.get_shots(c, 4)
-        assert np.all(newshots == correct_shots)
-        newcounts = backend.get_counts(c, 4)
-        assert newcounts == correct_counts
+        # check that generating new shots still works
+        res = backend.run_circuit(c, n_shots=4)
+        assert np.all(res.get_shots() == correct_shots)
+        assert res.get_counts() == correct_counts
     finally:
         # ensure shared backend is reset for other tests
         backend._MACHINE_DEBUG = False
@@ -519,14 +518,16 @@ def test_routing_measurements() -> None:
     qc = get_test_circuit(True)
     circ = qiskit_to_tk(qc)
     sim = AerBackend()
-    original_results = sim.get_shots(circ, 10, seed=4)
+    original_results = sim.run_circuit(circ, n_shots=10, seed=4).get_shots()
     coupling = [[1, 0], [2, 0], [2, 1], [3, 2], [3, 4], [4, 2]]
     arc = Architecture(coupling)
     physical_c = route(circ, arc)
     Transform.DecomposeSWAPtoCX().apply(physical_c)
     Transform.DecomposeCXDirected(arc).apply(physical_c)
     Transform.OptimisePostRouting().apply(physical_c)
-    assert (sim.get_shots(physical_c, 10) == original_results).all()
+    assert (
+        sim.run_circuit(physical_c, n_shots=10).get_shots() == original_results
+    ).all()
 
 
 def test_routing_no_cx() -> None:
@@ -546,7 +547,7 @@ def test_counts() -> None:
     qc = get_test_circuit(True)
     circ = qiskit_to_tk(qc)
     sim = AerBackend()
-    counts = sim.get_counts(circ, 10, seed=4)
+    counts = sim.run_circuit(circ, n_shots=10, seed=4).get_counts()
     assert counts == {(1, 0, 1, 1, 0): 10}
 
 
@@ -556,23 +557,24 @@ def test_ilo() -> None:
     bu = AerUnitaryBackend()
     c = Circuit(2)
     c.X(1)
-    assert (bs.get_state(c) == np.asarray([0, 1, 0, 0])).all()
-    assert (bs.get_state(c, basis=BasisOrder.dlo) == np.asarray([0, 0, 1, 0])).all()
+    res_s = bs.run_circuit(c)
+    res_u = bu.run_circuit(c)
+    assert (res_s.get_state() == np.asarray([0, 1, 0, 0])).all()
+    assert (res_s.get_state(basis=BasisOrder.dlo) == np.asarray([0, 0, 1, 0])).all()
     assert (
-        bu.get_unitary(c)
+        res_u.get_unitary()
         == np.asarray([[0, 1, 0, 0], [1, 0, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0]])
     ).all()
     assert (
-        bu.get_unitary(c, basis=BasisOrder.dlo)
+        res_u.get_unitary(basis=BasisOrder.dlo)
         == np.asarray([[0, 0, 1, 0], [0, 0, 0, 1], [1, 0, 0, 0], [0, 1, 0, 0]])
     ).all()
     c.measure_all()
-    assert (b.get_shots(c, 2) == np.asarray([[0, 1], [0, 1]])).all()
-    assert (
-        b.get_shots(c, 2, basis=BasisOrder.dlo) == np.asarray([[1, 0], [1, 0]])
-    ).all()
-    assert b.get_counts(c, 2) == {(0, 1): 2}
-    assert b.get_counts(c, 2, basis=BasisOrder.dlo) == {(1, 0): 2}
+    res = b.run_circuit(c, n_shots=2)
+    assert (res.get_shots() == np.asarray([[0, 1], [0, 1]])).all()
+    assert (res.get_shots(basis=BasisOrder.dlo) == np.asarray([[1, 0], [1, 0]])).all()
+    assert res.get_counts() == {(0, 1): 2}
+    assert res.get_counts(basis=BasisOrder.dlo) == {(1, 0): 2}
 
 
 def test_swaps_basisorder() -> None:
@@ -593,12 +595,14 @@ def test_swaps_basisorder() -> None:
     c, c1 = b.get_compiled_circuits([c, c1])
 
     handles = b.process_circuits([c, c1])
-    s_ilo = b.get_state(c1, basis=BasisOrder.ilo)
-    correct_ilo = b.get_state(c, basis=BasisOrder.ilo)
+    res_c = b.run_circuit(c)
+    res_c1 = b.run_circuit(c1)
+    s_ilo = res_c1.get_state(basis=BasisOrder.ilo)
+    correct_ilo = res_c.get_state(basis=BasisOrder.ilo)
 
     assert np.allclose(s_ilo, correct_ilo)
-    s_dlo = b.get_state(c1, basis=BasisOrder.dlo)
-    correct_dlo = b.get_state(c, basis=BasisOrder.dlo)
+    s_dlo = res_c1.get_state(basis=BasisOrder.dlo)
+    correct_dlo = res_c.get_state(basis=BasisOrder.dlo)
     assert np.allclose(s_dlo, correct_dlo)
 
     qbs = c.qubits
@@ -617,11 +621,13 @@ def test_swaps_basisorder() -> None:
         )
 
     bu = AerUnitaryBackend()
-    u_ilo = bu.get_unitary(c1, basis=BasisOrder.ilo)
-    correct_ilo = bu.get_unitary(c, basis=BasisOrder.ilo)
+    res_c = bu.run_circuit(c)
+    res_c1 = bu.run_circuit(c1)
+    u_ilo = res_c1.get_unitary(basis=BasisOrder.ilo)
+    correct_ilo = res_c.get_unitary(basis=BasisOrder.ilo)
     assert np.allclose(u_ilo, correct_ilo)
-    u_dlo = bu.get_unitary(c1, basis=BasisOrder.dlo)
-    correct_dlo = bu.get_unitary(c, basis=BasisOrder.dlo)
+    u_dlo = res_c1.get_unitary(basis=BasisOrder.dlo)
+    correct_dlo = res_c.get_unitary(basis=BasisOrder.dlo)
     assert np.allclose(u_dlo, correct_dlo)
 
 
@@ -697,7 +703,7 @@ def test_aerstate_result_handle() -> None:
     assert status == CircuitStatus(StatusEnum.COMPLETED, "job has successfully run")
     assert np.allclose(state, [np.sqrt(0.5), 0, 0, math.sqrt(0.5)], atol=1e-10)
     b2 = AerUnitaryBackend()
-    unitary = b2.get_unitary(c)
+    unitary = b2.run_circuit(c).get_unitary()
     assert np.allclose(
         unitary,
         np.sqrt(0.5)
@@ -716,8 +722,8 @@ def test_cache() -> None:
     assert h not in b._cache
     assert not b._cache
 
-    b.get_counts(c, n_shots=2)
-    b.get_counts(c.copy(), n_shots=2)
+    b.run_circuit(c, n_shots=2).get_counts()
+    b.run_circuit(c.copy(), n_shots=2).get_counts()
     b.empty_cache()
     assert not b._cache
 
@@ -733,7 +739,7 @@ def test_mixed_circuit() -> None:
     c.Measure(qr[1], br[0])
     backend = AerBackend()
     c = backend.get_compiled_circuit(c)
-    counts = backend.get_counts(c, 1024)
+    counts = backend.run_circuit(c, n_shots=1024).get_counts()
     for key in counts.keys():
         assert key in {(0, 1), (1, 0)}
 
@@ -801,8 +807,8 @@ def test_ibmq_emulator() -> None:
     circ = Circuit(2, 2).H(0).CX(0, 1).measure_all()
     circ = b_emu.get_compiled_circuit(circ)
     b_noi = AerBackend(noise_model=b_emu._noise_model)
-    emu_shots = b_emu.get_shots(circ, 10, seed=10)
-    aer_shots = b_noi.get_shots(circ, 10, seed=10)
+    emu_shots = b_emu.run_circuit(circ, n_shots=10, seed=10).get_shots()
+    aer_shots = b_noi.run_circuit(circ, n_shots=10, seed=10).get_shots()
     assert np.array_equal(emu_shots, aer_shots)
 
 
@@ -827,9 +833,10 @@ def test_shots_bits_edgecases(n_shots: int, n_bits: int) -> None:
     assert res.get_counts() == correct_counts
 
     # Direct
-    assert np.array_equal(aer_backend.get_shots(c, n_shots), correct_shots)
-    assert aer_backend.get_shots(c, n_shots).shape == correct_shape
-    assert aer_backend.get_counts(c, n_shots) == correct_counts
+    res = aer_backend.run_circuit(c, n_shots=n_shots)
+    assert np.array_equal(res.get_shots(), correct_shots)
+    assert res.get_shots().shape == correct_shape
+    assert res.get_counts() == correct_counts
 
 
 def test_simulation_method() -> None:
@@ -840,17 +847,17 @@ def test_simulation_method() -> None:
     clifford_T_circ = Circuit(2).H(0).T(1).CX(0, 1).measure_all()
 
     for b in state_backends + [stabilizer_backend]:
-        counts = b.get_counts(clifford_circ, 4)
+        counts = b.run_circuit(clifford_circ, n_shots=4).get_counts()
         assert sum(val for _, val in counts.items()) == 4
 
     for b in state_backends:
-        counts = b.get_counts(clifford_T_circ, 4)
+        counts = b.run_circuit(clifford_T_circ, n_shots=4).get_counts()
         assert sum(val for _, val in counts.items()) == 4
 
     with pytest.raises(AttributeError) as warninfo:
         # check for the error thrown when non-clifford circuit used with
         # stabilizer backend
-        stabilizer_backend.get_counts(clifford_T_circ, 4)
+        stabilizer_backend.run_circuit(clifford_T_circ, n_shots=4).get_counts()
         assert "Attribute header is not defined" in str(warninfo.value)
 
 
@@ -877,7 +884,7 @@ def test_remote_simulator() -> None:
 
     assert remote_qasm.valid_circuit(c)
 
-    assert sum(remote_qasm.get_counts(c, 10).values()) == 10
+    assert sum(remote_qasm.run_circuit(c, n_shots=10).get_counts().values()) == 10
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
@@ -939,14 +946,14 @@ def test_compilation_correctness(santiago_backend: IBMQBackend) -> None:
     c.SX(3).Rz(0.125, 3).SX(3)
     c.CX(0, 3).CX(0, 4)
     u_backend = AerUnitaryBackend()
-    u = u_backend.get_unitary(c)
+    u = u_backend.run_circuit(c).get_unitary()
     ibm_backend = santiago_backend
     for ol in range(3):
         p = ibm_backend.default_compilation_pass(optimisation_level=ol)
         cu = CompilationUnit(c)
         p.apply(cu)
         c1 = cu.circuit
-        compiled_u = u_backend.get_unitary(c1)
+        compiled_u = u_backend.run_circuit(c1).get_unitary()
 
         # Adjust for placement
         imap = cu.initial_map
@@ -988,11 +995,11 @@ def _verify_single_q_rebase(
 ) -> bool:
     """Compare the unitary of a tk1 gate to the unitary of the translated circuit"""
     rotation_circ = _tk1_to_rotations(a, b, c)
-    u_before = backend.get_unitary(rotation_circ)
+    u_before = backend.run_circuit(rotation_circ).get_unitary()
     circ = Circuit(1)
     circ.add_gate(OpType.TK1, [a, b, c], [0])
     _rebase_pass.apply(circ)
-    u_after = backend.get_unitary(circ)
+    u_after = backend.run_circuit(circ).get_unitary()
     return np.allclose(u_before, u_after)
 
 

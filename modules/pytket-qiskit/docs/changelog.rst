@@ -1,6 +1,13 @@
 Changelog
 ~~~~~~~~~
 
+0.19.0 (Unreleased)
+-------------------
+
+* Removed deprecated :py:meth:`AerUnitaryBackend.get_unitary`. Use
+  :py:meth:`AerUnitaryBackend.run_circuit` and
+  :py:meth:`pytket.backends.backendresult.BackendResult.get_unitary` instead.
+
 0.18.0 (September 2021)
 -----------------------
 

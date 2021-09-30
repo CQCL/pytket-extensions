@@ -333,9 +333,10 @@ def test_shots_bits_edgecases(n_shots, n_bits) -> None:
     assert res.get_counts() == correct_counts
 
     # Direct
-    assert np.array_equal(braket_backend.get_shots(c, n_shots), correct_shots)
-    assert braket_backend.get_shots(c, n_shots).shape == correct_shape
-    assert braket_backend.get_counts(c, n_shots) == correct_counts
+    res = braket_backend.run_circuit(c, n_shots=n_shots)
+    assert np.array_equal(res.get_shots(), correct_shots)
+    assert res.get_shots().shape == correct_shape
+    assert res.get_counts() == correct_counts
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)

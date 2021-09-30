@@ -43,7 +43,7 @@ def test_small_circuit_ionq() -> None:
     qc.Measure(1, 0)
     qc.Measure(2, 2)
     qc = backend.get_compiled_circuit(qc)
-    counts = backend.get_counts(qc, 1000)
+    counts = backend.run_circuit(qc, n_shots=1000).get_counts()
     # note that we are rebuilding counts from probabilities, which are
     # floats, and therefore count number is not always preserved!
     assert counts[(0, 0, 0)] > 498 and counts[(0, 0, 0)] < 502
@@ -60,7 +60,7 @@ def test_big_circuit_ionq() -> None:
     circ.CX(3, 2)
     circ.ZZPhase(1.2, 0, 1)
     circ.measure_all()
-    counts = backend.get_counts(circ, n_shots=100)
+    counts = backend.run_circuit(circ, n_shots=100).get_counts()
     assert counts[(0, 0, 0, 0)] == 100
 
 
@@ -93,7 +93,7 @@ def test_machine_debug() -> None:
     c.CX(0, 1)
     c.measure_all()
     n_shots = 100
-    counts = b.get_counts(c, n_shots=n_shots, timeout=30)
+    counts = b.run_circuit(c, n_shots=n_shots, timeout=30).get_counts()
     assert counts[(0, 0)] == n_shots
 
 
@@ -170,9 +170,10 @@ def test_shots_bits_edgecases(n_shots, n_bits) -> None:
     assert res.get_counts() == correct_counts
 
     # Direct
-    assert np.array_equal(ionq_backend.get_shots(c, n_shots), correct_shots)
-    assert ionq_backend.get_shots(c, n_shots).shape == correct_shape
-    assert ionq_backend.get_counts(c, n_shots) == correct_counts
+    res = ionq_backend.run_circuit(c, n_shots=n_shots)
+    assert np.array_equal(res.get_shots(), correct_shots)
+    assert res.get_shots().shape == correct_shape
+    assert res.get_counts() == correct_counts
 
 
 def test_nshots_ionq() -> None:
