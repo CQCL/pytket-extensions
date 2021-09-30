@@ -563,11 +563,11 @@ def test_ilo() -> None:
         bs.run_circuit(c).get_state(basis=BasisOrder.dlo) == np.asarray([0, 0, 1, 0])
     ).all()
     assert (
-        bu.get_unitary(c)
+        bu.run_circuit(c).get_unitary()
         == np.asarray([[0, 1, 0, 0], [1, 0, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0]])
     ).all()
     assert (
-        bu.get_unitary(c, basis=BasisOrder.dlo)
+        bu.run_circuit(c).get_unitary(basis=BasisOrder.dlo)
         == np.asarray([[0, 0, 1, 0], [0, 0, 0, 1], [1, 0, 0, 0], [0, 1, 0, 0]])
     ).all()
     c.measure_all()
@@ -624,11 +624,11 @@ def test_swaps_basisorder() -> None:
         )
 
     bu = AerUnitaryBackend()
-    u_ilo = bu.get_unitary(c1, basis=BasisOrder.ilo)
-    correct_ilo = bu.get_unitary(c, basis=BasisOrder.ilo)
+    u_ilo = bu.run_circuit(c1).get_unitary(basis=BasisOrder.ilo)
+    correct_ilo = bu.run_circuit(c).get_unitary(basis=BasisOrder.ilo)
     assert np.allclose(u_ilo, correct_ilo)
-    u_dlo = bu.get_unitary(c1, basis=BasisOrder.dlo)
-    correct_dlo = bu.get_unitary(c, basis=BasisOrder.dlo)
+    u_dlo = bu.run_circuit(c1).get_unitary(basis=BasisOrder.dlo)
+    correct_dlo = bu.run_circuit(c).get_unitary(basis=BasisOrder.dlo)
     assert np.allclose(u_dlo, correct_dlo)
 
 
@@ -704,7 +704,7 @@ def test_aerstate_result_handle() -> None:
     assert status == CircuitStatus(StatusEnum.COMPLETED, "job has successfully run")
     assert np.allclose(state, [np.sqrt(0.5), 0, 0, math.sqrt(0.5)], atol=1e-10)
     b2 = AerUnitaryBackend()
-    unitary = b2.get_unitary(c)
+    unitary = b2.run_circuit(c).get_unitary()
     assert np.allclose(
         unitary,
         np.sqrt(0.5)
@@ -950,14 +950,14 @@ def test_compilation_correctness(santiago_backend: IBMQBackend) -> None:
     c.SX(3).Rz(0.125, 3).SX(3)
     c.CX(0, 3).CX(0, 4)
     u_backend = AerUnitaryBackend()
-    u = u_backend.get_unitary(c)
+    u = u_backend.run_circuit(c).get_unitary()
     ibm_backend = santiago_backend
     for ol in range(3):
         p = ibm_backend.default_compilation_pass(optimisation_level=ol)
         cu = CompilationUnit(c)
         p.apply(cu)
         c1 = cu.circuit
-        compiled_u = u_backend.get_unitary(c1)
+        compiled_u = u_backend.run_circuit(c1).get_unitary()
 
         # Adjust for placement
         imap = cu.initial_map
@@ -999,11 +999,11 @@ def _verify_single_q_rebase(
 ) -> bool:
     """Compare the unitary of a tk1 gate to the unitary of the translated circuit"""
     rotation_circ = _tk1_to_rotations(a, b, c)
-    u_before = backend.get_unitary(rotation_circ)
+    u_before = backend.run_circuit(rotation_circ).get_unitary()
     circ = Circuit(1)
     circ.add_gate(OpType.TK1, [a, b, c], [0])
     _rebase_pass.apply(circ)
-    u_after = backend.get_unitary(circ)
+    u_after = backend.run_circuit(circ).get_unitary()
     return np.allclose(u_before, u_after)
 
 

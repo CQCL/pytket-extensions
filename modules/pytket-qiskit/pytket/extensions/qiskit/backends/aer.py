@@ -614,36 +614,6 @@ class AerUnitaryBackend(_AerStateBaseBackend):
         """Backend for running simulations on the Qiskit Aer Unitary simulator."""
         super().__init__("aer_simulator_unitary")
 
-    def get_unitary(
-        self,
-        circuit: Circuit,
-        basis: BasisOrder = BasisOrder.ilo,
-        valid_check: bool = True,
-    ) -> np.ndarray:
-        """
-        Calculate the unitary matrix for a circuit.
-
-        :param circuit: Circuit to execute
-        :type circuit: Circuit
-        :param basis: Toggle between ILO-BE (increasing lexicographic order of
-            bit ids, big-endian) and DLO-BE (decreasing lexicographic order,
-            big-endian) for column ordering. Defaults to BasisOrder.ilo.
-        :type basis: BasisOrder, optional
-        :param valid_check: Explicitly check that the circuit satisfies all of
-            the required predicates before running. Defaults to True.
-        :type valid_check: bool, optional
-        :return: Full statevector in encoding given by `basis`.
-        :rtype: np.ndarray
-        """
-
-        result, _ = self.run_circuit(circuit, valid_check=valid_check)
-        q_bits = (
-            sorted(result.q_bits.keys(), reverse=(basis is not BasisOrder.ilo))
-            if result.q_bits
-            else None
-        )
-        return result.get_unitary(q_bits)
-
 
 def _process_model(noise_model: NoiseModel, gate_set: Set[OpType]) -> dict:
     # obtain approximations for gate errors from noise model by using probability of
