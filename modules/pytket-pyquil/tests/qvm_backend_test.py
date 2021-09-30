@@ -259,21 +259,17 @@ def test_ilo(qvm: None, quilc: None) -> None:
     c = Circuit(2)
     c.CZ(0, 1)
     c.Rx(1.0, 1)
-    assert np.allclose(bs.run_circuit(c).get_state(), np.asarray([0, -1j, 0, 0]))
-    assert np.allclose(
-        bs.run_circuit(c).get_state(basis=BasisOrder.dlo), np.asarray([0, 0, -1j, 0])
-    )
+    res = bs.run_circuit(c)
+    assert np.allclose(res.get_state(), np.asarray([0, -1j, 0, 0]))
+    assert np.allclose(res.get_state(basis=BasisOrder.dlo), np.asarray([0, 0, -1j, 0]))
     c.rename_units({Qubit(0): Node(0), Qubit(1): Node(1)})
     c.measure_all()
-    assert (
-        b.run_circuit(c, n_shots=2).get_shots() == np.asarray([[0, 1], [0, 1]])
-    ).all()
-    assert (
-        b.run_circuit(c, n_shots=2).get_shots(basis=BasisOrder.dlo)
-        == np.asarray([[1, 0], [1, 0]])
-    ).all()
-    assert b.run_circuit(c, n_shots=2).get_counts() == {(0, 1): 2}
-    assert b.run_circuit(c, n_shots=2).get_counts(basis=BasisOrder.dlo) == {(1, 0): 2}
+
+    res = b.run_circuit(c, n_shots=2)
+    assert (res.get_shots() == np.asarray([[0, 1], [0, 1]])).all()
+    assert (res.get_shots(basis=BasisOrder.dlo) == np.asarray([[1, 0], [1, 0]])).all()
+    assert res.get_counts() == {(0, 1): 2}
+    assert res.get_counts(basis=BasisOrder.dlo) == {(1, 0): 2}
 
 
 @pytest.mark.skipif(
@@ -289,8 +285,9 @@ def test_swaps_basisorder() -> None:
     CliffordSimp(True).apply(c)
     assert c.n_gates_of_type(OpType.CX) == 1
     c = b.get_compiled_circuit(c)
-    s_ilo = b.run_circuit(c).get_state(basis=BasisOrder.ilo)
-    s_dlo = b.run_circuit(c).get_state(basis=BasisOrder.dlo)
+    res = b.run_circuit(c)
+    s_ilo = res.get_state(basis=BasisOrder.ilo)
+    s_dlo = res.get_state(basis=BasisOrder.dlo)
     correct_ilo = np.zeros((16,))
     correct_ilo[4] = 1.0
     assert np.allclose(s_ilo, correct_ilo)
@@ -374,18 +371,13 @@ def test_shots_bits_edgecases(qvm: None, quilc: None) -> None:
             assert res.get_shots().shape == correct_shape
             assert res.get_counts() == correct_counts
             # Direct
+            res = forest_backend.run_circuit(c, n_shots=n_shots)
             assert np.array_equal(
-                forest_backend.run_circuit(c, n_shots=n_shots).get_shots(),
+                res.get_shots(),
                 correct_shots,
             )
-            assert (
-                forest_backend.run_circuit(c, n_shots=n_shots).get_shots().shape
-                == correct_shape
-            )
-            assert (
-                forest_backend.run_circuit(c, n_shots=n_shots).get_counts()
-                == correct_counts
-            )
+            assert res.get_shots().shape == correct_shape
+            assert res.get_counts() == correct_counts
 
 
 @pytest.mark.skipif(

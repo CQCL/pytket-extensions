@@ -256,10 +256,7 @@ def test_shots_bits_edgecases(n_shots, n_bits) -> None:
     assert res.get_counts() == correct_counts
 
     # Direct
-    assert np.array_equal(
-        cirq_backend.run_circuit(c, n_shots=n_shots).get_shots(), correct_shots
-    )
-    assert (
-        cirq_backend.run_circuit(c, n_shots=n_shots).get_shots().shape == correct_shape
-    )
-    assert cirq_backend.run_circuit(c, n_shots=n_shots).get_counts() == correct_counts
+    res = cirq_backend.run_circuit(c, n_shots=n_shots)
+    assert np.array_equal(res.get_shots(), correct_shots)
+    assert res.get_shots().shape == correct_shape
+    assert res.get_counts() == correct_counts

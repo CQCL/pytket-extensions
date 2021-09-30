@@ -75,9 +75,10 @@ def test_honeywell() -> None:
     assert backend.circuit_status(handle).status is StatusEnum.COMPLETED
     assert np.all(shots == correct_shots)
     assert counts == correct_counts
-    newshots = backend.run_circuit(c, n_shots=4, timeout=49).get_shots()
+    res = backend.run_circuit(c, n_shots=4, timeout=49)
+    newshots = res.get_shots()
     assert np.all(newshots == correct_shots)
-    newcounts = backend.run_circuit(c, n_shots=4).get_counts()
+    newcounts = res.get_counts()
     assert newcounts == correct_counts
     if skip_remote_tests:
         assert backend.backend_info is None
@@ -279,16 +280,10 @@ def test_shots_bits_edgecases(n_shots, n_bits) -> None:
     assert res.get_counts() == correct_counts
 
     # Direct
-    assert np.array_equal(
-        honeywell_backend.run_circuit(c, n_shots=n_shots).get_shots(), correct_shots
-    )
-    assert (
-        honeywell_backend.run_circuit(c, n_shots=n_shots).get_shots().shape
-        == correct_shape
-    )
-    assert (
-        honeywell_backend.run_circuit(c, n_shots=n_shots).get_counts() == correct_counts
-    )
+    res = honeywell_backend.run_circuit(c, n_shots=n_shots)
+    assert np.array_equal(res.get_shots(), correct_shots)
+    assert res.get_shots().shape == correct_shape
+    assert res.get_counts() == correct_counts
 
 
 @given(

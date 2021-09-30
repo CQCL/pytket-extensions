@@ -397,15 +397,14 @@ def test_machine_debug(santiago_backend: IBMQBackend) -> None:
         correct_shots = np.zeros((4, 2))
         correct_counts = {(0, 0): 4}
 
-        shots = backend.run_circuit(c, n_shots=4).get_shots()
-        assert np.all(shots == correct_shots)
-        counts = backend.run_circuit(c, n_shots=4).get_counts()
-        assert counts == correct_counts
+        res = backend.run_circuit(c, n_shots=4)
+        assert np.all(res.get_shots() == correct_shots)
+        assert res.get_counts() == correct_counts
 
-        newshots = backend.run_circuit(c, n_shots=4).get_shots()
-        assert np.all(newshots == correct_shots)
-        newcounts = backend.run_circuit(c, n_shots=4).get_counts()
-        assert newcounts == correct_counts
+        # check that generating new shots still works
+        res = backend.run_circuit(c, n_shots=4)
+        assert np.all(res.get_shots() == correct_shots)
+        assert res.get_counts() == correct_counts
     finally:
         # ensure shared backend is reset for other tests
         backend._MACHINE_DEBUG = False
@@ -558,28 +557,24 @@ def test_ilo() -> None:
     bu = AerUnitaryBackend()
     c = Circuit(2)
     c.X(1)
-    assert (bs.run_circuit(c).get_state() == np.asarray([0, 1, 0, 0])).all()
+    res_s = bs.run_circuit(c)
+    res_u = bu.run_circuit(c)
+    assert (res_s.get_state() == np.asarray([0, 1, 0, 0])).all()
+    assert (res_s.get_state(basis=BasisOrder.dlo) == np.asarray([0, 0, 1, 0])).all()
     assert (
-        bs.run_circuit(c).get_state(basis=BasisOrder.dlo) == np.asarray([0, 0, 1, 0])
-    ).all()
-    assert (
-        bu.run_circuit(c).get_unitary()
+        res_u.get_unitary()
         == np.asarray([[0, 1, 0, 0], [1, 0, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0]])
     ).all()
     assert (
-        bu.run_circuit(c).get_unitary(basis=BasisOrder.dlo)
+        res_u.get_unitary(basis=BasisOrder.dlo)
         == np.asarray([[0, 0, 1, 0], [0, 0, 0, 1], [1, 0, 0, 0], [0, 1, 0, 0]])
     ).all()
     c.measure_all()
-    assert (
-        b.run_circuit(c, n_shots=2).get_shots() == np.asarray([[0, 1], [0, 1]])
-    ).all()
-    assert (
-        b.run_circuit(c, n_shots=2).get_shots(basis=BasisOrder.dlo)
-        == np.asarray([[1, 0], [1, 0]])
-    ).all()
-    assert b.run_circuit(c, n_shots=2).get_counts() == {(0, 1): 2}
-    assert b.run_circuit(c, n_shots=2).get_counts(basis=BasisOrder.dlo) == {(1, 0): 2}
+    res = b.run_circuit(c, n_shots=2)
+    assert (res.get_shots() == np.asarray([[0, 1], [0, 1]])).all()
+    assert (res.get_shots(basis=BasisOrder.dlo) == np.asarray([[1, 0], [1, 0]])).all()
+    assert res.get_counts() == {(0, 1): 2}
+    assert res.get_counts(basis=BasisOrder.dlo) == {(1, 0): 2}
 
 
 def test_swaps_basisorder() -> None:
@@ -834,13 +829,10 @@ def test_shots_bits_edgecases(n_shots: int, n_bits: int) -> None:
     assert res.get_counts() == correct_counts
 
     # Direct
-    assert np.array_equal(
-        aer_backend.run_circuit(c, n_shots=n_shots).get_shots(), correct_shots
-    )
-    assert (
-        aer_backend.run_circuit(c, n_shots=n_shots).get_shots().shape == correct_shape
-    )
-    assert aer_backend.run_circuit(c, n_shots=n_shots).get_counts() == correct_counts
+    res = aer_backend.run_circuit(c, n_shots=n_shots)
+    assert np.array_equal(res.get_shots(), correct_shots)
+    assert res.get_shots().shape == correct_shape
+    assert res.get_counts() == correct_counts
 
 
 def test_simulation_method() -> None:

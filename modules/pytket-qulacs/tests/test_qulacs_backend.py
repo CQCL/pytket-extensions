@@ -124,8 +124,9 @@ def test_swaps_basisorder() -> None:
         CliffordSimp(True).apply(c)
         assert c.n_gates_of_type(OpType.CX) == 1
         c = b.get_compiled_circuit(c)
-        s_ilo = b.run_circuit(c).get_state(basis=BasisOrder.ilo)
-        s_dlo = b.run_circuit(c).get_state(basis=BasisOrder.dlo)
+        res = b.run_circuit(c)
+        s_ilo = res.get_state(basis=BasisOrder.ilo)
+        s_dlo = res.get_state(basis=BasisOrder.dlo)
         correct_ilo = np.zeros((16,))
         correct_ilo[4] = 1.0
         assert np.allclose(s_ilo, correct_ilo)
@@ -253,14 +254,7 @@ def test_shots_bits_edgecases(n_shots, n_bits) -> None:
         assert res.get_counts() == correct_counts
 
         # Direct
-        assert np.array_equal(
-            qulacs_backend.run_circuit(c, n_shots=n_shots).get_shots(), correct_shots
-        )
-        assert (
-            qulacs_backend.run_circuit(c, n_shots=n_shots).get_shots().shape
-            == correct_shape
-        )
-        assert (
-            qulacs_backend.run_circuit(c, n_shots=n_shots).get_counts()
-            == correct_counts
-        )
+        res = qulacs_backend.run_circuit(c, n_shots=n_shots)
+        assert np.array_equal(res.get_shots(), correct_shots)
+        assert res.get_shots().shape == correct_shape
+        assert res.get_counts() == correct_counts

@@ -106,13 +106,14 @@ def test_ilo() -> None:
     b = ProjectQBackend()
     c = Circuit(2)
     c.X(1)
+    res = b.run_circuit(c)
     assert np.allclose(
-        b.run_circuit(c).get_state(),
+        res.get_state(),
         np.asarray([0, 1, 0, 0], dtype=complex),
         atol=1e-10,
     )
     assert np.allclose(
-        b.run_circuit(c).get_state(basis=BasisOrder.dlo),
+        res.get_state(basis=BasisOrder.dlo),
         np.asarray([0, 0, 1, 0], dtype=complex),
         atol=1e-10,
     )
@@ -128,8 +129,9 @@ def test_swaps_basisorder() -> None:
     CliffordSimp(True).apply(c)
     assert c.n_gates_of_type(OpType.CX) == 1
     c = b.get_compiled_circuit(c)
-    s_ilo = b.run_circuit(c).get_state(basis=BasisOrder.ilo)
-    s_dlo = b.run_circuit(c).get_state(basis=BasisOrder.dlo)
+    res = b.run_circuit(c)
+    s_ilo = res.get_state(basis=BasisOrder.ilo)
+    s_dlo = res.get_state(basis=BasisOrder.dlo)
     correct_ilo = np.zeros((16,))
     correct_ilo[4] = 1.0
     assert np.allclose(s_ilo, correct_ilo)
