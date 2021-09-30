@@ -114,16 +114,13 @@ class _CirqSampleBackend(_CirqBaseBackend):
             Simulator, DensityMatrixSimulator, CliffordSimulator
         ] = Simulator()
 
-    def run_circuit(self, circuit: Circuit, **kwargs: KwargTypes) -> BackendResult:
+    def _run_circuit(self, circuit: Circuit, n_shots: int) -> BackendResult:
         cirq_circ = tk_to_cirq(circuit)
         bit_to_qubit_map = {b: q for q, b in circuit.qubit_to_bit_map.items()}
         if not cirq_circ.has_measurements():  # type: ignore
-            n_shots = cast(int, kwargs.get("n_shots"))
             return self.empty_result(circuit, n_shots=n_shots)
         else:
-            run = self._simulator.run(
-                cirq_circ, repetitions=cast(int, kwargs.get("n_shots"))
-            )
+            run = self._simulator.run(cirq_circ, repetitions=n_shots)
             run_dict = run.data.to_dict()
             c_bits = [
                 bit
@@ -160,7 +157,7 @@ class _CirqSampleBackend(_CirqBaseBackend):
         for i, (circuit, n_shots) in enumerate(zip(circuits, n_shots_list)):
             handle = ResultHandle(str(uuid4()), i)
             handle_list.append(handle)
-            backres = self.run_circuit(circuit, n_shots=n_shots)
+            backres = self._run_circuit(circuit, n_shots=n_shots)
             self._cache[handle] = {"result": backres}
 
         return handle_list
@@ -218,7 +215,7 @@ class _CirqSimBackend(_CirqBaseBackend):
         """
         ...
 
-    def run_circuit(self, circuit: Circuit, **kwargs: KwargTypes) -> BackendResult:
+    def _run_circuit(self, circuit: Circuit) -> BackendResult:
         cirq_circ = tk_to_cirq(circuit, copy_all_qubits=True)
         _, q_bits = _get_default_uids(cirq_circ, circuit)
         return self.package_result(cirq_circ, q_bits)
@@ -231,22 +228,17 @@ class _CirqSimBackend(_CirqBaseBackend):
         **kwargs: KwargTypes,
     ) -> List[ResultHandle]:
 
-        if hasattr(n_shots, "__iter__"):
-            n_shots_list = cast(List[Optional[int]], n_shots)
-            if len(n_shots_list) != len(circuits):
-                raise ValueError("The length of n_shots and circuits must match")
-        else:
-            # convert n_shots to a list
-            n_shots_list = [cast(int, n_shots)] * len(circuits)
+        if n_shots is not None:
+            raise ValueError("`n_shots` argument is invalid for _CirqSimBackend")
 
         if valid_check:
             self._check_all_circuits(circuits)
 
         handle_list = []
-        for i, (circuit, n_shots) in enumerate(zip(circuits, n_shots_list)):
+        for i, circuit in enumerate(circuits):
             handle = ResultHandle(str(uuid4()), i)
             handle_list.append(handle)
-            backres = self.run_circuit(circuit, n_shots=n_shots)
+            backres = self._run_circuit(circuit)
             self._cache[handle] = {"result": backres}
 
         return handle_list
@@ -266,9 +258,7 @@ class _CirqSimBackend(_CirqBaseBackend):
         """
         ...
 
-    def run_circuit_moments(
-        self, circuit: Circuit, **kwargs: KwargTypes
-    ) -> List[BackendResult]:
+    def _run_circuit_moments(self, circuit: Circuit) -> List[BackendResult]:
         cirq_circ = tk_to_cirq(circuit, copy_all_qubits=True)
         _, q_bits = _get_default_uids(cirq_circ, circuit)
         return self.package_results(cirq_circ, q_bits)
@@ -318,7 +308,7 @@ class _CirqSimBackend(_CirqBaseBackend):
         for i, circuit in enumerate(circuits):
             handle = ResultHandle(str(uuid4()), i)
             handle_list.append(handle)
-            backres = self.run_circuit_moments(circuit)
+            backres = self._run_circuit_moments(circuit)
             self._cache[handle] = {"result": backres}  # type: ignore
 
         return handle_list
