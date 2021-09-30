@@ -35,7 +35,7 @@ from pytket.backends import Backend, CircuitNotRunError, CircuitStatus, ResultHa
 from pytket.backends.backendinfo import BackendInfo
 from pytket.backends.backendresult import BackendResult
 from pytket.backends.resulthandle import _ResultIdTuple
-from pytket.circuit import BasisOrder, Circuit, Node, OpType, Qubit  # type: ignore
+from pytket.circuit import Circuit, Node, OpType, Qubit  # type: ignore
 from pytket.passes import (  # type: ignore
     BasePass,
     CliffordSimp,
