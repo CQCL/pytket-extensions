@@ -45,12 +45,10 @@ jobs:
           cd ../..
         done
     - name: Install dotnet SDK
-      if: contains(env.MODULES_TO_TEST, 'pytket-qsharp')
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: '3.1.x'
     - name: Install iqsharp
-      if: contains(env.MODULES_TO_TEST, 'pytket-qsharp')
       run: |
         dotnet tool install -g Microsoft.Quantum.IQSharp
         dotnet iqsharp install --user

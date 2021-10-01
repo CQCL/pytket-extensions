@@ -272,13 +272,10 @@ class HoneywellBackend(Backend):
         See :py:meth:`pytket.backends.Backend.process_circuits`.
 
         Supported kwargs:
-        :param postprocess:  boolean flag to allow classical postprocessing.
-        :type postprocess: bool
 
-        :param noisy_simulation:  boolean flag to specify whether
-        the simulator should perform noisy simulation with an error model,
-        default value is True.
-        :type noisy_simulation: bool
+        * `postprocess`: boolean flag to allow classical postprocessing.
+        * `noisy_simulation`: boolean flag to specify whether the simulator should
+          perform noisy simulation with an error model (default value is `True`).
         """
         circuits = list(circuits)
         n_shots_list = Backend._get_n_shots_as_list(
