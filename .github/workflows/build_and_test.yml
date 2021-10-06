@@ -235,8 +235,7 @@ jobs:
     - name: Publish wheels
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
-        repository_url: https://test.pypi.org/legacy/
         packages_dir: wheelhouse/
         user: __token__
-        password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+        password: ${{ secrets.PYPI_EXTENSIONS_API_TOKEN }}
         verbose: true
