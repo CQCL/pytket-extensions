@@ -232,10 +232,13 @@ jobs:
       uses: actions/download-artifact@v2
       with:
         path: wheelhouse
+    - name: Put them all in the dist folder
+      run: |
+        mkdir dist
+        for w in `find wheelhouse/ -type f -name "*.tar.gz"` ; do cp $w dist/ ; done
     - name: Publish wheels
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
-        packages_dir: wheelhouse/
         user: __token__
         password: ${{ secrets.PYPI_EXTENSIONS_API_TOKEN }}
         verbose: true
