@@ -242,3 +242,58 @@ jobs:
         user: __token__
         password: ${{ secrets.PYPI_EXTENSIONS_API_TOKEN }}
         verbose: true
+
+  docs:
+    name: Build and publish docs
+    if: github.event_name == 'release'
+    needs: publish_to_pypi
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: '0'
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.9
+    - name: Download all wheels
+      uses: actions/download-artifact@v2
+      with:
+        path: wheelhouse
+    - name: Install pip, wheel
+      run: pip install -U pip wheel
+    - name: Install extensions
+      run: for w in `find wheelhouse/ -type f -name "*.tar.gz"` ; do pip install $w ; done
+    - name: Install dotnet SDK
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '3.1.x'
+    - name: Install iqsharp
+      run: |
+        dotnet tool install -g Microsoft.Quantum.IQSharp
+        dotnet iqsharp install --user
+    - name: Install docs dependencies
+      run: |
+        pip install -r docs/requirements.txt
+    - name: Build docs
+      timeout-minutes: 20
+      run: |
+        cd docs
+        mkdir extensions
+        ./build-docs -a -i -d ${GITHUB_WORKSPACE}/docs/extensions
+    - name: Configure git
+      run: |
+        git config --global user.email "tket-bot@cambridgequantum.com"
+        git config --global user.name  "«$GITHUB_WORKFLOW» github action"
+    - name: Check out gh-pages branch
+      run: git checkout gh-pages
+    - name: Remove old docs
+      run: git rm -r --ignore-unmatch doc
+    - name: Add generated docs to repository
+      run: |
+        mkdir doc
+        mv docs/extensions/* doc/
+        git add -f doc
+        git commit --allow-empty -m "Add generated documentation."
+    - name: Publish docs
+      run:  git push origin gh-pages:gh-pages
