@@ -45,7 +45,7 @@ conda activate qsharp-env
 ## Backends provided in this module
 
 This module provides four
-[backends](https://cqcl.github.io/pytket/build/html/backends.html), all deriving
+[backends](https://cqcl.github.io/tket/doc/pytket/api/backends.html), all deriving
 from the `pytket` `Backend` class:
 
 * `AzureBackend`, for executing pytket circuits on targets the user has access to on Azure Quantum;
