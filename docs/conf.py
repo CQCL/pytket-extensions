@@ -16,7 +16,7 @@ html_theme = "sphinx_rtd_theme"
 
 # -- Extension configuration -------------------------------------------------
 
-pytketdoc_base = "https://cqcl.github.io/tket/pytket/doc/html/"
+pytketdoc_base = "https://cqcl.github.io/tket/doc/pytket/api/"
 
 intersphinx_mapping = {
     "https://docs.python.org/3/": None,
