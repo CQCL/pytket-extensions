@@ -44,7 +44,7 @@ This will install `pytket` if it isn't already installed, and add new classes
 and methods into the `pytket.extensions` namespace.
 
 Full documentation for all these extension module is available
-[here](https://cqcl.github.io/pytket-extensions/doc/index.html).
+[here](https://cqcl.github.io/pytket-extensions/docs/index.html).
 
 ## Bugs and feature requests
 
