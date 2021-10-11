@@ -30,7 +30,7 @@ jobs:
       with:
         path: ${{ steps.pip-cache.outputs.dir }}
         # Look to see if there is a cache hit for the corresponding requirements file
-        key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('docs/requirements.txt') }}
+        key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('.github/workflows/docs/requirements.txt') }}
         restore-keys: |
           ${{ runner.os }}-pip-${{ matrix.python-version }}-
           ${{ runner.os }}-pip-
@@ -54,15 +54,15 @@ jobs:
         dotnet iqsharp install --user
     - name: Install docs dependencies
       run: |
-        pip install -r docs/requirements.txt
+        pip install -r .github/workflows/docs/requirements.txt
 
     - name: Test building docs
       timeout-minutes: 20
       run: |
-        cd docs
+        cd .github/workflows/docs
         mkdir extensions
-        ./build-docs -a -i -d ${GITHUB_WORKSPACE}/docs/extensions
+        ./build-docs -a -i -d ${GITHUB_WORKSPACE}/.github/workflows/docs/extensions
     - uses: actions/upload-artifact@v2
       with:
         name: pytket-extension-docs
-        path: docs/extensions/
+        path: .github/workflows/docs/extensions/

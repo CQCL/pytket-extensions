@@ -274,13 +274,13 @@ jobs:
         dotnet iqsharp install --user
     - name: Install docs dependencies
       run: |
-        pip install -r docs/requirements.txt
+        pip install -r .github/workflows/docs/requirements.txt
     - name: Build docs
       timeout-minutes: 20
       run: |
-        cd docs
+        cd .github/workflows/docs
         mkdir extensions
-        ./build-docs -a -i -d ${GITHUB_WORKSPACE}/docs/extensions
+        ./build-docs -a -i -d ${GITHUB_WORKSPACE}/.github/workflows/docs/extensions
     - name: Configure git
       run: |
         git config --global user.email "tket-bot@cambridgequantum.com"
@@ -292,7 +292,7 @@ jobs:
     - name: Add generated docs to repository
       run: |
         mkdir -p docs
-        mv docs/extensions docs/api
+        mv .github/workflows/docs/extensions docs/api
         git add -f docs/api
         git commit --allow-empty -m "Add generated documentation."
     - name: Publish docs
