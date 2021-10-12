@@ -9,7 +9,7 @@ import subprocess
 import sys
 
 DOCS_DIR = Path(sys.argv[0]).absolute().parent
-MODULES_DIR = DOCS_DIR.parent / "modules"
+MODULES_DIR = DOCS_DIR.parent.parent.parent / "modules"
 
 
 def get_all_modules():
