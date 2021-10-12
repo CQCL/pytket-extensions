@@ -659,8 +659,8 @@ def test_expectation_bug() -> None:
     backend = AerStateBackend()
     # backend.compile_circuit(circuit)
     circuit = Circuit(16)
-    with open("big_hamiltonian.pickle", "rb") as f:
-        hamiltonian = pickle.load(f)
+    with open("big_hamiltonian.txt", "r") as f:
+        hamiltonian = QubitPauliOperator.from_list(eval(f.read()))
     exp = backend.get_operator_expectation_value(circuit, hamiltonian)
     assert np.isclose(exp, 1.4325392)
 
