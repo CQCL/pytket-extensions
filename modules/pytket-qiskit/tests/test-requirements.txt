@@ -1,1 +1,2 @@
-pytest-timeout ~= 1.4.2 
+-r ../../../base-test-requirements.txt
+pytest-timeout ~= 1.4.2
