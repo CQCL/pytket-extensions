@@ -255,41 +255,8 @@ class IBMQBackend(Backend):
         self._config = self._backend.configuration()
         self._max_per_job = getattr(self._config, "max_experiments", 1)
 
-        # gather and store device specifics in BackendInfo
-        characterisation = process_characterisation(self._backend)
-        averaged_errors = get_avg_characterisation(characterisation)
-        characterisation_keys = [
-            "t1times",
-            "t2times",
-            "Frequencies",
-            "GateTimes",
-        ]
-        arch = characterisation["Architecture"]
-        # filter entries to keep
-        filtered_characterisation = {
-            k: v for k, v in characterisation.items() if k in characterisation_keys
-        }
-        supports_mid_measure = self._config.simulator or self._config.multi_meas_enabled
-        supports_fast_feedforward = supports_mid_measure
-        # simulator i.e. "ibmq_qasm_simulator" does not have `supported_instructions`
-        # attribute
         gate_set = _tk_gate_set(self._backend)
-        self._backend_info = BackendInfo(
-            type(self).__name__,
-            backend_name,
-            __extension_version__,
-            arch,
-            gate_set,
-            supports_midcircuit_measurement=supports_mid_measure,
-            supports_fast_feedforward=supports_fast_feedforward,
-            all_node_gate_errors=characterisation["NodeErrors"],
-            all_edge_gate_errors=characterisation["EdgeErrors"],
-            all_readout_errors=characterisation["ReadoutErrors"],
-            averaged_node_gate_errors=averaged_errors["node_errors"],
-            averaged_edge_gate_errors=averaged_errors["edge_errors"],
-            averaged_readout_errors=averaged_errors["readout_errors"],
-            misc={"characterisation": filtered_characterisation},
-        )
+        self._backend_info = self._get_backend_info(self._backend)
 
         self._standard_gateset = gate_set >= {OpType.X, OpType.SX, OpType.Rz, OpType.CX}
 
@@ -339,6 +306,57 @@ class IBMQBackend(Backend):
     @property
     def backend_info(self) -> BackendInfo:
         return self._backend_info
+
+    @classmethod
+    def _get_backend_info(cls, backend: "_QiskIBMQBackend") -> BackendInfo:
+        config = backend.configuration()
+        characterisation = process_characterisation(backend)
+        averaged_errors = get_avg_characterisation(characterisation)
+        characterisation_keys = [
+            "t1times",
+            "t2times",
+            "Frequencies",
+            "GateTimes",
+        ]
+        arch = characterisation["Architecture"]
+        # filter entries to keep
+        filtered_characterisation = {
+            k: v for k, v in characterisation.items() if k in characterisation_keys
+        }
+        supports_mid_measure = config.simulator or config.multi_meas_enabled
+        supports_fast_feedforward = supports_mid_measure
+        # simulator i.e. "ibmq_qasm_simulator" does not have `supported_instructions`
+        # attribute
+        gate_set = _tk_gate_set(backend)
+        backend_info = BackendInfo(
+            cls.__name__,
+            backend.name(),
+            __extension_version__,
+            arch,
+            gate_set,
+            supports_midcircuit_measurement=supports_mid_measure,
+            supports_fast_feedforward=supports_fast_feedforward,
+            all_node_gate_errors=characterisation["NodeErrors"],
+            all_edge_gate_errors=characterisation["EdgeErrors"],
+            all_readout_errors=characterisation["ReadoutErrors"],
+            averaged_node_gate_errors=averaged_errors["node_errors"],
+            averaged_edge_gate_errors=averaged_errors["edge_errors"],
+            averaged_readout_errors=averaged_errors["readout_errors"],
+            misc={"characterisation": filtered_characterisation},
+        )
+        return backend_info
+
+    @classmethod
+    def available_devices(cls, **kwargs: KwargTypes) -> List[BackendInfo]:
+        hub = kwargs.get("hub")
+        group = kwargs.get("group")
+        project = kwargs.get("project")
+        IBMQ.load_account()
+        provider = IBMQ.get_provider(hub=hub, group=group, project=project)
+        backend_info_list = [
+            cls._get_backend_info(backend) for backend in provider.backends()
+        ]
+        return backend_info_list
 
     @property
     def required_predicates(self) -> List[Predicate]:
