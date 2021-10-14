@@ -91,6 +91,7 @@ _GATE_SET = {
     OpType.Ry,
     OpType.Rz,
     OpType.Barrier,
+    OpType.Measure,
 }
 
 
