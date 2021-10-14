@@ -4,6 +4,8 @@ Changelog
 0.19.0 (Unreleased)
 -------------------
 
+* Qiskit version updated to 0.31.0
+
 * Removed deprecated :py:meth:`AerUnitaryBackend.get_unitary`. Use
   :py:meth:`AerUnitaryBackend.run_circuit` and
   :py:meth:`pytket.backends.backendresult.BackendResult.get_unitary` instead.
