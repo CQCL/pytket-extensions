@@ -247,7 +247,7 @@ class IBMQBackend(Backend):
         super().__init__()
         self._pytket_config = QiskitConfig.from_default_config_file()
         self._provider = (
-            self._get_provider(hub, group, project)
+            self._get_provider(hub, group, project, self._pytket_config)
             if account_provider is None
             else account_provider
         )
@@ -267,22 +267,39 @@ class IBMQBackend(Backend):
 
         self._MACHINE_DEBUG = False
 
+    @staticmethod
     def _get_provider(
-        self, hub: Optional[str], group: Optional[str], project: Optional[str]
+        hub: Optional[str],
+        group: Optional[str],
+        project: Optional[str],
+        qiskit_config: Optional[QiskitConfig],
     ) -> "AccountProvider":
         if not IBMQ.active_account():
             if IBMQ.stored_account():
                 IBMQ.load_account()
             else:
-                if self._pytket_config.ibmq_api_token is not None:
-                    IBMQ.save_account(self._pytket_config.ibmq_api_token)
+                if (
+                    qiskit_config is not None
+                    and qiskit_config.ibmq_api_token is not None
+                ):
+                    IBMQ.save_account(qiskit_config.ibmq_api_token)
                 else:
                     raise NoIBMQAccountError()
-        provider_kwargs = {}
-        provider_kwargs["hub"] = hub if hub else self._pytket_config.hub
-        provider_kwargs["group"] = group if group else self._pytket_config.group
-        provider_kwargs["project"] = project if project else self._pytket_config.project
-
+        provider_kwargs: Dict[str, Optional[str]] = {}
+        if hub:
+            provider_kwargs["hub"] = hub
+        else:
+            provider_kwargs["hub"] = qiskit_config.hub if qiskit_config else None
+        if group:
+            provider_kwargs["group"] = group
+        else:
+            provider_kwargs["group"] = qiskit_config.group if qiskit_config else None
+        if project:
+            provider_kwargs["project"] = project
+        else:
+            provider_kwargs["project"] = (
+                qiskit_config.project if qiskit_config else None
+            )
         try:
             if any(x is not None for x in provider_kwargs.values()):
                 provider = IBMQ.get_provider(**provider_kwargs)
@@ -347,12 +364,12 @@ class IBMQBackend(Backend):
         return backend_info
 
     @classmethod
-    def available_devices(cls, **kwargs: KwargTypes) -> List[BackendInfo]:
-        hub = kwargs.get("hub")
-        group = kwargs.get("group")
-        project = kwargs.get("project")
-        IBMQ.load_account()
-        provider = IBMQ.get_provider(hub=hub, group=group, project=project)
+    def available_devices(cls, **kwargs: Any) -> List[BackendInfo]:
+        provider: Optional["AccountProvider"] = kwargs.get("account_provider")
+        if provider is None:
+            provider = cls._get_provider(
+                kwargs.get("hub"), kwargs.get("group"), kwargs.get("project"), None
+            )
         backend_info_list = [
             cls._get_backend_info(backend) for backend in provider.backends()
         ]
