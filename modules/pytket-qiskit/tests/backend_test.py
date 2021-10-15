@@ -1058,3 +1058,19 @@ def test_cloud_stabiliser() -> None:
     c = Circuit(2, 2)
     c.H(0).SX(1).Rz(0.1, 0).CX(0, 1).measure_all()
     assert not b.valid_circuit(c)
+
+
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
+def test_available_devices() -> None:
+    backend_info_list = IBMQBackend.available_devices(
+        hub="ibm-q", group="open", project="main"
+    )
+    assert len(backend_info_list) > 0
+
+    provider = IBMQ.providers(hub="ibm-q", group="open")[0]
+
+    backend_info_list = IBMQBackend.available_devices(account_provider=provider)
+    assert len(backend_info_list) > 0
+
+    backend_info_list = IBMQBackend.available_devices()
+    assert len(backend_info_list) > 0
