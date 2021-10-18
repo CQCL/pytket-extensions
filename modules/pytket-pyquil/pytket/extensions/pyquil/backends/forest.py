@@ -100,19 +100,15 @@ class ForestBackend(Backend):
     _persistent_handles = True
     _GATE_SET = {OpType.CZ, OpType.Rx, OpType.Rz, OpType.Measure, OpType.Barrier}
 
-    def __init__(self, qc_name: str, simulator: bool = True):
-        """Backend for running circuits on a Rigetti QCS device or simulating with the
-        QVM.
+    def __init__(self, qc_name: str):
+        """Backend for running circuits with the Rigetti QVM.
 
         :param qc_name: The name of the particular QuantumComputer to use. See the
             pyQuil docs for more details.
         :type qc_name: str
-        :param simulator: Simulate the device with the QVM (True), or run on the QCS
-            (False). Defaults to True.
-        :type simulator: bool, optional
         """
         super().__init__()
-        self._qc: QuantumComputer = get_qc(qc_name, as_qvm=simulator)
+        self._qc: QuantumComputer = get_qc(qc_name, as_qvm=True)
 
         char_dict: dict = process_characterisation(self._qc)
         arch = char_dict.get("Architecture", Architecture([]))
