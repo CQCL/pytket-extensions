@@ -4,7 +4,7 @@ Changelog
 0.17.0 (unreleased)
 -------------------
 
-* Removed support for QPUs.
+* Modify `ForestBackend` constructor to accept a `QuantumComputer`.
 
 0.16.0 (September 2021)
 -----------------------

@@ -22,6 +22,7 @@ import platform
 from typing import cast, Dict
 import docker  # type: ignore
 import numpy as np
+from pyquil import get_qc
 import pytest
 from _pytest.fixtures import FixtureRequest
 
@@ -100,7 +101,8 @@ def test_statevector(qvm: None, quilc: None) -> None:
 @pytest.mark.filterwarnings("ignore:strict=False")
 def test_sim(qvm: None, quilc: None) -> None:
     c = circuit_gen(True)
-    b = ForestBackend("9q-square")
+    qc = get_qc("9q-square", as_qvm=True)
+    b = ForestBackend(qc)
     c = b.get_compiled_circuit(c)
     _ = b.run_circuit(c, n_shots=1024).get_shots()
 
@@ -115,7 +117,8 @@ def test_measures(qvm: None, quilc: None) -> None:
     for i in x_qbs:
         c.X(i)
     c.measure_all()
-    b = ForestBackend("9q-square")
+    qc = get_qc("9q-square", as_qvm=True)
+    b = ForestBackend(qc)
     c = b.get_compiled_circuit(c)
     shots = b.run_circuit(c, n_shots=10).get_shots()
     all_ones = True
@@ -146,7 +149,8 @@ def test_pauli_statevector(qvm: None, quilc: None) -> None:
     skip_qvm_tests, reason="Can only run Rigetti QVM if docker is installed"
 )
 def test_backendinfo(qvm: None, quilc: None) -> None:
-    b = ForestBackend("9q-square")
+    qc = get_qc("9q-square", as_qvm=True)
+    b = ForestBackend(qc)
     bi = b.backend_info
     node_gate_errors = cast(Dict, bi.all_node_gate_errors)
     edge_gate_errors = cast(Dict, bi.all_edge_gate_errors)
@@ -163,7 +167,8 @@ def test_backendinfo(qvm: None, quilc: None) -> None:
 def test_pauli_sim(qvm: None, quilc: None) -> None:
     c = Circuit(2, 2)
     c.Rz(0.5, 0)
-    b = ForestBackend("9q-square")
+    qc = get_qc("9q-square", as_qvm=True)
+    b = ForestBackend(qc)
     zi = QubitPauliString(Qubit(0), Pauli.Z)
     energy = get_pauli_expectation_value(c, zi, b, 10)
     assert abs(energy - 1) < 0.001
@@ -193,7 +198,8 @@ def test_operator_statevector(qvm: None, quilc: None) -> None:
 def test_operator_sim(qvm: None, quilc: None) -> None:
     c = Circuit(2, 2)
     c.Rz(0.5, 0)
-    b = ForestBackend("9q-square")
+    qc = get_qc("9q-square", as_qvm=True)
+    b = ForestBackend(qc)
     zi = QubitPauliString(Qubit(0), Pauli.Z)
     iz = QubitPauliString(Qubit(1), Pauli.Z)
     op = QubitPauliOperator({zi: 0.3, iz: -0.1})
@@ -209,7 +215,8 @@ def test_operator_sim(qvm: None, quilc: None) -> None:
 )
 def test_counts(qvm: None, quilc: None) -> None:
     c = circuit_gen(True)
-    b = ForestBackend("9q-square")
+    qc = get_qc("9q-square", as_qvm=True)
+    b = ForestBackend(qc)
     c = b.get_compiled_circuit(c)
     counts = b.run_circuit(c, n_shots=10).get_counts()
     assert all(x[0] == x[1] for x in counts.keys())
@@ -219,7 +226,8 @@ def test_counts(qvm: None, quilc: None) -> None:
     skip_qvm_tests, reason="Can only run Rigetti QVM if docker is installed"
 )
 def test_default_pass() -> None:
-    b = ForestBackend("9q-square")
+    qc = get_qc("9q-square", as_qvm=True)
+    b = ForestBackend(qc)
     for ol in range(3):
         comp_pass = b.default_compilation_pass(ol)
         c = Circuit(3, 3)
@@ -254,7 +262,8 @@ def test_default_pass_2() -> None:
     skip_qvm_tests, reason="Can only run Rigetti QVM if docker is installed"
 )
 def test_ilo(qvm: None, quilc: None) -> None:
-    b = ForestBackend("9q-square")
+    qc = get_qc("9q-square", as_qvm=True)
+    b = ForestBackend(qc)
     bs = ForestStateBackend()
     c = Circuit(2)
     c.CZ(0, 1)
@@ -300,7 +309,8 @@ def test_swaps_basisorder() -> None:
     skip_qvm_tests, reason="Can only run Rigetti QVM if docker is installed"
 )
 def test_handle() -> None:
-    b = ForestBackend("9q-square")
+    qc = get_qc("9q-square", as_qvm=True)
+    b = ForestBackend(qc)
     c0 = Circuit(1)
     c0.measure_all()
     c1 = Circuit(1)
@@ -334,7 +344,8 @@ def test_state_handle() -> None:
     skip_qvm_tests, reason="Can only run Rigetti QVM if docker is installed"
 )
 def test_delay_measures() -> None:
-    b = ForestBackend("9q-square")
+    qc = get_qc("9q-square", as_qvm=True)
+    b = ForestBackend(qc)
     # No triangles in architecture, so third CX will need a bridge
     # This will happen after the measurement on qubit 1
     c = Circuit(3, 3)
@@ -352,7 +363,8 @@ def test_delay_measures() -> None:
     skip_qvm_tests, reason="Can only run Rigetti QVM if docker is installed"
 )
 def test_shots_bits_edgecases(qvm: None, quilc: None) -> None:
-    forest_backend = ForestBackend("9q-square")
+    qc = get_qc("9q-square", as_qvm=True)
+    forest_backend = ForestBackend(qc)
 
     for n_bits in range(1, 9):  # Getting runtime error if n_qubit > 9.
         for n_shots in range(1, 11):
@@ -382,7 +394,8 @@ def test_shots_bits_edgecases(qvm: None, quilc: None) -> None:
     skip_qvm_tests, reason="Can only run Rigetti QVM if docker is installed"
 )
 def test_postprocess() -> None:
-    b = ForestBackend("9q-square")
+    qc = get_qc("9q-square", as_qvm=True)
+    b = ForestBackend(qc)
     assert b.supports_contextual_optimisation
     c = Circuit(2, 2)
     c.Rx(0.5, 0).Rx(0.5, 1).CZ(0, 1).X(0).X(1).measure_all()
@@ -401,7 +414,8 @@ def test_postprocess() -> None:
     skip_qvm_tests, reason="Can only run Rigetti QVM if docker is installed"
 )
 def test_process_characterisation(qvm: None, quilc: None) -> None:
-    backend = ForestBackend("9q-square")
+    qc = get_qc("9q-square", as_qvm=True)
+    backend = ForestBackend(qc)
     char = process_characterisation(backend._qc)
 
     assert "NodeErrors" in char
