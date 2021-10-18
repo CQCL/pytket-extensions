@@ -357,6 +357,7 @@ def test_shots_bits_edgecases(qvm: None, quilc: None) -> None:
     for n_bits in range(1, 9):  # Getting runtime error if n_qubit > 9.
         for n_shots in range(1, 11):
             c = Circuit(n_bits, n_bits)
+            c.measure_all()
 
             # TODO TKET-813 add more shot based backends and move to integration tests
             c = forest_backend.get_compiled_circuit(c)
