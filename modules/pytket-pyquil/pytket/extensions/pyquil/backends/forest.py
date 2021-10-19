@@ -18,7 +18,6 @@ from uuid import uuid4
 from logging import warning
 
 import numpy as np
-from pyquil import get_qc
 from pyquil.api import QuantumComputer, WavefunctionSimulator
 from pyquil.gates import I
 from pyquil.paulis import ID, PauliSum, PauliTerm
@@ -100,19 +99,15 @@ class ForestBackend(Backend):
     _persistent_handles = True
     _GATE_SET = {OpType.CZ, OpType.Rx, OpType.Rz, OpType.Measure, OpType.Barrier}
 
-    def __init__(self, qc_name: str, simulator: bool = True):
-        """Backend for running circuits on a Rigetti QCS device or simulating with the
-        QVM.
+    def __init__(self, qc: QuantumComputer):
+        """Backend for running circuits with the Rigetti QVM.
 
-        :param qc_name: The name of the particular QuantumComputer to use. See the
-            pyQuil docs for more details.
-        :type qc_name: str
-        :param simulator: Simulate the device with the QVM (True), or run on the QCS
-            (False). Defaults to True.
-        :type simulator: bool, optional
+        :param qc: The particular QuantumComputer to use. See the pyQuil docs for more
+        details.
+        :type qc: QuantumComputer
         """
         super().__init__()
-        self._qc: QuantumComputer = get_qc(qc_name, as_qvm=simulator)
+        self._qc: QuantumComputer = qc
 
         char_dict: dict = process_characterisation(self._qc)
         arch = char_dict.get("Architecture", Architecture([]))
@@ -121,7 +116,7 @@ class ForestBackend(Backend):
         averaged_errors = get_avg_characterisation(char_dict)
         self._backend_info = BackendInfo(
             type(self).__name__,
-            qc_name,
+            qc.name,
             __extension_version__,
             arch,
             self._GATE_SET,
