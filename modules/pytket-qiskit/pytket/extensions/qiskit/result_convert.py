@@ -64,6 +64,24 @@ def _hex_to_outar(hexes: Sequence[str], width: int) -> OutcomeArray:
     return OutcomeArray.from_ints(ints, width)
 
 
+# An empty ExperimentResult can be an empty dict, but it can also be a dict
+# filled with empty values.
+def _result_is_empty_shots(result: ExperimentResult) -> bool:
+    if not result.shots > 0:
+        # 0-shots results don't count as empty; they are simply ignored
+        return False
+
+    datadict = result.data.to_dict()
+    if len(datadict) == 0:
+        return True
+    elif "memory" in datadict and len(datadict["memory"]) == 0:
+        return True
+    elif "counts" in datadict and len(datadict["counts"]) == 0:
+        return True
+    else:
+        return False
+
+
 def qiskit_experimentresult_to_backendresult(
     result: ExperimentResult, ppcirc: Optional[Circuit] = None
 ) -> BackendResult:
@@ -78,7 +96,7 @@ def qiskit_experimentresult_to_backendresult(
     )
     shots, counts, state, unitary = (None,) * 4
     datadict = result.data.to_dict()
-    if len(datadict) == 0 and result.shots > 0:
+    if _result_is_empty_shots(result):
         n_bits = len(c_bits) if c_bits else 0
         shots = OutcomeArray.from_readouts(
             np.zeros((result.shots, n_bits), dtype=np.uint8)  #  type: ignore
