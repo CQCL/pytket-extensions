@@ -37,7 +37,7 @@ setup(
     license="Apache 2",
     packages=find_namespace_packages(include=["pytket.*"]),
     include_package_data=True,
-    install_requires=["pytket == 0.16.0rc0", "requests ~= 2.22", "types-requests"],
+    install_requires=["pytket ~= 0.16.0", "requests ~= 2.22", "types-requests"],
     classifiers=[
         "Environment :: Console",
         "Programming Language :: Python :: 3.7",
