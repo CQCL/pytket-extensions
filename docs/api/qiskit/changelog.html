@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Changelog &mdash; pytket-qiskit 0.18.0 documentation</title>
+  <title>Changelog &mdash; pytket-qiskit 0.19.0 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -29,7 +29,7 @@
             <a href="index.html" class="icon icon-home"> pytket-qiskit
           </a>
               <div class="version">
-                0.18
+                0.19
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -42,17 +42,17 @@
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="api.html">API documentation</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Changelog</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#unreleased">0.19.0 (Unreleased)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#october-2021">0.19.0 (October 2021)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#september-2021">0.18.0 (September 2021)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#id1">0.17.0 (September 2021)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#july-2021">0.16.1 (July 2021)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#id2">0.16.0 (July 2021)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#id3">0.15.1 (July 2021)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#june-2021">0.15.0 (June 2021)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id4">0.14.0 (unreleased)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#unreleased">0.14.0 (unreleased)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#may-2021">0.13.0 (May 2021)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id5">0.12.0 (unreleased)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id6">0.11.0 (May 2021)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id4">0.12.0 (unreleased)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id5">0.11.0 (May 2021)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#april-2021">0.10.0 (April 2021)</a></li>
 </ul>
 </li>
@@ -84,12 +84,14 @@
              
   <section id="changelog">
 <h1>Changelog<a class="headerlink" href="#changelog" title="Permalink to this headline"></a></h1>
-<section id="unreleased">
-<h2>0.19.0 (Unreleased)<a class="headerlink" href="#unreleased" title="Permalink to this headline"></a></h2>
+<section id="october-2021">
+<h2>0.19.0 (October 2021)<a class="headerlink" href="#october-2021" title="Permalink to this headline"></a></h2>
 <ul class="simple">
+<li><p>Qiskit version updated to 0.31.</p></li>
 <li><p>Removed deprecated <code class="xref py py-meth docutils literal notranslate"><span class="pre">AerUnitaryBackend.get_unitary()</span></code>. Use
 <code class="xref py py-meth docutils literal notranslate"><span class="pre">AerUnitaryBackend.run_circuit()</span></code> and
-<a class="reference external" href="https://cqcl.github.io/pytket/build/html/backends.html#pytket.backends.backendresult.BackendResult.get_unitary" title="(in pytket v0.15)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pytket.backends.backendresult.BackendResult.get_unitary()</span></code></a> instead.</p></li>
+<a class="reference external" href="https://cqcl.github.io/tket/pytket/api/backends.html#pytket.backends.backendresult.BackendResult.get_unitary" title="(in pytket v0.16)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pytket.backends.backendresult.BackendResult.get_unitary()</span></code></a> instead.</p></li>
+<li><p>Updated pytket version requirement to 0.16.</p></li>
 </ul>
 </section>
 <section id="september-2021">
@@ -131,8 +133,8 @@
 <li><p>Updated pytket version requirement to 0.12.</p></li>
 </ul>
 </section>
-<section id="id4">
-<h2>0.14.0 (unreleased)<a class="headerlink" href="#id4" title="Permalink to this headline"></a></h2>
+<section id="unreleased">
+<h2>0.14.0 (unreleased)<a class="headerlink" href="#unreleased" title="Permalink to this headline"></a></h2>
 <ul class="simple">
 <li><p>Qiskit version updated to 0.27.</p></li>
 </ul>
@@ -143,16 +145,16 @@
 <li><p>Updated pytket version requirement to 0.11.</p></li>
 </ul>
 </section>
-<section id="id5">
-<h2>0.12.0 (unreleased)<a class="headerlink" href="#id5" title="Permalink to this headline"></a></h2>
+<section id="id4">
+<h2>0.12.0 (unreleased)<a class="headerlink" href="#id4" title="Permalink to this headline"></a></h2>
 <ul class="simple">
 <li><p>Qiskit version updated to 0.26.</p></li>
 <li><p>Code rewrites to avoid use of deprecated qiskit methods.</p></li>
 <li><p>Restriction to hermitian operators for expectation values in <cite>AerBackend</cite>.</p></li>
 </ul>
 </section>
-<section id="id6">
-<h2>0.11.0 (May 2021)<a class="headerlink" href="#id6" title="Permalink to this headline"></a></h2>
+<section id="id5">
+<h2>0.11.0 (May 2021)<a class="headerlink" href="#id5" title="Permalink to this headline"></a></h2>
 <ul class="simple">
 <li><p>Contextual optimisation added to default compilation passes (except at optimisation level 0).</p></li>
 <li><p>Support for symbolic parameters in rebase pass.</p></li>

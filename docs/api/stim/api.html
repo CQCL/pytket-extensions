@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>API documentation &mdash; pytket-stim 0.3.0 documentation</title>
+  <title>API documentation &mdash; pytket-stim 0.4.0 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -30,7 +30,7 @@
             <a href="index.html" class="icon icon-home"> pytket-stim
           </a>
               <div class="version">
-                0.3
+                0.4
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -78,14 +78,14 @@
 <dd><p>Backend for simulating Clifford circuits using Stim</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pytket.extensions.stim.StimBackend.circuit_status">
-<span class="sig-name descname"><span class="pre">circuit_status</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">handle</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://cqcl.github.io/pytket/build/html/backends.html#pytket.backends.resulthandle.ResultHandle" title="(in pytket v0.15)"><span class="pre">pytket.backends.resulthandle.ResultHandle</span></a></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://cqcl.github.io/pytket/build/html/backends.html#pytket.backends.status.CircuitStatus" title="(in pytket v0.15)"><span class="pre">pytket.backends.status.CircuitStatus</span></a><a class="headerlink" href="#pytket.extensions.stim.StimBackend.circuit_status" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">circuit_status</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">handle</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://cqcl.github.io/tket/pytket/api/backends.html#pytket.backends.resulthandle.ResultHandle" title="(in pytket v0.16)"><span class="pre">pytket.backends.resulthandle.ResultHandle</span></a></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://cqcl.github.io/tket/pytket/api/backends.html#pytket.backends.status.CircuitStatus" title="(in pytket v0.16)"><span class="pre">pytket.backends.status.CircuitStatus</span></a><a class="headerlink" href="#pytket.extensions.stim.StimBackend.circuit_status" title="Permalink to this definition"></a></dt>
 <dd><p>Return a CircuitStatus reporting the status of the circuit execution
 corresponding to the ResultHandle</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pytket.extensions.stim.StimBackend.default_compilation_pass">
-<span class="sig-name descname"><span class="pre">default_compilation_pass</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">optimisation_level</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://cqcl.github.io/pytket/build/html/passes.html#pytket.passes.BasePass" title="(in pytket v0.15)"><span class="pre">pytket.passes.BasePass</span></a><a class="headerlink" href="#pytket.extensions.stim.StimBackend.default_compilation_pass" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">default_compilation_pass</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">optimisation_level</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://cqcl.github.io/tket/pytket/api/passes.html#pytket.passes.BasePass" title="(in pytket v0.16)"><span class="pre">pytket.passes.BasePass</span></a><a class="headerlink" href="#pytket.extensions.stim.StimBackend.default_compilation_pass" title="Permalink to this definition"></a></dt>
 <dd><p>A suggested compilation pass that will guarantee the resulting circuit
 will be suitable to run on this backend with as few preconditions as
 possible.</p>
@@ -101,14 +101,14 @@ time for large circuits. Defaults to 1.</p>
 <dd class="field-even"><p>Compilation pass guaranteeing required predicates.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference external" href="https://cqcl.github.io/pytket/build/html/passes.html#pytket.passes.BasePass" title="BasePass">BasePass</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://cqcl.github.io/tket/pytket/api/passes.html#pytket.passes.BasePass" title="BasePass">BasePass</a></p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pytket.extensions.stim.StimBackend.process_circuits">
-<span class="sig-name descname"><span class="pre">process_circuits</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">circuits</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://cqcl.github.io/pytket/build/html/circuit_class.html#pytket.circuit.Circuit" title="(in pytket v0.15)"><span class="pre">pytket.circuit.Circuit</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_shots</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span> </span><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">valid_check</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://cqcl.github.io/pytket/build/html/backends.html#pytket.backends.resulthandle.ResultHandle" title="(in pytket v0.15)"><span class="pre">pytket.backends.resulthandle.ResultHandle</span></a><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#pytket.extensions.stim.StimBackend.process_circuits" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">process_circuits</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">circuits</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://cqcl.github.io/tket/pytket/api/circuit_class.html#pytket.circuit.Circuit" title="(in pytket v0.16)"><span class="pre">pytket.circuit.Circuit</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_shots</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span> </span><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">valid_check</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://cqcl.github.io/tket/pytket/api/backends.html#pytket.backends.resulthandle.ResultHandle" title="(in pytket v0.16)"><span class="pre">pytket.backends.resulthandle.ResultHandle</span></a><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#pytket.extensions.stim.StimBackend.process_circuits" title="Permalink to this definition"></a></dt>
 <dd><p>Submit circuits to the backend for running. The results will be stored
 in the backend’s result cache to be retrieved by the corresponding
 get_&lt;data&gt; method.</p>
@@ -127,7 +127,7 @@ list:</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>circuits</strong> (<em>Sequence</em><em>[</em><a class="reference external" href="https://cqcl.github.io/pytket/build/html/circuit_class.html#pytket.circuit.Circuit" title="Circuit"><em>Circuit</em></a><em>]</em>) – Circuits to process on the backend.</p></li>
+<li><p><strong>circuits</strong> (<em>Sequence</em><em>[</em><a class="reference external" href="https://cqcl.github.io/tket/pytket/api/circuit_class.html#pytket.circuit.Circuit" title="Circuit"><em>Circuit</em></a><em>]</em>) – Circuits to process on the backend.</p></li>
 <li><p><strong>n_shots</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em>, </em><em>Iterable</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em>]</em><em>]</em><em>, </em><em>optional</em>) – Number of shots to run per circuit. Optionally, this can be
 a list of shots specifying the number of shots for each circuit separately.
 None is to be used for state/unitary simulators. Defaults to None.</p></li>
@@ -140,7 +140,7 @@ predicates to run on the backend. Defaults to True</p></li>
 the same order as the circuits.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>List[<a class="reference external" href="https://cqcl.github.io/pytket/build/html/backends.html#pytket.backends.resulthandle.ResultHandle" title="ResultHandle">ResultHandle</a>]</p>
+<dd class="field-odd"><p>List[<a class="reference external" href="https://cqcl.github.io/tket/pytket/api/backends.html#pytket.backends.resulthandle.ResultHandle" title="ResultHandle">ResultHandle</a>]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -155,7 +155,7 @@ be successfully run on this backend.</p>
 <dd class="field-odd"><p>Required predicates.</p>
 </dd>
 <dt class="field-even">Return type</dt>
-<dd class="field-even"><p>List[<a class="reference external" href="https://cqcl.github.io/pytket/build/html/predicates.html#pytket.predicates.Predicate" title="Predicate">Predicate</a>]</p>
+<dd class="field-even"><p>List[<a class="reference external" href="https://cqcl.github.io/tket/pytket/api/predicates.html#pytket.predicates.Predicate" title="Predicate">Predicate</a>]</p>
 </dd>
 </dl>
 </dd></dl>
