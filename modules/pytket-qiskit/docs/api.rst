@@ -13,19 +13,16 @@ API documentation
     :special-members: __init__
     :inherited-members:
     :members:
-    :exclude-members: get_state, get_unitary
 
 .. autoclass:: pytket.extensions.qiskit.AerStateBackend
     :special-members: __init__
     :inherited-members:
     :members:
-    :exclude-members: get_counts, get_shots, get_unitary
 
 .. autoclass:: pytket.extensions.qiskit.AerUnitaryBackend
     :special-members: __init__
     :inherited-members:
     :members:
-    :exclude-members: get_counts, get_shots, get_state
 
 .. automodule:: pytket.extensions.qiskit
     :members: qiskit_to_tk, tk_to_qiskit, process_characterisation

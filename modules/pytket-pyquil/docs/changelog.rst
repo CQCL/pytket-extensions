@@ -1,6 +1,12 @@
 Changelog
 ~~~~~~~~~
 
+0.17.0 (October 2021)
+---------------------
+
+* Modify `ForestBackend` constructor to accept a `QuantumComputer`.
+* Updated pytket version requirement to 0.16.
+
 0.16.0 (September 2021)
 -----------------------
 
@@ -30,4 +36,5 @@ Changelog
 0.11.0 (May 2021)
 -----------------
 
-* Contextual optimisation added to default compilation passes (except at optimisation level 0).
+* Contextual optimisation added to default compilation passes (except at
+  optimisation level 0).

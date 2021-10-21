@@ -579,8 +579,7 @@ def process_characterisation(backend: "QiskitBackend") -> Dict[str, Any]:
     :return: A dictionary containing device characteristics
     :rtype: dict
     """
-    gate_set = _tk_gate_set(backend)
-    assert OpType.CX in gate_set
+
     # TODO explicitly check for and separate 1 and 2 qubit gates
     properties = cast("BackendProperties", backend.properties())
 

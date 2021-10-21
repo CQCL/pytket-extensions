@@ -46,15 +46,14 @@ jobs:
       run: |
         docker pull rigetti/quilc
         docker pull rigetti/qvm
-    - name: Install dotnet SDK and iqsharp
+    - name: Install dotnet SDK
       if: contains(env.MODULES_TO_TEST, 'pytket-qsharp')
-      run: |
-        curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
-        sudo apt-add-repository https://packages.microsoft.com/ubuntu/20.04/prod
-        sudo apt-get update
-        sudo apt-get install dotnet-sdk-3.1
-        echo "~/.dotnet/tools" >> $GITHUB_PATH
-        dotnet tool install -g Microsoft.Quantum.IQSharp
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '3.1.x'
+    - name: Install iqsharp
+      if: contains(env.MODULES_TO_TEST, 'pytket-qsharp')
+      run: dotnet tool install -g Microsoft.Quantum.IQSharp
 
     - name: Set up Python 3.7
       if: github.event_name == 'push'
@@ -116,13 +115,15 @@ jobs:
         MM=`python3 .github/workflows/changed_modules.py origin/${{ github.base_ref }} ${{ github.sha }}`
         echo "MODULES_TO_TEST=${MM}" >> $GITHUB_ENV
 
-    - name: Install dotnet SDK and iqsharp
+    - name: Install dotnet SDK
+      if: contains(env.MODULES_TO_TEST, 'pytket-qsharp')
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '3.1.x'
+    - name: Install iqsharp
       if: contains(env.MODULES_TO_TEST, 'pytket-qsharp')
       run: |
         brew install mono-libgdiplus jupyter
-        wget https://dot.net/v1/dotnet-install.sh
-        chmod a+x dotnet-install.sh
-        ./dotnet-install.sh --channel 3.1
         dotnet tool install -g Microsoft.Quantum.IQSharp
         dotnet iqsharp install
 
@@ -181,12 +182,14 @@ jobs:
         MM=`python .github/workflows/changed_modules.py origin/${{ github.base_ref }} ${{ github.sha }}`
         echo "MODULES_TO_TEST=${MM}" >> $GITHUB_ENV
 
-    - name: Install dotnet SDK and iqsharp
+    - name: Install dotnet SDK
       if: contains(env.MODULES_TO_TEST, 'pytket-qsharp')
-      run: |
-        Invoke-WebRequest "https://dot.net/v1/dotnet-install.ps1" -outfile "dotnet-install.ps1"
-        .\dotnet-install.ps1
-        dotnet tool install -g Microsoft.Quantum.IQSharp
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '3.1.x'
+    - name: Install iqsharp
+      if: contains(env.MODULES_TO_TEST, 'pytket-qsharp')
+      run: dotnet tool install -g Microsoft.Quantum.IQSharp
 
     - name: Set up Python 3.7
       if: github.event_name == 'push'
@@ -218,3 +221,79 @@ jobs:
       shell: bash
       run: |
         ./.github/workflows/build-test nomypy
+
+  publish_to_pypi:
+    name: Publish to pypi
+    if: github.event_name == 'release'
+    needs: linux
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Download all wheels
+      uses: actions/download-artifact@v2
+      with:
+        path: wheelhouse
+    - name: Put them all in the dist folder
+      run: |
+        mkdir dist
+        for w in `find wheelhouse/ -type f -name "*.tar.gz"` ; do cp $w dist/ ; done
+    - name: Publish wheels
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        user: __token__
+        password: ${{ secrets.PYPI_EXTENSIONS_API_TOKEN }}
+        verbose: true
+
+  docs:
+    name: Build and publish docs
+    if: github.event_name == 'release'
+    needs: publish_to_pypi
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: '0'
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.9
+    - name: Download all wheels
+      uses: actions/download-artifact@v2
+      with:
+        path: wheelhouse
+    - name: Install pip, wheel
+      run: pip install -U pip wheel
+    - name: Install extensions
+      run: for w in `find wheelhouse/ -type f -name "*.tar.gz"` ; do pip install $w ; done
+    - name: Install dotnet SDK
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '3.1.x'
+    - name: Install iqsharp
+      run: |
+        dotnet tool install -g Microsoft.Quantum.IQSharp
+        dotnet iqsharp install --user
+    - name: Install docs dependencies
+      run: |
+        pip install -r .github/workflows/docs/requirements.txt
+    - name: Build docs
+      timeout-minutes: 20
+      run: |
+        cd .github/workflows/docs
+        mkdir extensions
+        ./build-docs -a -i -d ${GITHUB_WORKSPACE}/.github/workflows/docs/extensions
+    - name: Configure git
+      run: |
+        git config --global user.email "tket-bot@cambridgequantum.com"
+        git config --global user.name  "«$GITHUB_WORKFLOW» github action"
+    - name: Check out gh-pages branch
+      run: git checkout gh-pages
+    - name: Remove old docs
+      run: git rm -r --ignore-unmatch docs/api
+    - name: Add generated docs to repository
+      run: |
+        mkdir -p docs
+        mv .github/workflows/docs/extensions docs/api
+        git add -f docs/api
+        git commit --allow-empty -m "Add generated documentation."
+    - name: Publish docs
+      run:  git push origin gh-pages:gh-pages

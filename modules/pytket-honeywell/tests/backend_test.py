@@ -75,9 +75,10 @@ def test_honeywell() -> None:
     assert backend.circuit_status(handle).status is StatusEnum.COMPLETED
     assert np.all(shots == correct_shots)
     assert counts == correct_counts
-    newshots = backend.get_shots(c, 4, timeout=49)
+    res = backend.run_circuit(c, n_shots=4, timeout=49)
+    newshots = res.get_shots()
     assert np.all(newshots == correct_shots)
-    newcounts = backend.get_counts(c, 4)
+    newcounts = res.get_counts()
     assert newcounts == correct_counts
     if skip_remote_tests:
         assert backend.backend_info is None
@@ -92,7 +93,7 @@ def test_bell() -> None:
     c.measure_all()
     c = b.get_compiled_circuit(c)
     n_shots = 10
-    shots = b.get_shots(c, n_shots)
+    shots = b.run_circuit(c, n_shots=n_shots).get_shots()
     print(shots)
     assert all(q[0] == q[1] for q in shots)
 
@@ -116,7 +117,7 @@ def test_multireg() -> None:
     c = b.get_compiled_circuit(c)
 
     n_shots = 10
-    shots = b.get_shots(c, n_shots)
+    shots = b.run_circuit(c, n_shots=n_shots).get_shots()
     assert np.array_equal(shots, np.zeros((10, 2)))
 
 
@@ -234,7 +235,7 @@ def test_classical() -> None:
     b = HoneywellBackend("HQS-LT-S1-APIVAL")
 
     c = b.get_compiled_circuit(c)
-    assert b.get_counts(c, 10)
+    assert b.run_circuit(c, n_shots=10).get_counts()
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
@@ -279,9 +280,10 @@ def test_shots_bits_edgecases(n_shots, n_bits) -> None:
     assert res.get_counts() == correct_counts
 
     # Direct
-    assert np.array_equal(honeywell_backend.get_shots(c, n_shots), correct_shots)
-    assert honeywell_backend.get_shots(c, n_shots).shape == correct_shape
-    assert honeywell_backend.get_counts(c, n_shots) == correct_counts
+    res = honeywell_backend.run_circuit(c, n_shots=n_shots)
+    assert np.array_equal(res.get_shots(), correct_shots)
+    assert res.get_shots().shape == correct_shape
+    assert res.get_counts() == correct_counts
 
 
 @given(

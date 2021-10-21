@@ -1,1 +1,2 @@
+-r ../../base-test-requirements.txt
 docker

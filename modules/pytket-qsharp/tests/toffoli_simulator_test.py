@@ -42,7 +42,7 @@ def test_incrementer() -> None:
         circ.measure_all()
         # run the simulator
         circ = b.get_compiled_circuit(circ)
-        bits = b.get_shots(circ, 1)[0]
+        bits = b.run_circuit(circ, n_shots=1).get_shots()[0]
         # check the result
         for i in range(8):
             assert bits[i] == ((x + 1) >> i) % 2
@@ -62,7 +62,7 @@ def test_compile() -> None:
     c.SWAP(1, 2)
     c.measure_all()
     c = b.get_compiled_circuit(c)
-    shots = b.get_shots(c, 2)
+    shots = b.run_circuit(c, n_shots=2).get_shots()
     assert all(shots[0] == shots[1])
 
 
@@ -77,7 +77,7 @@ def test_handles() -> None:
     c.SWAP(1, 2)
     c.measure_all()
     c = b.get_compiled_circuit(c)
-    shots = b.get_shots(c, n_shots=2)
+    shots = b.run_circuit(c, n_shots=2).get_shots()
     assert all(shots[0] == shots[1])
 
 

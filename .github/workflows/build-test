@@ -29,7 +29,7 @@ ARTIFACTSDIR=${GITHUB_WORKSPACE}/wheelhouse
 
 rm -rf ${ARTIFACTSDIR} && mkdir ${ARTIFACTSDIR}
 
-python -m pip install --upgrade pip wheel pytest pytest-timeout hypothesis
+python -m pip install --upgrade pip wheel
 
 # Generate and install packages:
 for MODULE in $MODULES_TO_TEST; do
@@ -52,7 +52,8 @@ for MODULE in $MODULES_TO_TEST; do
     # FIXME see
     # https://github.com/CQCL/pytket-extensions/issues/180 and 
     # https://github.com/microsoft/iqsharp/issues/512
-    if [[ "${MODULE}" != "pytket-qsharp" || "${PLAT}" != "Windows" ]]
+    PYVER=`python -c 'import sys; print(".".join(map(str, sys.version_info[:2])))'`
+    if [[ "${MODULE}" != "pytket-qsharp" || "${PLAT}" != "Windows" || "${PYVER}" == "3.7" ]]
     then
         echo "${MODULE}..."
 

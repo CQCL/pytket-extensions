@@ -63,6 +63,7 @@ class IBMQEmulatorBackend(AerBackend):
     _supports_counts = True
     _supports_contextual_optimisation = True
     _persistent_handles = False
+    _supports_expectation = False
 
     def __init__(
         self,

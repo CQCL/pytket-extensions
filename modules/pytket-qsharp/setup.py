@@ -39,9 +39,9 @@ setup(
     packages=find_namespace_packages(include=["pytket.*"]),
     include_package_data=True,
     install_requires=[
-        "pytket ~= 0.15.0",
-        "qsharp ~= 0.18.2107",
-        "qsharp-core ~= 0.18.2107",
+        "pytket ~= 0.16.0",
+        "qsharp ~= 0.19.2109",
+        "qsharp-core ~= 0.19.2109",
     ],
     classifiers=[
         "Environment :: Console",

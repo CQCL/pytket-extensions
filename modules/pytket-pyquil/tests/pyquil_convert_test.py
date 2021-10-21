@@ -170,6 +170,6 @@ def test_symbolic(qvm) -> None:
     tkc2.symbol_substitution({pi2: pi / 2, pi3: -pi / 3})
 
     backend = ForestStateBackend()
-    state1 = backend.get_state(tkc2)
+    state1 = backend.run_circuit(tkc2).get_state()
     state0 = np.array([-0.56468689 + 0.0j, 0.0 + 0.0j, 0.0 + 0.0j, 0.0 + 0.82530523j])
     assert np.allclose(state0, state1)

@@ -22,6 +22,7 @@ import platform
 from typing import cast, Dict
 import docker  # type: ignore
 import numpy as np
+from pyquil import get_qc
 import pytest
 from _pytest.fixtures import FixtureRequest
 
@@ -85,12 +86,12 @@ def circuit_gen(measure: bool = False) -> Circuit:
 def test_statevector(qvm: None, quilc: None) -> None:
     c = circuit_gen()
     b = ForestStateBackend()
-    state = b.get_state(c)
+    state = b.run_circuit(c).get_state()
     assert np.allclose(
         state, np.asarray([math.sqrt(0.5), 0, 0, math.sqrt(0.5)]), atol=1e-10
     )
     c.add_phase(0.5)
-    state1 = b.get_state(c)
+    state1 = b.run_circuit(c).get_state()
     assert np.allclose(state1, state * 1j, atol=1e-10)
 
 
@@ -100,9 +101,10 @@ def test_statevector(qvm: None, quilc: None) -> None:
 @pytest.mark.filterwarnings("ignore:strict=False")
 def test_sim(qvm: None, quilc: None) -> None:
     c = circuit_gen(True)
-    b = ForestBackend("9q-square")
+    qc = get_qc("9q-square", as_qvm=True)
+    b = ForestBackend(qc)
     c = b.get_compiled_circuit(c)
-    _ = b.get_shots(c, 1024)
+    _ = b.run_circuit(c, n_shots=1024).get_shots()
 
 
 @pytest.mark.skipif(
@@ -115,9 +117,10 @@ def test_measures(qvm: None, quilc: None) -> None:
     for i in x_qbs:
         c.X(i)
     c.measure_all()
-    b = ForestBackend("9q-square")
+    qc = get_qc("9q-square", as_qvm=True)
+    b = ForestBackend(qc)
     c = b.get_compiled_circuit(c)
-    shots = b.get_shots(c, 10)
+    shots = b.run_circuit(c, n_shots=10).get_shots()
     all_ones = True
     all_zeros = True
     for i in x_qbs:
@@ -146,7 +149,8 @@ def test_pauli_statevector(qvm: None, quilc: None) -> None:
     skip_qvm_tests, reason="Can only run Rigetti QVM if docker is installed"
 )
 def test_backendinfo(qvm: None, quilc: None) -> None:
-    b = ForestBackend("9q-square")
+    qc = get_qc("9q-square", as_qvm=True)
+    b = ForestBackend(qc)
     bi = b.backend_info
     node_gate_errors = cast(Dict, bi.all_node_gate_errors)
     edge_gate_errors = cast(Dict, bi.all_edge_gate_errors)
@@ -163,7 +167,8 @@ def test_backendinfo(qvm: None, quilc: None) -> None:
 def test_pauli_sim(qvm: None, quilc: None) -> None:
     c = Circuit(2, 2)
     c.Rz(0.5, 0)
-    b = ForestBackend("9q-square")
+    qc = get_qc("9q-square", as_qvm=True)
+    b = ForestBackend(qc)
     zi = QubitPauliString(Qubit(0), Pauli.Z)
     energy = get_pauli_expectation_value(c, zi, b, 10)
     assert abs(energy - 1) < 0.001
@@ -193,7 +198,8 @@ def test_operator_statevector(qvm: None, quilc: None) -> None:
 def test_operator_sim(qvm: None, quilc: None) -> None:
     c = Circuit(2, 2)
     c.Rz(0.5, 0)
-    b = ForestBackend("9q-square")
+    qc = get_qc("9q-square", as_qvm=True)
+    b = ForestBackend(qc)
     zi = QubitPauliString(Qubit(0), Pauli.Z)
     iz = QubitPauliString(Qubit(1), Pauli.Z)
     op = QubitPauliOperator({zi: 0.3, iz: -0.1})
@@ -209,9 +215,10 @@ def test_operator_sim(qvm: None, quilc: None) -> None:
 )
 def test_counts(qvm: None, quilc: None) -> None:
     c = circuit_gen(True)
-    b = ForestBackend("9q-square")
+    qc = get_qc("9q-square", as_qvm=True)
+    b = ForestBackend(qc)
     c = b.get_compiled_circuit(c)
-    counts = b.get_counts(c, 10)
+    counts = b.run_circuit(c, n_shots=10).get_counts()
     assert all(x[0] == x[1] for x in counts.keys())
 
 
@@ -219,7 +226,8 @@ def test_counts(qvm: None, quilc: None) -> None:
     skip_qvm_tests, reason="Can only run Rigetti QVM if docker is installed"
 )
 def test_default_pass() -> None:
-    b = ForestBackend("9q-square")
+    qc = get_qc("9q-square", as_qvm=True)
+    b = ForestBackend(qc)
     for ol in range(3):
         comp_pass = b.default_compilation_pass(ol)
         c = Circuit(3, 3)
@@ -254,23 +262,23 @@ def test_default_pass_2() -> None:
     skip_qvm_tests, reason="Can only run Rigetti QVM if docker is installed"
 )
 def test_ilo(qvm: None, quilc: None) -> None:
-    b = ForestBackend("9q-square")
+    qc = get_qc("9q-square", as_qvm=True)
+    b = ForestBackend(qc)
     bs = ForestStateBackend()
     c = Circuit(2)
     c.CZ(0, 1)
     c.Rx(1.0, 1)
-    assert np.allclose(bs.get_state(c), np.asarray([0, -1j, 0, 0]))
-    assert np.allclose(
-        bs.get_state(c, basis=BasisOrder.dlo), np.asarray([0, 0, -1j, 0])
-    )
+    res = bs.run_circuit(c)
+    assert np.allclose(res.get_state(), np.asarray([0, -1j, 0, 0]))
+    assert np.allclose(res.get_state(basis=BasisOrder.dlo), np.asarray([0, 0, -1j, 0]))
     c.rename_units({Qubit(0): Node(0), Qubit(1): Node(1)})
     c.measure_all()
-    assert (b.get_shots(c, 2) == np.asarray([[0, 1], [0, 1]])).all()
-    assert (
-        b.get_shots(c, 2, basis=BasisOrder.dlo) == np.asarray([[1, 0], [1, 0]])
-    ).all()
-    assert b.get_counts(c, 2) == {(0, 1): 2}
-    assert b.get_counts(c, 2, basis=BasisOrder.dlo) == {(1, 0): 2}
+
+    res = b.run_circuit(c, n_shots=2)
+    assert (res.get_shots() == np.asarray([[0, 1], [0, 1]])).all()
+    assert (res.get_shots(basis=BasisOrder.dlo) == np.asarray([[1, 0], [1, 0]])).all()
+    assert res.get_counts() == {(0, 1): 2}
+    assert res.get_counts(basis=BasisOrder.dlo) == {(1, 0): 2}
 
 
 @pytest.mark.skipif(
@@ -286,8 +294,9 @@ def test_swaps_basisorder() -> None:
     CliffordSimp(True).apply(c)
     assert c.n_gates_of_type(OpType.CX) == 1
     c = b.get_compiled_circuit(c)
-    s_ilo = b.get_state(c, basis=BasisOrder.ilo)
-    s_dlo = b.get_state(c, basis=BasisOrder.dlo)
+    res = b.run_circuit(c)
+    s_ilo = res.get_state(basis=BasisOrder.ilo)
+    s_dlo = res.get_state(basis=BasisOrder.dlo)
     correct_ilo = np.zeros((16,))
     correct_ilo[4] = 1.0
     assert np.allclose(s_ilo, correct_ilo)
@@ -300,7 +309,8 @@ def test_swaps_basisorder() -> None:
     skip_qvm_tests, reason="Can only run Rigetti QVM if docker is installed"
 )
 def test_handle() -> None:
-    b = ForestBackend("9q-square")
+    qc = get_qc("9q-square", as_qvm=True)
+    b = ForestBackend(qc)
     c0 = Circuit(1)
     c0.measure_all()
     c1 = Circuit(1)
@@ -308,8 +318,8 @@ def test_handle() -> None:
     c1.measure_all()
     c0 = b.get_compiled_circuit(c0)
     c1 = b.get_compiled_circuit(c1)
-    counts0 = b.get_counts(c0, n_shots=10)
-    counts1 = b.get_counts(c1, n_shots=10)
+    counts0 = b.run_circuit(c0, n_shots=10).get_counts()
+    counts1 = b.run_circuit(c1, n_shots=10).get_counts()
     assert counts0 == {(0,): 10}
     assert counts1 == {(1,): 10}
 
@@ -324,8 +334,8 @@ def test_state_handle() -> None:
     c1.X(0)
     c0 = b.get_compiled_circuit(c0)
     c1 = b.get_compiled_circuit(c1)
-    state0 = b.get_state(c0)
-    state1 = b.get_state(c1)
+    state0 = b.run_circuit(c0).get_state()
+    state1 = b.run_circuit(c1).get_state()
     assert np.allclose(state0, np.asarray([1.0, 0.0]))
     assert np.allclose(state1, np.asarray([0.0, 1.0]))
 
@@ -334,7 +344,8 @@ def test_state_handle() -> None:
     skip_qvm_tests, reason="Can only run Rigetti QVM if docker is installed"
 )
 def test_delay_measures() -> None:
-    b = ForestBackend("9q-square")
+    qc = get_qc("9q-square", as_qvm=True)
+    b = ForestBackend(qc)
     # No triangles in architecture, so third CX will need a bridge
     # This will happen after the measurement on qubit 1
     c = Circuit(3, 3)
@@ -352,11 +363,13 @@ def test_delay_measures() -> None:
     skip_qvm_tests, reason="Can only run Rigetti QVM if docker is installed"
 )
 def test_shots_bits_edgecases(qvm: None, quilc: None) -> None:
-    forest_backend = ForestBackend("9q-square")
+    qc = get_qc("9q-square", as_qvm=True)
+    forest_backend = ForestBackend(qc)
 
     for n_bits in range(1, 9):  # Getting runtime error if n_qubit > 9.
         for n_shots in range(1, 11):
             c = Circuit(n_bits, n_bits)
+            c.measure_all()
 
             # TODO TKET-813 add more shot based backends and move to integration tests
             c = forest_backend.get_compiled_circuit(c)
@@ -371,16 +384,18 @@ def test_shots_bits_edgecases(qvm: None, quilc: None) -> None:
             assert res.get_shots().shape == correct_shape
             assert res.get_counts() == correct_counts
             # Direct
-            assert np.array_equal(forest_backend.get_shots(c, n_shots), correct_shots)
-            assert forest_backend.get_shots(c, n_shots).shape == correct_shape
-            assert forest_backend.get_counts(c, n_shots) == correct_counts
+            res = forest_backend.run_circuit(c, n_shots=n_shots)
+            assert np.array_equal(res.get_shots(), correct_shots)
+            assert res.get_shots().shape == correct_shape
+            assert res.get_counts() == correct_counts
 
 
 @pytest.mark.skipif(
     skip_qvm_tests, reason="Can only run Rigetti QVM if docker is installed"
 )
 def test_postprocess() -> None:
-    b = ForestBackend("9q-square")
+    qc = get_qc("9q-square", as_qvm=True)
+    b = ForestBackend(qc)
     assert b.supports_contextual_optimisation
     c = Circuit(2, 2)
     c.Rx(0.5, 0).Rx(0.5, 1).CZ(0, 1).X(0).X(1).measure_all()
@@ -399,7 +414,8 @@ def test_postprocess() -> None:
     skip_qvm_tests, reason="Can only run Rigetti QVM if docker is installed"
 )
 def test_process_characterisation(qvm: None, quilc: None) -> None:
-    backend = ForestBackend("9q-square")
+    qc = get_qc("9q-square", as_qvm=True)
+    backend = ForestBackend(qc)
     char = process_characterisation(backend._qc)
 
     assert "NodeErrors" in char

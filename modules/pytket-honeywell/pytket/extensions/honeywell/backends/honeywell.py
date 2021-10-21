@@ -142,12 +142,12 @@ class HoneywellBackend(Backend):
             raise RuntimeError("_MACHINE_DEBUG cannot be False with no _api_handler.")
 
     @classmethod
-    def available_devices(
+    def _available_devices(
         cls, _api_handler: Optional[HoneywellQAPI] = None
     ) -> List[Dict[str, Any]]:
         """List devices available from Honeywell.
 
-        >>> HoneywellBackend.available_devices()
+        >>> HoneywellBackend._available_devices()
         e.g. [{'name': 'HQS-LT-1.0-APIVAL', 'n_qubits': 6}]
 
         :param _api_handler: Instance of API handler, defaults to None
@@ -167,7 +167,7 @@ class HoneywellBackend(Backend):
         return jr  # type: ignore
 
     def _retrieve_backendinfo(self, machine: str) -> BackendInfo:
-        jr = self.available_devices(self._api_handler)
+        jr = self._available_devices(self._api_handler)
         try:
             self._machine_info = next(entry for entry in jr if entry["name"] == machine)
         except StopIteration:
@@ -272,13 +272,10 @@ class HoneywellBackend(Backend):
         See :py:meth:`pytket.backends.Backend.process_circuits`.
 
         Supported kwargs:
-        :param postprocess:  boolean flag to allow classical postprocessing.
-        :type postprocess: bool
 
-        :param noisy_simulation:  boolean flag to specify whether
-        the simulator should perform noisy simulation with an error model,
-        default value is True.
-        :type noisy_simulation: bool
+        * `postprocess`: boolean flag to allow classical postprocessing.
+        * `noisy_simulation`: boolean flag to specify whether the simulator should
+          perform noisy simulation with an error model (default value is `True`).
         """
         circuits = list(circuits)
         n_shots_list = Backend._get_n_shots_as_list(
