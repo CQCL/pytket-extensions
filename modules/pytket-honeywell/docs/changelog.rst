@@ -5,8 +5,8 @@ Changelog
 ---------------------
 
 * Updated pytket version requirement to 0.16.
-* Changed ``HoneywellBackend.available_devices`` to match abstract pytket
-  interface, and renamed the old method to ``_available_devices``.
+* Renamed ``HoneywellBackend.available_devices`` to ``_available_devices`` so as
+  not to conflict with abstract ``Backend`` method.
 
 0.16.0 (September 2021)
 -----------------------

@@ -181,20 +181,6 @@ class HoneywellBackend(Backend):
         )
 
     @classmethod
-    def available_devices(cls, **kwargs: Any) -> List[BackendInfo]:
-        jr = self._available_devices(self._api_handler)
-        return [
-            fully_connected_backendinfo(
-                type(self).__name__,
-                entry["name"],
-                __extension_version__,
-                self._machine_info["n_qubits"],
-                _GATE_SET,
-            )
-            for entry in jr
-        ]
-
-    @classmethod
     def device_state(
         cls, device_name: str, _api_handler: Optional[HoneywellQAPI] = None
     ) -> str:
