@@ -64,14 +64,8 @@ def _hex_to_outar(hexes: Sequence[str], width: int) -> OutcomeArray:
     return OutcomeArray.from_ints(ints, width)
 
 
-"""
-Checks if given ExperimentResult is just empty shots
-
-An empty ExperimentResult can be an empty dict, but it can also be a dict
-filled with empty values.
-"""
-
-
+# An empty ExperimentResult can be an empty dict, but it can also be a dict
+# filled with empty values.
 def _result_is_empty_shots(result: ExperimentResult) -> bool:
     if not result.shots > 0:
         # 0-shots results don't count as empty; they are simply ignored
