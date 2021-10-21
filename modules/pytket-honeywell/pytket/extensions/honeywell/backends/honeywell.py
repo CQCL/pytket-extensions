@@ -144,7 +144,7 @@ class HoneywellBackend(Backend):
     @classmethod
     def available_devices(
         cls, _api_handler: Optional[HoneywellQAPI] = None
-    ) -> List[Dict[str, Any]]:
+    ) -> List[BackendInfo]:
         """List devices available from Honeywell.
 
         >>> HoneywellBackend.available_devices()
