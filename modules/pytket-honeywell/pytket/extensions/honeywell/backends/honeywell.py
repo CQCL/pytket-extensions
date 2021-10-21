@@ -142,12 +142,12 @@ class HoneywellBackend(Backend):
             raise RuntimeError("_MACHINE_DEBUG cannot be False with no _api_handler.")
 
     @classmethod
-    def available_devices(
+    def _available_devices(
         cls, _api_handler: Optional[HoneywellQAPI] = None
     ) -> List[Dict[str, Any]]:
         """List devices available from Honeywell.
 
-        >>> HoneywellBackend.available_devices()
+        >>> HoneywellBackend._available_devices()
         e.g. [{'name': 'HQS-LT-1.0-APIVAL', 'n_qubits': 6}]
 
         :param _api_handler: Instance of API handler, defaults to None
@@ -167,7 +167,7 @@ class HoneywellBackend(Backend):
         return jr  # type: ignore
 
     def _retrieve_backendinfo(self, machine: str) -> BackendInfo:
-        jr = self.available_devices(self._api_handler)
+        jr = self._available_devices(self._api_handler)
         try:
             self._machine_info = next(entry for entry in jr if entry["name"] == machine)
         except StopIteration:
@@ -179,6 +179,20 @@ class HoneywellBackend(Backend):
             self._machine_info["n_qubits"],
             _GATE_SET,
         )
+
+    @classmethod
+    def available_devices(cls, **kwargs: Any) -> List[BackendInfo]:
+        jr = self._available_devices(self._api_handler)
+        return [
+            fully_connected_backendinfo(
+                type(self).__name__,
+                entry["name"],
+                __extension_version__,
+                self._machine_info["n_qubits"],
+                _GATE_SET,
+            )
+            for entry in jr
+        ]
 
     @classmethod
     def device_state(
