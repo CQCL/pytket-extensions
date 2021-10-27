@@ -49,6 +49,18 @@ def build_module_docs(module):
     shutil.copy(DOCS_DIR / "conf.py", conf_copy)
     shutil.copy(DOCS_DIR / "CQCLogo.png", logo_copy)
     remove_dir(mod_build)
+    index_rst = mod_docs / "index.rst"
+    with open(mod_docs / "intro.txt", "r") as f:
+        content = f.readlines()
+        content.append("\n.. toctree::\n\t:caption: Extensions:\n\t:maxdepth: 1\n\n")
+        content.append(f"\tIntroduction </index.html#http://>\n")
+        for module in get_all_modules():
+            # Using relative links in toctree requires a hack, see
+            # https://stackoverflow.com/questions/27979803/external-relative-link-in-sphinx-toctree-directive/31820846#31820846
+            content.append(f"\tpytket-{module} <../../{module}/index.html#http://>\n")
+
+    with open(index_rst, "w") as f:
+        f.writelines(content)
     subprocess.run(
         [
             "sphinx-build",
@@ -72,6 +84,7 @@ def build_module_docs(module):
     fix_links(mod_build / "searchindex.js")
     conf_copy.unlink()
     logo_copy.unlink()
+    index_rst.unlink()
 
 
 if __name__ == "__main__":
@@ -106,8 +119,6 @@ if __name__ == "__main__":
             content = f.readlines()
             content.append("\n.. toctree::\n\t:caption: Extensions:\n\t:maxdepth: 1\n\n")
             for module in get_all_modules():
-                # Using relative links in toctree requires a hack, see
-                # https://stackoverflow.com/questions/27979803/external-relative-link-in-sphinx-toctree-directive/31820846#31820846
                 content.append(f"\tpytket-{module} <{module}/index.html#http://>\n")
 
         with open(index_rst, "w") as f:
