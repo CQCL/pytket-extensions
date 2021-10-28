@@ -10,6 +10,7 @@ import sys
 
 DOCS_DIR = Path(sys.argv[0]).absolute().parent
 MODULES_DIR = DOCS_DIR.parent.parent.parent / "modules"
+PYTKET_DOCS_LINK = "https://cqcl.github.io/tket/pytket/api/index.html"
 
 
 def get_all_modules():
@@ -59,7 +60,7 @@ def build_module_docs(module):
             # https://stackoverflow.com/questions/27979803/external-relative-link-in-sphinx-toctree-directive/31820846#31820846
             content.append(f"\tpytket-{module} <../{module}/index.html#http://>\n")
         content.append("\n.. toctree::\n\t:caption: More documentation:\n\t:maxdepth: 1\n\n")
-        content.append(f"\tpytket <https://cqcl.github.io/tket/pytket/api/index.html>\n")
+        content.append(f"\tpytket <{PYTKET_DOCS_LINK}>\n")
 
     with open(index_rst, "w") as f:
         f.writelines(content)
@@ -124,7 +125,7 @@ if __name__ == "__main__":
                 content.append(f"\tpytket-{module} <{module}/index.html#http://>\n")
 
             content.append("\n.. toctree::\n\t:caption: More documentation:\n\t:maxdepth: 1\n\n")
-            content.append(f"\tpytket <https://cqcl.github.io/tket/pytket/api/index.html>\n")
+            content.append(f"\tpytket <{PYTKET_DOCS_LINK}>\n")
 
         with open(index_rst, "w") as f:
             f.writelines(content)
