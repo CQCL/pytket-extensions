@@ -41,7 +41,7 @@ from pytket.extensions.honeywell.backends.honeywell import (
     _GATE_SET,
 )
 from pytket.extensions.honeywell import split_utf8
-from pytket.extensions.honeywell.backends.api_wrappers import HQSAPIError
+from pytket.extensions.honeywell.backends.api_wrappers import HQSAPIError, HoneywellQAPI
 from pytket.backends.status import StatusEnum
 
 skip_remote_tests: bool = os.getenv("PYTKET_RUN_REMOTE_TESTS") is None
@@ -333,6 +333,15 @@ def test_simulator() -> None:
 
     with pytest.raises(GetResultFailed) as _:
         _ = stabilizer_backend.get_result(broken_handle)
+
+
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
+def test_retrieve_available_devices() -> None:
+    backend_infos = HoneywellBackend.available_devices()
+    assert len(backend_infos) > 0
+    api_handler = HoneywellQAPI()
+    backend_infos = HoneywellBackend.available_devices(api_handler=api_handler)
+    assert len(backend_infos) > 0
 
 
 # hard to run as it involves removing credentials
