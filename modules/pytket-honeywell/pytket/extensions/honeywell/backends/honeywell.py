@@ -166,6 +166,33 @@ class HoneywellBackend(Backend):
         jr = res.json()
         return jr  # type: ignore
 
+    @classmethod
+    def available_devices(cls, **kwargs: Any) -> List[BackendInfo]:
+        """
+        See :py:meth:`pytket.backends.Backend.available_devices`.
+        Supported kwargs: `api_handler` (default none).
+        """
+        api_handler: Optional[HoneywellQAPI] = kwargs.get("api_handler")
+        if api_handler is None:
+            api_handler = HoneywellQAPI(login=False)
+        id_token = api_handler.login()
+        res = requests.get(
+            f"{api_handler.url}machine/?config=true",
+            headers={"Authorization": id_token},
+        )
+        api_handler._response_check(res, "get machine list")
+        jr = res.json()
+        return [
+            fully_connected_backendinfo(
+                cls.__name__,
+                machine["name"],
+                __extension_version__,
+                machine["n_qubits"],
+                _GATE_SET,
+            )
+            for machine in jr
+        ]
+
     def _retrieve_backendinfo(self, machine: str) -> BackendInfo:
         jr = self._available_devices(self._api_handler)
         try:
