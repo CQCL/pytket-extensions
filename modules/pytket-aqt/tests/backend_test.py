@@ -20,6 +20,7 @@ import pytest
 from pytket.circuit import Circuit  # type: ignore
 from pytket.backends import StatusEnum
 from pytket.extensions.aqt import AQTBackend
+from pytket.extensions.aqt.backends.aqt import _DEVICE_INFO
 
 skip_remote_tests: bool = os.getenv("PYTKET_RUN_REMOTE_TESTS") is None
 REASON = "PYTKET_RUN_REMOTE_TESTS not set (requires configuration of AQT access token)"
@@ -174,3 +175,16 @@ def test_shots_bits_edgecases(n_shots, n_bits) -> None:
     assert np.array_equal(res.get_shots(), correct_shots)
     assert res.get_shots().shape == correct_shape
     assert res.get_counts() == correct_counts
+
+
+def test_retrieve_available_devices() -> None:
+    backend_infos = AQTBackend.available_devices()
+    for machine, v in _DEVICE_INFO.items():
+        assert (
+            next(
+                backend_info
+                for backend_info in backend_infos
+                if backend_info.device_name == machine
+            ).n_nodes
+            == v["max_n_qubits"]
+        )

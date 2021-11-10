@@ -15,7 +15,7 @@
 import json
 import time
 from ast import literal_eval
-from typing import Dict, List, Optional, Sequence, Tuple, Union, cast
+from typing import Dict, List, Optional, Sequence, Tuple, Union, cast, Any
 
 from requests import put
 from pytket.backends import Backend, CircuitStatus, ResultHandle, StatusEnum
@@ -146,6 +146,23 @@ class AQTBackend(Backend):
     @property
     def backend_info(self) -> Optional[BackendInfo]:
         return self._backend_info
+
+    @classmethod
+    def available_devices(cls, **kwargs: Any) -> List[BackendInfo]:
+        """
+        See :py:meth:`pytket.backends.Backend.available_devices`.
+        Supported kwargs: none.
+        """
+        return [
+            fully_connected_backendinfo(
+                cls.__name__,
+                key,
+                __extension_version__,
+                value["max_n_qubits"],
+                _GATE_SET,
+            )
+            for key, value in _DEVICE_INFO.items()
+        ]
 
     @property
     def required_predicates(self) -> List[Predicate]:
