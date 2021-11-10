@@ -13,12 +13,17 @@
 # limitations under the License.
 
 import json
-from typing import cast, Iterable, List, Optional, Sequence, Union
+from typing import cast, Iterable, List, Optional, Sequence, Union, Any
 from uuid import uuid4
 from logging import warning
 
 import numpy as np
-from pyquil.api import QuantumComputer, WavefunctionSimulator
+from pyquil.api import (
+    QuantumComputer,
+    WavefunctionSimulator,
+    list_quantum_computers,
+    get_qc,
+)
 from pyquil.gates import I
 from pyquil.paulis import ID, PauliSum, PauliTerm
 from pyquil.quilatom import Qubit as Qubit_
@@ -278,6 +283,18 @@ class ForestBackend(Backend):
             averaged_node_gate_errors=averaged_errors["node_errors"],
             averaged_edge_gate_errors=averaged_errors["link_errors"],
         )
+
+    @classmethod
+    def available_devices(cls, **kwargs: Any) -> List[BackendInfo]:
+        """
+        See :py:meth:`pytket.backends.Backend.available_devices`.
+        Supported kwargs: `qpus` (default true), `qvms` (default false).
+        """
+        if "qvms" not in kwargs:
+            kwargs["qvms"] = False
+        qc_name_list = list_quantum_computers(**kwargs)
+        print(qc_name_list)
+        return [cls._get_backend_info(get_qc(name)) for name in qc_name_list]
 
 
 class ForestStateBackend(Backend):
