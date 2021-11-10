@@ -82,7 +82,12 @@ jobs:
       if: github.event_name == 'push'
       run: |
         ./.github/workflows/build-test nomypy
-    - name: Build, test and save (3.10)
+    - name: Set up Python 3.9
+      if: github.event_name == 'release' || contains(github.ref, 'refs/heads/wheel')
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.9'
+    - name: Build, test and save (3.9)
       if: github.event_name == 'release' || contains(github.ref, 'refs/heads/wheel')
       run: |
         ./.github/workflows/build-test nomypy
