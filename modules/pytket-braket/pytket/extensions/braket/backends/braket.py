@@ -26,6 +26,7 @@ from typing import (
     Sequence,
     Union,
     Tuple,
+    Set,
     TYPE_CHECKING,
 )
 from uuid import uuid4
@@ -279,35 +280,6 @@ class BraketBackend(Backend):
             else:
                 raise ValueError(f"Unsupported device type {aws_device_type}")
         props = self._device.properties.dict()
-        paradigm = props["paradigm"]
-        n_qubits = paradigm["qubitCount"]
-        connectivity_graph = None  # None means "fully connected"
-        if self._device_type == _DeviceType.QPU:
-            connectivity = paradigm["connectivity"]
-            if connectivity["fullyConnected"]:
-                self._all_qubits: List = list(range(n_qubits))
-            else:
-                connectivity_graph = connectivity["connectivityGraph"]
-                # Convert strings to ints
-                connectivity_graph = dict(
-                    (int(k), [int(v) for v in l]) for k, l in connectivity_graph.items()
-                )
-                self._all_qubits = sorted(connectivity_graph.keys())
-                if n_qubits < len(self._all_qubits):
-                    # This can happen, at least on rigetti devices, and causes errors.
-                    # As a kludgy workaround, remove some qubits from the architecture.
-                    self._all_qubits = self._all_qubits[
-                        : (n_qubits - len(self._all_qubits))
-                    ]
-                    connectivity_graph = dict(
-                        (k, [v for v in l if v in self._all_qubits])
-                        for k, l in connectivity_graph.items()
-                        if k in self._all_qubits
-                    )
-            self._characteristics: Optional[Dict] = props["provider"]
-        else:
-            self._all_qubits = list(range(n_qubits))
-            self._characteristics = None
 
         device_info = props["action"][DeviceActionType.JAQCD]
         supported_ops = set(op.lower() for op in device_info["supportedOperations"])
@@ -341,8 +313,57 @@ class BraketBackend(Backend):
                 self._variance_min_shots = rtminshots
                 self._variance_max_shots = rtmaxshots
 
-        self._multiqs = set()
-        self._singleqs = set()
+        self._singleqs, self._multiqs = self._get_gate_set(
+            supported_ops, self._device_type
+        )
+
+        arch, self._all_qubits = self._get_arch_info(self._device)
+        characteristics = None
+        if self._device_type == _DeviceType.QPU:
+            characteristics = props["provider"]
+        self._backend_info = self._get_backend_info(
+            arch,
+            device,
+            self._singleqs,
+            self._multiqs,
+            characteristics,
+        )
+
+        paradigm = props["paradigm"]
+        n_qubits = paradigm["qubitCount"]
+
+        self._req_preds = [
+            NoClassicalControlPredicate(),
+            NoFastFeedforwardPredicate(),
+            NoMidMeasurePredicate(),
+            NoSymbolsPredicate(),
+            GateSetPredicate(self._multiqs | self._singleqs),
+            MaxNQubitsPredicate(n_qubits),
+        ]
+
+        if (
+            self._device_type == _DeviceType.QPU
+            and not paradigm["connectivity"]["fullyConnected"]
+        ):
+            self._req_preds.append(ConnectivityPredicate(arch))
+
+        self._rebase_pass = RebaseCustom(
+            self._multiqs,
+            Circuit(),
+            self._singleqs,
+            lambda a, b, c: Circuit(1).Rz(c, 0).Rx(b, 0).Rz(a, 0),
+        )
+        self._squash_pass = SquashCustom(
+            self._singleqs,
+            lambda a, b, c: Circuit(1).Rz(c, 0).Rx(b, 0).Rz(a, 0),
+        )
+
+    @staticmethod
+    def _get_gate_set(
+        supported_ops: Set[str], device_type: _DeviceType
+    ) -> Tuple[Set[OpType], Set[OpType]]:
+        multiqs = set()
+        singleqs = set()
         if not {"cnot", "rx", "rz", "x"} <= supported_ops:
             # This is so that we can define RebaseCustom without prior knowledge of the
             # gate set, and use X as the bit-flip gate in contextual optimization. We
@@ -353,20 +374,43 @@ class BraketBackend(Backend):
             tkt = _gate_types[t]
             if tkt is not None:
                 if t in _multiq_gate_types:
-                    if self._device_type == _DeviceType.QPU and t in ["ccnot", "cswap"]:
+                    if device_type == _DeviceType.QPU and t in ["ccnot", "cswap"]:
                         # FullMappingPass can't handle 3-qubit gates, so ignore them.
                         continue
-                    self._multiqs.add(tkt)
+                    multiqs.add(tkt)
                 else:
-                    self._singleqs.add(tkt)
-        self._req_preds = [
-            NoClassicalControlPredicate(),
-            NoFastFeedforwardPredicate(),
-            NoMidMeasurePredicate(),
-            NoSymbolsPredicate(),
-            GateSetPredicate(self._multiqs | self._singleqs),
-            MaxNQubitsPredicate(n_qubits),
-        ]
+                    singleqs.add(tkt)
+        return singleqs, multiqs
+
+    @staticmethod
+    def _get_arch_info(device: AwsDevice) -> Tuple[Architecture, List[int]]:
+        # return the architecture, and all_qubits
+        props = device.properties.dict()
+        paradigm = props["paradigm"]
+        n_qubits = paradigm["qubitCount"]
+        connectivity_graph = None  # None means "fully connected"
+        if device.type == AwsDeviceType.QPU:
+            connectivity = paradigm["connectivity"]
+            if connectivity["fullyConnected"]:
+                all_qubits: List = list(range(n_qubits))
+            else:
+                connectivity_graph = connectivity["connectivityGraph"]
+                # Convert strings to ints
+                connectivity_graph = dict(
+                    (int(k), [int(v) for v in l]) for k, l in connectivity_graph.items()
+                )
+                all_qubits = sorted(connectivity_graph.keys())
+                if n_qubits < len(all_qubits):
+                    # This can happen, at least on rigetti devices, and causes errors.
+                    # As a kludgy workaround, remove some qubits from the architecture.
+                    all_qubits = all_qubits[: (n_qubits - len(all_qubits))]
+                    connectivity_graph = dict(
+                        (k, [v for v in l if v in all_qubits])
+                        for k, l in connectivity_graph.items()
+                        if k in all_qubits
+                    )
+        else:
+            all_qubits = list(range(n_qubits))
 
         if connectivity_graph is None:
             arch = FullyConnected(n_qubits)
@@ -374,12 +418,21 @@ class BraketBackend(Backend):
             arch = Architecture(
                 [(k, v) for k, l in connectivity_graph.items() for v in l]
             )
-            self._req_preds.append(ConnectivityPredicate(arch))
-        if self._device_type == _DeviceType.QPU:
-            assert self._characteristics is not None
-            schema = self._characteristics["braketSchemaHeader"]
+        return arch, all_qubits
+
+    @classmethod
+    def _get_backend_info(
+        cls,
+        arch: Architecture,
+        device_name: str,
+        singleqs: Set[OpType],
+        multiqs: Set[OpType],
+        characteristics: Optional[Dict[str, Any]],
+    ) -> BackendInfo:
+        if characteristics is not None:
+            schema = characteristics["braketSchemaHeader"]
             if schema == IONQ_SCHEMA:
-                fid = self._characteristics["fidelity"]
+                fid = characteristics["fidelity"]
                 get_node_error: Callable[["Node"], float] = lambda n: 1.0 - cast(
                     float, fid["1Q"]["mean"]
                 )
@@ -388,7 +441,7 @@ class BraketBackend(Backend):
                     ["Node", "Node"], float
                 ] = lambda n0, n1: 1.0 - cast(float, fid["2Q"]["mean"])
             elif schema == RIGETTI_SCHEMA:
-                specs = self._characteristics["specs"]
+                specs = characteristics["specs"]
                 specs1q, specs2q = specs["1Q"], specs["2Q"]
                 get_node_error = lambda n: 1.0 - cast(
                     float, specs1q[f"{n.index[0]}"].get("f1QRB", 1.0)
@@ -408,46 +461,36 @@ class BraketBackend(Backend):
                 [x, 1.0 - x],
             ]
             node_errors = {
-                node: {optype: get_node_error(node) for optype in self._singleqs}
+                node: {optype: get_node_error(node) for optype in singleqs}
                 for node in arch.nodes
             }
             readout_errors = {
                 node: to_sym_mat(get_readout_error(node)) for node in arch.nodes
             }
             link_errors = {
-                (n0, n1): {optype: get_link_error(n0, n1) for optype in self._multiqs}
+                (n0, n1): {optype: get_link_error(n0, n1) for optype in multiqs}
                 for n0, n1 in arch.coupling
             }
 
-            self._backend_info = BackendInfo(
-                type(self).__name__,
-                device,
+            backend_info = BackendInfo(
+                cls.__name__,
+                device_name,
                 __extension_version__,
                 arch,
-                self._singleqs.union(self._multiqs),
+                singleqs.union(multiqs),
                 all_node_gate_errors=node_errors,
                 all_edge_gate_errors=link_errors,
                 all_readout_errors=readout_errors,
             )
         else:
-            self._backend_info = BackendInfo(
-                type(self).__name__,
-                device,
+            backend_info = BackendInfo(
+                cls.__name__,
+                device_name,
                 __extension_version__,
                 arch,
-                self._singleqs.union(self._multiqs),
+                singleqs.union(multiqs),
             )
-
-        self._rebase_pass = RebaseCustom(
-            self._multiqs,
-            Circuit(),
-            self._singleqs,
-            lambda a, b, c: Circuit(1).Rz(c, 0).Rx(b, 0).Rz(a, 0),
-        )
-        self._squash_pass = SquashCustom(
-            self._singleqs,
-            lambda a, b, c: Circuit(1).Rz(c, 0).Rx(b, 0).Rz(a, 0),
-        )
+        return backend_info
 
     @property
     def required_predicates(self) -> List[Predicate]:
