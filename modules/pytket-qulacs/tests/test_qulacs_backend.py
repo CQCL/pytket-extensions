@@ -18,8 +18,6 @@ import math
 from hypothesis import given, strategies
 import numpy as np
 import pytest
-from openfermion.ops import QubitOperator  # type: ignore
-from openfermion.linalg import eigenspectrum  # type: ignore
 from pytket.circuit import Circuit, BasisOrder, OpType, Qubit  # type: ignore
 from pytket.pauli import Pauli, QubitPauliString  # type: ignore
 from pytket.passes import CliffordSimp  # type: ignore
@@ -34,6 +32,15 @@ try:
     backends.append(QulacsGPUBackend())
 except ImportError:
     warnings.warn("local settings failed to import QulacsGPUBackend", ImportWarning)
+
+try:
+    from openfermion.ops import QubitOperator  # type: ignore
+    from openfermion.linalg import eigenspectrum  # type: ignore
+
+    have_openfermion = True
+except ImportError:
+    have_openfermion = False
+
 
 PARAM = -0.11176849
 
@@ -135,6 +142,7 @@ def test_swaps_basisorder() -> None:
         assert np.allclose(s_dlo, correct_dlo)
 
 
+@pytest.mark.skipif(not have_openfermion, reason="No openfermion")
 @pytest.mark.filterwarnings("ignore::PendingDeprecationWarning")
 def test_statevector_expectation() -> None:
     hamiltonian = QubitOperator()
@@ -177,16 +185,6 @@ def test_basisorder() -> None:
 
 
 pauli_sym = {"I": Pauli.I, "X": Pauli.X, "Y": Pauli.Y, "Z": Pauli.Z}
-
-
-def qps_from_openfermion(paulis: QubitOperator) -> QubitPauliString:
-    """Utility function to translate from openfermion format to a QubitPauliString"""
-    qlist = []
-    plist = []
-    for q, p in paulis:
-        qlist.append(Qubit(q))
-        plist.append(pauli_sym[p])
-    return QubitPauliString(qlist, plist)
 
 
 def test_measurement_mask() -> None:
