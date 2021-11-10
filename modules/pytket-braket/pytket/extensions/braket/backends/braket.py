@@ -319,15 +319,15 @@ class BraketBackend(Backend):
         )
 
         arch, self._all_qubits = self._get_arch_info(props, self._device_type)
-        characteristics = None
+        self._characteristics: Optional[Dict] = None
         if self._device_type == _DeviceType.QPU:
-            characteristics = props["provider"]
+            self._characteristics = props["provider"]
         self._backend_info = self._get_backend_info(
             arch,
             device,
             self._singleqs,
             self._multiqs,
-            characteristics,
+            self._characteristics,
         )
 
         paradigm = props["paradigm"]
