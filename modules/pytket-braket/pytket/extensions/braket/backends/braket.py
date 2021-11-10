@@ -318,7 +318,7 @@ class BraketBackend(Backend):
             supported_ops, self._device_type
         )
 
-        arch, self._all_qubits = self._get_arch_info(self._device)
+        arch, self._all_qubits = self._get_arch_info(props, self._device_type)
         characteristics = None
         if self._device_type == _DeviceType.QPU:
             characteristics = props["provider"]
@@ -384,13 +384,14 @@ class BraketBackend(Backend):
         return singleqs, multiqs
 
     @staticmethod
-    def _get_arch_info(device: AwsDevice) -> Tuple[Architecture, List[int]]:
+    def _get_arch_info(
+        device_properties: Dict[str, Any], device_type: _DeviceType
+    ) -> Tuple[Architecture, List[int]]:
         # return the architecture, and all_qubits
-        props = device.properties.dict()
-        paradigm = props["paradigm"]
+        paradigm = device_properties["paradigm"]
         n_qubits = paradigm["qubitCount"]
         connectivity_graph = None  # None means "fully connected"
-        if device.type == AwsDeviceType.QPU:
+        if device_type == _DeviceType.QPU:
             connectivity = paradigm["connectivity"]
             if connectivity["fullyConnected"]:
                 all_qubits: List = list(range(n_qubits))
@@ -704,7 +705,7 @@ class BraketBackend(Backend):
             except KeyError:
                 # The device has unsupported ops
                 continue
-            arch, _ = cls._get_arch_info(aws_device)
+            arch, _ = cls._get_arch_info(props, device_type)
             characteristics = None
             if device_type == _DeviceType.QPU:
                 characteristics = props["provider"]
