@@ -8,7 +8,7 @@ pytket-braket
 ``pytket-braket`` is an extension to ``pytket`` that allows ``pytket`` circuits to
 be executed on quantum devices and simulators via Amazon's Braket service.
 
-``pytket-braket`` is available for Python 3.7, 3.8 and 3.9, on Linux, MacOS and Windows.
+``pytket-braket`` is available for Python 3.8, 3.9 and 3.10, on Linux, MacOS and Windows.
 To install, run:
 
 ``pip install pytket-braket``

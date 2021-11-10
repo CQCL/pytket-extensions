@@ -8,7 +8,7 @@ executed on a range of devices and simulators via Amazon's Braket service.
 
 ## Getting started
 
-`pytket-braket` is available for Python 3.7, 3.8 and 3.9, on Linux, MacOS and
+`pytket-braket` is available for Python 3.8, 3.9 and 3.10, on Linux, MacOS and
 Windows. To install, run:
 
 ```pip install pytket-braket```
