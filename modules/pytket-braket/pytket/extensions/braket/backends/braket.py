@@ -682,13 +682,11 @@ class BraketBackend(Backend):
         else:
             session = AwsSession()
 
-        devices = session.search_devices()
+        devices = session.search_devices(statuses=["ONLINE"])
 
         backend_infos = []
 
         for device in devices:
-            if device["deviceStatus"] != "ONLINE":
-                continue
             aws_device = AwsDevice(device["deviceArn"], aws_session=session)
             if aws_device.type == AwsDeviceType.SIMULATOR:
                 device_type = _DeviceType.SIMULATOR
