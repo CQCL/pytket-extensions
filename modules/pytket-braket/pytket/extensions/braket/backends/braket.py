@@ -81,6 +81,7 @@ from braket.circuits.result_type import ResultType  # type: ignore
 from braket.device_schema import DeviceActionType  # type: ignore
 from braket.devices import LocalSimulator  # type: ignore
 from braket.tasks.local_quantum_task import LocalQuantumTask  # type: ignore
+import boto3  # type: ignore
 import numpy as np
 
 from .config import BraketConfig
@@ -667,6 +668,55 @@ class BraketBackend(Backend):
     @property
     def backend_info(self) -> BackendInfo:
         return self._backend_info
+
+    @classmethod
+    def available_devices(cls, **kwargs: Any) -> List[BackendInfo]:
+        """
+        See :py:meth:`pytket.backends.Backend.available_devices`.
+        Supported kwargs: `region` (default none).
+        """
+        region: Optional[str] = kwargs.get("region")
+        if region is not None:
+            session = AwsSession(boto_session=boto3.Session(region_name=region))
+        else:
+            session = AwsSession()
+
+        devices = session.search_devices()
+
+        backend_infos = []
+
+        for device in devices:
+            if device["deviceStatus"] != "ONLINE":
+                continue
+            aws_device = AwsDevice(device["deviceArn"], aws_session=session)
+            if aws_device.type == AwsDeviceType.SIMULATOR:
+                device_type = _DeviceType.SIMULATOR
+            elif aws_device.type == AwsDeviceType.QPU:
+                device_type = _DeviceType.QPU
+            else:
+                continue
+
+            props = aws_device.properties.dict()
+            device_info = props["action"][DeviceActionType.JAQCD]
+            supported_ops = set(op.lower() for op in device_info["supportedOperations"])
+            try:
+                singleqs, multiqs = cls._get_gate_set(supported_ops, device_type)
+            except KeyError:
+                # The device has unsupported ops
+                continue
+            arch, _ = cls._get_arch_info(aws_device)
+            characteristics = None
+            if device_type == _DeviceType.QPU:
+                characteristics = props["provider"]
+            backend_info = cls._get_backend_info(
+                arch,
+                device["deviceName"],
+                singleqs,
+                multiqs,
+                characteristics,
+            )
+            backend_infos.append(backend_info)
+        return backend_infos
 
     def get_result(self, handle: ResultHandle, **kwargs: KwargTypes) -> BackendResult:
         """

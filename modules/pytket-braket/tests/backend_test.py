@@ -371,3 +371,11 @@ def test_postprocess_ionq() -> None:
     assert len(ppcmds) > 0
     assert all(ppcmd.op.type == OpType.ClassicalTransform for ppcmd in ppcmds)
     b.cancel(h)
+
+
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
+def test_retrieve_available_devices() -> None:
+    backend_infos = BraketBackend.available_devices()
+    assert len(backend_infos) > 0
+    backend_infos = BraketBackend.available_devices(region="us-east-1")
+    assert len(backend_infos) > 0
