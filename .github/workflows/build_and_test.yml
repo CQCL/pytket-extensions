@@ -9,6 +9,7 @@ on:
     branches:
       - develop
       - 'wheel/**'
+      - test-pytket-v0.17.0rc0.1
   release:
     types:
       - created
