@@ -108,23 +108,7 @@ class ForestBackend(Backend):
         """
         super().__init__()
         self._qc: QuantumComputer = qc
-
-        char_dict: dict = process_characterisation(self._qc)
-        arch = char_dict.get("Architecture", Architecture([]))
-        node_errors = char_dict.get("NodeErrors")
-        link_errors = char_dict.get("EdgeErrors")
-        averaged_errors = get_avg_characterisation(char_dict)
-        self._backend_info = BackendInfo(
-            type(self).__name__,
-            qc.name,
-            __extension_version__,
-            arch,
-            self._GATE_SET,
-            all_node_gate_errors=node_errors,
-            all_edge_gate_errors=link_errors,
-            averaged_node_gate_errors=averaged_errors["node_errors"],
-            averaged_edge_gate_errors=averaged_errors["link_errors"],
-        )
+        self._backend_info = self._get_backend_info(self._qc)
 
     @property
     def required_predicates(self) -> List[Predicate]:
@@ -275,6 +259,25 @@ class ForestBackend(Backend):
     @property
     def backend_info(self) -> BackendInfo:
         return self._backend_info
+
+    @classmethod
+    def _get_backend_info(cls, qc: QuantumComputer) -> BackendInfo:
+        char_dict: dict = process_characterisation(qc)
+        arch = char_dict.get("Architecture", Architecture([]))
+        node_errors = char_dict.get("NodeErrors")
+        link_errors = char_dict.get("EdgeErrors")
+        averaged_errors = get_avg_characterisation(char_dict)
+        return BackendInfo(
+            cls.__name__,
+            qc.name,
+            __extension_version__,
+            arch,
+            cls._GATE_SET,
+            all_node_gate_errors=node_errors,
+            all_edge_gate_errors=link_errors,
+            averaged_node_gate_errors=averaged_errors["node_errors"],
+            averaged_edge_gate_errors=averaged_errors["link_errors"],
+        )
 
 
 class ForestStateBackend(Backend):
