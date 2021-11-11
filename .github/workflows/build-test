@@ -34,7 +34,7 @@ rm -rf ${ARTIFACTSDIR} && mkdir ${ARTIFACTSDIR}
 python -m pip install --upgrade pip wheel
 
 # arguments: (module, platform, python version)
-# output: "1" if unsupported, else "0"
+# output: "0" if unsupported, else "1"
 function unsupported() {
     local module=$1
     local plat=$2
@@ -42,31 +42,31 @@ function unsupported() {
 
     if [[ "$pyver" != "3.10" ]]
     then
-        echo "0" ; return
+        echo 1 ; return
     fi
 
     # https://github.com/Qiskit/qiskit/issues/1343
     if [[ "$module" = "pytket-qiskit" ]]
     then
-        echo "1" ; return
+        echo 0 ; return
     fi
 
     if [[ "$module" = "pytket-qsharp" && $plat = "Windows" ]]
     then
-        echo 1 ; return
+        echo 0 ; return
     fi
 
     if [[ "$module" = "pytket-qulacs" && $plat != "Linux" ]]
     then
-        echo 1 ; return
+        echo 0 ; return
     fi
 
     if [[ "$module" = "pytket-stim" && $plat = "Windows" ]]
     then
-        echo 1 ; return
+        echo 0 ; return
     fi
 
-    echo "0" ; return
+    echo 1 ; return
 }
 
 # Generate and install packages:
