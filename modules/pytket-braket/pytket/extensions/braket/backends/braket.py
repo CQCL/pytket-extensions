@@ -281,8 +281,12 @@ class BraketBackend(Backend):
             else:
                 raise ValueError(f"Unsupported device type {aws_device_type}")
         props = self._device.properties.dict()
+        try:
+            device_info = props["action"][DeviceActionType.JAQCD]
+        except KeyError:
+            # This can happen with quantum anealers (e.g. D-Wave devices)
+            raise ValueError(f"Unsupported device {device}")
 
-        device_info = props["action"][DeviceActionType.JAQCD]
         supported_ops = set(op.lower() for op in device_info["supportedOperations"])
         supported_result_types = device_info["supportedResultTypes"]
         self._result_types = set()
@@ -699,12 +703,14 @@ class BraketBackend(Backend):
                 continue
 
             props = aws_device.properties.dict()
-            device_info = props["action"][DeviceActionType.JAQCD]
-            supported_ops = set(op.lower() for op in device_info["supportedOperations"])
             try:
+                device_info = props["action"][DeviceActionType.JAQCD]
+                supported_ops = set(
+                    op.lower() for op in device_info["supportedOperations"]
+                )
                 singleqs, multiqs = cls._get_gate_set(supported_ops, device_type)
             except KeyError:
-                # The device has unsupported ops
+                # The device has unsupported ops or it's a quantum annealer
                 continue
             arch, _ = cls._get_arch_info(props, device_type)
             characteristics = None
