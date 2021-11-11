@@ -33,11 +33,46 @@ rm -rf ${ARTIFACTSDIR} && mkdir ${ARTIFACTSDIR}
 
 python -m pip install --upgrade pip wheel
 
+# arguments: (module, platform, python version)
+# output: "1" if unsupported, else "0"
+function unsupported() {
+    local module=$1
+    local plat=$2
+    local pyver=$3
+
+    if [[ "$pyver" != "3.10" ]]
+    then
+        echo "0" ; return
+    fi
+
+    # https://github.com/Qiskit/qiskit/issues/1343
+    if [[ "$module" = "pytket-qiskit" ]]
+    then
+        echo "1" ; return
+    fi
+
+    if [[ "$module" = "pytket-qsharp" && $plat = "Windows" ]]
+    then
+        echo 1 ; return
+    fi
+
+    if [[ "$module" = "pytket-qulacs" && $plat != "Linux" ]]
+    then
+        echo 1 ; return
+    fi
+
+    if [[ "$module" = "pytket-stim" && $plat = "Windows" ]]
+    then
+        echo 1 ; return
+    fi
+
+    echo "0" ; return
+}
+
 # Generate and install packages:
 for MODULE in $MODULES_TO_TEST; do
 
-    # https://github.com/Qiskit/qiskit/issues/1343
-    if [[ "${MODULE}" = "pytket-qiskit" && "${PYVER}" = "3.10" ]]
+    if [[ $(unsupported(${MODULE}, ${PLAT}, ${PYVER})) ]]
     then
         continue
     fi
@@ -65,12 +100,10 @@ for MODULE in $MODULES_TO_TEST; do
         continue
     fi
 
-    # https://github.com/Qiskit/qiskit/issues/1343
-    if [[ "${MODULE}" = "pytket-qiskit" && "${PYVER}" = "3.10" ]]
+    if [[ $(unsupported(${MODULE}, ${PLAT}, ${PYVER})) ]]
     then
         continue
     fi
-
 
     echo "${MODULE}..."
 
