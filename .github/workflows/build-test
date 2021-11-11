@@ -72,8 +72,11 @@ function unsupported() {
 # Generate and install packages:
 for MODULE in $MODULES_TO_TEST; do
 
-    if [[ $(unsupported ${MODULE} ${PLAT} ${PYVER}) ]]
+    echo "Install: UNSUPPORTED:" ${UNSUPPORTED}
+
+    if [[ ${UNSUPPORTED} ]]
     then
+        echo "continuing..."
         continue
     fi
 
@@ -100,8 +103,13 @@ for MODULE in $MODULES_TO_TEST; do
         continue
     fi
 
-    if [[ $(unsupported ${MODULE} ${PLAT} ${PYVER}) ]]
+    UNSUPPORTED = $(unsupported ${MODULE} ${PLAT} ${PYVER})
+
+    echo "Test: UNSUPPORTED:" ${UNSUPPORTED}
+
+    if [[ ${UNSUPPORTED} ]]
     then
+        echo "continuing..."
         continue
     fi
 
