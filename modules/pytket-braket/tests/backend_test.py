@@ -377,3 +377,5 @@ def test_postprocess_ionq() -> None:
 def test_retrieve_available_devices() -> None:
     backend_infos = BraketBackend.available_devices()
     assert len(backend_infos) > 0
+    backend_infos = BraketBackend.available_devices(region="us-east-1")
+    assert len(backend_infos) > 0
