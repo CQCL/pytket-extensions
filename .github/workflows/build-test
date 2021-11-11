@@ -1,5 +1,5 @@
 #!/bin/bash
-set -vu
+set -evu
 
 # Usage:
 #
