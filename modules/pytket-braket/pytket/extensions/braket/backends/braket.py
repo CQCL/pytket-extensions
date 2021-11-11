@@ -674,21 +674,19 @@ class BraketBackend(Backend):
     def available_devices(cls, **kwargs: Any) -> List[BackendInfo]:
         """
         See :py:meth:`pytket.backends.Backend.available_devices`.
-        Supported kwargs: none.
+        Supported kwargs: `region` (default none).
         """
-        braket_regions = ["us-west-1", "us-west-2", "us-east-1"]
-        devices = {}
-        for region in braket_regions:
-            session = AwsSession(
-                boto_session=boto3.Session(region_name=region),
-            )
-            regional_devices = session.search_devices(statuses=["ONLINE"])
-            for device in regional_devices:
-                if device["deviceArn"] not in devices:
-                    devices[device["deviceArn"]] = device
+        region: Optional[str] = kwargs.get("region")
+        if region is not None:
+            session = AwsSession(boto_session=boto3.Session(region_name=region))
+        else:
+            session = AwsSession()
+
+        devices = session.search_devices(statuses=["ONLINE"])
 
         backend_infos = []
-        for device in devices.values():
+
+        for device in devices:
             aws_device = AwsDevice(device["deviceArn"], aws_session=session)
             if aws_device.type == AwsDeviceType.SIMULATOR:
                 device_type = _DeviceType.SIMULATOR
@@ -698,15 +696,12 @@ class BraketBackend(Backend):
                 continue
 
             props = aws_device.properties.dict()
-
+            device_info = props["action"][DeviceActionType.JAQCD]
+            supported_ops = set(op.lower() for op in device_info["supportedOperations"])
             try:
-                device_info = props["action"][DeviceActionType.JAQCD]
-                supported_ops = set(
-                    op.lower() for op in device_info["supportedOperations"]
-                )
                 singleqs, multiqs = cls._get_gate_set(supported_ops, device_type)
             except KeyError:
-                # The device has unsupported ops or it's a quantum annealer
+                # The device has unsupported ops
                 continue
             arch, _ = cls._get_arch_info(props, device_type)
             characteristics = None
