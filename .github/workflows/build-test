@@ -72,6 +72,8 @@ function unsupported() {
 # Generate and install packages:
 for MODULE in $MODULES_TO_TEST; do
 
+    UNSUPPORTED = $(unsupported ${MODULE} ${PLAT} ${PYVER})
+
     echo "Install: UNSUPPORTED:" ${UNSUPPORTED}
 
     if [[ ${UNSUPPORTED} ]]
