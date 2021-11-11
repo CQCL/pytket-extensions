@@ -45,6 +45,11 @@ function unsupported() {
         echo 0 ; return
     fi
 
+    if [[ "$module" = "pytket-aqt" ]]
+    then
+        echo 1 ; return
+    fi
+
     # https://github.com/Qiskit/qiskit/issues/1343
     if [[ "$module" = "pytket-qiskit" ]]
     then
