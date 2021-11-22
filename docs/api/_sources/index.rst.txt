@@ -14,15 +14,25 @@ circuits can be submitted.
 .. _pytket: https://cqcl.github.io/pytket
 .. _CQC: https://cambridgequantum.com
 
-- `pytket-qiskit <qiskit/index.html>`_
-- `pytket-braket <braket/index.html>`_
-- `pytket-honeywell <honeywell/index.html>`_
-- `pytket-aqt <aqt/index.html>`_
-- `pytket-ionq <ionq/index.html>`_
-- `pytket-pyzx <pyzx/index.html>`_
-- `pytket-stim <stim/index.html>`_
-- `pytket-qsharp <qsharp/index.html>`_
-- `pytket-pyquil <pyquil/index.html>`_
-- `pytket-cirq <cirq/index.html>`_
-- `pytket-projectq <projectq/index.html>`_
-- `pytket-qulacs <qulacs/index.html>`_
+.. toctree::
+	:caption: Extensions:
+	:maxdepth: 1
+
+	pytket-pyquil <pyquil/index.html#http://>
+	pytket-pyzx <pyzx/index.html#http://>
+	pytket-qiskit <qiskit/index.html#http://>
+	pytket-stim <stim/index.html#http://>
+	pytket-ionq <ionq/index.html#http://>
+	pytket-cirq <cirq/index.html#http://>
+	pytket-qsharp <qsharp/index.html#http://>
+	pytket-honeywell <honeywell/index.html#http://>
+	pytket-qulacs <qulacs/index.html#http://>
+	pytket-braket <braket/index.html#http://>
+	pytket-projectq <projectq/index.html#http://>
+	pytket-aqt <aqt/index.html#http://>
+
+.. toctree::
+	:caption: More documentation:
+	:maxdepth: 1
+
+	pytket <https://cqcl.github.io/tket/pytket/api/index.html>
