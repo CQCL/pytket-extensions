@@ -11,5 +11,5 @@ platforms. Each extension adds either new methods to the ``pytket`` package to
 convert between circuit representations, or new backends to which ``pytket``
 circuits can be submitted.
 
-.. _pytket: https://cqcl.github.io/pytket
+.. _pytket: https://cqcl.github.io/tket/pytket/api/
 .. _CQC: https://cambridgequantum.com
