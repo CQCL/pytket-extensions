@@ -23,5 +23,5 @@ jobs:
         dotnet tool install -g Microsoft.Quantum.IQSharp
         pip install jupyter
         dotnet iqsharp install --user
-        pip install qsharp
+        pip install -U qsharp
         python -c "import qsharp"
