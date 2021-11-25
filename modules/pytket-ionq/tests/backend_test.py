@@ -187,3 +187,9 @@ def test_nshots_ionq() -> None:
         return cast(int, h._identifiers[1])
 
     assert [get_nshots(h) for h in handles] == n_shots
+
+
+def test_retrieve_available_devices() -> None:
+    backend_infos = IonQBackend.available_devices()
+    assert len(backend_infos) == 1
+    assert backend_infos[0].device_name == "qpu"
