@@ -43,7 +43,7 @@ def split_utf8(s: str, n: int) -> Iterable[str]:
     yield s_bytes.decode("utf-8")
 
 
-class _OverrideManger:
+class _OverrideManager:
     def __init__(
         self,
         api_handler: "HoneywellQAPI",
@@ -120,15 +120,15 @@ class HoneywellQAPI:
         )
         self.ws_timeout = 180
         self.retry_timeout = 5
-        self.timeout: Optional[int] = None  # don't timetout by default
+        self.timeout: Optional[int] = None  # don't timeout by default
 
         if login:
             self.login()
 
     def override_timeouts(
         self, timeout: Optional[int] = None, retry_timeout: Optional[int] = None
-    ) -> _OverrideManger:
-        return _OverrideManger(self, timeout=timeout, retry_timeout=retry_timeout)
+    ) -> _OverrideManager:
+        return _OverrideManager(self, timeout=timeout, retry_timeout=retry_timeout)
 
     def _request_tokens(self, body: dict) -> Tuple[Optional[int], Optional[Any]]:
         """Method to send login request to machine api and save tokens."""
