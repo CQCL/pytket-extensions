@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import cast, Optional, List, Sequence, Union, Counter
+from typing import cast, Optional, List, Sequence, Union, Counter, Any
 import json
 import time
 from ast import literal_eval
@@ -126,6 +126,18 @@ class IonQBackend(Backend):
     @property
     def backend_info(self) -> Optional[BackendInfo]:
         return self._backend_info
+
+    @classmethod
+    def available_devices(cls, **kwargs: Any) -> List[BackendInfo]:
+        return [
+            fully_connected_backendinfo(
+                cls.__name__,
+                "qpu",
+                __extension_version__,
+                IONQ_N_QUBITS,
+                ionq_gates,
+            )
+        ]
 
     @property
     def required_predicates(self) -> List[Predicate]:

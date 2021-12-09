@@ -1,6 +1,12 @@
 Changelog
 ~~~~~~~~~
 
+0.20.0 (November 2021)
+----------------------
+
+* Qiskit version updated to 0.32.
+* Updated pytket version requirement to 0.17.
+
 0.19.0 (October 2021)
 ---------------------
 
