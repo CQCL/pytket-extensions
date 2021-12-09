@@ -293,7 +293,6 @@ class ForestBackend(Backend):
         if "qvms" not in kwargs:
             kwargs["qvms"] = False
         qc_name_list = list_quantum_computers(**kwargs)
-        print(qc_name_list)
         return [cls._get_backend_info(get_qc(name)) for name in qc_name_list]
 
 
