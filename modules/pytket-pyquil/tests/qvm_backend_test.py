@@ -451,3 +451,13 @@ def test_process_characterisation(qvm: None, quilc: None) -> None:
     arch = char["Architecture"]
     assert len(arch.nodes) == 9
     assert len(arch.coupling) == 12
+
+
+@pytest.mark.skipif(
+    skip_qvm_tests, reason="Can only run Rigetti QVM if docker is installed"
+)
+def test_retrieve_available_devices() -> None:
+    backend_infos = ForestBackend.available_devices()
+    assert len(backend_infos) > 0
+    backend_infos_with_vms = ForestBackend.available_devices(qvms=True)
+    assert len(backend_infos_with_vms) > len(backend_infos)
