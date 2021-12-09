@@ -153,7 +153,7 @@ def cirq_to_tk(circuit: cirq.circuits.Circuit) -> Circuit:
             if isinstance(gate, cirq.ops.ParallelGate):
                 if gate.num_copies != len(qb_lst):
                     raise NotImplementedError(
-                        "Could not understand parameters to ParallelGate"
+                        "ParallelGate parameters defined incorrectly."
                     )
                 gate = gate.sub_gate
                 gatetype = type(gate)
