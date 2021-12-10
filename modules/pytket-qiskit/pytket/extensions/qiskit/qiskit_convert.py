@@ -65,7 +65,7 @@ from pytket.circuit import (  # type: ignore
     Qubit,
 )
 from pytket._tket.circuit import _TEMP_BIT_NAME  # type: ignore
-from pytket.routing import Architecture  # type: ignore
+from pytket.routing import Architecture, FullyConnected  # type: ignore
 
 if TYPE_CHECKING:
     from qiskit.providers.backend import BackendV1 as QiskitBackend  # type: ignore
@@ -552,24 +552,6 @@ def tk_to_qiskit(tkcirc: Circuit) -> QuantumCircuit:
     return qcirc
 
 
-class FullyConnected2(Architecture):
-    """A replacement FullyConnected architecture that doesn't build the full
-    matrix.
-    For use with large numbers of qubits, to avoid calculations/routing."""
-
-    def __init__(self, n_nodes: int) -> None:
-        super().__init__([])
-        self.n_nodes = n_nodes
-
-    @property
-    def nodes(self) -> List[Node]:
-        return [Node(i) for i in range(self.n_nodes)]
-
-    @property
-    def coupling(self) -> List[Tuple[Node, Node]]:
-        return NotImplemented
-
-
 def process_characterisation(backend: "QiskitBackend") -> Dict[str, Any]:
     """Convert a :py:class:`qiskit.providers.backend.Backendv1` to a dictionary
      containing device Characteristics
@@ -597,7 +579,7 @@ def process_characterisation(backend: "QiskitBackend") -> Dict[str, Any]:
     n_qubits = config.n_qubits
     if coupling_map is None:
         # Assume full connectivity
-        arc = FullyConnected2(n_qubits)
+        arc = FullyConnected(n_qubits)
     else:
         arc = Architecture(coupling_map)
 
