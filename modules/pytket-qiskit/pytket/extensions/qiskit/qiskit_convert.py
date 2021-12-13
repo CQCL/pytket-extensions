@@ -49,7 +49,7 @@ from qiskit.circuit import (
     ParameterExpression,
     Reset,
 )
-from qiskit.circuit.library import CRYGate, RYGate, MCMT  # type: ignore
+from qiskit.circuit.library import CRYGate, RYGate, MCMT, PauliEvolutionGate  # type: ignore
 
 from qiskit.extensions.unitary import UnitaryGate  # type: ignore
 from pytket.circuit import (  # type: ignore
@@ -65,7 +65,9 @@ from pytket.circuit import (  # type: ignore
     Qubit,
 )
 from pytket._tket.circuit import _TEMP_BIT_NAME  # type: ignore
+from pytket.pauli import Pauli, QubitPauliString  # type: ignore
 from pytket.routing import Architecture  # type: ignore
+from pytket.utils import QubitPauliOperator, gen_term_sequence_circuit
 
 if TYPE_CHECKING:
     from qiskit.providers.backend import BackendV1 as QiskitBackend  # type: ignore
@@ -211,6 +213,26 @@ def _tk_gate_set(backend: "QiskitBackend") -> Set[OpType]:
         }
 
 
+def _qpo_from_peg(peg: PauliEvolutionGate, qubits: List[Qubit]) -> QubitPauliOperator:
+    op = peg.operator
+    qpodict = {}
+    for p, c in zip(op.paulis, op.coeffs):
+        qpslist = []
+        pstr = p.to_label()
+        for a in pstr:
+            if a == "X":
+                qpslist.append(Pauli.X)
+            elif a == "Y":
+                qpslist.append(Pauli.Y)
+            elif a == "Z":
+                qpslist.append(Pauli.Z)
+            else:
+                assert a == "I"
+                qpslist.append(Pauli.I)
+        qpodict[QubitPauliString(qubits, qpslist)] = c
+    return QubitPauliOperator(qpodict)
+
+
 class CircuitBuilder:
     def __init__(
         self,
@@ -251,6 +273,7 @@ class CircuitBuilder:
                     "condition_bits": [cond_reg[k] for k in range(len(cond_reg))],
                     "condition_value": i.condition[1],
                 }
+            optype = None
             if type(i) == ControlledGate:
                 if type(i.base_gate) == qiskit_gates.RYGate:
                     optype = OpType.CnRy
@@ -261,6 +284,8 @@ class CircuitBuilder:
                         "qiskit ControlledGate with "
                         + "base gate {} not implemented".format(i.base_gate)
                     )
+            elif type(i) == PauliEvolutionGate:
+                pass  # Special handling below
             else:
                 optype = _known_qiskit_gate[type(i)]
             qubits = [self.qbmap[qbit] for qbit in qargs]
@@ -272,6 +297,12 @@ class CircuitBuilder:
                 self.tkc.add_unitary2qbox(
                     ubox, qubits[0], qubits[1], **condition_kwargs
                 )
+            elif type(i) == PauliEvolutionGate:
+                qpo = _qpo_from_peg(i, qubits)
+                empty_circ = Circuit(len(qargs))
+                circ = gen_term_sequence_circuit(qpo, empty_circ)
+                ccbox = CircBox(circ)
+                self.tkc.add_circbox(ccbox, qubits)
             elif optype == OpType.Barrier:
                 self.tkc.add_barrier(qubits)
             elif optype in (OpType.CircBox, OpType.Custom):
