@@ -135,7 +135,7 @@ class HoneywellQAPI:
         try:
             # send request to login
             response = requests.post(
-                f"{self.url}/login",
+                f"{self.url}login",
                 json.dumps(body),
             )
 
