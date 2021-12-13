@@ -12,79 +12,33 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import datetime
-import sys
+from typing import Tuple
 
-import pytest
 from requests_mock.mocker import Mocker
-import jwt
 
 from pytket.extensions.honeywell.backends.api_wrappers import HoneywellQAPI
-from pytket.extensions.honeywell.backends.credential_storage import (
-    CredentialStorage,
-    MemoryStorage,
-    PersistentStorage,
-)
 
 
-@pytest.mark.parametrize("test_keyring_storage", [True, False])
-def test_hqs_login(test_keyring_storage: bool, requests_mock: Mocker) -> None:
+def test_hqs_login(
+    mock_hqs_api_handler: HoneywellQAPI,
+    mock_credentials: Tuple[str, str],
+    mock_token: str,
+) -> None:
     """Test that credentials are storable and deletable using
     the HoneywellQAPI handler."""
 
-    username = "mark.honeywell@mail.com"
-    pwd = "1906"
-
-    id_payload = {"exp": (datetime.datetime.now().timestamp() * 2)}
-
-    mock_id_token = jwt.encode(id_payload, key="").decode("utf-8")
-
-    # Mock /login endpoint
-    mock_url = "https://qapi.honeywell.com/v1/login"
-
-    requests_mock.register_uri(
-        "POST",
-        mock_url,
-        json={
-            "id-token": mock_id_token,
-            "refresh-token": mock_id_token,
-        },
-        headers={"Content-Type": "application/json"},
-    )
-
-    cred_store: CredentialStorage
-    # Skip testing keyring service if running on linux
-    if test_keyring_storage and sys.platform != "linux":
-        cred_store = PersistentStorage()
-        cred_store.KEYRING_SERVICE = "HQS_API_MOCK"
-    else:
-        cred_store = MemoryStorage()
-
-    cred_store.save_login_credential(
-        user_name=username,
-        password=pwd,
-    )
-
-    api_handler = HoneywellQAPI(
-        user_name=username,
-        token="",
-        persistent_credential=False,
-        login=False,
-    )
-
-    api_handler._cred_store = cred_store
-    api_handler.login()
+    username, pwd = mock_credentials
 
     # Check credentials are retrievable
-    assert api_handler._cred_store.login_credential(username) == pwd
-    assert api_handler._cred_store.refresh_token == mock_id_token
-    assert api_handler._cred_store.id_token == mock_id_token
+    assert mock_hqs_api_handler._cred_store.login_credential(username) == pwd
+    assert mock_hqs_api_handler._cred_store.refresh_token == mock_token
+    assert mock_hqs_api_handler._cred_store.id_token == mock_token
 
     # Delete authentication and verify
-    api_handler.delete_authentication()
-    assert api_handler._cred_store.id_token == None
-    assert api_handler._cred_store.login_credential(username) == None
-    assert api_handler._cred_store.refresh_token == None
+    mock_hqs_api_handler.delete_authentication()
+    assert mock_hqs_api_handler._cred_store.id_token == None
+    assert mock_hqs_api_handler._cred_store.login_credential(username) == None
+    assert mock_hqs_api_handler._cred_store.refresh_token == None
 
 
 def test_machine_status(
@@ -107,3 +61,6 @@ def test_machine_status(
     )
 
     assert mock_hqs_api_handler.status(machine_name) == mock_machine_state
+
+    # Delete authentication tokens to clean them from the keyring
+    mock_hqs_api_handler.delete_authentication()
