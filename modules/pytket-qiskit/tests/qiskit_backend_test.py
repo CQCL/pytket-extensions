@@ -105,7 +105,7 @@ def test_cancel() -> None:
     qc = circuit_gen()
     job = execute(qc, tb, shots=1024)
     job.cancel()
-    assert job.status() == JobStatus.CANCELLED
+    assert job.status() in [JobStatus.CANCELLED, JobStatus.DONE]
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
