@@ -50,7 +50,11 @@ def fixture_mock_hqs_api_handler(
     mock_credentials: Tuple[str, str],
     mock_token: str,
 ) -> HoneywellQAPI:
-    """A logged-in HoneywellQAPI fixture."""
+    """A logged-in HoneywellQAPI fixture.
+    After using this fixture in a test, call:
+        mock_hqs_api_handler.delete_authentication()
+    To remove mock tokens from the keyring.
+    """
 
     username, pwd = mock_credentials
 
@@ -80,13 +84,13 @@ def fixture_mock_hqs_api_handler(
     )
 
     # Construct HoneywellQAPI and login
-    # pylint: disable=E1123
     api_handler = HoneywellQAPI(
-        user_name=username,
-        token="",
+        persistent_credential=False,
         login=False,
     )
 
+    # Add the credential storage seperately in line with fixture parameters
+    api_handler.user_name = username
     api_handler._cred_store = cred_store
     api_handler.login()
 
