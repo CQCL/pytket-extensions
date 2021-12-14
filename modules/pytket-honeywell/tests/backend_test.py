@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 from collections import Counter
 from typing import cast, Callable, Any  # pylint: disable=unused-import
 from ast import literal_eval
@@ -342,15 +343,3 @@ def test_retrieve_available_devices() -> None:
     api_handler = HoneywellQAPI()
     backend_infos = HoneywellBackend.available_devices(api_handler=api_handler)
     assert len(backend_infos) > 0
-
-
-# hard to run as it involves removing credentials
-# def test_delete_authentication():
-#     print("first login")
-#     b = HoneywellBackend()
-#     print("delete login")
-
-#     b.delete_authentication()
-#     print("second login")
-
-#     b = HoneywellBackend()
