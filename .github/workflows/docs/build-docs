@@ -59,7 +59,9 @@ def build_module_docs(module):
             # Using relative links in toctree requires a hack, see
             # https://stackoverflow.com/questions/27979803/external-relative-link-in-sphinx-toctree-directive/31820846#31820846
             content.append(f"\tpytket-{mod} <../{mod}/index.html#http://>\n")
-        content.append("\n.. toctree::\n\t:caption: More documentation:\n\t:maxdepth: 1\n\n")
+        content.append(
+            "\n.. toctree::\n\t:caption: More documentation:\n\t:maxdepth: 1\n\n"
+        )
         content.append(f"\tpytket <{PYTKET_DOCS_LINK}>\n")
 
     with open(index_rst, "w") as f:
@@ -120,11 +122,15 @@ if __name__ == "__main__":
         index_rst = DOCS_DIR / "index.rst"
         with open(DOCS_DIR / "intro.txt", "r") as f:
             content = f.readlines()
-            content.append("\n.. toctree::\n\t:caption: Extensions:\n\t:maxdepth: 1\n\n")
+            content.append(
+                "\n.. toctree::\n\t:caption: Extensions:\n\t:maxdepth: 1\n\n"
+            )
             for module in get_all_modules():
                 content.append(f"\tpytket-{module} <{module}/index.html#http://>\n")
 
-            content.append("\n.. toctree::\n\t:caption: More documentation:\n\t:maxdepth: 1\n\n")
+            content.append(
+                "\n.. toctree::\n\t:caption: More documentation:\n\t:maxdepth: 1\n\n"
+            )
             content.append(f"\tpytket <{PYTKET_DOCS_LINK}>\n")
 
         with open(index_rst, "w") as f:
