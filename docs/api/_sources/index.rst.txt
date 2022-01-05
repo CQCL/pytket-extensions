@@ -11,25 +11,25 @@ platforms. Each extension adds either new methods to the ``pytket`` package to
 convert between circuit representations, or new backends to which ``pytket``
 circuits can be submitted.
 
-.. _pytket: https://cqcl.github.io/pytket
+.. _pytket: https://cqcl.github.io/tket/pytket/api/
 .. _CQC: https://cambridgequantum.com
 
 .. toctree::
 	:caption: Extensions:
 	:maxdepth: 1
 
-	pytket-pyquil <pyquil/index.html#http://>
-	pytket-pyzx <pyzx/index.html#http://>
-	pytket-qiskit <qiskit/index.html#http://>
 	pytket-stim <stim/index.html#http://>
-	pytket-ionq <ionq/index.html#http://>
-	pytket-cirq <cirq/index.html#http://>
-	pytket-qsharp <qsharp/index.html#http://>
-	pytket-honeywell <honeywell/index.html#http://>
 	pytket-qulacs <qulacs/index.html#http://>
 	pytket-braket <braket/index.html#http://>
 	pytket-projectq <projectq/index.html#http://>
+	pytket-ionq <ionq/index.html#http://>
+	pytket-qsharp <qsharp/index.html#http://>
+	pytket-honeywell <honeywell/index.html#http://>
+	pytket-pyquil <pyquil/index.html#http://>
 	pytket-aqt <aqt/index.html#http://>
+	pytket-pyzx <pyzx/index.html#http://>
+	pytket-cirq <cirq/index.html#http://>
+	pytket-qiskit <qiskit/index.html#http://>
 
 .. toctree::
 	:caption: More documentation:
