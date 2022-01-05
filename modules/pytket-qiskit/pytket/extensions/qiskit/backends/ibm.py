@@ -45,7 +45,6 @@ from pytket.backends.backendinfo import BackendInfo
 from pytket.backends.backendresult import BackendResult
 from pytket.backends.resulthandle import _ResultIdTuple
 from pytket.extensions.qiskit.qiskit_convert import (
-    FullyConnected2,
     process_characterisation,
     get_avg_characterisation,
 )
@@ -74,7 +73,7 @@ from pytket.extensions.qiskit.qiskit_convert import tk_to_qiskit, _tk_gate_set
 from pytket.extensions.qiskit.result_convert import (
     qiskit_experimentresult_to_backendresult,
 )
-from pytket.routing import NoiseAwarePlacement  # type: ignore
+from pytket.routing import FullyConnected, NoiseAwarePlacement  # type: ignore
 from pytket.utils import prepare_circuit
 from pytket.utils.results import KwargTypes
 from .ibm_utils import _STATUS_MAP, _batch_circuits
@@ -412,7 +411,7 @@ class IBMQBackend(Backend):
             passlist.append(FullPeepholeOptimise())
         mid_measure = self._backend_info.supports_midcircuit_measurement
         arch = self._backend_info.architecture
-        if not isinstance(arch, FullyConnected2):
+        if not isinstance(arch, FullyConnected):
             passlist.append(
                 CXMappingPass(
                     arch,
