@@ -1,4 +1,4 @@
-# Copyright 2020-2021 Cambridge Quantum Computing
+# Copyright 2020-2022 Cambridge Quantum Computing
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ setup(
     license="Apache 2",
     packages=find_namespace_packages(include=["pytket.*"]),
     include_package_data=True,
-    install_requires=["pytket ~= 0.18.0rc0", "requests ~= 2.22", "types-requests"],
+    install_requires=["pytket ~= 0.18.0", "requests ~= 2.22", "types-requests"],
     classifiers=[
         "Environment :: Console",
         "Programming Language :: Python :: 3.7",
