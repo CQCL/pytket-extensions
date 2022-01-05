@@ -149,6 +149,16 @@ def cirq_to_tk(circuit: cirq.circuits.Circuit) -> Circuit:
             ):
                 gate = cirq_pauli.Z
 
+            apply_in_parallel = False
+            if isinstance(gate, cirq.ops.ParallelGate):
+                if gate.num_copies != len(qb_lst):
+                    raise NotImplementedError(
+                        "ParallelGate parameters defined incorrectly."
+                    )
+                gate = gate.sub_gate
+                gatetype = type(gate)
+                apply_in_parallel = True
+
             if gate in _constant_gates:
                 try:
                     optype = _cirq2ops_mapping[gate]
@@ -180,7 +190,11 @@ def cirq_to_tk(circuit: cirq.circuits.Circuit) -> Circuit:
                     raise NotImplementedError(
                         "Operation not supported by tket: " + str(op.gate)
                     ) from error
-            tkcirc.add_gate(optype, params, qb_lst)
+            if apply_in_parallel:
+                for qb in qb_lst:
+                    tkcirc.add_gate(optype, params, [qb])
+            else:
+                tkcirc.add_gate(optype, params, qb_lst)
     return tkcirc
 
 

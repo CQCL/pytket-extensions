@@ -271,7 +271,7 @@ def test_tketautopass() -> None:
 def test_instruction() -> None:
     # TKET-446
     qreg = QuantumRegister(3)
-    op = PauliSumOp.from_list([("XXI", 0.3), ("YYI", 0.5 + 1j * 0.2), ("ZZZ", -0.4)])
+    op = PauliSumOp.from_list([("XXI", 0.3), ("YYI", 0.5), ("ZZZ", -0.4)])
     evolved_op = (1.2 * op).exp_i()
     evo = PauliTrotterEvolution(reps=1)
     evo_circop = evo.convert(evolved_op)

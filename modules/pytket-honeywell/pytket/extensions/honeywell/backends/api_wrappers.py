@@ -8,8 +8,7 @@ Adapted from original file provided by Honeywell Quantum Solutions
 import datetime
 import time
 from http import HTTPStatus
-from typing import Iterable, Optional, Dict, Any, Tuple
-from itertools import takewhile, count
+from typing import Optional, Dict, Any, Tuple
 import asyncio
 import json
 import getpass
@@ -17,9 +16,9 @@ import jwt
 import requests
 from websockets import connect, exceptions  # type: ignore
 import nest_asyncio  # type: ignore
-import keyring  # type: ignore
 
 from .config import HoneywellConfig
+from .credential_storage import CredentialStorage, MemoryStorage, PersistentStorage
 
 # This is necessary for use in Jupyter notebooks to allow for nested asyncio loops
 nest_asyncio.apply()
@@ -29,21 +28,7 @@ class HQSAPIError(Exception):
     pass
 
 
-def split_utf8(s: str, n: int) -> Iterable[str]:
-    # stolen from
-    # https://stackoverflow.com/questions/6043463/split-unicode-string-into-300-byte-chunks-without-destroying-characters
-    """Split UTF-8 s into chunks of maximum length n."""
-    s_bytes = s.encode("utf-8")
-    while len(s_bytes) > n:
-        k = n
-        while (s_bytes[k] & 0xC0) == 0x80:
-            k -= 1
-        yield s_bytes[:k].decode("utf-8")
-        s_bytes = s_bytes[k:]
-    yield s_bytes.decode("utf-8")
-
-
-class _OverrideManger:
+class _OverrideManager:
     def __init__(
         self,
         api_handler: "HoneywellQAPI",
@@ -76,8 +61,6 @@ class HoneywellQAPI:
         60  # Default safety factor (in seconds) to token expiration before a refresh
     )
 
-    KEYRING_NAME = "HQS-API"
-
     def __init__(
         self,
         user_name: Optional[str] = None,
@@ -88,6 +71,8 @@ class HoneywellQAPI:
         use_websocket: bool = True,
         time_safety: Optional[int] = None,
         login: bool = True,
+        persistent_credential: bool = True,
+        __pwd: Optional[str] = None,
     ):
         """Initialize and login to the Honeywell Quantum API interface
 
@@ -96,10 +81,18 @@ class HoneywellQAPI:
         Arguments:
             user_name (str): User e-mail used to register
             token (str): Token used to refresh id token
-            url (str): Url of the Quantum API including version:
-             https://qapi.honeywell.com/v1/
-            shots (int): Default number of shots for submitted experiments
-            use_websockets: Whether to default to using websockets to reduce traffic
+            api_url (str): Url of the Quantum API:
+             https://qapi.honeywell.com/
+            api_version (str): API version
+            use_websocket (bool): Whether to default to using websockets
+            to reduce traffic
+            time_safety (int): seconds before token expiration within which
+            to refresh tokens
+            login (bool): attempt to login during initialiasation
+            persistent_credential (bool): use keyring to store credentials
+            (instead of memory)
+            __pwd (str): password for the service. For debugging purposes only,
+            do not store password in source code.
         """
         self.config = HoneywellConfig.from_default_config_file()
 
@@ -108,10 +101,17 @@ class HoneywellQAPI:
             if api_url
             else f"{self.DEFAULT_API_URL}v{api_version}/"
         )
-        self.keyring_service = self.KEYRING_NAME
-
+        self._cred_store: CredentialStorage = (
+            MemoryStorage() if not persistent_credential else PersistentStorage()
+        )
         self.user_name = user_name if user_name else self.config.username
-        self.refresh_token = token if token else self._get_token("refresh_token")
+        if self.user_name is not None and __pwd is not None:
+            self._cred_store.save_login_credential(self.user_name, __pwd)
+
+        refresh_token = token if token else self._cred_store.refresh_token
+        if refresh_token is not None:
+            self._cred_store.save_refresh_token(refresh_token)
+
         self.api_version = api_version
         self.machine = machine
         self.use_websocket = use_websocket
@@ -120,22 +120,22 @@ class HoneywellQAPI:
         )
         self.ws_timeout = 180
         self.retry_timeout = 5
-        self.timeout: Optional[int] = None  # don't timetout by default
+        self.timeout: Optional[int] = None  # don't timeout by default
 
         if login:
             self.login()
 
     def override_timeouts(
         self, timeout: Optional[int] = None, retry_timeout: Optional[int] = None
-    ) -> _OverrideManger:
-        return _OverrideManger(self, timeout=timeout, retry_timeout=retry_timeout)
+    ) -> _OverrideManager:
+        return _OverrideManager(self, timeout=timeout, retry_timeout=retry_timeout)
 
     def _request_tokens(self, body: dict) -> Tuple[Optional[int], Optional[Any]]:
         """Method to send login request to machine api and save tokens."""
         try:
             # send request to login
             response = requests.post(
-                f"{self.url}/login",
+                f"{self.url}login",
                 json.dumps(body),
             )
 
@@ -147,7 +147,7 @@ class HoneywellQAPI:
 
             else:
                 print("***Successfully logged in***")
-                self._save_tokens(
+                self._cred_store.save_tokens(
                     response.json()["id-token"], response.json()["refresh-token"]
                 )
                 return response.status_code, None
@@ -159,10 +159,7 @@ class HoneywellQAPI:
     def _get_credentials(self) -> Tuple[str, str]:
         """Method to ask for user's credentials"""
         if self.config.username is not None:
-            pwd = keyring.get_password(  # type: ignore
-                self.keyring_service,
-                self.config.username,
-            )
+            pwd = self._cred_store.login_credential(self.config.username)  # type: ignore
             if pwd:
                 self.user_name = self.config.username
                 return self.user_name, pwd
@@ -171,7 +168,10 @@ class HoneywellQAPI:
             user_name = input("Enter your email: ")
             self.user_name = user_name
 
-        pwd = getpass.getpass(prompt="Enter your password: ")
+        pwd = self._cred_store.login_credential(self.user_name)
+        if not pwd:
+            pwd = getpass.getpass(prompt="Enter your password: ")
+            self._cred_store.save_login_credential(self.user_name, pwd)
         return self.user_name, pwd
 
     def _authenticate(
@@ -191,7 +191,7 @@ class HoneywellQAPI:
         body = {}
 
         if action == "refresh":
-            body["refresh-token"] = self.refresh_token
+            body["refresh-token"] = self._cred_store.refresh_token
         else:
             # ask user for crendentials before making login request
             user_name: Optional[str]
@@ -234,52 +234,19 @@ class HoneywellQAPI:
                 f"{status_code} {'' if message is None else message}"
             )
 
-    def _get_token_parts(self, token_name: str) -> Iterable[str]:
-        token_parts = (
-            keyring.get_password(self.keyring_service, f"{token_name}_{i}")  # type: ignore
-            for i in count(start=0)
-        )
-        return takewhile(lambda x: x is not None, token_parts)  # type: ignore
-
-    def _get_token(self, token_name: str):  # type: ignore
-        """Method to retrieve id and refresh tokens from system's keyring service.
-        Windows keyring backend has a length limitation on passwords.
-        To avoid this, passwords get split in to tokens of length 512.
-        """
-
-        token = "".join(self._get_token_parts(token_name))
-        return token if token else None
-
-    def _save_tokens(self, id_token: str, refresh_token: str) -> None:
-        """Method to save id and refresh tokens on system's keyring service.
-        Windows keyring backend has a length limitation on passwords.
-        To avoid this, passwords get split in to tokens of length 512.
-        """
-
-        split_id_tokens = list(split_utf8(id_token, 512))
-        split_refresh_tokens = list(split_utf8(refresh_token, 512))
-
-        for token_list, token_name in zip(
-            (split_id_tokens, split_refresh_tokens), ("id_token", "refresh_token")
-        ):
-            for index, part in enumerate(token_list):
-                keyring.set_password(  # type: ignore
-                    self.keyring_service, f"{token_name}_{index}", part
-                )
-
     def login(self) -> str:
         """This methods checks if we have a valid (non-expired) id-token
         and returns it, otherwise it gets a new one with refresh-token.
         If refresh-token doesn't exist, it asks user for credentials.
         """
         # check if id_token exists
-        id_token = self._get_token("id_token")
+        id_token = self._cred_store.id_token
         if id_token is None:
             # authenticate against '/login' endpoint
             self._authenticate()
 
             # get id_token
-            id_token = self._get_token("id_token")
+            id_token = self._cred_store.id_token
         if id_token is None:
             raise HQSAPIError("Unable to retrieve id token.")
         # check id_token is not expired yet
@@ -290,27 +257,22 @@ class HoneywellQAPI:
             print("Your id token is expired. Refreshing...")
 
             # get refresh_token
-            refresh_token = self._get_token("refresh_token")
+            refresh_token = self._cred_store.refresh_token
             if refresh_token is not None:
                 self._authenticate("refresh")
             else:
                 self._authenticate()
 
             # get id_token
-            id_token = self._get_token("id_token")
+            id_token = self._cred_store.id_token
 
         return id_token  # type: ignore
 
     def delete_authentication(self) -> None:
-        """Use keyrings delete_password to remove stored"""
-        for token_name in ("id_token", "refresh_token"):
-            for index in count():
-                token_part = f"{token_name}_{index}"
-                try:
-                    keyring.delete_password(self.keyring_service, token_part)  # type: ignore
-                except keyring.errors.PasswordDeleteError:
-                    # stop when the token part doesn't exist
-                    break
+        """Remove stored credentials and tokens"""
+        if self.user_name:
+            self._cred_store.delete_login_credential(self.user_name)
+        self._cred_store.delete_tokens()
 
     def recent_jobs(
         self,

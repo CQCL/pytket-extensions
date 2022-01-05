@@ -1,4 +1,4 @@
-# Copyright 2020-2021 Cambridge Quantum Computing
+# Copyright 2020-2022 Cambridge Quantum Computing
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -39,9 +39,9 @@ setup(
     packages=find_namespace_packages(include=["pytket.*"]),
     include_package_data=True,
     install_requires=[
-        "pytket ~= 0.17.0",
-        "qsharp ~= 0.20.2110",
-        "qsharp-core ~= 0.20.2110",
+        "pytket ~= 0.18.0",
+        "qsharp ~= 0.21.2111",
+        "qsharp-core ~= 0.21.2111",
     ],
     classifiers=[
         "Environment :: Console",

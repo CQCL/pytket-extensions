@@ -66,7 +66,7 @@ from pytket.predicates import (  # type: ignore
     NoSymbolsPredicate,
     Predicate,
 )
-from pytket.routing import Architecture, FullyConnected, NoiseAwarePlacement  # type: ignore
+from pytket.routing import Architecture, NoiseAwarePlacement  # type: ignore
 from pytket.utils import prepare_circuit
 from pytket.utils.operators import QubitPauliOperator
 from pytket.utils.outcomearray import OutcomeArray
@@ -419,11 +419,10 @@ class BraketBackend(Backend):
             all_qubits = list(range(n_qubits))
 
         if connectivity_graph is None:
-            arch = FullyConnected(n_qubits)
-        else:
-            arch = Architecture(
-                [(k, v) for k, l in connectivity_graph.items() for v in l]
+            connectivity_graph = dict(
+                (k, [v for v in range(n_qubits) if v != k]) for k in range(n_qubits)
             )
+        arch = Architecture([(k, v) for k, l in connectivity_graph.items() for v in l])
         return arch, all_qubits
 
     @classmethod
