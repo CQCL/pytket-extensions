@@ -1,0 +1,18 @@
+pytket-iqm
+==========
+
+.. image:: CQCLogo.png
+   :width: 120px
+   :align: right
+
+``pytket-iqm`` is an extension to ``pytket`` that allows ``pytket`` circuits to
+be executed on IQM's quantum devices and simulators.
+
+``pytket-iqm`` is available for Python 3.9, on Linux, MacOS and Windows. To
+install, run:
+
+``pip install pytket-iqm``
+
+.. toctree::
+    api.rst
+    changelog.rst

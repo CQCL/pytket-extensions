@@ -1,0 +1,2 @@
+-r ../../base-test-requirements.txt
+types-requests
