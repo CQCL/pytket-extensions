@@ -503,7 +503,12 @@ class HoneywellQAPI:
                             raise RuntimeError("Keyboard Interrupted")
 
     def run_job(
-        self, qasm_str: str, shots: int, machine: str, name: str = "job", group: Optional[str] = None,
+        self,
+        qasm_str: str,
+        shots: int,
+        machine: str,
+        name: str = "job",
+        group: Optional[str] = None,
     ) -> Optional[Dict]:
         """
         Submits a job and waits to receives job result dictionary.
@@ -520,7 +525,11 @@ class HoneywellQAPI:
 
         """
         job_id = self.submit_job(
-            qasm_str=qasm_str, shots=shots, machine=machine, name=name, group=group,
+            qasm_str=qasm_str,
+            shots=shots,
+            machine=machine,
+            name=name,
+            group=group,
         )
 
         jr = self.retrieve_job(job_id)

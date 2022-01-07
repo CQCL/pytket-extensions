@@ -344,6 +344,7 @@ def test_retrieve_available_devices() -> None:
     backend_infos = HoneywellBackend.available_devices(api_handler=api_handler)
     assert len(backend_infos) > 0
 
+
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_submission_with_group() -> None:
     b = HoneywellBackend(device_name="HQS-LT-S1-APIVAL")
