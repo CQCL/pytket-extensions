@@ -343,3 +343,16 @@ def test_retrieve_available_devices() -> None:
     api_handler = HoneywellQAPI()
     backend_infos = HoneywellBackend.available_devices(api_handler=api_handler)
     assert len(backend_infos) > 0
+
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
+def test_submission_with_group() -> None:
+    b = HoneywellBackend(device_name="HQS-LT-S1-APIVAL")
+    c = Circuit(2, 2, "test 2")
+    c.H(0)
+    c.CX(0, 1)
+    c.measure_all()
+    c = b.get_compiled_circuit(c)
+    n_shots = 10
+    shots = b.run_circuit(c, n_shots=n_shots, group="test").get_shots()
+    print(shots)
+    assert all(q[0] == q[1] for q in shots)
