@@ -16,7 +16,7 @@
 from ast import literal_eval
 import json
 from http import HTTPStatus
-from typing import Dict, List, Optional, Sequence, Union, Any, cast
+from typing import Dict, List, Set, Optional, Sequence, Union, Any, cast
 
 import numpy as np
 import requests
@@ -73,6 +73,7 @@ _GATE_SET = {
     OpType.Rz,
     OpType.PhasedX,
     OpType.ZZMax,
+    OpType.ZZPhase,
     OpType.Reset,
     OpType.Measure,
     OpType.Barrier,
@@ -82,6 +83,13 @@ _GATE_SET = {
     OpType.ExplicitModifier,
     OpType.SetBits,
 }
+
+
+def _get_gateset(machine_name: str) -> Set[OpType]:
+    gs = _GATE_SET.copy()
+    if "sim" in machine_name.lower():
+        gs.remove(OpType.ZZPhase)
+    return gs
 
 
 class GetResultFailed(Exception):
@@ -130,6 +138,7 @@ class HoneywellBackend(Backend):
             self._api_handler = HoneywellQAPI(machine=device_name, login=login)
 
         self.simulator_type = simulator
+        self._gate_set = _get_gateset(self._device_name)
 
     @property
     def _MACHINE_DEBUG(self) -> bool:
@@ -189,7 +198,7 @@ class HoneywellBackend(Backend):
                 machine["name"],
                 __extension_version__,
                 machine["n_qubits"],
-                _GATE_SET,
+                _get_gateset(machine["name"]),
             )
             for machine in jr
         ]
@@ -205,7 +214,7 @@ class HoneywellBackend(Backend):
             machine,
             __extension_version__,
             self._machine_info["n_qubits"],
-            _GATE_SET,
+            self._gate_set,
         )
 
     @classmethod
@@ -245,7 +254,7 @@ class HoneywellBackend(Backend):
     def required_predicates(self) -> List[Predicate]:
         preds = [
             NoSymbolsPredicate(),
-            GateSetPredicate(_GATE_SET),
+            GateSetPredicate(self._gate_set),
         ]
         if not self._MACHINE_DEBUG:
             assert self.backend_info is not None
@@ -254,7 +263,7 @@ class HoneywellBackend(Backend):
         return preds
 
     def rebase_pass(self) -> BasePass:
-        return auto_rebase_pass(_GATE_SET)
+        return auto_rebase_pass(self._gate_set)
 
     def default_compilation_pass(self, optimisation_level: int = 1) -> BasePass:
         assert optimisation_level in range(3)
@@ -358,6 +367,8 @@ class HoneywellBackend(Backend):
                 if i == final_index:
                     # flag to signal end of batch
                     body["batch-end"] = True
+            if circ.n_gates_of_type(OpType.ZZPhase) > 0:
+                body["options"]["compiler-options"] = {"parametrized_zz": True}
             if self._api_handler is None:
                 handle_list.append(
                     ResultHandle(

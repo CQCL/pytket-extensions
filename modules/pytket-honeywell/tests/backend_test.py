@@ -374,3 +374,33 @@ def test_submission_with_group() -> None:
     shots = b.run_circuit(c, n_shots=n_shots, group="test").get_shots()  # type: ignore
     print(shots)
     assert all(q[0] == q[1] for q in shots)
+
+
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
+def test_zzphase() -> None:
+    backend = HoneywellBackend(
+        device_name="HQS-LT-S1-APIVAL", machine_debug=skip_remote_tests
+    )
+    c = Circuit(2, 2, "test rzz")
+    c.H(0)
+    c.CX(0, 1)
+    c.Rz(0.3, 0)
+    c.CY(0, 1)
+    c.ZZPhase(0.1, 1, 0)
+    c.measure_all()
+    c0 = backend.get_compiled_circuit(c, 0)
+
+    assert c0.n_gates_of_type(OpType.ZZPhase) > 0
+
+    # simulator does not yet support ZZPhase
+    backsim = HoneywellBackend(
+        device_name="HQS-LT-S1-SIM", machine_debug=skip_remote_tests
+    )
+    assert backsim.get_compiled_circuit(c, 0).n_gates_of_type(OpType.ZZPhase) == 0
+
+    n_shots = 4
+    handle = backend.process_circuits([c0], n_shots)[0]
+    correct_counts = {(0, 0): 4}
+    res = backend.get_result(handle, timeout=49)
+    counts = res.get_counts()
+    assert counts == correct_counts
