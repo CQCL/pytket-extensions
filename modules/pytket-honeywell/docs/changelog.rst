@@ -1,6 +1,11 @@
 Changelog
 ~~~~~~~~~
 
+0.20.0 (January 2022)
+---------------------
+
+* Added optional ``group`` field to circuit submission.
+
 0.19.0 (January 2022)
 ---------------------
 
