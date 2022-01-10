@@ -320,7 +320,8 @@ class HoneywellQAPI:
             shots:      number of repetitions of qasm_str
             machine:    machine to run on
             name:       name of job (for error handling)
-            group:      identifier of a collection of jobs, can be used for usage tracking.
+            group:      identifier of a collection of jobs, can be used for usage
+                        tracking.
 
         Returns:
             (str):     id of job submitted
@@ -518,7 +519,8 @@ class HoneywellQAPI:
             name:       name of job (for error handling)
             shots:      number of repetitions of qasm_str
             machine:    machine to run on
-            group:      identifier of a collection of jobs, can be used for usage tracking.
+            group:      identifier of a collection of jobs, can be used for usage
+                        tracking.
 
         Returns:
             jr:         (dict) output from API

@@ -303,7 +303,8 @@ class HoneywellBackend(Backend):
         * `postprocess`: boolean flag to allow classical postprocessing.
         * `noisy_simulation`: boolean flag to specify whether the simulator should
           perform noisy simulation with an error model (default value is `True`).
-        * `group`: string identifier of a collection of jobs, can be used for usage tracking.
+        * `group`: string identifier of a collection of jobs, can be used for usage
+          tracking.
         """
         circuits = list(circuits)
         n_shots_list = Backend._get_n_shots_as_list(
