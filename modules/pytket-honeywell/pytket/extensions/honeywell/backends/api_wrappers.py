@@ -310,6 +310,7 @@ class HoneywellQAPI:
         shots: Optional[int] = None,
         machine: Optional[str] = None,
         name: str = "job",
+        group: Optional[str] = None,
     ) -> str:
         """
         Submits job to device and returns job ID.
@@ -319,6 +320,8 @@ class HoneywellQAPI:
             shots:      number of repetitions of qasm_str
             machine:    machine to run on
             name:       name of job (for error handling)
+            group:      identifier of a collection of jobs, can be used for usage
+                        tracking.
 
         Returns:
             (str):     id of job submitted
@@ -337,6 +340,8 @@ class HoneywellQAPI:
                 "count": shots,
                 "options": None,
             }
+            if group is not None:
+                body["group"] = group
             id_token = self.login()
             res = requests.post(
                 f"{self.url}job", json.dumps(body), headers={"Authorization": id_token}
@@ -499,7 +504,12 @@ class HoneywellQAPI:
                             raise RuntimeError("Keyboard Interrupted")
 
     def run_job(
-        self, qasm_str: str, shots: int, machine: str, name: str = "job"
+        self,
+        qasm_str: str,
+        shots: int,
+        machine: str,
+        name: str = "job",
+        group: Optional[str] = None,
     ) -> Optional[Dict]:
         """
         Submits a job and waits to receives job result dictionary.
@@ -509,13 +519,19 @@ class HoneywellQAPI:
             name:       name of job (for error handling)
             shots:      number of repetitions of qasm_str
             machine:    machine to run on
+            group:      identifier of a collection of jobs, can be used for usage
+                        tracking.
 
         Returns:
             jr:         (dict) output from API
 
         """
         job_id = self.submit_job(
-            qasm_str=qasm_str, shots=shots, machine=machine, name=name
+            qasm_str=qasm_str,
+            shots=shots,
+            machine=machine,
+            name=name,
+            group=group,
         )
 
         jr = self.retrieve_job(job_id)
