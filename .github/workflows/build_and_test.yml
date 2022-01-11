@@ -147,12 +147,12 @@ jobs:
         ./.github/workflows/build-test mypy
 
     - name: Set up Python 3.9
-      if: github.event_name == 'push'
+      if: github.event_name == 'push' || github.event_name == 'pull_request'
       uses: actions/setup-python@v2
       with:
         python-version: 3.9
     - name: Build and test (3.9)
-      if: github.event_name == 'push'
+      if: github.event_name == 'push' || github.event_name == 'pull_request'
       run: |
         ./.github/workflows/build-test nomypy
 
@@ -211,12 +211,12 @@ jobs:
       run: |
         ./.github/workflows/build-test nomypy
     - name: Set up Python 3.9
-      if: github.event_name == 'push'
+      if: github.event_name == 'push' || github.event_name == 'pull_request'
       uses: actions/setup-python@v2
       with:
         python-version: 3.9
     - name: Build and test (3.9)
-      if: github.event_name == 'push'
+      if: github.event_name == 'push' || github.event_name == 'pull_request'
       shell: bash
       run: |
         ./.github/workflows/build-test nomypy
