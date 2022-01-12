@@ -341,4 +341,4 @@ def _iqm_rebase() -> BasePass:
     return RebaseCustom({OpType.CZ}, c_cx, {OpType.PhasedX}, c_tk1)
 
 
-_xcirc = Circuit(1).add_gate(OpType.PhasedX, [1, 0], [0])
+_xcirc = Circuit(1).add_gate(OpType.PhasedX, [1, 0], [0]).add_phase(0.5)
