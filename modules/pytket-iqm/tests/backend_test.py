@@ -98,6 +98,22 @@ def test_default_pass() -> None:
             assert pred.verify(c)
 
 
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
+def test_postprocess() -> None:
+    b = IQMBackend()
+    assert b.supports_contextual_optimisation
+    c = Circuit(2, 2)
+    c.Y(0)
+    c.Z(1)
+    c.measure_all()
+    c = b.get_compiled_circuit(c)
+    h = b.process_circuit(c, n_shots=10, postprocess=True)
+    r = b.get_result(h)
+    shots = r.get_shots()
+    assert len(shots) == 10
+    assert all(len(shot) == 2 for shot in shots)
+
+
 def test_backendinfo() -> None:
     b = IQMBackend(username="invalid", api_key="invalid")
     info = b.backend_info
