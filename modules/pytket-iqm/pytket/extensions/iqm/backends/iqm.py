@@ -64,6 +64,7 @@ _GATE_SET = {OpType.PhasedX, OpType.CZ, OpType.Measure}
 
 _DEFAULT_SETTINGS = Path(__file__).resolve().parent / "demo_settings.json"
 
+# https://iqm-finland.github.io/cirq-on-iqm/api/cirq_iqm.devices.adonis.Adonis.html
 _DEFAULT_COUPLING = [
     ("QB1", "QB3"),
     ("QB2", "QB3"),
