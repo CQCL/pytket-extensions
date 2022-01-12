@@ -84,7 +84,7 @@ def test_handles() -> None:
 
 
 def test_default_pass() -> None:
-    b = IQMBackend()
+    b = IQMBackend(username="invalid", api_key="invalid")
     for ol in range(3):
         comp_pass = b.default_compilation_pass(ol)
         c = Circuit(3, 3)
@@ -99,7 +99,7 @@ def test_default_pass() -> None:
 
 
 def test_backendinfo() -> None:
-    b = IQMBackend()
+    b = IQMBackend(username="invalid", api_key="invalid")
     info = b.backend_info
     assert info.name == type(b).__name__
     assert len(info.gate_set) >= 3
