@@ -83,6 +83,18 @@ def test_handles() -> None:
         assert result.get_shots().shape == (n_shots, 2)
 
 
+def test_none_nshots() -> None:
+    b = IQMBackend()
+    c = Circuit(2, 2)
+    c.H(0)
+    c.CX(0, 1)
+    c.measure_all()
+    c = b.get_compiled_circuit(c)
+    with pytest.raises(ValueError) as errorinfo:
+        h = b.process_circuits([c])
+    assert "Parameter n_shots is required" in str(errorinfo.value)
+
+
 def test_default_pass() -> None:
     b = IQMBackend(username="invalid", api_key="invalid")
     for ol in range(3):
