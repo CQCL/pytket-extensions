@@ -18,6 +18,7 @@ subdirectory of the `modules` directory:
 * `pytket-cirq`
 * `pytket-honeywell`
 * `pytket-ionq`
+* `pytket-iqm`
 * `pytket-projectq`
 * `pytket-pyquil`
 * `pytket-pyzx`

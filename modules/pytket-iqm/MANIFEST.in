@@ -1,0 +1,3 @@
+include _metadata.py
+include pytket/extensions/iqm/py.typed
+include pytket/extensions/iqm/backends/demo_settings.json
