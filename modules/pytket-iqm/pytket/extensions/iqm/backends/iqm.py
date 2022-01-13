@@ -167,11 +167,12 @@ class IQMBackend(Backend):
     def default_compilation_pass(self, optimisation_level: int = 1) -> BasePass:
         assert optimisation_level in range(3)
         passes = [DecomposeBoxes(), FlattenRegisters()]
-        if optimisation_level == 1:
+        if optimisation_level == 0:
+            passes.append(_iqm_rebase())  # to satisfy MaxTwoQubitGatesPredicate
+        elif optimisation_level == 1:
             passes.append(SynthesiseTket())
         elif optimisation_level == 2:
             passes.append(FullPeepholeOptimise())
-        passes.append(_iqm_rebase())  # to satisfy MaxTwoQubitGatesPredicate
         passes.append(DefaultMappingPass(self._arch))
         passes.append(DelayMeasures())
         passes.append(_iqm_rebase())
