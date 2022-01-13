@@ -1,7 +1,7 @@
 # pytket-iqm
 
-[Pytket](https://cqcl.github.io/pytket) is a Python module for interfacing
-with CQC tket, a set of quantum programming tools.
+[Pytket](https://cqcl.github.io/pytket) is a Python module providing an
+extensive set of tools for compiling and executing quantum circuits.
 
 `pytket-iqm` is an extension to `pytket` that allows `pytket` circuits to be
 executed on [IQM](https://meetiqm.com/)'s quantum devices and simulators.
