@@ -91,7 +91,7 @@ def test_none_nshots() -> None:
     c.measure_all()
     c = b.get_compiled_circuit(c)
     with pytest.raises(ValueError) as errorinfo:
-        h = b.process_circuits([c])
+        _ = b.process_circuits([c])
     assert "Parameter n_shots is required" in str(errorinfo.value)
 
 
