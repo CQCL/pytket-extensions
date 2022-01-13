@@ -83,6 +83,7 @@ def test_handles() -> None:
         assert result.get_shots().shape == (n_shots, 2)
 
 
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_none_nshots() -> None:
     b = IQMBackend()
     c = Circuit(2, 2)
