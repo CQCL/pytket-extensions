@@ -52,12 +52,12 @@ then
     python -m pip install --upgrade mypy
 fi
 for MODULE in $MODULES_TO_TEST; do
-    # pytket-iqm not supported with 3.7 or 3.8
+    # pytket-iqm is only available for 3.9
     if [[ "${MODULE}" != "pytket-iqm" || "${PYVER}" == "3.9" ]]; then
         # FIXME see
         # https://github.com/CQCL/pytket-extensions/issues/180 and
         # https://github.com/microsoft/iqsharp/issues/512
-        if [[ "${MODULE}" != "pytket-qsharp" || "${PLAT}" != "Windows" || "${PYVER}" == "3.7" ]]
+        if [[ "${MODULE}" != "pytket-qsharp" || "${PLAT}" != "Windows" ]]
         then
             echo "${MODULE}..."
 
