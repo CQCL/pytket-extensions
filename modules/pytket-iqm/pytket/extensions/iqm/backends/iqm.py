@@ -108,7 +108,8 @@ class IQMBackend(Backend):
         :param url: base URL for requests
         :param device: path of JSON file containing device settings
         :param arch: list of couplings between the qubits defined in the device settings
-            (default: [("QB1", "QB3"), ("QB2", "QB3"), ("QB4", "QB3"), ("QB5", "QB3")])
+            (default: [("QB1", "QB3"), ("QB2", "QB3"), ("QB4", "QB3"), ("QB5", "QB3")],
+            i.e. a 5-qubit star topology centred on "QB3")
         :param username: IQM username
         :param api_key: IQM API key
         """
