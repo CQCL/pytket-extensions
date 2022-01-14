@@ -12,7 +12,7 @@ run on the Qulacs simulator.
 
 ## Getting started
 
-`pytket-qulacs` is available for Python 3.8, 3.9 and 3.10, on Linux, MacOS and
-Windows. To install, run:
+`pytket-qulacs` is available for Python 3.8 and 3.9 on Linux, MacOS and Windows,
+and also for Python 3.10 on Linux. To install, run:
 
 ```pip install pytket-qulacs```

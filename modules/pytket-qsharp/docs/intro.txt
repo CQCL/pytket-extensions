@@ -12,7 +12,7 @@ language and associated toolkit for quantum programming.
 executed on simulators and resource estimators from the Microsoft QDK.
 
 ``pytket-qsharp`` is available for Python 3.8, 3.9 and 3.10, on Linux, MacOS and
-Windows. To install, run:
+Windows (except for Windows with 3.10). To install, run:
 
 ``pip install pytket-qsharp``
 
