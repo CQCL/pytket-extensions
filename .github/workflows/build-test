@@ -36,13 +36,13 @@ python -m pip install --upgrade pip wheel
 function unsupported() {
     case "$1" in
         pytket-iqm)
-            if [[ "${PYVER}" == "3.9" ]] && return
+            [[ "${PYVER}" == "3.9" ]] && return
             ;;
         pytket-qiskit)
-            if [[ "${PLAT}" == "Windows" && "${PYVER}" == "3.10" ]] && return
+            [[ "${PLAT}" == "Windows" && "${PYVER}" == "3.10" ]] && return
             ;;
         pytket-qulacs)
-            if [[ "${PLAT}" == "Darwin" && "${PYVER}" == "3.10" ]] && return
+            [[ "${PLAT}" == "Darwin" && "${PYVER}" == "3.10" ]] && return
             ;;
         *)
             false
