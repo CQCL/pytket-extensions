@@ -33,7 +33,7 @@ rm -rf ${ARTIFACTSDIR} && mkdir ${ARTIFACTSDIR}
 
 python -m pip install --upgrade pip wheel
 
-function unsupported (
+function unsupported() {
     case "$1" in
         pytket-iqm)
             if [[ "${PYVER}" == "3.9" ]] && return
@@ -48,7 +48,7 @@ function unsupported (
             false
             ;;
     esac
-)
+}
 
 # Generate and install packages:
 for MODULE in $MODULES_TO_TEST; do
