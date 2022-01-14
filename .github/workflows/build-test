@@ -74,6 +74,7 @@ function skip_tests() {
                     false
                     ;;
             esac
+            ;;
         *)
             false
             ;;
