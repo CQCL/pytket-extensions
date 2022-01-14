@@ -51,8 +51,8 @@ function unsupported() {
             [[ "${PLAT}" == "Windows" ]] && return
             ;;
         pytket-qulacs)
-            # Cannot install qulacs on Windows with 3.10.
-            [[ "${PLAT}" == "Darwin" && "${PYVER}" == "3.10" ]] && return
+            # Cannot install qulacs on MacOS or Windows with 3.10.
+            [[ "${PLAT}" != "Linux" && "${PYVER}" == "3.10" ]] && return
             ;;
         *)
             false
