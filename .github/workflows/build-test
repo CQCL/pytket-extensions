@@ -33,9 +33,26 @@ rm -rf ${ARTIFACTSDIR} && mkdir ${ARTIFACTSDIR}
 
 python -m pip install --upgrade pip wheel
 
+function unsupported (
+    case "$1" in
+        pytket-iqm)
+            if [[ "${PYVER}" == "3.9" ]] && return
+            ;;
+        pytket-qiskit)
+            if [[ "${PLAT}" == "Windows" && "${PYVER}" == "3.10" ]] && return
+            ;;
+        pytket-qulacs)
+            if [[ "${PLAT}" == "Darwin" && "${PYVER}" == "3.10" ]] && return
+            ;;
+        *)
+            false
+            ;;
+    esac
+)
+
 # Generate and install packages:
 for MODULE in $MODULES_TO_TEST; do
-    if [[ "${MODULE}" != "pytket-iqm" || "${PYVER}" == "3.9" ]]; then
+    if ! (unsupported ${MODULE}) ; then
         echo "${MODULE}..."
         cd ${MODULEDIR}/${MODULE}
         python setup.py sdist
@@ -53,7 +70,7 @@ then
 fi
 for MODULE in $MODULES_TO_TEST; do
     # pytket-iqm is only available for 3.9
-    if [[ "${MODULE}" != "pytket-iqm" || "${PYVER}" == "3.9" ]]; then
+    if ! (unsupported ${MODULE}) ; then
         # FIXME see
         # https://github.com/CQCL/pytket-extensions/issues/180 and
         # https://github.com/microsoft/iqsharp/issues/512
