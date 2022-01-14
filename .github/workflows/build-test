@@ -36,12 +36,22 @@ python -m pip install --upgrade pip wheel
 function unsupported() {
     case "$1" in
         pytket-iqm)
+            # The iqm-client package is only available for 3.9.
             [[ "${PYVER}" != "3.9" ]] && return
             ;;
         pytket-qiskit)
+            # Cannot install qiskit-aer on Windows with 3.10.
             [[ "${PLAT}" == "Windows" && "${PYVER}" == "3.10" ]] && return
             ;;
+        pytket-qsharp)
+            # Currently qsharp can't be run on Windows: see
+            # https://github.com/CQCL/pytket-extensions/issues/180 and
+            # https://github.com/microsoft/iqsharp/issues/512 .
+            # (And with Python 3.10 it can't even be installed.)
+            [[ "${PLAT}" == "Windows" ]] && return
+            ;;
         pytket-qulacs)
+            # Cannot install qulacs on Windows with 3.10.
             [[ "${PLAT}" == "Darwin" && "${PYVER}" == "3.10" ]] && return
             ;;
         *)
@@ -69,30 +79,23 @@ then
     python -m pip install --upgrade mypy
 fi
 for MODULE in $MODULES_TO_TEST; do
-    # pytket-iqm is only available for 3.9
     if ! (unsupported ${MODULE}) ; then
-        # FIXME see
-        # https://github.com/CQCL/pytket-extensions/issues/180 and
-        # https://github.com/microsoft/iqsharp/issues/512
-        if [[ "${MODULE}" != "pytket-qsharp" || "${PLAT}" != "Windows" ]]
+        echo "${MODULE}..."
+
+        cd ${MODULEDIR}/${MODULE}/tests
+
+        python -m pip install --pre -r test-requirements.txt
+
+        if [[ "${MODULE}" = "pytket-qsharp" && "${PLAT}" != "Darwin" ]]
         then
-            echo "${MODULE}..."
+            dotnet iqsharp install --user
+        fi
 
-            cd ${MODULEDIR}/${MODULE}/tests
+        pytest --doctest-modules
 
-            python -m pip install --pre -r test-requirements.txt
-
-            if [[ "${MODULE}" = "pytket-qsharp" && "${PLAT}" != "Darwin" ]]
-            then
-                dotnet iqsharp install --user
-            fi
-
-            pytest --doctest-modules
-
-            if [[ "${MYPY}" = "mypy" ]]
-            then
-                ${MODULEDIR}/mypy-check ${MODULEDIR}/${MODULE}
-            fi
+        if [[ "${MYPY}" = "mypy" ]]
+        then
+            ${MODULEDIR}/mypy-check ${MODULEDIR}/${MODULE}
         fi
     fi
 done
