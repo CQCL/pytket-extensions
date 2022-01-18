@@ -363,7 +363,6 @@ class BraketBackend(Backend):
             lambda a, b, c: Circuit(1).Rz(c, 0).Rx(b, 0).Rz(a, 0),
         )
 
-
     @staticmethod
     def _get_gate_set(
         supported_ops: Set[str], device_type: _DeviceType
