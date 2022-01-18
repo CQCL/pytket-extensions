@@ -63,10 +63,33 @@ class _CirqBaseBackend(Backend):
 
     def __init__(self) -> None:
         super().__init__()
-        self._pass_0 = regular_pass_0
-        self._pass_1 = regular_pass_1
-        self._pass_2 = regular_pass_2
+        self._pass_0 = SequencePass(
+            [FlattenRegisters(), DecomposeBoxes(), self.rebase_pass()]
+        )
+        self._pass_1 = SequencePass(
+            [
+                FlattenRegisters(),
+                DecomposeBoxes(),
+                SynthesiseTket(),
+                self.rebase_pass(),
+                RemoveRedundancies(),
+                _cirq_squash,
+            ]
+        )
+        self._pass_2 = SequencePass(
+            [
+                FlattenRegisters(),
+                DecomposeBoxes(),
+                FullPeepholeOptimise(),
+                self.rebase_pass(),
+                RemoveRedundancies(),
+                _cirq_squash,
+            ]
+        )
         self._gate_set_predicate = _regular_gate_set_predicate
+
+    def rebase_pass(self) -> BasePass:
+        return RebaseCirq()
 
     @property
     def required_predicates(self) -> List[Predicate]:
@@ -190,11 +213,33 @@ class CirqCliffordSampleBackend(_CirqSampleBackend):
     def __init__(self, seed: RANDOM_STATE_OR_SEED_LIKE = None) -> None:
         super().__init__()
         self._simulator = CliffordSimulator(seed=seed)
-        self._pass_0 = clifford_pass_0
-        self._pass_1 = clifford_pass_1
-        self._pass_2 = clifford_pass_2
+        self._pass_0 = SequencePass(
+            [FlattenRegisters(), DecomposeBoxes(), self.rebase_pass()]
+        )
+        self._pass_1 = SequencePass(
+            [
+                FlattenRegisters(),
+                DecomposeBoxes(),
+                SynthesiseTket(),
+                RemoveRedundancies(),
+                self.rebase_pass(),
+            ]
+        )
+        self._pass_2 = SequencePass(
+            [
+                FlattenRegisters(),
+                DecomposeBoxes(),
+                FullPeepholeOptimise(),
+                RemoveRedundancies(),
+                self.rebase_pass(),
+            ]
+        )
+
         self._gate_set_predicate = _clifford_gate_set_predicate
         self._clifford_only = True
+
+    def rebase_pass(self) -> BasePass:
+        return _partial_clifford_rebase
 
 
 class _CirqSimBackend(_CirqBaseBackend):
@@ -391,12 +436,34 @@ class CirqCliffordSimBackend(_CirqSimBackend):
 
     def __init__(self, seed: RANDOM_STATE_OR_SEED_LIKE = None) -> None:
         super().__init__()
-        self._pass_0 = clifford_pass_0
-        self._pass_1 = clifford_pass_1
-        self._pass_2 = clifford_pass_2
+        self._pass_0 = SequencePass(
+            [FlattenRegisters(), DecomposeBoxes(), self.rebase_pass()]
+        )
+        self._pass_1 = SequencePass(
+            [
+                FlattenRegisters(),
+                DecomposeBoxes(),
+                SynthesiseTket(),
+                RemoveRedundancies(),
+                self.rebase_pass(),
+            ]
+        )
+        self._pass_2 = SequencePass(
+            [
+                FlattenRegisters(),
+                DecomposeBoxes(),
+                FullPeepholeOptimise(),
+                RemoveRedundancies(),
+                self.rebase_pass(),
+            ]
+        )
+
         self._gate_set_predicate = _clifford_gate_set_predicate
         self._supports_state = True
         self._simulator = CliffordSimulator(seed=seed)
+
+    def rebase_pass(self) -> BasePass:
+        return _partial_clifford_rebase
 
     def package_result(
         self, circuit: CirqCircuit, q_bits: Sequence[Qubit]
@@ -515,48 +582,4 @@ _partial_clifford_rebase = RebaseCustom(
         OpType.H,
     },
     _tk1_to_phasedxrz_clifford,
-)
-
-regular_pass_0 = SequencePass([FlattenRegisters(), DecomposeBoxes(), RebaseCirq()])
-regular_pass_1 = SequencePass(
-    [
-        FlattenRegisters(),
-        DecomposeBoxes(),
-        SynthesiseTket(),
-        RebaseCirq(),
-        RemoveRedundancies(),
-        _cirq_squash,
-    ]
-)
-regular_pass_2 = SequencePass(
-    [
-        FlattenRegisters(),
-        DecomposeBoxes(),
-        FullPeepholeOptimise(),
-        RebaseCirq(),
-        RemoveRedundancies(),
-        _cirq_squash,
-    ]
-)
-
-clifford_pass_0 = SequencePass(
-    [FlattenRegisters(), DecomposeBoxes(), _partial_clifford_rebase]
-)
-clifford_pass_1 = SequencePass(
-    [
-        FlattenRegisters(),
-        DecomposeBoxes(),
-        SynthesiseTket(),
-        RemoveRedundancies(),
-        _partial_clifford_rebase,
-    ]
-)
-clifford_pass_2 = SequencePass(
-    [
-        FlattenRegisters(),
-        DecomposeBoxes(),
-        FullPeepholeOptimise(),
-        RemoveRedundancies(),
-        _partial_clifford_rebase,
-    ]
 )
