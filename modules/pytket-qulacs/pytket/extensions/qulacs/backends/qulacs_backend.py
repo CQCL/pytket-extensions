@@ -116,12 +116,6 @@ class QulacsBackend(Backend):
         )
 
         self._sim = QuantumState
-        self._rebase_pass = RebaseCustom(
-            set(_TWO_QUBIT_GATES),
-            Circuit(2).CX(0, 1),
-            _1Q_GATES,
-            _tk1_to_u,
-        )
 
     @property
     def _result_id_type(self) -> _ResultIdTuple:
@@ -142,11 +136,19 @@ class QulacsBackend(Backend):
             DefaultRegisterPredicate(),
         ]
 
+    def rebase_pass(self) -> BasePass:
+        return RebaseCustom(
+            set(_TWO_QUBIT_GATES),
+            Circuit(2).CX(0, 1),
+            _1Q_GATES,
+            _tk1_to_u,
+        )
+
     def default_compilation_pass(self, optimisation_level: int = 1) -> BasePass:
         assert optimisation_level in range(3)
         if optimisation_level == 0:
             return SequencePass(
-                [DecomposeBoxes(), FlattenRegisters(), self._rebase_pass]
+                [DecomposeBoxes(), FlattenRegisters(), self.rebase_pass()]
             )
         elif optimisation_level == 1:
             return SequencePass(
@@ -154,7 +156,7 @@ class QulacsBackend(Backend):
                     DecomposeBoxes(),
                     FlattenRegisters(),
                     SynthesiseTket(),
-                    self._rebase_pass,
+                    self.rebase_pass(),
                 ]
             )
         else:
@@ -163,7 +165,7 @@ class QulacsBackend(Backend):
                     DecomposeBoxes(),
                     FlattenRegisters(),
                     FullPeepholeOptimise(),
-                    self._rebase_pass,
+                    self.rebase_pass(),
                 ]
             )
 
