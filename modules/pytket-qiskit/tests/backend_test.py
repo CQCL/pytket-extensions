@@ -41,7 +41,6 @@ from pytket.extensions.qiskit import (
     AerUnitaryBackend,
     IBMQEmulatorBackend,
 )
-from pytket.extensions.qiskit.backends.ibm import _rebase_pass
 from pytket.extensions.qiskit import qiskit_to_tk, process_characterisation
 from pytket.utils.expectations import (
     get_pauli_expectation_value,
@@ -983,7 +982,7 @@ def test_symbolic_rebase() -> None:
     pytket_circ = qiskit_to_tk(circ)
 
     # rebase pass could not handle symbolic parameters originally and would fail here:
-    _rebase_pass.apply(pytket_circ)
+    AerBackend().rebase_pass().apply(pytket_circ)
 
     assert len(pytket_circ.free_symbols()) == 2
 
@@ -1003,7 +1002,7 @@ def _verify_single_q_rebase(
     u_before = backend.run_circuit(rotation_circ).get_unitary()
     circ = Circuit(1)
     circ.add_gate(OpType.TK1, [a, b, c], [0])
-    _rebase_pass.apply(circ)
+    backend.rebase_pass().apply(circ)
     u_after = backend.run_circuit(circ).get_unitary()
     return np.allclose(u_before, u_after)
 

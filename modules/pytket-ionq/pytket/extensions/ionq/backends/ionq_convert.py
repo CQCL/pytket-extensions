@@ -55,7 +55,7 @@ ionq_singleqs = {
 
 ionq_gates = ionq_multiqs.union(ionq_singleqs)
 
-ionq_pass = RebaseCustom(
+ionq_rebase_pass = RebaseCustom(
     ionq_multiqs,
     Circuit(),  # cx_replacement (irrelevant)
     ionq_singleqs,  # singleqs

@@ -133,11 +133,14 @@ class ProjectQBackend(Backend):
             DefaultRegisterPredicate(),
         ]
 
+    def rebase_pass(self) -> BasePass:
+        return RebaseProjectQ()
+
     def default_compilation_pass(self, optimisation_level: int = 1) -> BasePass:
         assert optimisation_level in range(3)
         if optimisation_level == 0:
             return SequencePass(
-                [DecomposeBoxes(), FlattenRegisters(), RebaseProjectQ()]
+                [DecomposeBoxes(), FlattenRegisters(), self.rebase_pass()]
             )
         elif optimisation_level == 1:
             return SequencePass(
@@ -145,7 +148,7 @@ class ProjectQBackend(Backend):
                     DecomposeBoxes(),
                     FlattenRegisters(),
                     SynthesiseTket(),
-                    RebaseProjectQ(),
+                    self.rebase_pass(),
                 ]
             )
         else:
@@ -154,7 +157,7 @@ class ProjectQBackend(Backend):
                     DecomposeBoxes(),
                     FlattenRegisters(),
                     FullPeepholeOptimise(),
-                    RebaseProjectQ(),
+                    self.rebase_pass(),
                 ]
             )
 

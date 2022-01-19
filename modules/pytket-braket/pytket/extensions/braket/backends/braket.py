@@ -501,6 +501,9 @@ class BraketBackend(Backend):
     def required_predicates(self) -> List[Predicate]:
         return self._req_preds
 
+    def rebase_pass(self) -> BasePass:
+        return self._rebase_pass
+
     def default_compilation_pass(self, optimisation_level: int = 1) -> BasePass:
         assert optimisation_level in range(3)
         passes = [DecomposeBoxes()]
@@ -508,7 +511,7 @@ class BraketBackend(Backend):
             passes.append(SynthesiseTket())
         elif optimisation_level == 2:
             passes.append(FullPeepholeOptimise())
-        passes.append(self._rebase_pass)
+        passes.append(self.rebase_pass())
         if self._device_type == _DeviceType.QPU and self.characterisation is not None:
             arch = self.backend_info.architecture
             passes.append(
@@ -530,7 +533,7 @@ class BraketBackend(Backend):
                 [
                     CliffordSimp(False),
                     SynthesiseTket(),
-                    self._rebase_pass,
+                    self.rebase_pass(),
                     self._squash_pass,
                 ]
             )

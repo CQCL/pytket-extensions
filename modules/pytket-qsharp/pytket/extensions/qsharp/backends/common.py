@@ -79,25 +79,6 @@ def qs_predicates(gate_set: Set[OpType]) -> List[Predicate]:
     ]
 
 
-def qs_compilation_pass() -> BasePass:
-    return RebaseCustom(
-        {OpType.CX, OpType.CCX, OpType.PauliExpBox, OpType.SWAP, OpType.CnX},  # multiqs
-        Circuit(),  # cx_replacement (irrelevant)
-        {
-            OpType.H,
-            OpType.Rx,
-            OpType.Ry,
-            OpType.Rz,
-            OpType.S,
-            OpType.T,
-            OpType.X,
-            OpType.Y,
-            OpType.Z,
-        },  # singleqs
-        _from_tk1,
-    )  # tk1_replacement
-
-
 class _QsharpBaseBackend(Backend):
     """Shared base backend for Qsharp backends."""
 
@@ -135,12 +116,36 @@ class _QsharpBaseBackend(Backend):
     def required_predicates(self) -> List[Predicate]:
         return qs_predicates(self._GATE_SET)
 
+    def rebase_pass(self) -> BasePass:
+        return RebaseCustom(
+            {
+                OpType.CX,
+                OpType.CCX,
+                OpType.PauliExpBox,
+                OpType.SWAP,
+                OpType.CnX,
+            },  # multiqs
+            Circuit(),  # cx_replacement (irrelevant)
+            {
+                OpType.H,
+                OpType.Rx,
+                OpType.Ry,
+                OpType.Rz,
+                OpType.S,
+                OpType.T,
+                OpType.X,
+                OpType.Y,
+                OpType.Z,
+            },  # singleqs
+            _from_tk1,
+        )  # tk1_replacement
+
     def default_compilation_pass(self, optimisation_level: int = 1) -> BasePass:
         assert optimisation_level in range(3)
         if optimisation_level == 0:
 
             return SequencePass(
-                [DecomposeBoxes(), FlattenRegisters(), qs_compilation_pass()]
+                [DecomposeBoxes(), FlattenRegisters(), self.rebase_pass()]
             )
         elif optimisation_level == 1:
             return SequencePass(
@@ -148,7 +153,7 @@ class _QsharpBaseBackend(Backend):
                     DecomposeBoxes(),
                     SynthesiseTket(),
                     FlattenRegisters(),
-                    qs_compilation_pass(),
+                    self.rebase_pass(),
                 ]
             )
         else:
@@ -157,7 +162,7 @@ class _QsharpBaseBackend(Backend):
                     DecomposeBoxes(),
                     FullPeepholeOptimise(),
                     FlattenRegisters(),
-                    qs_compilation_pass(),
+                    self.rebase_pass(),
                 ]
             )
 

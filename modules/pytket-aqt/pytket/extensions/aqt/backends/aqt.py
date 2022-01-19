@@ -143,6 +143,9 @@ class AQTBackend(Backend):
             }
         self._MACHINE_DEBUG = False
 
+    def rebase_pass(self) -> BasePass:
+        return _aqt_rebase()
+
     @property
     def backend_info(self) -> Optional[BackendInfo]:
         return self._backend_info
@@ -186,7 +189,7 @@ class AQTBackend(Backend):
                     FlattenRegisters(),
                     RenameQubitsPass(self._qm),
                     DecomposeBoxes(),
-                    _aqt_rebase(),
+                    self.rebase_pass(),
                 ]
             )
         elif optimisation_level == 1:
@@ -196,7 +199,7 @@ class AQTBackend(Backend):
                     SynthesiseTket(),
                     FlattenRegisters(),
                     RenameQubitsPass(self._qm),
-                    _aqt_rebase(),
+                    self.rebase_pass(),
                     SimplifyInitial(
                         allow_classical=False, create_all_qubits=True, xcirc=_xcirc
                     ),
@@ -210,7 +213,7 @@ class AQTBackend(Backend):
                     FullPeepholeOptimise(),
                     FlattenRegisters(),
                     RenameQubitsPass(self._qm),
-                    _aqt_rebase(),
+                    self.rebase_pass(),
                     SimplifyInitial(
                         allow_classical=False, create_all_qubits=True, xcirc=_xcirc
                     ),
