@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from pytket import OpType  # type: ignore
 from pytket.extensions.cirq import cirq_to_tk, tk_to_cirq, process_characterisation
 from pytket.routing import Architecture  # type: ignore
 
@@ -82,3 +83,11 @@ def test_device() -> None:
     char = process_characterisation(fox)
     arc = char.get("Architecture", Architecture([]))
     assert str(arc) == "<tket::Architecture, nodes=22>"
+
+
+def test_parallel_ops() -> None:
+    q0, q1, q2 = [cirq.LineQubit(i) for i in range(3)]
+    circ = cirq.Circuit([cirq.ops.ParallelGate(cirq.Y ** 0.3, 3).on(q0, q1, q2)])
+    c_tk = cirq_to_tk(circ)
+    assert c_tk.n_gates_of_type(OpType.Ry) == 3
+    assert c_tk.n_gates == 3

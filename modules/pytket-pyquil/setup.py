@@ -1,4 +1,4 @@
-# Copyright 2020-2021 Cambridge Quantum Computing
+# Copyright 2020-2022 Cambridge Quantum Computing
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ setup(
     version=metadata["__extension_version__"],
     author="Will Simmons",
     author_email="will.simmons@cambridgequantum.com",
-    python_requires=">=3.7",
+    python_requires=">=3.8",
     url="https://github.com/CQCL/pytket-extensions",
     description="Extension for pytket, providing translation to and from the pyQuil "
     "framework",
@@ -39,16 +39,16 @@ setup(
     packages=find_namespace_packages(include=["pytket.*"]),
     include_package_data=True,
     install_requires=[
-        "pytket == 0.16.0rc0",
+        "pytket == 0.19.0rc0",
         "pyquil ~= 3.0",
         "typing-extensions ~= 3.7",
     ],
     classifiers=[
         "Environment :: Console",
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
-        "License :: Other/Proprietary License",
+        "Programming Language :: Python :: 3.10",
+        "License :: OSI Approved :: Apache Software License",
         "Operating System :: MacOS :: MacOS X",
         "Operating System :: POSIX :: Linux",
         "Operating System :: Microsoft :: Windows",

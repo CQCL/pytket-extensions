@@ -124,7 +124,7 @@ def test_rigetti() -> None:
     b = BraketBackend(
         device_type="qpu",
         provider="rigetti",
-        device="Aspen-9",
+        device="Aspen-11",
     )
     assert b.persistent_handles
     assert b.supports_shots
@@ -161,7 +161,7 @@ def test_rigetti_with_rerouting() -> None:
     b = BraketBackend(
         device_type="qpu",
         provider="rigetti",
-        device="Aspen-9",
+        device="Aspen-11",
     )
     c = Circuit(4).CX(0, 1).CX(0, 2).CX(0, 3).CX(1, 2).CX(1, 3).CX(2, 3)
     c = b.get_compiled_circuit(c)
@@ -371,3 +371,12 @@ def test_postprocess_ionq() -> None:
     assert len(ppcmds) > 0
     assert all(ppcmd.op.type == OpType.ClassicalTransform for ppcmd in ppcmds)
     b.cancel(h)
+
+
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
+def test_retrieve_available_devices() -> None:
+    backend_infos = BraketBackend.available_devices()
+    assert len(backend_infos) > 0
+    # Test annealers are filtered out.
+    backend_infos = BraketBackend.available_devices(region="us-west-2")
+    assert len(backend_infos) > 0

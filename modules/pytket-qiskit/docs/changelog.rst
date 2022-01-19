@@ -1,12 +1,26 @@
 Changelog
 ~~~~~~~~~
 
-0.19.0 (Unreleased)
--------------------
+0.21.0 (January 2022)
+---------------------
 
+* Qiskit version updated to 0.33.
+* Updated pytket version requirement to 0.18.
+
+0.20.0 (November 2021)
+----------------------
+
+* Qiskit version updated to 0.32.
+* Updated pytket version requirement to 0.17.
+
+0.19.0 (October 2021)
+---------------------
+
+* Qiskit version updated to 0.31.
 * Removed deprecated :py:meth:`AerUnitaryBackend.get_unitary`. Use
   :py:meth:`AerUnitaryBackend.run_circuit` and
   :py:meth:`pytket.backends.backendresult.BackendResult.get_unitary` instead.
+* Updated pytket version requirement to 0.16.
 
 0.18.0 (September 2021)
 -----------------------

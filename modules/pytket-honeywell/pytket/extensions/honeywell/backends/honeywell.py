@@ -142,12 +142,12 @@ class HoneywellBackend(Backend):
             raise RuntimeError("_MACHINE_DEBUG cannot be False with no _api_handler.")
 
     @classmethod
-    def available_devices(
+    def _available_devices(
         cls, _api_handler: Optional[HoneywellQAPI] = None
     ) -> List[Dict[str, Any]]:
         """List devices available from Honeywell.
 
-        >>> HoneywellBackend.available_devices()
+        >>> HoneywellBackend._available_devices()
         e.g. [{'name': 'HQS-LT-1.0-APIVAL', 'n_qubits': 6}]
 
         :param _api_handler: Instance of API handler, defaults to None
@@ -166,8 +166,35 @@ class HoneywellBackend(Backend):
         jr = res.json()
         return jr  # type: ignore
 
+    @classmethod
+    def available_devices(cls, **kwargs: Any) -> List[BackendInfo]:
+        """
+        See :py:meth:`pytket.backends.Backend.available_devices`.
+        Supported kwargs: `api_handler` (default none).
+        """
+        api_handler: Optional[HoneywellQAPI] = kwargs.get("api_handler")
+        if api_handler is None:
+            api_handler = HoneywellQAPI(login=False)
+        id_token = api_handler.login()
+        res = requests.get(
+            f"{api_handler.url}machine/?config=true",
+            headers={"Authorization": id_token},
+        )
+        api_handler._response_check(res, "get machine list")
+        jr = res.json()
+        return [
+            fully_connected_backendinfo(
+                cls.__name__,
+                machine["name"],
+                __extension_version__,
+                machine["n_qubits"],
+                _GATE_SET,
+            )
+            for machine in jr
+        ]
+
     def _retrieve_backendinfo(self, machine: str) -> BackendInfo:
-        jr = self.available_devices(self._api_handler)
+        jr = self._available_devices(self._api_handler)
         try:
             self._machine_info = next(entry for entry in jr if entry["name"] == machine)
         except StopIteration:
@@ -276,6 +303,8 @@ class HoneywellBackend(Backend):
         * `postprocess`: boolean flag to allow classical postprocessing.
         * `noisy_simulation`: boolean flag to specify whether the simulator should
           perform noisy simulation with an error model (default value is `True`).
+        * `group`: string identifier of a collection of jobs, can be used for usage
+          tracking.
         """
         circuits = list(circuits)
         n_shots_list = Backend._get_n_shots_as_list(
@@ -298,6 +327,9 @@ class HoneywellBackend(Backend):
                 "error-model": noisy_simulation,
             },
         }
+        group = kwargs.get("group")
+        if group is not None:
+            basebody["group"] = group
 
         handle_list = []
         for i, (circ, n_shots) in enumerate(zip(circuits, n_shots_list)):

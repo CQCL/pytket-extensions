@@ -16,4 +16,4 @@
 """
 
 from .honeywell import HoneywellBackend
-from .api_wrappers import split_utf8
+from .credential_storage import split_utf8

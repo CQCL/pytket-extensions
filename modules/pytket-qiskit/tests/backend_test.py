@@ -70,6 +70,11 @@ def santiago_backend() -> IBMQBackend:
     return IBMQBackend("ibmq_santiago", hub="ibm-q", group="open", project="main")
 
 
+@pytest.fixture(scope="module")
+def lima_backend() -> IBMQBackend:
+    return IBMQBackend("ibmq_lima", hub="ibm-q", group="open", project="main")
+
+
 def circuit_gen(measure: bool = False) -> Circuit:
     c = Circuit(2, 2)
     c.H(0)
@@ -368,8 +373,8 @@ def test_cancellation_aer() -> None:
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_cancellation_ibmq(santiago_backend: IBMQBackend) -> None:
-    b = santiago_backend
+def test_cancellation_ibmq(lima_backend: IBMQBackend) -> None:
+    b = lima_backend
     c = circuit_gen(True)
     c = b.get_compiled_circuit(c)
     h = b.process_circuit(c, 10)
@@ -1014,8 +1019,8 @@ def test_rebase_phase() -> None:
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_postprocess(santiago_backend: IBMQBackend) -> None:
-    b = santiago_backend
+def test_postprocess(lima_backend: IBMQBackend) -> None:
+    b = lima_backend
     assert b.supports_contextual_optimisation
     c = Circuit(2, 2)
     c.SX(0).SX(1).CX(0, 1).measure_all()
@@ -1058,3 +1063,19 @@ def test_cloud_stabiliser() -> None:
     c = Circuit(2, 2)
     c.H(0).SX(1).Rz(0.1, 0).CX(0, 1).measure_all()
     assert not b.valid_circuit(c)
+
+
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
+def test_available_devices() -> None:
+    backend_info_list = IBMQBackend.available_devices(
+        hub="ibm-q", group="open", project="main"
+    )
+    assert len(backend_info_list) > 0
+
+    provider = IBMQ.providers(hub="ibm-q", group="open")[0]
+
+    backend_info_list = IBMQBackend.available_devices(account_provider=provider)
+    assert len(backend_info_list) > 0
+
+    backend_info_list = IBMQBackend.available_devices()
+    assert len(backend_info_list) > 0

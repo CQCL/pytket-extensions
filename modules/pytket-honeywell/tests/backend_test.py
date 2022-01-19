@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 from collections import Counter
 from typing import cast, Callable, Any  # pylint: disable=unused-import
 from ast import literal_eval
@@ -41,7 +42,7 @@ from pytket.extensions.honeywell.backends.honeywell import (
     _GATE_SET,
 )
 from pytket.extensions.honeywell import split_utf8
-from pytket.extensions.honeywell.backends.api_wrappers import HQSAPIError
+from pytket.extensions.honeywell.backends.api_wrappers import HQSAPIError, HoneywellQAPI
 from pytket.backends.status import StatusEnum
 
 skip_remote_tests: bool = os.getenv("PYTKET_RUN_REMOTE_TESTS") is None
@@ -335,13 +336,24 @@ def test_simulator() -> None:
         _ = stabilizer_backend.get_result(broken_handle)
 
 
-# hard to run as it involves removing credentials
-# def test_delete_authentication():
-#     print("first login")
-#     b = HoneywellBackend()
-#     print("delete login")
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
+def test_retrieve_available_devices() -> None:
+    backend_infos = HoneywellBackend.available_devices()
+    assert len(backend_infos) > 0
+    api_handler = HoneywellQAPI()
+    backend_infos = HoneywellBackend.available_devices(api_handler=api_handler)
+    assert len(backend_infos) > 0
 
-#     b.delete_authentication()
-#     print("second login")
 
-#     b = HoneywellBackend()
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
+def test_submission_with_group() -> None:
+    b = HoneywellBackend(device_name="HQS-LT-S1-APIVAL")
+    c = Circuit(2, 2, "test 2")
+    c.H(0)
+    c.CX(0, 1)
+    c.measure_all()
+    c = b.get_compiled_circuit(c)
+    n_shots = 10
+    shots = b.run_circuit(c, n_shots=n_shots, group="test").get_shots()  # type: ignore
+    print(shots)
+    assert all(q[0] == q[1] for q in shots)

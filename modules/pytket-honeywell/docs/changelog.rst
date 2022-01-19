@@ -1,6 +1,28 @@
 Changelog
 ~~~~~~~~~
 
+0.20.0 (January 2022)
+---------------------
+
+* Added optional ``group`` field to circuit submission.
+
+0.19.0 (January 2022)
+---------------------
+
+* Updated pytket version requirement to 0.18.
+
+0.18.0 (November 2021)
+----------------------
+
+* Updated pytket version requirement to 0.17.
+
+0.17.0 (October 2021)
+---------------------
+
+* Updated pytket version requirement to 0.16.
+* Renamed ``HoneywellBackend.available_devices`` to ``_available_devices`` so as
+  not to conflict with abstract ``Backend`` method.
+
 0.16.0 (September 2021)
 -----------------------
 
