@@ -140,7 +140,7 @@ class ProjectQBackend(Backend):
         assert optimisation_level in range(3)
         if optimisation_level == 0:
             return SequencePass(
-                [DecomposeBoxes(), FlattenRegisters(), self.rebase_pass()()]
+                [DecomposeBoxes(), FlattenRegisters(), self.rebase_pass()]
             )
         elif optimisation_level == 1:
             return SequencePass(
@@ -148,7 +148,7 @@ class ProjectQBackend(Backend):
                     DecomposeBoxes(),
                     FlattenRegisters(),
                     SynthesiseTket(),
-                    self.rebase_pass()(),
+                    self.rebase_pass(),
                 ]
             )
         else:
@@ -157,7 +157,7 @@ class ProjectQBackend(Backend):
                     DecomposeBoxes(),
                     FlattenRegisters(),
                     FullPeepholeOptimise(),
-                    self.rebase_pass()(),
+                    self.rebase_pass(),
                 ]
             )
 
