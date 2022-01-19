@@ -115,7 +115,7 @@ def qiskit_experimentresult_to_backendresult(
             )
 
         if "statevector" in datadict:
-            state = datadict["statevector"]
+            state = np.asarray(datadict["statevector"])
 
         if "unitary" in datadict:
             unitary = datadict["unitary"]
