@@ -1,4 +1,4 @@
-# Copyright 2019-2021 Cambridge Quantum Computing
+# Copyright 2019-2022 Cambridge Quantum Computing
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -110,36 +110,29 @@ class _AerBaseBackend(Backend):
         super().__init__()
         self._backend: "QiskitAerBackend" = Aer.get_backend(backend_name)
 
-        gate_set: Set[OpType] = {
+        self._gate_set: Set[OpType] = {
             _gate_str_2_optype[gate_str]
             for gate_str in self._backend.configuration().basis_gates
             if gate_str in _gate_str_2_optype
         }
         # special case mapping TK1 to U
-        gate_set.add(OpType.TK1)
-        if not gate_set >= _required_gates:
+        self._gate_set.add(OpType.TK1)
+        if not self._gate_set >= _required_gates:
             raise NotImplementedError(
-                f"Gate set {gate_set} missing at least one of {_required_gates}"
+                f"Gate set {self._gate_set} missing at least one of {_required_gates}"
             )
         self._backend_info = BackendInfo(
             type(self).__name__,
             backend_name,
             __extension_version__,
             Architecture([]),
-            gate_set,
+            self._gate_set,
             supports_midcircuit_measurement=True,  # is this correct?
             misc={"characterisation": None},
         )
 
         self._memory = False
         self._noise_model: Optional[NoiseModel] = None
-
-        self._rebase_pass = RebaseCustom(
-            gate_set & _2q_gates,
-            Circuit(2).CX(0, 1),
-            gate_set & _1q_gates,
-            _tk1_to_u,
-        )
 
     @property
     def _result_id_type(self) -> _ResultIdTuple:
@@ -153,6 +146,14 @@ class _AerBaseBackend(Backend):
     @property
     def backend_info(self) -> BackendInfo:
         return self._backend_info
+
+    def rebase_pass(self) -> BasePass:
+        return RebaseCustom(
+            self._gate_set & _2q_gates,
+            Circuit(2).CX(0, 1),
+            self._gate_set & _1q_gates,
+            _tk1_to_u,
+        )
 
     def process_circuits(
         self,
@@ -328,7 +329,7 @@ class _AerStateBaseBackend(_AerBaseBackend):
     def default_compilation_pass(self, optimisation_level: int = 1) -> BasePass:
         assert optimisation_level in range(3)
         if optimisation_level == 0:
-            return SequencePass([DecomposeBoxes(), self._rebase_pass])
+            return SequencePass([DecomposeBoxes(), self.rebase_pass()])
         elif optimisation_level == 1:
             return SequencePass([DecomposeBoxes(), SynthesiseTket()])
         else:
@@ -484,7 +485,7 @@ class AerBackend(_AerBaseBackend):
         assert optimisation_level in range(3)
         passlist = [DecomposeBoxes()]
         if optimisation_level == 0:
-            passlist.append(self._rebase_pass)
+            passlist.append(self.rebase_pass())
         elif optimisation_level == 1:
             passlist.append(SynthesiseTket())
         else:
@@ -506,7 +507,7 @@ class AerBackend(_AerBaseBackend):
                 )
             )
             if optimisation_level == 0:
-                passlist.append(self._rebase_pass)
+                passlist.append(self.rebase_pass())
             elif optimisation_level == 1:
                 passlist.append(SynthesiseTket())
             else:

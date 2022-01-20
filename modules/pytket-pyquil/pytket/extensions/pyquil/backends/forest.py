@@ -1,4 +1,4 @@
-# Copyright 2019-2021 Cambridge Quantum Computing
+# Copyright 2019-2022 Cambridge Quantum Computing
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -125,6 +125,9 @@ class ForestBackend(Backend):
             ConnectivityPredicate(self.backend_info.architecture),
         ]
 
+    def rebase_pass(self) -> BasePass:
+        return RebaseQuil()
+
     def default_compilation_pass(self, optimisation_level: int = 1) -> BasePass:
         assert optimisation_level in range(3)
         passlist = [
@@ -151,7 +154,7 @@ class ForestBackend(Backend):
             passlist.append(CliffordSimp(False))
         if optimisation_level > 0:
             passlist.append(SynthesiseTket())
-        passlist.append(RebaseQuil())
+        passlist.append(self.rebase_pass())
         if optimisation_level > 0:
             passlist.extend(
                 [
@@ -335,6 +338,9 @@ class ForestStateBackend(Backend):
             DefaultRegisterPredicate(),
         ]
 
+    def rebase_pass(self) -> BasePass:
+        return RebaseQuil()
+
     def default_compilation_pass(self, optimisation_level: int = 1) -> BasePass:
         assert optimisation_level in range(3)
         passlist = [DecomposeBoxes(), FlattenRegisters()]
@@ -342,7 +348,7 @@ class ForestStateBackend(Backend):
             passlist.append(SynthesiseTket())
         elif optimisation_level == 2:
             passlist.append(FullPeepholeOptimise())
-        passlist.append(RebaseQuil())
+        passlist.append(self.rebase_pass())
         if optimisation_level > 0:
             passlist.append(EulerAngleReduction(OpType.Rx, OpType.Rz))
         return SequencePass(passlist)

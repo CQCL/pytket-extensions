@@ -1,4 +1,4 @@
-# Copyright 2019-2021 Cambridge Quantum Computing
+# Copyright 2019-2022 Cambridge Quantum Computing
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -136,7 +136,7 @@ _qiskit_gates_other = {
     # Special types:
     Barrier: OpType.Barrier,
     Instruction: OpType.CircBox,
-    Gate: OpType.Custom,
+    Gate: OpType.CustomGate,
     Measure: OpType.Measure,
     Reset: OpType.Reset,
     UnitaryGate: OpType.Unitary2qBox,
@@ -305,7 +305,7 @@ class CircuitBuilder:
                 self.tkc.add_circbox(ccbox, qubits)
             elif optype == OpType.Barrier:
                 self.tkc.add_barrier(qubits)
-            elif optype in (OpType.CircBox, OpType.Custom):
+            elif optype in (OpType.CircBox, OpType.CustomGate):
                 qregs = [QuantumRegister(i.num_qubits, "q")] if i.num_qubits > 0 else []
                 cregs = (
                     [ClassicalRegister(i.num_clbits, "c")] if i.num_clbits > 0 else []
@@ -418,7 +418,7 @@ def append_tk_command_to_qiskit(
         qb = qregmap[args[0].reg_name][args[0].index[0]]
         return qcirc.reset(qb)
 
-    if optype in [OpType.CircBox, OpType.ExpBox, OpType.PauliExpBox, OpType.Custom]:
+    if optype in [OpType.CircBox, OpType.ExpBox, OpType.PauliExpBox, OpType.CustomGate]:
         subcircuit = op.get_circuit()
         subqc = tk_to_qiskit(subcircuit)
         qargs = []
@@ -428,7 +428,7 @@ def append_tk_command_to_qiskit(
                 qargs.append(qregmap[a.reg_name][a.index[0]])
             else:
                 cargs.append(cregmap[a.reg_name][a.index[0]])
-        if optype == OpType.Custom:
+        if optype == OpType.CustomGate:
             instruc = subqc.to_gate()
             instruc.name = op.get_name()
         else:
@@ -450,7 +450,7 @@ def append_tk_command_to_qiskit(
         # attach predicate to bit,
         # subsequent conditional will handle it
         return Instruction("", 0, 0, [])
-    if optype == OpType.ConditionalGate:
+    if optype == OpType.Conditional:
         if args[0] in range_preds:
             assert op.value == 1
             condition_bits, value = range_preds[args[0]]

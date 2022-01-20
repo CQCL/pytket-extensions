@@ -1,4 +1,4 @@
-# Copyright 2019-2021 Cambridge Quantum Computing
+# Copyright 2019-2022 Cambridge Quantum Computing
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -193,14 +193,6 @@ def _tk1_to_x_sx_rz(
 
     circ.add_phase(correction_phase)
     return circ
-
-
-_rebase_pass = RebaseCustom(
-    {OpType.CX},
-    Circuit(2).CX(0, 1),
-    {OpType.X, OpType.SX, OpType.Rz},
-    _tk1_to_x_sx_rz,
-)
 
 
 class IBMQBackend(Backend):
@@ -404,7 +396,7 @@ class IBMQBackend(Backend):
         passlist = [DecomposeBoxes()]
         if optimisation_level == 0:
             if self._standard_gateset:
-                passlist.append(_rebase_pass)
+                passlist.append(self.rebase_pass())
         elif optimisation_level == 1:
             passlist.append(SynthesiseTket())
         elif optimisation_level == 2:
@@ -430,7 +422,7 @@ class IBMQBackend(Backend):
         if optimisation_level == 2:
             passlist.extend([CliffordSimp(False), SynthesiseTket()])
         if self._standard_gateset:
-            passlist.extend([_rebase_pass, RemoveRedundancies()])
+            passlist.extend([self.rebase_pass(), RemoveRedundancies()])
         if optimisation_level > 0:
             passlist.append(
                 SimplifyInitial(allow_classical=False, create_all_qubits=True)
@@ -440,6 +432,14 @@ class IBMQBackend(Backend):
     @property
     def _result_id_type(self) -> _ResultIdTuple:
         return (str, int, str)
+
+    def rebase_pass(self) -> BasePass:
+        return RebaseCustom(
+            {OpType.CX},
+            Circuit(2).CX(0, 1),
+            {OpType.X, OpType.SX, OpType.Rz},
+            _tk1_to_x_sx_rz,
+        )
 
     def process_circuits(
         self,
