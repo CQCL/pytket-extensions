@@ -38,7 +38,7 @@ setup(
     license="Apache 2",
     packages=find_namespace_packages(include=["pytket.*"]),
     include_package_data=True,
-    install_requires=["pytket == 0.19.0rc0", "qiskit ~= 0.34.0"],
+    install_requires=["pytket == 0.19.0rc1", "qiskit ~= 0.34.0"],
     classifiers=[
         "Environment :: Console",
         "Programming Language :: Python :: 3.8",
