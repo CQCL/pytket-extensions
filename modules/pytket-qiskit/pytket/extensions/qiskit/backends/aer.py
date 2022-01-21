@@ -655,7 +655,7 @@ def _process_model(noise_model: NoiseModel, gate_set: Set[OpType]) -> dict:
         name = name[0]
 
         qubits = error["gate_qubits"][0]
-        gate_fid = error["probabilities"][-1]
+        gate_fid = error["probabilities"][0]
         if len(qubits) == 1:
             [q] = qubits
             optype = _gate_str_2_optype[name]
