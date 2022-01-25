@@ -42,6 +42,7 @@ from qiskit import (
 from qiskit.circuit import (
     Barrier,
     Instruction,
+    InstructionSet,
     Gate,
     ControlledGate,
     Measure,
@@ -405,7 +406,7 @@ def append_tk_command_to_qiskit(
     cregmap: Dict[str, ClassicalRegister],
     symb_map: Dict[Parameter, sympy.Symbol],
     range_preds: Dict[Bit, Tuple[List["UnitID"], int]],
-) -> Instruction:
+) -> InstructionSet:
     optype = op.type
     if optype == OpType.Measure:
         qubit = args[0]
@@ -507,12 +508,11 @@ def append_tk_command_to_qiskit(
     if optype == OpType.TK1:
         params = _get_params(op, symb_map)
         half = ParameterExpression(symb_map, sympy.pi / 2)
-        qcirc.append(
+        qcirc.global_phase += -params[0] / 2 - params[2] / 2
+        return qcirc.append(
             qiskit_gates.UGate(params[1], params[0] - half, params[2] + half),
             qargs=qargs,
         )
-        qcirc.global_phase += -params[0] / 2 - params[2] / 2
-        return qcirc.to_instruction()
     # others are direct translations
     try:
         gatetype, phase = _known_gate_rev_phase[optype]
