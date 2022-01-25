@@ -42,6 +42,7 @@ from qiskit import (
 from qiskit.circuit import (
     Barrier,
     Instruction,
+    InstructionSet,
     Gate,
     ControlledGate,
     Measure,
@@ -405,7 +406,7 @@ def append_tk_command_to_qiskit(
     cregmap: Dict[str, ClassicalRegister],
     symb_map: Dict[Parameter, sympy.Symbol],
     range_preds: Dict[Bit, Tuple[List["UnitID"], int]],
-) -> Instruction:
+) -> InstructionSet:
     optype = op.type
     if optype == OpType.Measure:
         qubit = args[0]
