@@ -1,6 +1,11 @@
 Changelog
 ~~~~~~~~~
 
+0.21.0 (unreleased)
+-------------------
+
+* Updated qsharp version requirement to 0.22.
+
 0.20.0 (January 2022)
 ---------------------
 
