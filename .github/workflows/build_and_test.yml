@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - test-qsharp
+
 env:
   IQSHARP_TELEMETRY_OPT_OUT: 1
 jobs:
