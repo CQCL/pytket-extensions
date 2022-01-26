@@ -9,6 +9,7 @@ on:
     branches:
       - develop
       - 'wheel/**'
+      - test-feature-qsharp022-py310
   release:
     types:
       - created
@@ -18,138 +19,6 @@ env:
   IQSHARP_TELEMETRY_OPT_OUT: 1
 
 jobs:
-
-  linux:
-    name: Build and test (Linux)
-    runs-on: ubuntu-20.04
-
-    steps:
-
-    - uses: actions/checkout@v2
-      with:
-        fetch-depth: '0'
-    - run: git fetch --depth=1 origin +refs/tags/*:refs/tags/* +refs/heads/*:refs/remotes/origin/*
-    - name: Initialize modules list
-      run: |
-        cd ${GITHUB_WORKSPACE}/modules
-        LS_MODULES=`ls -d */`
-        ALL_MODULES=`echo ${LS_MODULES} | sed -e 's/\///g'`
-        echo "MODULES_TO_TEST=${ALL_MODULES}" >> $GITHUB_ENV
-    - name: check for mofified modules
-      if: github.event_name == 'pull_request'
-      run : |
-        MM=`python3 .github/workflows/changed_modules.py origin/${{ github.base_ref }} ${{ github.sha }}`
-        echo "MODULES_TO_TEST=${MM}" >> $GITHUB_ENV
-
-    - name: Pull docker images
-      if: contains(env.MODULES_TO_TEST, 'pytket-pyquil')
-      run: |
-        docker pull rigetti/quilc
-        docker pull rigetti/qvm
-    - name: Install dotnet SDK
-      if: contains(env.MODULES_TO_TEST, 'pytket-qsharp')
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: '3.1.x'
-    - name: Install iqsharp
-      if: contains(env.MODULES_TO_TEST, 'pytket-qsharp')
-      run: dotnet tool install -g Microsoft.Quantum.IQSharp
-
-    - name: Set up Python 3.8
-      if: github.event_name == 'push'
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.8'
-    - name: Build and test (3.8)
-      if: github.event_name == 'push'
-      run: |
-        ./.github/workflows/build-test nomypy
-    - name: Set up Python 3.9
-      if: github.event_name == 'pull_request'
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.9'
-    - name: Build and test (3.9)
-      if: github.event_name == 'pull_request'
-      run: |
-        ./.github/workflows/build-test nomypy
-    - name: Set up Python 3.10
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.10'
-    - name: Build and test (3.10)
-      run: |
-        ./.github/workflows/build-test nomypy
-    - uses: actions/upload-artifact@v2
-      if: github.event_name == 'release' || contains(github.ref, 'refs/heads/wheel')
-      with:
-        name: artefacts
-        path: wheelhouse/
-
-  macos:
-    if: github.event_name != 'release'
-    name: Build and test (MacOS)
-    runs-on: macos-11
-
-    steps:
-
-    - uses: actions/checkout@v2
-      with:
-        fetch-depth: '0'
-    - run: git fetch --depth=1 origin +refs/tags/*:refs/tags/* +refs/heads/*:refs/remotes/origin/*
-    - name: Initialize modules list
-      run: |
-        cd ${GITHUB_WORKSPACE}/modules
-        LS_MODULES=`ls -d */`
-        ALL_MODULES=`echo ${LS_MODULES} | sed -e 's/\///g'`
-        echo "MODULES_TO_TEST=${ALL_MODULES}" >> $GITHUB_ENV
-    - name: check for mofified modules
-      if: github.event_name == 'pull_request'
-      run : |
-        MM=`python3 .github/workflows/changed_modules.py origin/${{ github.base_ref }} ${{ github.sha }}`
-        echo "MODULES_TO_TEST=${MM}" >> $GITHUB_ENV
-
-    - name: Install dotnet SDK
-      if: contains(env.MODULES_TO_TEST, 'pytket-qsharp')
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: '3.1.x'
-    - name: Install iqsharp
-      if: contains(env.MODULES_TO_TEST, 'pytket-qsharp')
-      run: |
-        brew install mono-libgdiplus jupyter
-        dotnet tool install -g Microsoft.Quantum.IQSharp
-        dotnet iqsharp install
-
-    - name: Set up Python 3.8
-      if: github.event_name == 'push'
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.8'
-    - name: Build and test (3.8)
-      if: github.event_name == 'push'
-      run: |
-        ./.github/workflows/build-test nomypy
-
-    - name: Set up Python 3.9
-      if: github.event_name == 'pull_request'
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.9'
-    - name: Build and test (3.9) + mypy
-      if: github.event_name == 'pull_request'
-      run: |
-        ./.github/workflows/build-test mypy
-
-    - name: Set up Python 3.10
-      if: github.event_name == 'push' || github.event_name == 'pull_request'
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.10'
-    - name: Build and test (3.10)
-      if: github.event_name == 'push' || github.event_name == 'pull_request'
-      run: |
-        ./.github/workflows/build-test nomypy
 
   windows:
     if: github.event_name != 'release'
@@ -162,19 +31,11 @@ jobs:
       with:
         fetch-depth: '0'
     - run: git fetch --depth=1 origin +refs/tags/*:refs/tags/* +refs/heads/*:refs/remotes/origin/*
-    - name: Initialize modules list
-      shell: bash
-      run: |
-        cd ${GITHUB_WORKSPACE}/modules
-        LS_MODULES=`ls -d */`
-        ALL_MODULES=`echo ${LS_MODULES} | sed -e 's/\///g'`
-        echo "MODULES_TO_TEST=${ALL_MODULES}" >> $GITHUB_ENV
+
     - name: Determine changed modules
-      if: github.event_name == 'pull_request'
       shell: bash
       run: |
-        MM=`python .github/workflows/changed_modules.py origin/${{ github.base_ref }} ${{ github.sha }}`
-        echo "MODULES_TO_TEST=${MM}" >> $GITHUB_ENV
+        echo "MODULES_TO_TEST=pytket-qsharp" >> $GITHUB_ENV
 
     - name: Install dotnet SDK
       if: contains(env.MODULES_TO_TEST, 'pytket-qsharp')
@@ -185,26 +46,6 @@ jobs:
       if: contains(env.MODULES_TO_TEST, 'pytket-qsharp')
       run: dotnet tool install -g Microsoft.Quantum.IQSharp
 
-    - name: Set up Python 3.8
-      if: github.event_name == 'push'
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.8'
-    - name: Build and test (3.8)
-      if: github.event_name == 'push'
-      shell: bash
-      run: |
-        ./.github/workflows/build-test nomypy
-    - name: Set up Python 3.9
-      if: github.event_name == 'pull_request'
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.9'
-    - name: Build and test (3.9)
-      if: github.event_name == 'pull_request'
-      shell: bash
-      run: |
-        ./.github/workflows/build-test nomypy
     - name: Set up Python 3.10
       if: github.event_name == 'push' || github.event_name == 'pull_request'
       uses: actions/setup-python@v2
@@ -215,79 +56,3 @@ jobs:
       shell: bash
       run: |
         ./.github/workflows/build-test nomypy
-
-  publish_to_pypi:
-    name: Publish to pypi
-    if: github.event_name == 'release'
-    needs: linux
-    runs-on: ubuntu-20.04
-    steps:
-    - name: Download all wheels
-      uses: actions/download-artifact@v2
-      with:
-        path: wheelhouse
-    - name: Put them all in the dist folder
-      run: |
-        mkdir dist
-        for w in `find wheelhouse/ -type f -name "*.tar.gz"` ; do cp $w dist/ ; done
-    - name: Publish wheels
-      uses: pypa/gh-action-pypi-publish@release/v1
-      with:
-        user: __token__
-        password: ${{ secrets.PYPI_EXTENSIONS_API_TOKEN }}
-        verbose: true
-
-  docs:
-    name: Build and publish docs
-    if: github.event_name == 'release'
-    needs: publish_to_pypi
-    runs-on: ubuntu-20.04
-    steps:
-    - uses: actions/checkout@v2
-      with:
-        fetch-depth: '0'
-    - name: Set up Python 3.10
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.10'
-    - name: Download all wheels
-      uses: actions/download-artifact@v2
-      with:
-        path: wheelhouse
-    - name: Install pip, wheel
-      run: pip install -U pip wheel
-    - name: Install extensions
-      run: for w in `find wheelhouse/ -type f -name "*.tar.gz"` ; do pip install $w ; done
-    - name: Install dotnet SDK
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: '3.1.x'
-    - name: Install iqsharp
-      run: |
-        dotnet tool install -g Microsoft.Quantum.IQSharp
-        dotnet iqsharp install --user
-    - name: Install docs dependencies
-      run: |
-        pip install -r .github/workflows/docs/requirements.txt
-    - name: Build docs
-      timeout-minutes: 20
-      run: |
-        cd .github/workflows/docs
-        mkdir extensions
-        ./build-docs -a -i -d ${GITHUB_WORKSPACE}/.github/workflows/docs/extensions
-    - name: Configure git
-      run: |
-        git config --global user.email "tket-bot@cambridgequantum.com"
-        git config --global user.name  "«$GITHUB_WORKFLOW» github action"
-    - name: Check out gh-pages branch
-      run: git checkout gh-pages
-    - name: Remove old docs
-      run: git rm -r --ignore-unmatch docs/api
-    - name: Add generated docs to repository
-      run: |
-        mkdir -p docs
-        mv .github/workflows/docs/extensions docs/api
-        git add -f docs/api
-        git commit --allow-empty -m "Add generated documentation."
-    - name: Publish docs
-      run:  git push origin gh-pages:gh-pages
