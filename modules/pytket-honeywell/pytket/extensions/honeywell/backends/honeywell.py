@@ -55,6 +55,7 @@ from pytket.utils.outcomearray import OutcomeArray
 
 from .config import set_honeywell_config
 from .api_wrappers import HQSAPIError, HoneywellQAPI
+from .credential_storage import PersistentStorage
 
 _DEBUG_HANDLE_PREFIX = "_MACHINE_DEBUG_"
 HONEYWELL_URL_PREFIX = "https://qapi.honeywell.com/v1/"
@@ -532,14 +533,14 @@ class HoneywellBackend(Backend):
         """
         set_honeywell_config(user_name)
 
-        keyring.set_password(HoneywellQAPI.KEYRING_NAME, user_name, pwd)  # type: ignore
+        keyring.set_password(PersistentStorage.KEYRING_SERVICE, user_name, pwd)  # type: ignore
 
     @staticmethod
     def clear_saved_login(user_name: str) -> None:
         """Delete saved password for user_name if it exists"""
         set_honeywell_config(None)
         try:
-            keyring.delete_password(HoneywellQAPI.KEYRING_NAME, user_name)  # type: ignore
+            keyring.delete_password(PersistentStorage.KEYRING_SERVICE, user_name)  # type: ignore
         except keyring.errors.PasswordDeleteError:
             raise ValueError(f"No credentials stored for {user_name}")
 
