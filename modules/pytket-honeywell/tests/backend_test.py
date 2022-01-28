@@ -346,6 +346,23 @@ def test_retrieve_available_devices() -> None:
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
+def test_batching() -> None:
+    circ = Circuit(2, name="batching_test").H(0).CX(0, 1).measure_all()
+    state_backend = HoneywellBackend("HQS-LT-S1-SIM")
+    circ = state_backend.get_compiled_circuit(circ)
+
+    handles = state_backend.process_circuits([circ, circ], 10)
+    assert state_backend.get_results(handles)
+
+
+# hard to run as it involves removing credentials
+# def test_delete_authentication():
+#     print("first login")
+#     b = HoneywellBackend()
+#     print("delete login")
+
+
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_submission_with_group() -> None:
     b = HoneywellBackend(device_name="HQS-LT-S1-APIVAL")
     c = Circuit(2, 2, "test 2")

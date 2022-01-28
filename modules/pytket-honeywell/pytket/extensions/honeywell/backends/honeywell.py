@@ -58,7 +58,7 @@ from .api_wrappers import HQSAPIError, HoneywellQAPI
 from .credential_storage import PersistentStorage
 
 _DEBUG_HANDLE_PREFIX = "_MACHINE_DEBUG_"
-HONEYWELL_URL_PREFIX = "https://qapi.honeywell.com/v1/"
+HONEYWELL_URL_PREFIX = "https://qapi.honeywell.com/"
 
 _STATUS_MAP = {
     "queued": StatusEnum.QUEUED,
@@ -309,6 +309,7 @@ class HoneywellBackend(Backend):
           perform noisy simulation with an error model (default value is `True`).
         * `group`: string identifier of a collection of jobs, can be used for usage
           tracking.
+        * `max_batch_cost`: maximum HQC usable by submitted batch, default is 500.
         """
         circuits = list(circuits)
         n_shots_list = Backend._get_n_shots_as_list(
@@ -336,6 +337,8 @@ class HoneywellBackend(Backend):
             basebody["group"] = group
 
         handle_list = []
+        batch_exec: Union[int, str] = cast(int, kwargs.get("max_batch_cost", 500))
+        final_index = len(circuits) - 1
         for i, (circ, n_shots) in enumerate(zip(circuits, n_shots_list)):
             if postprocess:
                 c0, ppcirc = prepare_circuit(circ, allow_classical=False, xcirc=_xcirc)
@@ -347,6 +350,13 @@ class HoneywellBackend(Backend):
             body["name"] = circ.name if circ.name else f"{self._label}_{i}"
             body["program"] = honeywell_circ
             body["count"] = n_shots
+
+            if final_index > 0:
+                # only set batch fields if more than one job submitted
+                body["batch-exec"] = batch_exec
+                if i == final_index:
+                    # flag to signal end of batch
+                    body["batch-end"] = True
             if self._api_handler is None:
                 handle_list.append(
                     ResultHandle(
@@ -364,7 +374,7 @@ class HoneywellBackend(Backend):
                     jobdict = res.json()
                     if res.status_code != HTTPStatus.OK:
                         raise HQSAPIError(
-                            f'HTTP error submitting job, {jobdict["error"]["text"]}'
+                            f'HTTP error submitting job, {jobdict["error"]}'
                         )
                 except ConnectionError:
                     raise ConnectionError(
@@ -373,6 +383,11 @@ class HoneywellBackend(Backend):
 
                 # extract job ID from response
                 jobid = cast(str, jobdict["job"])
+                if i == 0:
+                    # `batch-exec` field set to max batch cost for first job of batch
+                    # and to the id of first job of batch otherwise
+                    _ = self._api_handler.retrieve_job_status(jobid, use_websocket=True)
+                    batch_exec = jobid
                 handle = ResultHandle(jobid, json.dumps(ppcirc_rep))
                 handle_list.append(handle)
                 self._cache[handle] = dict()
