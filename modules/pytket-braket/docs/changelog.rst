@@ -6,6 +6,7 @@ Changelog
 
 * Updated pytket version requirement to 0.19.
 * Drop support for Python 3.7; add support for 3.10.
+* Add support for CV gates.
 
 0.15.0 (January 2022)
 ---------------------
