@@ -6,6 +6,7 @@ Changelog
 
 * Qiskit version updated to 0.34.
 * Updated pytket version requirement to 0.19.
+* Drop support for Python 3.7; add support for 3.10.
 
 0.21.0 (January 2022)
 ---------------------
