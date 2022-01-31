@@ -332,7 +332,7 @@ class AQTBackend(Backend):
         try:
             return super().get_result(handle)
         except CircuitNotRunError:
-            timeout = kwargs.get("timeout")
+            timeout = cast(float, kwargs.get("timeout"))
             wait = kwargs.get("wait", 1.0)
             # Wait for job to finish; result will then be in the cache.
             end_time = (time.time() + timeout) if (timeout is not None) else None

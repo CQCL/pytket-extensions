@@ -738,7 +738,7 @@ class BraketBackend(Backend):
         try:
             return super().get_result(handle)
         except CircuitNotRunError:
-            timeout = kwargs.get("timeout", 60.0)
+            timeout = cast(float, kwargs.get("timeout", 60.0))
             wait = cast(float, kwargs.get("wait", 1.0))
             # Wait for job to finish; result will then be in the cache.
             end_time = (time.time() + timeout) if (timeout is not None) else None

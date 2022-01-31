@@ -257,7 +257,7 @@ class AzureBackend(_QsharpBaseBackend):
         try:
             return Backend.get_result(self, handle)
         except CircuitNotRunError:
-            timeout = kwargs.get("timeout")
+            timeout = cast(float, kwargs.get("timeout"))
             wait = kwargs.get("wait", 1.0)
             # Wait for job to finish; result will then be in the cache.
             end_time = (time.time() + timeout) if (timeout is not None) else None
