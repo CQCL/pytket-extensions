@@ -450,7 +450,7 @@ class AerBackend(_AerBaseBackend):
             arch = characterisation["Architecture"]
             # filter entries to keep
             characterisation = {
-                k: v for k, v in characterisation.items() if k in characterisation_keys
+                k: dict(v) for k, v in characterisation.items() if k in characterisation_keys
             }
             self._backend_info.misc["characterisation"] = characterisation
 
