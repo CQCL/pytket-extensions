@@ -11,8 +11,8 @@ language and associated toolkit for quantum programming.
 ``pytket-qsharp`` is an extension to ``pytket`` that allows ``pytket`` circuits to be
 executed on simulators and resource estimators from the Microsoft QDK.
 
-``pytket-qsharp`` is available for Python 3.7, 3.8 and 3.9, on Linux, MacOS and Windows. To
-install, run:
+``pytket-qsharp`` is available for Python 3.8, 3.9 and 3.10, on Linux, MacOS and
+Windows (except for Windows with 3.10). To install, run:
 
 ``pip install pytket-qsharp``
 
@@ -34,18 +34,19 @@ modify your ``PATH``:
 	:maxdepth: 1
 
 	Introduction <../index.html#http://>
-	pytket-stim <../stim/index.html#http://>
 	pytket-qulacs <../qulacs/index.html#http://>
-	pytket-braket <../braket/index.html#http://>
-	pytket-projectq <../projectq/index.html#http://>
-	pytket-ionq <../ionq/index.html#http://>
-	pytket-qsharp <../qsharp/index.html#http://>
 	pytket-honeywell <../honeywell/index.html#http://>
+	pytket-iqm <../iqm/index.html#http://>
+	pytket-braket <../braket/index.html#http://>
+	pytket-cirq <../cirq/index.html#http://>
 	pytket-pyquil <../pyquil/index.html#http://>
+	pytket-qsharp <../qsharp/index.html#http://>
 	pytket-aqt <../aqt/index.html#http://>
 	pytket-pyzx <../pyzx/index.html#http://>
-	pytket-cirq <../cirq/index.html#http://>
+	pytket-projectq <../projectq/index.html#http://>
+	pytket-stim <../stim/index.html#http://>
 	pytket-qiskit <../qiskit/index.html#http://>
+	pytket-ionq <../ionq/index.html#http://>
 
 .. toctree::
 	:caption: More documentation:

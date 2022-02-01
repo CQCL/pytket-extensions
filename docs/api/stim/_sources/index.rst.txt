@@ -11,7 +11,7 @@ simulator.
 ``pytket-stim`` is an extension to ``pytket`` that allows ``pytket`` circuits
 to be simulated using ``stim``.
 
-``pytket-stim`` is available for Python 3.7, 3.8 and 3.9, on Linux, MacOS and
+``pytket-stim`` is available for Python 3.8, 3.9 and 3.10, on Linux, MacOS and
 Windows. To install, run:
 
 ``pip install pytket-stim``
@@ -25,18 +25,19 @@ Windows. To install, run:
 	:maxdepth: 1
 
 	Introduction <../index.html#http://>
-	pytket-stim <../stim/index.html#http://>
 	pytket-qulacs <../qulacs/index.html#http://>
-	pytket-braket <../braket/index.html#http://>
-	pytket-projectq <../projectq/index.html#http://>
-	pytket-ionq <../ionq/index.html#http://>
-	pytket-qsharp <../qsharp/index.html#http://>
 	pytket-honeywell <../honeywell/index.html#http://>
+	pytket-iqm <../iqm/index.html#http://>
+	pytket-braket <../braket/index.html#http://>
+	pytket-cirq <../cirq/index.html#http://>
 	pytket-pyquil <../pyquil/index.html#http://>
+	pytket-qsharp <../qsharp/index.html#http://>
 	pytket-aqt <../aqt/index.html#http://>
 	pytket-pyzx <../pyzx/index.html#http://>
-	pytket-cirq <../cirq/index.html#http://>
+	pytket-projectq <../projectq/index.html#http://>
+	pytket-stim <../stim/index.html#http://>
 	pytket-qiskit <../qiskit/index.html#http://>
+	pytket-ionq <../ionq/index.html#http://>
 
 .. toctree::
 	:caption: More documentation:

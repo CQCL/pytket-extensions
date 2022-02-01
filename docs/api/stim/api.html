@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>API documentation &mdash; pytket-stim 0.6.0 documentation</title>
+  <title>API documentation &mdash; pytket-stim 0.7.0 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -30,7 +30,7 @@
             <a href="index.html" class="icon icon-home"> pytket-stim
           </a>
               <div class="version">
-                0.6
+                0.7
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -44,23 +44,24 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">API documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Extensions:</span></p>
+<p class="caption" role="heading"><span class="caption-text">Extensions:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference external" href="../index.html#http://">Introduction</a></li>
-<li class="toctree-l1"><a class="reference external" href="../stim/index.html#http://">pytket-stim</a></li>
 <li class="toctree-l1"><a class="reference external" href="../qulacs/index.html#http://">pytket-qulacs</a></li>
-<li class="toctree-l1"><a class="reference external" href="../braket/index.html#http://">pytket-braket</a></li>
-<li class="toctree-l1"><a class="reference external" href="../projectq/index.html#http://">pytket-projectq</a></li>
-<li class="toctree-l1"><a class="reference external" href="../ionq/index.html#http://">pytket-ionq</a></li>
-<li class="toctree-l1"><a class="reference external" href="../qsharp/index.html#http://">pytket-qsharp</a></li>
 <li class="toctree-l1"><a class="reference external" href="../honeywell/index.html#http://">pytket-honeywell</a></li>
+<li class="toctree-l1"><a class="reference external" href="../iqm/index.html#http://">pytket-iqm</a></li>
+<li class="toctree-l1"><a class="reference external" href="../braket/index.html#http://">pytket-braket</a></li>
+<li class="toctree-l1"><a class="reference external" href="../cirq/index.html#http://">pytket-cirq</a></li>
 <li class="toctree-l1"><a class="reference external" href="../pyquil/index.html#http://">pytket-pyquil</a></li>
+<li class="toctree-l1"><a class="reference external" href="../qsharp/index.html#http://">pytket-qsharp</a></li>
 <li class="toctree-l1"><a class="reference external" href="../aqt/index.html#http://">pytket-aqt</a></li>
 <li class="toctree-l1"><a class="reference external" href="../pyzx/index.html#http://">pytket-pyzx</a></li>
-<li class="toctree-l1"><a class="reference external" href="../cirq/index.html#http://">pytket-cirq</a></li>
+<li class="toctree-l1"><a class="reference external" href="../projectq/index.html#http://">pytket-projectq</a></li>
+<li class="toctree-l1"><a class="reference external" href="../stim/index.html#http://">pytket-stim</a></li>
 <li class="toctree-l1"><a class="reference external" href="../qiskit/index.html#http://">pytket-qiskit</a></li>
+<li class="toctree-l1"><a class="reference external" href="../ionq/index.html#http://">pytket-ionq</a></li>
 </ul>
-<p class="caption"><span class="caption-text">More documentation:</span></p>
+<p class="caption" role="heading"><span class="caption-text">More documentation:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference external" href="https://cqcl.github.io/tket/pytket/api/index.html">pytket</a></li>
 </ul>
@@ -94,18 +95,18 @@
 <p>Pytket extension for using the Stim Clifford simulator</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="pytket.extensions.stim.StimBackend">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">pytket.extensions.stim.</span></span><span class="sig-name descname"><span class="pre">StimBackend</span></span><a class="headerlink" href="#pytket.extensions.stim.StimBackend" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pytket.extensions.stim.</span></span><span class="sig-name descname"><span class="pre">StimBackend</span></span><a class="headerlink" href="#pytket.extensions.stim.StimBackend" title="Permalink to this definition"></a></dt>
 <dd><p>Backend for simulating Clifford circuits using Stim</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pytket.extensions.stim.StimBackend.circuit_status">
-<span class="sig-name descname"><span class="pre">circuit_status</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">handle</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://cqcl.github.io/tket/pytket/api/backends.html#pytket.backends.resulthandle.ResultHandle" title="(in pytket v0.18)"><span class="pre">pytket.backends.resulthandle.ResultHandle</span></a></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://cqcl.github.io/tket/pytket/api/backends.html#pytket.backends.status.CircuitStatus" title="(in pytket v0.18)"><span class="pre">pytket.backends.status.CircuitStatus</span></a><a class="headerlink" href="#pytket.extensions.stim.StimBackend.circuit_status" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">circuit_status</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">handle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://cqcl.github.io/tket/pytket/api/backends.html#pytket.backends.resulthandle.ResultHandle" title="(in pytket v0.19)"><span class="pre">pytket.backends.resulthandle.ResultHandle</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://cqcl.github.io/tket/pytket/api/backends.html#pytket.backends.status.CircuitStatus" title="(in pytket v0.19)"><span class="pre">pytket.backends.status.CircuitStatus</span></a></span></span><a class="headerlink" href="#pytket.extensions.stim.StimBackend.circuit_status" title="Permalink to this definition"></a></dt>
 <dd><p>Return a CircuitStatus reporting the status of the circuit execution
 corresponding to the ResultHandle</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pytket.extensions.stim.StimBackend.default_compilation_pass">
-<span class="sig-name descname"><span class="pre">default_compilation_pass</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">optimisation_level</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://cqcl.github.io/tket/pytket/api/passes.html#pytket.passes.BasePass" title="(in pytket v0.18)"><span class="pre">pytket.passes.BasePass</span></a><a class="headerlink" href="#pytket.extensions.stim.StimBackend.default_compilation_pass" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">default_compilation_pass</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">optimisation_level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://cqcl.github.io/tket/pytket/api/passes.html#pytket.passes.BasePass" title="(in pytket v0.19)"><span class="pre">pytket.passes.BasePass</span></a></span></span><a class="headerlink" href="#pytket.extensions.stim.StimBackend.default_compilation_pass" title="Permalink to this definition"></a></dt>
 <dd><p>A suggested compilation pass that will guarantee the resulting circuit
 will be suitable to run on this backend with as few preconditions as
 possible.</p>
@@ -128,7 +129,7 @@ time for large circuits. Defaults to 1.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pytket.extensions.stim.StimBackend.process_circuits">
-<span class="sig-name descname"><span class="pre">process_circuits</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">circuits</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://cqcl.github.io/tket/pytket/api/circuit_class.html#pytket.circuit.Circuit" title="(in pytket v0.18)"><span class="pre">pytket.circuit.Circuit</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_shots</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span> </span><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">valid_check</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://cqcl.github.io/tket/pytket/api/backends.html#pytket.backends.resulthandle.ResultHandle" title="(in pytket v0.18)"><span class="pre">pytket.backends.resulthandle.ResultHandle</span></a><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#pytket.extensions.stim.StimBackend.process_circuits" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">process_circuits</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">circuits</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://cqcl.github.io/tket/pytket/api/circuit_class.html#pytket.circuit.Circuit" title="(in pytket v0.19)"><span class="pre">pytket.circuit.Circuit</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_shots</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">valid_check</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://cqcl.github.io/tket/pytket/api/backends.html#pytket.backends.resulthandle.ResultHandle" title="(in pytket v0.19)"><span class="pre">pytket.backends.resulthandle.ResultHandle</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pytket.extensions.stim.StimBackend.process_circuits" title="Permalink to this definition"></a></dt>
 <dd><p>Submit circuits to the backend for running. The results will be stored
 in the backend’s result cache to be retrieved by the corresponding
 get_&lt;data&gt; method.</p>
@@ -144,6 +145,10 @@ list:</p>
 <li><p><cite>seed</cite>: RNG seed for simulators</p></li>
 <li><p><cite>postprocess</cite>: if True, apply contextual optimisations</p></li>
 </ul>
+<p>Note: If a backend is reused many times, the in-memory results cache grows
+indefinitely. Therefore, when processing many circuits on a statevector or
+unitary backend (whose results may occupy significant amounts of memory), it is
+advisable to run <code class="xref py py-meth docutils literal notranslate"><span class="pre">Backend.empty_cache()</span></code> after each result is retrieved.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -165,9 +170,25 @@ the same order as the circuits.</p>
 </dl>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="pytket.extensions.stim.StimBackend.rebase_pass">
+<span class="sig-name descname"><span class="pre">rebase_pass</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://cqcl.github.io/tket/pytket/api/passes.html#pytket.passes.BasePass" title="(in pytket v0.19)"><span class="pre">pytket.passes.BasePass</span></a></span></span><a class="headerlink" href="#pytket.extensions.stim.StimBackend.rebase_pass" title="Permalink to this definition"></a></dt>
+<dd><p>A single compilation pass that when run converts all gates in a Circuit to
+an OpType supported by the Backend (ignoring architecture constraints).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Compilation pass that converts gates to primitives supported by
+Backend.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference external" href="https://cqcl.github.io/tket/pytket/api/passes.html#pytket.passes.BasePass" title="BasePass">BasePass</a></p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py property">
 <dt class="sig sig-object py" id="pytket.extensions.stim.StimBackend.required_predicates">
-<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">required_predicates</span></span><em class="property"><span class="pre">:</span> <span class="pre">List[pytket.predicates.Predicate]</span></em><a class="headerlink" href="#pytket.extensions.stim.StimBackend.required_predicates" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">required_predicates</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://cqcl.github.io/tket/pytket/api/predicates.html#pytket.predicates.Predicate" title="(in pytket v0.19)"><span class="pre">pytket.predicates.Predicate</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#pytket.extensions.stim.StimBackend.required_predicates" title="Permalink to this definition"></a></dt>
 <dd><p>The minimum set of predicates that a circuit must satisfy before it can
 be successfully run on this backend.</p>
 <dl class="field-list simple">
