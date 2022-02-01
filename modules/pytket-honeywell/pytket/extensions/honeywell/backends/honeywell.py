@@ -1,4 +1,4 @@
-# Copyright 2020-2021 Cambridge Quantum Computing
+# Copyright 2020-2022 Cambridge Quantum Computing
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -252,17 +252,20 @@ class HoneywellBackend(Backend):
 
         return preds
 
+    def rebase_pass(self) -> BasePass:
+        return RebaseHQS()
+
     def default_compilation_pass(self, optimisation_level: int = 1) -> BasePass:
         assert optimisation_level in range(3)
         passlist = [DecomposeClassicalExp(), DecomposeBoxes()]
         if optimisation_level == 0:
-            return SequencePass(passlist + [RebaseHQS()])
+            return SequencePass(passlist + [self.rebase_pass()])
         elif optimisation_level == 1:
             return SequencePass(
                 passlist
                 + [
                     SynthesiseTket(),
-                    RebaseHQS(),
+                    self.rebase_pass(),
                     RemoveRedundancies(),
                     SquashHQS(),
                     SimplifyInitial(
@@ -275,7 +278,7 @@ class HoneywellBackend(Backend):
                 passlist
                 + [
                     FullPeepholeOptimise(),
-                    RebaseHQS(),
+                    self.rebase_pass(),
                     RemoveRedundancies(),
                     SquashHQS(),
                     SimplifyInitial(

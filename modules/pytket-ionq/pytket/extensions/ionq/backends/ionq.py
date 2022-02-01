@@ -1,4 +1,4 @@
-# Copyright 2020-2021 Cambridge Quantum Computing
+# Copyright 2020-2022 Cambridge Quantum Computing
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ from pytket.predicates import (  # type: ignore
 )
 from pytket.utils import prepare_circuit
 from pytket.utils.outcomearray import OutcomeArray
-from .ionq_convert import ionq_pass, ionq_gates, ionq_singleqs, tk_to_ionq
+from .ionq_convert import ionq_rebase_pass, ionq_gates, ionq_singleqs, tk_to_ionq
 from .config import IonQConfig
 
 IONQ_JOBS_URL = "https://api.ionq.co/v0.1/jobs/"
@@ -151,6 +151,9 @@ class IonQBackend(Backend):
         ]
         return preds
 
+    def rebase_pass(self) -> BasePass:
+        return ionq_rebase_pass
+
     def default_compilation_pass(self, optimisation_level: int = 1) -> BasePass:
         assert optimisation_level in range(3)
         if optimisation_level == 0:
@@ -159,7 +162,7 @@ class IonQBackend(Backend):
                     DecomposeBoxes(),
                     FlattenRegisters(),
                     RenameQubitsPass(self._qm),
-                    ionq_pass,
+                    self.rebase_pass(),
                 ]
             )
         elif optimisation_level == 1:
@@ -169,7 +172,7 @@ class IonQBackend(Backend):
                     SynthesiseTket(),
                     FlattenRegisters(),
                     RenameQubitsPass(self._qm),
-                    ionq_pass,
+                    self.rebase_pass(),
                     SimplifyInitial(allow_classical=False, create_all_qubits=True),
                 ]
             )
@@ -180,7 +183,7 @@ class IonQBackend(Backend):
                     FullPeepholeOptimise(),
                     FlattenRegisters(),
                     RenameQubitsPass(self._qm),
-                    ionq_pass,
+                    self.rebase_pass(),
                     SquashCustom(
                         ionq_singleqs,
                         lambda a, b, c: Circuit(1).Rz(c, 0).Rx(b, 0).Rz(a, 0),
@@ -347,7 +350,7 @@ class IonQBackend(Backend):
         try:
             return super().get_result(handle)
         except CircuitNotRunError:
-            timeout = kwargs.get("timeout")
+            timeout = cast(float, kwargs.get("timeout"))
             wait = kwargs.get("wait", 1.0)
             # Wait for job to finish; result will then be in the cache.
             end_time = (time.time() + timeout) if (timeout is not None) else None

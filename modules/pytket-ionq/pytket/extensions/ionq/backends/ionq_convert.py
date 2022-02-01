@@ -1,4 +1,4 @@
-# Copyright 2020-2021 Cambridge Quantum Computing
+# Copyright 2020-2022 Cambridge Quantum Computing
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -55,7 +55,7 @@ ionq_singleqs = {
 
 ionq_gates = ionq_multiqs.union(ionq_singleqs)
 
-ionq_pass = RebaseCustom(
+ionq_rebase_pass = RebaseCustom(
     ionq_multiqs,
     Circuit(),  # cx_replacement (irrelevant)
     ionq_singleqs,  # singleqs

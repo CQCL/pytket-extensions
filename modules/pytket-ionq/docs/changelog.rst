@@ -1,6 +1,12 @@
 Changelog
 ~~~~~~~~~
 
+0.15.0 (February 2022)
+----------------------
+
+* Updated pytket version requirement to 0.19.
+* Drop support for Python 3.7; add support for 3.10.
+
 0.14.0 (January 2022)
 ---------------------
 

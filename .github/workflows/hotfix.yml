@@ -51,10 +51,10 @@ jobs:
       if: contains(env.MODULES_TO_TEST, 'pytket-qsharp')
       run: dotnet tool install -g Microsoft.Quantum.IQSharp
 
-    - name: Set up Python 3.9
+    - name: Set up Python 3.10
       uses: actions/setup-python@v2
       with:
-        python-version: 3.9
+        python-version: '3.10'
     - name: Build and test
       run: |
         ./.github/workflows/build-test nomypy
@@ -62,3 +62,26 @@ jobs:
       with:
         name: artefacts
         path: wheelhouse/
+
+  publish_to_pypi:
+    name: Publish to pypi
+    if: contains(github.event.head_commit.message, 'hotfix')
+    needs: generate
+    runs-on: ubuntu-20.04
+
+    steps:
+
+    - name: Download all wheels
+      uses: actions/download-artifact@v2
+      with:
+        path: wheelhouse
+    - name: Put them all in the dist folder
+      run: |
+        mkdir dist
+        for w in `find wheelhouse/ -type f -name "*.tar.gz"` ; do cp $w dist/ ; done
+    - name: Publish wheels
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        user: __token__
+        password: ${{ secrets.PYPI_EXTENSIONS_API_TOKEN }}
+        verbose: true

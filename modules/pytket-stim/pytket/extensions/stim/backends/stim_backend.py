@@ -1,4 +1,4 @@
-# Copyright 2020-2021 Cambridge Quantum Computing
+# Copyright 2020-2022 Cambridge Quantum Computing
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -130,15 +130,16 @@ class StimBackend(Backend):
             NoClassicalControlPredicate(),
         ]
 
+    def rebase_pass(self) -> BasePass:
+        return RebaseCustom({OpType.CX}, Circuit(), {OpType.H, OpType.S}, _tk1_to_cliff)
+
     def default_compilation_pass(self, optimisation_level: int = 1) -> BasePass:
         # No optimization.
         return SequencePass(
             [
                 DecomposeBoxes(),
                 FlattenRegisters(),
-                RebaseCustom(
-                    {OpType.CX}, Circuit(), {OpType.H, OpType.S}, _tk1_to_cliff
-                ),
+                self.rebase_pass(),
                 RemoveRedundancies(),
             ]
         )

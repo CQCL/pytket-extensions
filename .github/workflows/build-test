@@ -19,6 +19,8 @@ MYPY=$1
 
 PLAT=`python -c 'import platform; print(platform.system())'`
 
+PYVER=`python -c 'import sys; print(".".join(map(str, sys.version_info[:2])))'`
+
 git clean -dfx
 
 echo "Modules to test: ${MODULES_TO_TEST}"
@@ -31,15 +33,65 @@ rm -rf ${ARTIFACTSDIR} && mkdir ${ARTIFACTSDIR}
 
 python -m pip install --upgrade pip wheel
 
+function unsupported() {
+    case "$1" in
+        pytket-iqm)
+            # The iqm-client package is only available for 3.9.
+            [[ "${PYVER}" != "3.9" ]] && return
+            ;;
+        pytket-qiskit)
+            # Cannot install qiskit-aer on Windows with 3.10.
+            [[ "${PLAT}" == "Windows" && "${PYVER}" == "3.10" ]] && return
+            ;;
+        pytket-qsharp)
+            # Cannot install qsharp on Windows with 3.10.
+            [[ "${PLAT}" == "Windows" && ${PYVER} == "3.10" ]] && return
+            ;;
+        pytket-qulacs)
+            # Cannot install qulacs on MacOS or Windows with 3.10.
+            [[ "${PLAT}" != "Linux" && "${PYVER}" == "3.10" ]] && return
+            ;;
+        *)
+            false
+            ;;
+    esac
+}
+
+function skip_tests() {
+    case "$1" in
+        pytket-qsharp)
+            case "${PLAT}" in
+                Windows)
+                    # https://github.com/CQCL/pytket-extensions/issues/180
+                    # https://github.com/microsoft/iqsharp/issues/512
+                    true && return
+                    ;;
+                Darwin)
+                    # Test timeout issues
+                    [[ ${PYVER} == "3.10" ]] && return
+                    ;;
+                *)
+                    false
+                    ;;
+            esac
+            ;;
+        *)
+            false
+            ;;
+    esac
+}
+
 # Generate and install packages:
 for MODULE in $MODULES_TO_TEST; do
-    echo "${MODULE}..."
-    cd ${MODULEDIR}/${MODULE}
-    python setup.py sdist
-    for sdist in dist/*.tar.gz ; do
-        python -m pip install $sdist
-        cp $sdist ${ARTIFACTSDIR}
-    done
+    if ! (unsupported ${MODULE}) ; then
+        echo "${MODULE}..."
+        cd ${MODULEDIR}/${MODULE}
+        python setup.py sdist
+        for sdist in dist/*.tar.gz ; do
+            python -m pip install $sdist
+            cp $sdist ${ARTIFACTSDIR}
+        done
+    fi
 done
 
 # Test and mypy:
@@ -48,29 +100,25 @@ then
     python -m pip install --upgrade mypy
 fi
 for MODULE in $MODULES_TO_TEST; do
+    if ! (unsupported ${MODULE}) ; then
+        if ! (skip_tests ${MODULE}) ; then
+            echo "${MODULE}..."
 
-    # FIXME see
-    # https://github.com/CQCL/pytket-extensions/issues/180 and 
-    # https://github.com/microsoft/iqsharp/issues/512
-    PYVER=`python -c 'import sys; print(".".join(map(str, sys.version_info[:2])))'`
-    if [[ "${MODULE}" != "pytket-qsharp" || "${PLAT}" != "Windows" || "${PYVER}" == "3.7" ]]
-    then
-        echo "${MODULE}..."
+            cd ${MODULEDIR}/${MODULE}/tests
 
-        cd ${MODULEDIR}/${MODULE}/tests
+            python -m pip install --pre -r test-requirements.txt
 
-        python -m pip install --pre -r test-requirements.txt
+            if [[ "${MODULE}" = "pytket-qsharp" && "${PLAT}" != "Darwin" ]]
+            then
+                dotnet iqsharp install --user
+            fi
 
-        if [[ "${MODULE}" = "pytket-qsharp" && "${PLAT}" != "Darwin" ]]
-        then
-            dotnet iqsharp install --user
-        fi
+            pytest --doctest-modules
 
-        pytest --doctest-modules
-
-        if [[ "${MYPY}" = "mypy" ]]
-        then
-            ${MODULEDIR}/mypy-check ${MODULEDIR}/${MODULE}
+            if [[ "${MYPY}" = "mypy" ]]
+            then
+                ${MODULEDIR}/mypy-check ${MODULEDIR}/${MODULE}
+            fi
         fi
     fi
 done

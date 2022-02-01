@@ -1,4 +1,4 @@
-# Copyright 2020-2021 Cambridge Quantum Computing
+# Copyright 2020-2022 Cambridge Quantum Computing
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -107,6 +107,7 @@ _gate_types = {
     "cphaseshift01": None,
     "cphaseshift10": None,
     "cswap": OpType.CSWAP,
+    "cv": OpType.CV,
     "cy": OpType.CY,
     "cz": OpType.CZ,
     "end_verbatim_box": None,
@@ -144,6 +145,7 @@ _multiq_gate_types = {
     "cphaseshift01",
     "cphaseshift10",
     "cswap",
+    "cv",
     "cy",
     "cz",
     "iswap",
@@ -501,6 +503,9 @@ class BraketBackend(Backend):
     def required_predicates(self) -> List[Predicate]:
         return self._req_preds
 
+    def rebase_pass(self) -> BasePass:
+        return self._rebase_pass
+
     def default_compilation_pass(self, optimisation_level: int = 1) -> BasePass:
         assert optimisation_level in range(3)
         passes = [DecomposeBoxes()]
@@ -508,7 +513,7 @@ class BraketBackend(Backend):
             passes.append(SynthesiseTket())
         elif optimisation_level == 2:
             passes.append(FullPeepholeOptimise())
-        passes.append(self._rebase_pass)
+        passes.append(self.rebase_pass())
         if self._device_type == _DeviceType.QPU and self.characterisation is not None:
             arch = self.backend_info.architecture
             passes.append(
@@ -530,7 +535,7 @@ class BraketBackend(Backend):
                 [
                     CliffordSimp(False),
                     SynthesiseTket(),
-                    self._rebase_pass,
+                    self.rebase_pass(),
                     self._squash_pass,
                 ]
             )
@@ -733,7 +738,7 @@ class BraketBackend(Backend):
         try:
             return super().get_result(handle)
         except CircuitNotRunError:
-            timeout = kwargs.get("timeout", 60.0)
+            timeout = cast(float, kwargs.get("timeout", 60.0))
             wait = cast(float, kwargs.get("wait", 1.0))
             # Wait for job to finish; result will then be in the cache.
             end_time = (time.time() + timeout) if (timeout is not None) else None
