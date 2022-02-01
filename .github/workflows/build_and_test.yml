@@ -57,7 +57,6 @@ jobs:
       run: |
         ./.github/workflows/build-test nomypy
     - uses: actions/upload-artifact@v2
-      if: github.event_name == 'release' || contains(github.ref, 'refs/heads/wheel')
       with:
         name: artefacts
         path: wheelhouse/
