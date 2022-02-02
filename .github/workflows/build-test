@@ -39,10 +39,6 @@ function unsupported() {
             # The iqm-client package is only available for 3.9.
             [[ "${PYVER}" != "3.9" ]] && return
             ;;
-        pytket-qiskit)
-            # Cannot install qiskit-aer on Windows with 3.10.
-            [[ "${PLAT}" == "Windows" && "${PYVER}" == "3.10" ]] && return
-            ;;
         pytket-qsharp)
             # Cannot install qsharp on Windows with 3.10.
             [[ "${PLAT}" == "Windows" && ${PYVER} == "3.10" ]] && return
