@@ -34,6 +34,7 @@ from pytket.extensions.qiskit.qiskit_convert import tk_to_qiskit
 from pytket.extensions.qiskit.result_convert import (
     qiskit_experimentresult_to_backendresult,
 )
+from pytket.passes import BasePass  # type: ignore
 from pytket.utils import prepare_circuit
 from pytket.utils.results import KwargTypes
 
@@ -46,7 +47,6 @@ from .ibm_utils import _batch_circuits
 
 if TYPE_CHECKING:
     from pytket.predicates import Predicate  # type: ignore
-    from pytket.passes import BasePass  # type: ignore
     from qiskit.providers.aer import AerJob  # type: ignore
     from qiskit.providers.ibmq import AccountProvider  # type: ignore
     from qiskit.result.models import ExperimentResult  # type: ignore
