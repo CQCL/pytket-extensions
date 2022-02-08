@@ -100,6 +100,9 @@ class IBMQEmulatorBackend(AerBackend):
     def backend_info(self) -> BackendInfo:
         return self._ibmq.backend_info
 
+    def rebase_pass(self) -> BasePass:
+        return self._ibmq.rebase_pass
+
     @property
     def required_predicates(self) -> List["Predicate"]:
         return list(self._ibmq.required_predicates)
