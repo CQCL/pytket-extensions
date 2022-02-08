@@ -1084,3 +1084,47 @@ def test_available_devices() -> None:
 
     backend_info_list = IBMQBackend.available_devices()
     assert len(backend_info_list) > 0
+
+
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
+def test_backendinfo_serialization1() -> None:
+    # https://github.com/CQCL/tket/issues/192
+    backend = IBMQEmulatorBackend(
+        "ibmq_santiago", hub="ibm-q", group="open", project="main"
+    )
+    backend_info_json = backend.backend_info.to_dict()
+    s = json.dumps(backend_info_json)
+    backend_info_json1 = json.loads(s)
+    assert backend_info_json == backend_info_json1
+
+
+def test_backendinfo_serialization2() -> None:
+    # https://github.com/CQCL/tket/issues/192
+    my_noise_model = NoiseModel()
+    my_noise_model.add_readout_error(
+        [
+            [0.8, 0.2],
+            [0.2, 0.8],
+        ],
+        [0],
+    )
+    my_noise_model.add_readout_error(
+        [
+            [0.7, 0.3],
+            [0.3, 0.7],
+        ],
+        [1],
+    )
+    my_noise_model.add_quantum_error(depolarizing_error(0.6, 2), ["cx"], [0, 1])
+    my_noise_model.add_quantum_error(depolarizing_error(0.5, 1), ["u3"], [0])
+    my_noise_model.add_quantum_error(
+        pauli_error([("X", 0.35), ("Z", 0.65)]), ["u2"], [0]
+    )
+    my_noise_model.add_quantum_error(
+        pauli_error([("X", 0.35), ("Y", 0.65)]), ["u1"], [0]
+    )
+    backend = AerBackend(my_noise_model)
+    backend_info_json = backend.backend_info.to_dict()
+    s = json.dumps(backend_info_json)
+    backend_info_json1 = json.loads(s)
+    assert backend_info_json == backend_info_json1
