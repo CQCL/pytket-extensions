@@ -37,7 +37,6 @@ from pytket.passes import (  # type: ignore
     SequencePass,
     SynthesiseTket,
     RemoveRedundancies,
-    SquashHQS,
     FullPeepholeOptimise,
     DecomposeBoxes,
     DecomposeClassicalExp,
@@ -55,7 +54,7 @@ from pytket.utils.outcomearray import OutcomeArray
 from .config import set_honeywell_config
 from .api_wrappers import HQSAPIError, HoneywellQAPI
 from .credential_storage import PersistentStorage
-from .rebase import _quantinuum_rebase
+from .rebase import _quantinuum_rebase, _quantinuum_squash
 
 _DEBUG_HANDLE_PREFIX = "_MACHINE_DEBUG_"
 HONEYWELL_URL_PREFIX = "https://qapi.honeywell.com/"
@@ -261,6 +260,7 @@ class HoneywellBackend(Backend):
         assert optimisation_level in range(3)
         passlist = [DecomposeClassicalExp(), DecomposeBoxes()]
         rebase = self.rebase_pass()
+        squash_pass = _quantinuum_squash(self._gate_set)
         if optimisation_level == 0:
             return SequencePass(passlist + [self.rebase_pass()])
         elif optimisation_level == 1:
@@ -270,7 +270,7 @@ class HoneywellBackend(Backend):
                     SynthesiseTket(),
                     rebase,
                     RemoveRedundancies(),
-                    SquashHQS(),
+                    squash_pass,
                     SimplifyInitial(
                         allow_classical=False, create_all_qubits=True, xcirc=_xcirc
                     ),
@@ -283,7 +283,7 @@ class HoneywellBackend(Backend):
                     FullPeepholeOptimise(),
                     rebase,
                     RemoveRedundancies(),
-                    SquashHQS(),
+                    squash_pass,
                     SimplifyInitial(
                         allow_classical=False, create_all_qubits=True, xcirc=_xcirc
                     ),
