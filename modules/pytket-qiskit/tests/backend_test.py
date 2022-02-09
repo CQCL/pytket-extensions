@@ -812,6 +812,9 @@ def test_ibmq_emulator() -> None:
             assert not all(pred.verify(c_cop_2) for pred in b_emu.required_predicates)
 
     circ = Circuit(2, 2).H(0).CX(0, 1).measure_all()
+    copy_circ = circ.copy()
+    b_emu.rebase_pass().apply(copy_circ)
+    assert b_emu.required_predicates[1].verify(copy_circ)
     circ = b_emu.get_compiled_circuit(circ)
     b_noi = AerBackend(noise_model=b_emu._noise_model)
     emu_shots = b_emu.run_circuit(circ, n_shots=10, seed=10).get_shots()
