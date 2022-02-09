@@ -37,7 +37,6 @@ from pytket.passes import (  # type: ignore
     SequencePass,
     SynthesiseTket,
     RemoveRedundancies,
-    RebaseHQS,
     SquashHQS,
     FullPeepholeOptimise,
     DecomposeBoxes,
@@ -56,6 +55,7 @@ from pytket.utils.outcomearray import OutcomeArray
 from .config import set_honeywell_config
 from .api_wrappers import HQSAPIError, HoneywellQAPI
 from .credential_storage import PersistentStorage
+from .rebase import _quantinuum_rebase
 
 _DEBUG_HANDLE_PREFIX = "_MACHINE_DEBUG_"
 HONEYWELL_URL_PREFIX = "https://qapi.honeywell.com/"
@@ -130,6 +130,7 @@ class HoneywellBackend(Backend):
             self._api_handler = HoneywellQAPI(machine=device_name, login=login)
 
         self.simulator_type = simulator
+        self._gate_set = _GATE_SET
 
     @property
     def _MACHINE_DEBUG(self) -> bool:
@@ -205,7 +206,7 @@ class HoneywellBackend(Backend):
             machine,
             __extension_version__,
             self._machine_info["n_qubits"],
-            _GATE_SET,
+            self._gate_set,
         )
 
     @classmethod
@@ -245,7 +246,7 @@ class HoneywellBackend(Backend):
     def required_predicates(self) -> List[Predicate]:
         preds = [
             NoSymbolsPredicate(),
-            GateSetPredicate(_GATE_SET),
+            GateSetPredicate(self._gate_set),
         ]
         if not self._MACHINE_DEBUG:
             assert self.backend_info is not None
@@ -254,11 +255,12 @@ class HoneywellBackend(Backend):
         return preds
 
     def rebase_pass(self) -> BasePass:
-        return RebaseHQS()
+        return _quantinuum_rebase(self._gate_set)
 
     def default_compilation_pass(self, optimisation_level: int = 1) -> BasePass:
         assert optimisation_level in range(3)
         passlist = [DecomposeClassicalExp(), DecomposeBoxes()]
+        rebase = self.rebase_pass()
         if optimisation_level == 0:
             return SequencePass(passlist + [self.rebase_pass()])
         elif optimisation_level == 1:
@@ -266,7 +268,7 @@ class HoneywellBackend(Backend):
                 passlist
                 + [
                     SynthesiseTket(),
-                    self.rebase_pass(),
+                    rebase,
                     RemoveRedundancies(),
                     SquashHQS(),
                     SimplifyInitial(
@@ -279,7 +281,7 @@ class HoneywellBackend(Backend):
                 passlist
                 + [
                     FullPeepholeOptimise(),
-                    self.rebase_pass(),
+                    rebase,
                     RemoveRedundancies(),
                     SquashHQS(),
                     SimplifyInitial(
@@ -516,7 +518,7 @@ class HoneywellBackend(Backend):
                 + " Try running `backend.get_compiled_circuit` first"
             )
         gate_counts: Dict[OpType, int] = {
-            g_type: circuit.n_gates_of_type(g_type) for g_type in _GATE_SET
+            g_type: circuit.n_gates_of_type(g_type) for g_type in self._gate_set
         }
         n_1q = gate_counts[OpType.PhasedX]
         n_m = circuit.n_qubits + gate_counts[OpType.Measure] + gate_counts[OpType.Reset]

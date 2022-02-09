@@ -13,8 +13,9 @@
 # limitations under the License.
 
 from pytket.circuit import Circuit, OpType  # type: ignore
-from pytket.passes import RebaseHQS  # type: ignore
 from pytket.qasm import circuit_to_qasm_str
+from pytket.extensions.honeywell.backends.rebase import _quantinuum_rebase
+from pytket.extensions.honeywell.backends.honeywell import _GATE_SET
 
 
 def test_convert() -> None:
@@ -26,12 +27,10 @@ def test_convert() -> None:
     circ.ZZPhase(0.3, 2, 3).CX(3, 0).Tdg(1)
     circ.measure_all()
 
-    RebaseHQS().apply(circ)
+    _quantinuum_rebase(_GATE_SET).apply(circ)
     circ_hqs = circuit_to_qasm_str(circ, header="hqslib1")
     qasm_str = circ_hqs.split("\n")[6:-1]
-    test = True
-    for com in qasm_str:
-        test &= any(
-            com.startswith(gate) for gate in ("rz", "U1q", "ZZ", "measure", "barrier")
-        )
-    assert test
+    assert all(
+        any(com.startswith(gate) for gate in ("rz", "U1q", "ZZ", "measure", "barrier"))
+        for com in qasm_str
+    )
