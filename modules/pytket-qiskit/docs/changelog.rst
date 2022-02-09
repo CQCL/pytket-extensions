@@ -1,6 +1,11 @@
 Changelog
 ~~~~~~~~~
 
+0.22.1 (February 2022)
+----------------------
+
+* Added :py:meth:`IBMQEmulatorBackend.rebase_pass`.
+
 0.22.0 (February 2022)
 ----------------------
 
