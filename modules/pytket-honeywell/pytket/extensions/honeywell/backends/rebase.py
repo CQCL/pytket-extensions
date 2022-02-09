@@ -1,7 +1,7 @@
 from typing import Set, Union
-from sympy import Expr
+from sympy import Expr  # type: ignore
 from pytket.circuit import OpType, Circuit  # type: ignore
-from pytket.passes import BasePass, RebaseCustom  # type: ignore
+from pytket.passes import SquashCustom, RebaseCustom  # type: ignore
 from pytket.transform import Transform  # type: ignore
 
 
@@ -31,7 +31,7 @@ def _tk1_to_PhasedXRz(
     return circ
 
 
-def _quantinuum_rebase(gate_set: Set[OpType]) -> BasePass:
+def _quantinuum_rebase(gate_set: Set[OpType]) -> RebaseCustom:
     # CX replacement
     c_cx = Circuit(2)
     c_cx.Rz(1.5, 0).Rx(0.5, 1).Rz(1.5, 1).Rx(1.5, 1)
@@ -46,4 +46,10 @@ def _quantinuum_rebase(gate_set: Set[OpType]) -> BasePass:
         c_cx,
         singlops,
         _tk1_to_PhasedXRz,
+    )
+
+
+def _quantinuum_squash(gate_set: Set[OpType]) -> SquashCustom:
+    return SquashCustom(
+        gate_set.intersection({OpType.PhasedX, OpType.Rz}), _tk1_to_PhasedXRz
     )
