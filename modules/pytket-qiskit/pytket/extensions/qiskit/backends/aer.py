@@ -441,7 +441,6 @@ class AerBackend(_AerBaseBackend):
                 "GenericOneQubitQErrors",
                 "GenericTwoQubitQErrors",
             ]
-            arch = characterisation["Architecture"]
             # filter entries to keep
             characterisation = {
                 k: dict(v)
