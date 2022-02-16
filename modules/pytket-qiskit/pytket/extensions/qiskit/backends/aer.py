@@ -139,11 +139,6 @@ class _AerBaseBackend(Backend):
         return (str, int)
 
     @property
-    def characterisation(self) -> Optional[Dict[str, Any]]:
-        char = self._backend_info.get_misc("characterisation")
-        return cast(Dict[str, Any], char) if char else None
-
-    @property
     def backend_info(self) -> BackendInfo:
         return self._backend_info
 
@@ -493,7 +488,7 @@ class AerBackend(_AerBaseBackend):
         else:
             passlist.append(FullPeepholeOptimise())
         arch = self._backend_info.architecture
-        if arch.coupling and self.characterisation:
+        if arch.coupling and self._backend_info.get_misc("characterisation"):
             # architecture is non-trivial
             passlist.append(
                 CXMappingPass(

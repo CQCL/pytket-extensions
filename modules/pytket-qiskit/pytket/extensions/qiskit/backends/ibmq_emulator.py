@@ -93,10 +93,6 @@ class IBMQEmulatorBackend(AerBackend):
         self._ibm_res_cache: Dict[Tuple[str, int], ExperimentResult] = dict()
 
     @property
-    def characterisation(self) -> Optional[Dict[str, Any]]:
-        return self._ibmq.characterisation
-
-    @property
     def backend_info(self) -> BackendInfo:
         return self._ibmq.backend_info
 
