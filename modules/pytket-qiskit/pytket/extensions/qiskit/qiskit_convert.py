@@ -618,16 +618,16 @@ def process_characterisation(backend: "QiskitBackend") -> Dict[str, Any]:
     node_errors: dict = defaultdict(dict)
     readout_errors: dict = {}
 
-    t1_times_dict = {}
-    t2_times_dict = {}
-    frequencies_dict = {}
-    gate_times_dict = {}
+    t1_times = []
+    t2_times = []
+    frequencies = []
+    gate_times = []
 
     if properties is not None:
         for index, qubit_info in enumerate(properties.qubits):
-            t1_times_dict[index] = return_value_if_found(qubit_info, "T1")
-            t2_times_dict[index] = return_value_if_found(qubit_info, "T2")
-            frequencies_dict[index] = return_value_if_found(qubit_info, "frequency")
+            t1_times.append([index, return_value_if_found(qubit_info, "T1")])
+            t2_times.append([index, return_value_if_found(qubit_info, "T2")])
+            frequencies.append([index, return_value_if_found(qubit_info, "frequency")])
             # readout error as a symmetric 2x2 matrix
             offdiag = return_value_if_found(qubit_info, "readout_error")
             if offdiag:
@@ -645,7 +645,7 @@ def process_characterisation(backend: "QiskitBackend") -> Dict[str, Any]:
                 gate_error = gate_error if gate_error else 0.0
                 gate_length = return_value_if_found(gate.parameters, "gate_length")
                 gate_length = gate_length if gate_length else 0.0
-                gate_times_dict[(optype, tuple(qubits))] = gate_length
+                gate_times.append([name, qubits, gate_length])
                 # add gate fidelities to their relevant lists
                 if len(qubits) == 1:
                     node_errors[qubits[0]].update({optype: gate_error})
@@ -672,10 +672,10 @@ def process_characterisation(backend: "QiskitBackend") -> Dict[str, Any]:
     characterisation["EdgeErrors"] = link_errors
     characterisation["ReadoutErrors"] = readout_errors
     characterisation["Architecture"] = arc
-    characterisation["t1times"] = t1_times_dict
-    characterisation["t2times"] = t2_times_dict
-    characterisation["Frequencies"] = frequencies_dict
-    characterisation["GateTimes"] = gate_times_dict
+    characterisation["t1times"] = t1_times
+    characterisation["t2times"] = t2_times
+    characterisation["Frequencies"] = frequencies
+    characterisation["GateTimes"] = gate_times
 
     return characterisation
 
