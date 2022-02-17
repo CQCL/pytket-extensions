@@ -16,7 +16,6 @@ import itertools
 from collections import defaultdict
 from logging import warning
 from typing import (
-    Any,
     Callable,
     Dict,
     List,
@@ -137,11 +136,6 @@ class _AerBaseBackend(Backend):
     @property
     def _result_id_type(self) -> _ResultIdTuple:
         return (str, int)
-
-    @property
-    def characterisation(self) -> Optional[Dict[str, Any]]:
-        char = self._backend_info.get_misc("characterisation")
-        return cast(Dict[str, Any], char) if char else None
 
     @property
     def backend_info(self) -> BackendInfo:
@@ -493,7 +487,7 @@ class AerBackend(_AerBaseBackend):
         else:
             passlist.append(FullPeepholeOptimise())
         arch = self._backend_info.architecture
-        if arch.coupling and self.characterisation:
+        if arch.coupling and self._backend_info.get_misc("characterisation"):
             # architecture is non-trivial
             passlist.append(
                 CXMappingPass(

@@ -1,6 +1,12 @@
 Changelog
 ~~~~~~~~~
 
+0.23.0 (unreleased)
+-------------------
+
+* Removed ``characterisation`` property of backends. (Use `backend_info`
+  instead.)
+
 0.22.2 (February 2022)
 ----------------------
 

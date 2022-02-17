@@ -308,10 +308,6 @@ class IBMQBackend(Backend):
         return provider
 
     @property
-    def characterisation(self) -> Dict[str, Any]:
-        return cast(Dict[str, Any], self._backend_info.get_misc("characterisation"))
-
-    @property
     def backend_info(self) -> BackendInfo:
         return self._backend_info
 
