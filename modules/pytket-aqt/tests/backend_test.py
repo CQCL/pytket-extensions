@@ -64,6 +64,7 @@ def test_bell() -> None:
     assert all(q[0] == q[1] for q in counts)
 
 
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_invalid_cred() -> None:
     token = "invalid"
     b = AQTBackend(device_name="sim", access_token=token, label="test 3")
