@@ -16,7 +16,6 @@ import itertools
 from collections import defaultdict
 from logging import warning
 from typing import (
-    Any,
     Callable,
     Dict,
     List,
