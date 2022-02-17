@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from pytket.circuit import Circuit, OpType  # type: ignore
-from pytket.passes import RebaseHQS  # type: ignore
+from pytket.extensions.honeywell import HoneywellBackend
 from pytket.qasm import circuit_to_qasm_str
 
 
@@ -26,7 +26,7 @@ def test_convert() -> None:
     circ.ZZPhase(0.3, 2, 3).CX(3, 0).Tdg(1)
     circ.measure_all()
 
-    RebaseHQS().apply(circ)
+    HoneywellBackend("", login=False, machine_debug=True).rebase_pass().apply(circ)
     circ_hqs = circuit_to_qasm_str(circ, header="hqslib1")
     qasm_str = circ_hqs.split("\n")[6:-1]
     test = True

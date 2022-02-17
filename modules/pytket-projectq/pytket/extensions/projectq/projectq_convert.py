@@ -24,6 +24,8 @@ from projectq.ops._command import Command as ProjectQCommand, apply_command  # t
 from projectq.types._qubit import Qureg  # type: ignore
 from pytket.circuit import OpType, Op, Circuit, Command, Bit  # type: ignore
 from pytket.transform import Transform  # type: ignore
+from pytket.passes import RebaseCustom  # type: ignore
+from pytket._tket.circuit._library import _CX, _TK1_to_RzRx  # type: ignore
 import numpy as np
 
 _pq_to_tk_singleqs = {
@@ -56,7 +58,26 @@ _OTHER_KNOWN_GATES = {
 
 
 _ALLOWED_GATES = {**_pq_to_tk_singleqs, **_pq_to_tk_multiqs, **_OTHER_KNOWN_GATES}
-
+_REBASE = RebaseCustom(
+    {
+        OpType.SWAP,
+        OpType.CRz,
+        OpType.CX,
+        OpType.CZ,
+        OpType.H,
+        OpType.X,
+        OpType.Y,
+        OpType.Z,
+        OpType.S,
+        OpType.T,
+        OpType.V,
+        OpType.Rx,
+        OpType.Ry,
+        OpType.Rz,
+    },
+    _CX(),
+    _TK1_to_RzRx,
+)
 _tk_to_pq_singleqs: dict = dict(
     ((item[1], item[0]) for item in _pq_to_tk_singleqs.items())
 )
@@ -325,7 +346,7 @@ class tketOptimiser(BasicEngine):
         # ProjectQ commands
         if self._circuit.n_qubits != 0:
             Transform.OptimisePhaseGadgets().apply(self._circuit)
-            Transform.RebaseToProjectQ().apply(self._circuit)
+            _REBASE.apply(self._circuit)
 
         cmd_list = []
 

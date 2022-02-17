@@ -37,12 +37,12 @@ from pytket.passes import (  # type: ignore
     SequencePass,
     SynthesiseTket,
     RemoveRedundancies,
-    RebaseHQS,
-    SquashHQS,
     FullPeepholeOptimise,
     DecomposeBoxes,
     DecomposeClassicalExp,
     SimplifyInitial,
+    auto_rebase_pass,
+    auto_squash_pass,
 )
 from pytket.predicates import (  # type: ignore
     GateSetPredicate,
@@ -254,11 +254,12 @@ class HoneywellBackend(Backend):
         return preds
 
     def rebase_pass(self) -> BasePass:
-        return RebaseHQS()
+        return auto_rebase_pass(_GATE_SET)
 
     def default_compilation_pass(self, optimisation_level: int = 1) -> BasePass:
         assert optimisation_level in range(3)
         passlist = [DecomposeClassicalExp(), DecomposeBoxes()]
+        squash = auto_squash_pass({OpType.PhasedX, OpType.Rz})
         if optimisation_level == 0:
             return SequencePass(passlist + [self.rebase_pass()])
         elif optimisation_level == 1:
@@ -268,7 +269,7 @@ class HoneywellBackend(Backend):
                     SynthesiseTket(),
                     self.rebase_pass(),
                     RemoveRedundancies(),
-                    SquashHQS(),
+                    squash,
                     SimplifyInitial(
                         allow_classical=False, create_all_qubits=True, xcirc=_xcirc
                     ),
@@ -281,7 +282,7 @@ class HoneywellBackend(Backend):
                     FullPeepholeOptimise(),
                     self.rebase_pass(),
                     RemoveRedundancies(),
-                    SquashHQS(),
+                    squash,
                     SimplifyInitial(
                         allow_classical=False, create_all_qubits=True, xcirc=_xcirc
                     ),

@@ -42,9 +42,9 @@ from pytket.passes import (  # type: ignore
     CXMappingPass,
     DecomposeBoxes,
     FullPeepholeOptimise,
-    RebaseCustom,
     SequencePass,
     SynthesiseTket,
+    auto_rebase_pass,
 )
 from pytket.pauli import Pauli, QubitPauliString  # type: ignore
 from pytket.predicates import (  # type: ignore
@@ -57,8 +57,6 @@ from pytket.predicates import (  # type: ignore
 )
 from pytket.extensions.qiskit.qiskit_convert import (
     tk_to_qiskit,
-    _qiskit_gates_1q,
-    _qiskit_gates_2q,
     _gate_str_2_optype,
     get_avg_characterisation,
 )
@@ -90,15 +88,6 @@ def _default_q_index(q: Qubit) -> int:
 
 
 _required_gates: Set[OpType] = {OpType.CX, OpType.U1, OpType.U2, OpType.U3}
-_1q_gates: Set[OpType] = set(_qiskit_gates_1q.values())
-_2q_gates: Set[OpType] = set(_qiskit_gates_2q.values())
-
-
-def _tk1_to_u(a: float, b: float, c: float) -> Circuit:
-    circ = Circuit(1)
-    circ.add_gate(OpType.U3, [b, a - 0.5, c + 0.5], [0])
-    circ.add_phase(-0.5 * (a + c))
-    return circ
 
 
 class _AerBaseBackend(Backend):
@@ -143,11 +132,8 @@ class _AerBaseBackend(Backend):
         return self._backend_info
 
     def rebase_pass(self) -> BasePass:
-        return RebaseCustom(
-            self._gate_set & _2q_gates,
-            Circuit(2).CX(0, 1),
-            self._gate_set & _1q_gates,
-            _tk1_to_u,
+        return auto_rebase_pass(
+            self._gate_set,
         )
 
     def process_circuits(
