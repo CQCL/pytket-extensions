@@ -698,7 +698,7 @@ def _process_model(noise_model: NoiseModel, gate_set: Set[OpType]) -> dict:
     link_errors = convert_keys(lambda p: (Node(p[0]), Node(p[1])), link_errors)
     readout_errors = convert_keys(lambda q: Node(q), readout_errors)
 
-    characterisation = {}
+    characterisation: Dict[str, Any] = {}
     characterisation["NodeErrors"] = node_errors
     characterisation["EdgeErrors"] = link_errors
     characterisation["ReadoutErrors"] = readout_errors
