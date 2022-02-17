@@ -207,6 +207,7 @@ def test_process_characterisation() -> None:
 def test_process_characterisation_no_noise_model() -> None:
     my_noise_model = NoiseModel()
     back = AerBackend(my_noise_model)
+    assert back.backend_info.get_misc("characterisation") is None
 
     c = Circuit(4).CX(0, 1).H(2).CX(2, 1).H(3).CX(0, 3).H(1).X(0)
     c = back.get_compiled_circuit(c)
