@@ -443,9 +443,7 @@ class AerBackend(_AerBaseBackend):
             ]
             # filter entries to keep
             characterisation = {
-                k: dict(v)
-                for k, v in characterisation.items()
-                if k in characterisation_keys
+                k: v for k, v in characterisation.items() if k in characterisation_keys
             }
             self._backend_info.misc["characterisation"] = characterisation
 
@@ -657,7 +655,7 @@ def _process_model(noise_model: NoiseModel, gate_set: Set[OpType]) -> dict:
             if error["type"] == "qerror":
                 node_errors[q].update({optype: 1 - gate_fid})
                 generic_single_qerrors_dict[q].append(
-                    (error["instructions"], error["probabilities"])
+                    [error["instructions"], error["probabilities"]]
                 )
             elif error["type"] == "roerror":
                 readout_errors[q] = error["probabilities"]
@@ -674,7 +672,7 @@ def _process_model(noise_model: NoiseModel, gate_set: Set[OpType]) -> dict:
             # to simulate a worse reverse direction square the fidelity
             link_errors[(q1, q0)].update({optype: 1 - gate_fid ** 2})
             generic_2q_qerrors_dict[(q0, q1)].append(
-                (error["instructions"], error["probabilities"])
+                [error["instructions"], error["probabilities"]]
             )
             coupling_map.append(qubits)
 
@@ -704,8 +702,12 @@ def _process_model(noise_model: NoiseModel, gate_set: Set[OpType]) -> dict:
     characterisation["NodeErrors"] = node_errors
     characterisation["EdgeErrors"] = link_errors
     characterisation["ReadoutErrors"] = readout_errors
-    characterisation["GenericOneQubitQErrors"] = generic_single_qerrors_dict
-    characterisation["GenericTwoQubitQErrors"] = generic_2q_qerrors_dict
+    characterisation["GenericOneQubitQErrors"] = [
+        [k, v] for k, v in generic_single_qerrors_dict.items()
+    ]
+    characterisation["GenericTwoQubitQErrors"] = [
+        [list(k), v] for k, v in generic_2q_qerrors_dict.items()
+    ]
     characterisation["Architecture"] = Architecture(coupling_map)
 
     return characterisation

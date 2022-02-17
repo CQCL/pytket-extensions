@@ -303,14 +303,14 @@ def test_process_characterisation_complete_noise_model() -> None:
     )
 
     back = AerBackend(my_noise_model)
-    char = cast(Dict[str, Any], back.backend_info.get_misc("characterisation"))
+    char = back.backend_info.get_misc("characterisation")
 
     node_errors = cast(Dict, back.backend_info.all_node_gate_errors)
     link_errors = cast(Dict, back.backend_info.all_edge_gate_errors)
     arch = back.backend_info.architecture
 
-    gqe2 = cast(Dict, char["GenericTwoQubitQErrors"])
-    gqe1 = cast(Dict, char["GenericOneQubitQErrors"])
+    gqe2 = {tuple(qs): errs for qs, errs in char["GenericTwoQubitQErrors"]}
+    gqe1 = {q: errs for q, errs in char["GenericOneQubitQErrors"]}
 
     assert round(gqe2[(0, 1)][0][1][15], 5) == 0.0375
     assert round(gqe2[(0, 1)][0][1][0], 5) == 0.4375
