@@ -39,7 +39,6 @@ from pytket.passes import (  # type: ignore
     SynthesiseTket,
     SequencePass,
     DecomposeBoxes,
-    RebaseCustom,
     FullPeepholeOptimise,
     FlattenRegisters,
 )
@@ -53,6 +52,7 @@ from pytket.predicates import (  # type: ignore
     Predicate,
 )
 from pytket.circuit import Pauli  # type: ignore
+from pytket.passes import auto_rebase_pass
 from pytket.pauli import QubitPauliString  # type: ignore
 from pytket.routing import Architecture  # type: ignore
 from pytket.utils.operators import QubitPauliOperator
@@ -137,12 +137,7 @@ class QulacsBackend(Backend):
         ]
 
     def rebase_pass(self) -> BasePass:
-        return RebaseCustom(
-            set(_TWO_QUBIT_GATES),
-            Circuit(2).CX(0, 1),
-            _1Q_GATES,
-            _tk1_to_u,
-        )
+        return auto_rebase_pass(set(_TWO_QUBIT_GATES) | _1Q_GATES)
 
     def default_compilation_pass(self, optimisation_level: int = 1) -> BasePass:
         assert optimisation_level in range(3)

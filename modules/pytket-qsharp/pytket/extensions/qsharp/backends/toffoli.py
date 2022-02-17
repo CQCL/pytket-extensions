@@ -17,24 +17,20 @@ import numpy as np
 from pytket.circuit import Circuit, OpType  # type: ignore
 from pytket.passes import BasePass, RebaseCustom  # type: ignore
 from pytket.utils.outcomearray import OutcomeArray
+from pytket.passes._decompositions import approx_0_mod_2
 from .common import _QsharpSimBaseBackend, BackendResult
 
 if TYPE_CHECKING:
     from qsharp.loader import QSharpCallable  # type: ignore
 
 
-def is_approx_0_mod_2(x: float, tol: float = 1e-10) -> bool:
-    x %= 2  # --> [0,2)
-    return min(x, 2 - x) < tol
-
-
 def toffoli_from_tk1(a: float, b: float, c: float) -> Circuit:
     """Only accept operations equivalent to I or X."""
     circ = Circuit(1)
-    if is_approx_0_mod_2(b) and is_approx_0_mod_2(a + c):
+    if approx_0_mod_2(b) and approx_0_mod_2(a + c):
         # identity
         pass
-    elif is_approx_0_mod_2(b + 1) and is_approx_0_mod_2(a - c):
+    elif approx_0_mod_2(b + 1) and approx_0_mod_2(a - c):
         # X
         circ.X()
     else:
@@ -52,9 +48,8 @@ class QsharpToffoliSimulatorBackend(_QsharpSimBaseBackend):
     def default_compilation_pass(self, optimisation_level: int = 1) -> BasePass:
         assert optimisation_level in range(3)
         return RebaseCustom(
-            {OpType.CX, OpType.CCX, OpType.CnX, OpType.SWAP},  # multiqs
+            {OpType.CX, OpType.CCX, OpType.CnX, OpType.SWAP, OpType.X},
             Circuit(),  # cx_replacement (irrelevant)
-            {OpType.X},  # singleqs
             toffoli_from_tk1,
         )  # tk1_replacement
 

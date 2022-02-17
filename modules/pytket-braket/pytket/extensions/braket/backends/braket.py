@@ -55,6 +55,7 @@ from pytket.passes import (  # type: ignore
     DecomposeBoxes,
     SimplifyInitial,
 )
+from pytket._tket.circuit._library import _TK1_to_RzRx  # type: ignore
 from pytket.pauli import Pauli, QubitPauliString  # type: ignore
 from pytket.predicates import (  # type: ignore
     ConnectivityPredicate,
@@ -355,14 +356,13 @@ class BraketBackend(Backend):
             self._req_preds.append(ConnectivityPredicate(arch))
 
         self._rebase_pass = RebaseCustom(
-            self._multiqs,
+            self._multiqs | self._singleqs,
             Circuit(),
-            self._singleqs,
-            lambda a, b, c: Circuit(1).Rz(c, 0).Rx(b, 0).Rz(a, 0),
+            _TK1_to_RzRx,
         )
         self._squash_pass = SquashCustom(
             self._singleqs,
-            lambda a, b, c: Circuit(1).Rz(c, 0).Rx(b, 0).Rz(a, 0),
+            _TK1_to_RzRx,
         )
 
     @staticmethod
