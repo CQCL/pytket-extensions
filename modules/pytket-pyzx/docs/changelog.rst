@@ -1,6 +1,11 @@
 Changelog
 ~~~~~~~~~
 
+0.19.0 (unreleased)
+-------------------
+
+* Updated pyzx version requirement to 0.7.
+
 0.18.0 (February 2022)
 ----------------------
 
