@@ -54,6 +54,7 @@ from pytket.passes import (  # type: ignore
     SquashCustom,
     DecomposeBoxes,
     SimplifyInitial,
+    NaivePlacementPass,
 )
 from pytket._tket.circuit._library import _TK1_to_RzRx  # type: ignore
 from pytket.pauli import Pauli, QubitPauliString  # type: ignore
@@ -527,6 +528,7 @@ class BraketBackend(Backend):
                     delay_measures=True,
                 )
             )
+            passes.append(NaivePlacementPass(arch))
             # If CX weren't supported by the device then we'd need to do another
             # rebase_pass here. But we checked above that it is.
         if optimisation_level == 1:
