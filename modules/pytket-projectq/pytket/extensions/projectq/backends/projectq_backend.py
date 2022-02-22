@@ -61,7 +61,7 @@ from pytket.predicates import (  # type: ignore
     DefaultRegisterPredicate,
     Predicate,
 )
-from pytket.routing import Architecture  # type: ignore
+from pytket.architecture import Architecture  # type: ignore
 from pytket.extensions.projectq.projectq_convert import tk_to_projectq, _REBASE  # type: ignore
 from pytket.extensions.projectq._metadata import __extension_version__  # type: ignore
 from pytket.utils.operators import QubitPauliOperator
