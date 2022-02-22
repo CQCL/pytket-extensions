@@ -660,7 +660,7 @@ def _process_model(noise_model: NoiseModel, gate_set: Set[OpType]) -> dict:
             link_errors_qubits.add(q0)
             link_errors_qubits.add(q1)
             # to simulate a worse reverse direction square the fidelity
-            link_errors[(q1, q0)].update({optype: 1 - gate_fid**2})
+            link_errors[(q1, q0)].update({optype: 1 - gate_fid ** 2})
             generic_2q_qerrors_dict[(q0, q1)].append(
                 [error["instructions"], error["probabilities"]]
             )
