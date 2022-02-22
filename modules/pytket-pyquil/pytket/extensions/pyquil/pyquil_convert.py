@@ -52,7 +52,7 @@ from pyquil.quilbase import Declare, Gate, Halt, Measurement, Pragma
 from sympy import pi, Expr, Symbol, sin, cos, Number, Add, Mul, Pow  # type: ignore
 
 from pytket.circuit import Circuit, Node, OpType, Qubit, Bit  # type: ignore
-from pytket.routing import Architecture  # type: ignore
+from pytket.architecture import Architecture  # type: ignore
 
 _known_quil_gate = {
     "X": OpType.X,

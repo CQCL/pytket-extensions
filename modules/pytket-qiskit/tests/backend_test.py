@@ -25,7 +25,8 @@ from pytket.circuit import Circuit, OpType, BasisOrder, Qubit, reg_eq  # type: i
 from pytket.passes import CliffordSimp  # type: ignore
 from pytket.pauli import Pauli, QubitPauliString  # type: ignore
 from pytket.predicates import CompilationUnit, NoMidMeasurePredicate  # type: ignore
-from pytket.routing import Architecture, route  # type: ignore
+from pytket.architecture import Architecture  # type: ignore
+from pytket.mapping import MappingManager, LexiRouteRoutingMethod  # type: ignore
 from pytket.transform import Transform  # type: ignore
 from pytket.backends import (
     ResultHandle,
@@ -523,12 +524,13 @@ def test_aer_default_pass() -> None:
 
 def test_routing_measurements() -> None:
     qc = get_test_circuit(True)
-    circ = qiskit_to_tk(qc)
+    physical_c = qiskit_to_tk(qc)
     sim = AerBackend()
-    original_results = sim.run_circuit(circ, n_shots=10, seed=4).get_shots()
+    original_results = sim.run_circuit(physical_c, n_shots=10, seed=4).get_shots()
     coupling = [[1, 0], [2, 0], [2, 1], [3, 2], [3, 4], [4, 2]]
     arc = Architecture(coupling)
-    physical_c = route(circ, arc)
+    mm = MappingManager(arc)
+    mm.route_circuit(physical_c, [LexiRouteRoutingMethod()])
     Transform.DecomposeSWAPtoCX().apply(physical_c)
     Transform.DecomposeCXDirected(arc).apply(physical_c)
     Transform.OptimisePostRouting().apply(physical_c)
@@ -540,14 +542,13 @@ def test_routing_measurements() -> None:
 def test_routing_no_cx() -> None:
     circ = Circuit(2, 2)
     circ.H(1)
-    # c.CX(1, 2)
     circ.Rx(0.2, 0)
     circ.measure_all()
     coupling = [[1, 0], [2, 0], [2, 1], [3, 2], [3, 4], [4, 2]]
     arc = Architecture(coupling)
-    physical_c = route(circ, arc)
-
-    assert len(physical_c.get_commands()) == 4
+    mm = MappingManager(arc)
+    mm.route_circuit(circ, [LexiRouteRoutingMethod()])
+    assert len(circ.get_commands()) == 4
 
 
 def test_counts() -> None:

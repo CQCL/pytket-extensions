@@ -54,7 +54,7 @@ from pytket.predicates import (  # type: ignore
     NoMidMeasurePredicate,
     NoSymbolsPredicate,
 )
-from pytket.routing import Architecture  # type: ignore
+from pytket.architecture import Architecture  # type: ignore
 from pytket.extensions.qsharp._metadata import __extension_version__
 from pytket.extensions.qsharp.qsharp_convert import tk_to_qsharp
 

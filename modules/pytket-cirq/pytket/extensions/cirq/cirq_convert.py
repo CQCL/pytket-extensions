@@ -24,7 +24,7 @@ from cirq.devices import LineQubit, GridQubit
 import cirq.ops
 import cirq_google
 from pytket.circuit import Circuit, OpType, Qubit, Bit, Node  # type: ignore
-from pytket.routing import Architecture  # type: ignore
+from pytket.architecture import Architecture  # type: ignore
 from sympy import pi  # type: ignore
 
 # For translating cirq circuits to tket circuits

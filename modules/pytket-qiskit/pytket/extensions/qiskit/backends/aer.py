@@ -45,6 +45,7 @@ from pytket.passes import (  # type: ignore
     SequencePass,
     SynthesiseTket,
     auto_rebase_pass,
+    NaivePlacementPass,
 )
 from pytket.pauli import Pauli, QubitPauliString  # type: ignore
 from pytket.predicates import (  # type: ignore
@@ -62,7 +63,8 @@ from pytket.extensions.qiskit.qiskit_convert import (
 )
 from pytket.extensions.qiskit.result_convert import qiskit_result_to_backendresult
 from pytket.extensions.qiskit._metadata import __extension_version__
-from pytket.routing import Architecture, NoiseAwarePlacement  # type: ignore
+from pytket.architecture import Architecture  # type: ignore
+from pytket.placement import NoiseAwarePlacement  # type: ignore
 from pytket.utils.operators import QubitPauliOperator
 from pytket.utils.results import KwargTypes, permute_basis_indexing
 from qiskit import Aer  # type: ignore
@@ -486,6 +488,7 @@ class AerBackend(_AerBaseBackend):
                     delay_measures=False,
                 )
             )
+            passlist.append(NaivePlacementPass(arch))
             if optimisation_level == 0:
                 passlist.append(self.rebase_pass())
             elif optimisation_level == 1:

@@ -59,6 +59,7 @@ from pytket.passes import (  # type: ignore
     FullPeepholeOptimise,
     CliffordSimp,
     SimplifyInitial,
+    NaivePlacementPass,
 )
 from pytket.predicates import (  # type: ignore
     NoMidMeasurePredicate,
@@ -72,7 +73,8 @@ from pytket.extensions.qiskit.qiskit_convert import tk_to_qiskit, _tk_gate_set
 from pytket.extensions.qiskit.result_convert import (
     qiskit_experimentresult_to_backendresult,
 )
-from pytket.routing import FullyConnected, NoiseAwarePlacement  # type: ignore
+from pytket.architecture import FullyConnected  # type: ignore
+from pytket.placement import NoiseAwarePlacement  # type: ignore
 from pytket.utils import prepare_circuit
 from pytket.utils.results import KwargTypes
 from .ibm_utils import _STATUS_MAP, _batch_circuits
@@ -342,6 +344,7 @@ class IBMQBackend(Backend):
                     delay_measures=(not mid_measure),
                 )
             )
+            passlist.append(NaivePlacementPass(arch))
         if optimisation_level == 1:
             passlist.append(SynthesiseTket())
         if optimisation_level == 2:

@@ -67,7 +67,7 @@ from pytket.circuit import (  # type: ignore
 )
 from pytket._tket.circuit import _TEMP_BIT_NAME  # type: ignore
 from pytket.pauli import Pauli, QubitPauliString  # type: ignore
-from pytket.routing import Architecture, FullyConnected  # type: ignore
+from pytket.architecture import Architecture, FullyConnected  # type: ignore
 from pytket.utils import QubitPauliOperator, gen_term_sequence_circuit
 
 if TYPE_CHECKING:
