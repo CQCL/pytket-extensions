@@ -14,7 +14,7 @@
 
 from pytket import OpType  # type: ignore
 from pytket.extensions.cirq import cirq_to_tk, tk_to_cirq, process_characterisation
-from pytket.routing import Architecture  # type: ignore
+from pytket.architecture import Architecture  # type: ignore
 
 import cirq
 import cirq_google
