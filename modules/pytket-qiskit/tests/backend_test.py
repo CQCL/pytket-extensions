@@ -25,7 +25,7 @@ from pytket.circuit import Circuit, OpType, BasisOrder, Qubit, reg_eq  # type: i
 from pytket.passes import CliffordSimp  # type: ignore
 from pytket.pauli import Pauli, QubitPauliString  # type: ignore
 from pytket.predicates import CompilationUnit, NoMidMeasurePredicate  # type: ignore
-from pytket.architecture import Architecture
+from pytket.architecture import Architecture  # type: ignore
 from pytket.mapping import MappingManager, LexiRouteRoutingMethod  # type: ignore
 from pytket.transform import Transform  # type: ignore
 from pytket.backends import (
