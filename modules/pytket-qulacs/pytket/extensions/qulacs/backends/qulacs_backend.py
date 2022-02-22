@@ -54,7 +54,7 @@ from pytket.predicates import (  # type: ignore
 from pytket.circuit import Pauli  # type: ignore
 from pytket.passes import auto_rebase_pass
 from pytket.pauli import QubitPauliString  # type: ignore
-from pytket.routing import Architecture  # type: ignore
+from pytket.architecture import Architecture  # type: ignore
 from pytket.utils.operators import QubitPauliOperator
 from pytket.utils.outcomearray import OutcomeArray
 from pytket.extensions.qulacs.qulacs_convert import (
