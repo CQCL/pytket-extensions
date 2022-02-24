@@ -31,7 +31,7 @@ ARTIFACTSDIR=${GITHUB_WORKSPACE}/wheelhouse
 
 rm -rf ${ARTIFACTSDIR} && mkdir ${ARTIFACTSDIR}
 
-python -m pip install --upgrade pip wheel
+python -m pip install --upgrade pip wheel build
 
 function unsupported() {
     case "$1" in
@@ -82,10 +82,10 @@ for MODULE in $MODULES_TO_TEST; do
     if ! (unsupported ${MODULE}) ; then
         echo "${MODULE}..."
         cd ${MODULEDIR}/${MODULE}
-        python setup.py sdist
-        for sdist in dist/*.tar.gz ; do
-            python -m pip install $sdist
-            cp $sdist ${ARTIFACTSDIR}
+        python -m build
+        for w in dist/*.whl ; do
+            python -m pip install $w
+            cp $w ${ARTIFACTSDIR}
         done
     fi
 done
