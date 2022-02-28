@@ -362,14 +362,16 @@ class HoneywellBackend(Backend):
             body["program"] = honeywell_circ
             body["count"] = n_shots
 
-            if final_index > 0:
-                # only set batch fields if more than one job submitted
-                if (self._device_name != DEVICE_FAMILY) or ("max_batch_cost" in kwargs):
-                    # Don't set default batch fields if submitting to the device family
-                    body["batch-exec"] = batch_exec
-                    if i == final_index:
-                        # flag to signal end of batch
-                        body["batch-end"] = True
+            if final_index > 0 and (
+                self._device_name != DEVICE_FAMILY or "max_batch_cost" in kwargs
+            ):
+                # Don't set default batch fields if:
+                #  - Submitting to the device family
+                #  - Less than one job submitted
+                body["batch-exec"] = batch_exec
+                if i == final_index:
+                    # flag to signal end of batch
+                    body["batch-end"] = True
 
             if circ.n_gates_of_type(OpType.ZZPhase) > 0:
                 body["options"]["compiler-options"] = {"parametrized_zz": True}
