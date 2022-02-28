@@ -59,6 +59,7 @@ from .credential_storage import PersistentStorage
 
 _DEBUG_HANDLE_PREFIX = "_MACHINE_DEBUG_"
 HONEYWELL_URL_PREFIX = "https://qapi.honeywell.com/"
+DEVICE_FAMILY = "HQS-LT"
 
 _STATUS_MAP = {
     "queued": StatusEnum.QUEUED,
@@ -363,10 +364,13 @@ class HoneywellBackend(Backend):
 
             if final_index > 0:
                 # only set batch fields if more than one job submitted
-                body["batch-exec"] = batch_exec
-                if i == final_index:
-                    # flag to signal end of batch
-                    body["batch-end"] = True
+                if (self._device_name != DEVICE_FAMILY) or ("max_batch_cost" in kwargs):
+                    # Don't set default batch fields if submitting to the device family
+                    body["batch-exec"] = batch_exec
+                    if i == final_index:
+                        # flag to signal end of batch
+                        body["batch-end"] = True
+
             if circ.n_gates_of_type(OpType.ZZPhase) > 0:
                 body["options"]["compiler-options"] = {"parametrized_zz": True}
             if self._api_handler is None:
