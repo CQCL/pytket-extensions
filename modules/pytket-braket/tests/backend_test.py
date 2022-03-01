@@ -122,9 +122,7 @@ def test_ionq() -> None:
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_rigetti() -> None:
     b = BraketBackend(
-        device_type="qpu",
-        provider="rigetti",
-        device="Aspen-M-1",
+        device_type="qpu", provider="rigetti", device="Aspen-M-1", region="us-west-1"
     )
     assert b.persistent_handles
     assert b.supports_shots
@@ -159,9 +157,7 @@ def test_rigetti() -> None:
 def test_rigetti_with_rerouting() -> None:
     # A circuit that requires rerouting to a non-fully-connected architecture
     b = BraketBackend(
-        device_type="qpu",
-        provider="rigetti",
-        device="Aspen-M-1",
+        device_type="qpu", provider="rigetti", device="Aspen-M-1", region="us-west-1"
     )
     c = Circuit(4).CX(0, 1).CX(0, 2).CX(0, 3).CX(1, 2).CX(1, 3).CX(2, 3)
     c = b.get_compiled_circuit(c)

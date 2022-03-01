@@ -1,6 +1,11 @@
 Changelog
 ~~~~~~~~~
 
+0.17.0 (unreleased)
+-------------------
+
+* Add optional "region" argument for initializing BraketBackend.
+
 0.16.0 (February 2022)
 ----------------------
 
