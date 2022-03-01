@@ -26,7 +26,7 @@ from pytket.passes import CliffordSimp  # type: ignore
 from pytket.pauli import Pauli, QubitPauliString  # type: ignore
 from pytket.predicates import CompilationUnit, NoMidMeasurePredicate  # type: ignore
 from pytket.architecture import Architecture  # type: ignore
-from pytket.mapping import MappingManager, LexiRouteRoutingMethod  # type: ignore
+from pytket.mapping import MappingManager, LexiLabellingMethod, LexiRouteRoutingMethod  # type: ignore
 from pytket.transform import Transform  # type: ignore
 from pytket.backends import (
     ResultHandle,
@@ -530,7 +530,7 @@ def test_routing_measurements() -> None:
     coupling = [[1, 0], [2, 0], [2, 1], [3, 2], [3, 4], [4, 2]]
     arc = Architecture(coupling)
     mm = MappingManager(arc)
-    mm.route_circuit(physical_c, [LexiRouteRoutingMethod()])
+    mm.route_circuit(physical_c, [LexiLabellingMethod(), LexiRouteRoutingMethod()])
     Transform.DecomposeSWAPtoCX().apply(physical_c)
     Transform.DecomposeCXDirected(arc).apply(physical_c)
     Transform.OptimisePostRouting().apply(physical_c)
