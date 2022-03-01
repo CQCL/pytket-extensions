@@ -1,16 +1,32 @@
 name: Build and test
 
 on:
+  pull_request:
+    branches:
+      - main
+      - develop
   push:
     branches:
+      - develop
+      - 'wheel/**'
       - test-macoshang
+  release:
+    types:
+      - created
+      - edited
+
+env:
+  IQSHARP_TELEMETRY_OPT_OUT: 1
 
 jobs:
 
   macos:
+    if: github.event_name != 'release'
     name: Build and test (MacOS)
     runs-on: macos-11
+
     steps:
+
     - uses: actions/checkout@v2
       with:
         fetch-depth: '0'
@@ -18,10 +34,21 @@ jobs:
     - name: Initialize modules list
       run: |
         echo "MODULES_TO_TEST=pytket-honeywell" >> $GITHUB_ENV
+
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.9'
+    - name: Build and test (3.9) + mypy
+      if: github.event_name == 'pull_request'
+      run: |
+        ./.github/workflows/build-test mypy
+
     - name: Set up Python 3.10
       uses: actions/setup-python@v2
       with:
         python-version: '3.10'
     - name: Build and test (3.10)
+      if: github.event_name == 'push' || github.event_name == 'pull_request'
       run: |
         ./.github/workflows/build-test nomypy
