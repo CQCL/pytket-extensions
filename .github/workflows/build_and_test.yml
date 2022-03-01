@@ -1,22 +1,9 @@
 name: Build and test
 
 on:
-  pull_request:
-    branches:
-      - main
-      - develop
   push:
     branches:
-      - develop
-      - 'wheel/**'
       - test-macoshang
-  release:
-    types:
-      - created
-      - edited
-
-env:
-  IQSHARP_TELEMETRY_OPT_OUT: 1
 
 jobs:
 
@@ -39,9 +26,9 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: '3.9'
-    - name: Build and test (3.9) + mypy
+    - name: Build and test (3.9)
       run: |
-        ./.github/workflows/build-test mypy
+        ./.github/workflows/build-test nomypy
 
     - name: Set up Python 3.10
       uses: actions/setup-python@v2
