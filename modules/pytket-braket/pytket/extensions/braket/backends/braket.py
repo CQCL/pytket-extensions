@@ -213,6 +213,7 @@ class BraketBackend(Backend):
         self,
         local: bool = False,
         device: Optional[str] = None,
+        region: str = "",
         s3_bucket: Optional[str] = None,
         s3_folder: Optional[str] = None,
         device_type: Optional[str] = None,
@@ -271,7 +272,9 @@ class BraketBackend(Backend):
             self._device_type = _DeviceType.LOCAL
         else:
             self._device = AwsDevice(
-                "arn:aws:braket:::"
+                "arn:aws:braket:"
+                + region
+                + "::"
                 + "/".join(
                     ["device", device_type, provider, device],
                 ),
