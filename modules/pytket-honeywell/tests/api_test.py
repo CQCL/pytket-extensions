@@ -13,7 +13,6 @@
 # limitations under the License.
 
 from typing import Tuple
-import pytest
 
 from requests_mock.mocker import Mocker
 
