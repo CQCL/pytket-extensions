@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# NB: This test has been placed in a separate file from api_test.py to work around an
+# issue on the MacOS CI, whereby pytest would hang indefinitely after the collection
+# phase.
+
 from typing import Optional
 import pytest
 
