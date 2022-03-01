@@ -68,15 +68,15 @@ def test_machine_status(
     mock_hqs_api_handler.delete_authentication()
 
 
-@pytest.mark.parametrize(
-    "chosen_device,max_batch_cost",
-    [("HQS-LT", 300), ("HQS-LT", None), ("HQS-LT-S1", 300), ("HQS-LT-S1", None)],
-)
+# @pytest.mark.parametrize(
+#     "chosen_device,max_batch_cost",
+#     [("HQS-LT", 300), ("HQS-LT", None), ("HQS-LT-S1", 300), ("HQS-LT-S1", None)],
+# )
 def test_device_family(
     requests_mock: Mocker,
     mock_hqs_api_handler: HoneywellQAPI,
-    chosen_device: str,
-    max_batch_cost: Optional[int],
+    # chosen_device: str,
+    # max_batch_cost: Optional[int],
 ) -> None:
     """Test that batch params are NOT supplied by default
     if we are submitting to a device family.
