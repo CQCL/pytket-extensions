@@ -216,6 +216,7 @@ def _tk_gate_set(backend: "QiskitBackend") -> Set[OpType]:
 
 def _qpo_from_peg(peg: PauliEvolutionGate, qubits: List[Qubit]) -> QubitPauliOperator:
     import numpy as np
+
     op = peg.operator
     qpodict = {}
     for p, c in zip(op.paulis, op.coeffs):
