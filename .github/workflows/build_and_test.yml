@@ -229,7 +229,7 @@ jobs:
     - name: Put them all in the dist folder
       run: |
         mkdir dist
-        for w in `find wheelhouse/ -type f -name "*.tar.gz"` ; do cp $w dist/ ; done
+        for w in `find wheelhouse/ -type f -name "*.whl"` ; do cp $w dist/ ; done
     - name: Publish wheels
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
@@ -257,7 +257,7 @@ jobs:
     - name: Install pip, wheel
       run: pip install -U pip wheel
     - name: Install extensions
-      run: for w in `find wheelhouse/ -type f -name "*.tar.gz"` ; do pip install $w ; done
+      run: for w in `find wheelhouse/ -type f -name "*.whl"` ; do pip install $w ; done
     - name: Install dotnet SDK
       uses: actions/setup-dotnet@v1
       with:
