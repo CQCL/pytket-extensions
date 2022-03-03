@@ -57,6 +57,15 @@ skip_remote_tests: bool = (
 )
 
 
+def test_convert_circuit_with_complex_params() -> None:
+    with pytest.raises(ValueError):
+        qiskit_op = PauliSumOp.from_list([("Z", 1j)])
+        evolved_op = qiskit_op.exp_i()
+        evolution_circ = PauliTrotterEvolution(reps=1).convert(evolved_op).to_circuit()
+        tk_circ = qiskit_to_tk(evolution_circ)
+        DecomposeBoxes().apply(tk_circ)
+
+
 def get_test_circuit(measure: bool, reset: bool = True) -> QuantumCircuit:
     qr = QuantumRegister(4)
     cr = ClassicalRegister(4)
