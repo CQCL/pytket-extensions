@@ -32,6 +32,9 @@ from typing import (
 )
 from inspect import signature
 from uuid import UUID
+
+import numpy as np
+
 import sympy  # type: ignore
 import qiskit.circuit.library.standard_gates as qiskit_gates  # type: ignore
 from qiskit import (
@@ -215,8 +218,6 @@ def _tk_gate_set(backend: "QiskitBackend") -> Set[OpType]:
 
 
 def _qpo_from_peg(peg: PauliEvolutionGate, qubits: List[Qubit]) -> QubitPauliOperator:
-    import numpy as np
-
     op = peg.operator
     qpodict = {}
     for p, c in zip(op.paulis, op.coeffs):
