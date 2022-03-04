@@ -50,7 +50,7 @@ def test_machine_status(
     machine_name = "HQS-LT-S1-APIVAL"
     mock_machine_state = "online"
 
-    mock_url = f"https://qapi.honeywell.com/v1/machine/{machine_name}"
+    mock_url = f"https://qapi.quantinuum.com/v1/machine/{machine_name}"
 
     requests_mock.register_uri(
         "GET",

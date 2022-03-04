@@ -56,7 +56,7 @@ class QuantinuumQAPI:
 
     JOB_DONE = ["failed", "completed", "canceled"]
 
-    DEFAULT_API_URL = "https://qapi.honeywell.com/"
+    DEFAULT_API_URL = "https://qapi.quantinuum.com/"
     DEFAULT_TIME_SAFETY = (
         60  # Default safety factor (in seconds) to token expiration before a refresh
     )
@@ -82,7 +82,7 @@ class QuantinuumQAPI:
             user_name (str): User e-mail used to register
             token (str): Token used to refresh id token
             api_url (str): Url of the Quantum API:
-             https://qapi.honeywell.com/
+             https://qapi.quantinuum.com/
             api_version (str): API version
             use_websocket (bool): Whether to default to using websockets
             to reduce traffic

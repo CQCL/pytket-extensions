@@ -44,14 +44,14 @@ def test_device_family(
 
     requests_mock.register_uri(
         "POST",
-        "https://qapi.honeywell.com/v1/job",
+        "https://qapi.quantinuum.com/v1/job",
         json={"job": fake_job_id},
         headers={"Content-Type": "application/json"},
     )
 
     requests_mock.register_uri(
         "GET",
-        f"https://qapi.honeywell.com/v1/job/{fake_job_id}?websocket=true",
+        f"https://qapi.quantinuum.com/v1/job/{fake_job_id}?websocket=true",
         json={"job": fake_job_id},
         headers={"Content-Type": "application/json"},
     )

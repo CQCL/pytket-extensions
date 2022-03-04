@@ -58,7 +58,7 @@ def fixture_mock_hqs_api_handler(
 
     username, pwd = mock_credentials
 
-    mock_url = "https://qapi.honeywell.com/v1/login"
+    mock_url = "https://qapi.quantinuum.com/v1/login"
 
     requests_mock.register_uri(
         "POST",
