@@ -14,7 +14,7 @@ and Windows. To install, run:
 ``pip install pytket-quantinuum``
 
 
-.. note::   Requires a `Honeywell Quantum Solutions <https://www.honeywell.com/en-us/company/quantum>`_ account.
+.. note::   Requires a `Quantinuum <https://www.quantinuum.com/>`_ account.
             When initialising the backend for the first time, you will be prompted for your username and password.
 
 .. toctree::
