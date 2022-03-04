@@ -203,13 +203,19 @@ def _obs_from_qpo(operator: QubitPauliOperator, n_qubits: int) -> Observable:
 def _get_result(
     completed_task: Union[AwsQuantumTask, LocalQuantumTask],
     want_state: bool,
+    want_dm: bool,
     ppcirc: Optional[Circuit] = None,
 ) -> Dict[str, BackendResult]:
     result = completed_task.result()
     kwargs = {}
-    if want_state:
-        kwargs["state"] = result.get_value_by_result_type(ResultType.StateVector())
+    if want_state or want_dm:
         assert ppcirc is None
+        if want_state:
+            kwargs["state"] = result.get_value_by_result_type(ResultType.StateVector())
+        if want_dm:
+            kwargs["density_matrix"] = result.get_value_by_result_type(
+                ResultType.DensityMatrix()
+            )
     else:
         kwargs["shots"] = OutcomeArray.from_readouts(result.measurements)
         kwargs["ppcirc"] = ppcirc
@@ -344,6 +350,9 @@ class BraketBackend(Backend):
             elif rtname == "Variance":
                 self._variance_min_shots = rtminshots
                 self._variance_max_shots = rtmaxshots
+            elif rtname == "DensityMatrix":
+                self._supports_density_matrix = True
+                # Always use n_shots = 0 for DensityMatrix
 
         self._singleqs, self._multiqs = self._get_gate_set(
             supported_ops, self._device_type
@@ -584,8 +593,9 @@ class BraketBackend(Backend):
 
     @property
     def _result_id_type(self) -> _ResultIdTuple:
-        # (task ID, whether state vector is wanted, serialized ppcirc or "null")
-        return (str, bool, str)
+        # (task ID, whether state vector / density matrix are wanted, serialized ppcirc
+        # or "null")
+        return (str, bool, bool, str)
 
     def _run(
         self, bkcirc: braket.circuits.Circuit, n_shots: int = 0, **kwargs: KwargTypes
@@ -639,7 +649,8 @@ class BraketBackend(Backend):
 
         handles = []
         for circ, n_shots in zip(circuits, n_shots_list):
-            want_state = n_shots == 0
+            want_state = (n_shots == 0) and self.supports_state
+            want_dm = (n_shots == 0) and self.supports_density_matrix
             if postprocess:
                 circ_measured = circ.copy()
                 circ_measured.measure_all()
@@ -650,6 +661,8 @@ class BraketBackend(Backend):
             bkcirc = self._to_bkcirc(c0)
             if want_state:
                 bkcirc.add_result_type(ResultType.StateVector())
+            if want_dm:
+                bkcirc.add_result_type(ResultType.DensityMatrix(target=bkcirc.qubits))
             if not bkcirc.instructions and len(circ.bits) == 0:
                 task = None
             else:
@@ -658,16 +671,18 @@ class BraketBackend(Backend):
                 # Results are available now. Put them in the cache.
                 if task is not None:
                     assert task.state() == "COMPLETED"
-                    results = _get_result(task, want_state, ppcirc)
+                    results = _get_result(task, want_state, want_dm, ppcirc)
                 else:
                     results = {"result": self.empty_result(circ, n_shots=n_shots)}
             else:
                 # Task is asynchronous. Must wait for results.
                 results = {}
             if task is not None:
-                handle = ResultHandle(task.id, want_state, json.dumps(ppcirc_rep))
+                handle = ResultHandle(
+                    task.id, want_state, want_dm, json.dumps(ppcirc_rep)
+                )
             else:
-                handle = ResultHandle(str(uuid4()), False, json.dumps(None))
+                handle = ResultHandle(str(uuid4()), False, False, json.dumps(None))
             self._cache[handle] = results
             handles.append(handle)
         return handles
@@ -683,7 +698,7 @@ class BraketBackend(Backend):
     def circuit_status(self, handle: ResultHandle) -> CircuitStatus:
         if self._device_type == _DeviceType.LOCAL:
             return CircuitStatus(StatusEnum.COMPLETED)
-        task_id, want_state, ppcirc_str = handle
+        task_id, want_state, want_dm, ppcirc_str = handle
         ppcirc_rep = json.loads(ppcirc_str)
         ppcirc = Circuit.from_dict(ppcirc_rep) if ppcirc_rep is not None else None
         task = AwsQuantumTask(task_id, aws_session=self._aws_session)
@@ -694,7 +709,9 @@ class BraketBackend(Backend):
         elif state == "CANCELLED":
             return CircuitStatus(StatusEnum.CANCELLED)
         elif state == "COMPLETED":
-            self._update_cache_result(handle, _get_result(task, want_state, ppcirc))
+            self._update_cache_result(
+                handle, _get_result(task, want_state, want_dm, ppcirc)
+            )
             return CircuitStatus(StatusEnum.COMPLETED)
         elif state == "QUEUED" or state == "CREATED":
             return CircuitStatus(StatusEnum.QUEUED)
