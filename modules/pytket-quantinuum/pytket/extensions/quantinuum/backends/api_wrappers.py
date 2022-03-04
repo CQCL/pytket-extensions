@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """"
-Functions used to submit jobs with Honeywell Quantum Solutions API.
+Functions used to submit jobs with Quantinuum Quantum Solutions API.
 
-Adapted from original file provided by Honeywell Quantum Solutions
+Adapted from original file provided by Quantinuum Quantum Solutions
 """
 
 import datetime
@@ -17,7 +17,7 @@ import requests
 from websockets import connect, exceptions  # type: ignore
 import nest_asyncio  # type: ignore
 
-from .config import HoneywellConfig
+from .config import QuantinuumConfig
 from .credential_storage import CredentialStorage, MemoryStorage, PersistentStorage
 
 # This is necessary for use in Jupyter notebooks to allow for nested asyncio loops
@@ -31,7 +31,7 @@ class HQSAPIError(Exception):
 class _OverrideManager:
     def __init__(
         self,
-        api_handler: "HoneywellQAPI",
+        api_handler: "QuantinuumQAPI",
         timeout: Optional[int] = None,
         retry_timeout: Optional[int] = None,
     ):
@@ -52,11 +52,11 @@ class _OverrideManager:
         self.api_handler.retry_timeout = self._orig_retry
 
 
-class HoneywellQAPI:
+class QuantinuumQAPI:
 
     JOB_DONE = ["failed", "completed", "canceled"]
 
-    DEFAULT_API_URL = "https://qapi.honeywell.com/"
+    DEFAULT_API_URL = "https://qapi.quantinuum.com/"
     DEFAULT_TIME_SAFETY = (
         60  # Default safety factor (in seconds) to token expiration before a refresh
     )
@@ -74,7 +74,7 @@ class HoneywellQAPI:
         persistent_credential: bool = True,
         __pwd: Optional[str] = None,
     ):
-        """Initialize and login to the Honeywell Quantum API interface
+        """Initialize and login to the Quantinuum Quantum API interface
 
         All arguments are optional
 
@@ -82,7 +82,7 @@ class HoneywellQAPI:
             user_name (str): User e-mail used to register
             token (str): Token used to refresh id token
             api_url (str): Url of the Quantum API:
-             https://qapi.honeywell.com/
+             https://qapi.quantinuum.com/
             api_version (str): API version
             use_websocket (bool): Whether to default to using websockets
             to reduce traffic
@@ -94,7 +94,7 @@ class HoneywellQAPI:
             __pwd (str): password for the service. For debugging purposes only,
             do not store password in source code.
         """
-        self.config = HoneywellConfig.from_default_config_file()
+        self.config = QuantinuumConfig.from_default_config_file()
 
         self.url = (
             f"{api_url}v{api_version}/"

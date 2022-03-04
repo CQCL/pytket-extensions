@@ -36,23 +36,26 @@ from pytket.circuit import (  # type: ignore
     reg_geq,
     if_not_bit,
 )
-from pytket.extensions.honeywell import HoneywellBackend
-from pytket.extensions.honeywell.backends.honeywell import (
+from pytket.extensions.quantinuum import QuantinuumBackend
+from pytket.extensions.quantinuum.backends.quantinuum import (
     GetResultFailed,
     _GATE_SET,
 )
-from pytket.extensions.honeywell import split_utf8
-from pytket.extensions.honeywell.backends.api_wrappers import HQSAPIError, HoneywellQAPI
+from pytket.extensions.quantinuum import split_utf8
+from pytket.extensions.quantinuum.backends.api_wrappers import (
+    HQSAPIError,
+    QuantinuumQAPI,
+)
 from pytket.backends.status import StatusEnum
 
 skip_remote_tests: bool = os.getenv("PYTKET_RUN_REMOTE_TESTS") is None
 REASON = (
-    "PYTKET_RUN_REMOTE_TESTS not set (requires configuration of Honeywell username)"
+    "PYTKET_RUN_REMOTE_TESTS not set (requires configuration of Quantinuum username)"
 )
 
 
-def test_honeywell() -> None:
-    backend = HoneywellBackend(
+def test_quantinuum() -> None:
+    backend = QuantinuumBackend(
         device_name="HQS-LT-S1-APIVAL", machine_debug=skip_remote_tests
     )
     c = Circuit(4, 4, "test 1")
@@ -87,7 +90,7 @@ def test_honeywell() -> None:
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_bell() -> None:
-    b = HoneywellBackend(device_name="HQS-LT-S1-APIVAL")
+    b = QuantinuumBackend(device_name="HQS-LT-S1-APIVAL")
     c = Circuit(2, 2, "test 2")
     c.H(0)
     c.CX(0, 1)
@@ -101,7 +104,7 @@ def test_bell() -> None:
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_multireg() -> None:
-    b = HoneywellBackend(device_name="HQS-LT-S1-APIVAL", label="test 3")
+    b = QuantinuumBackend(device_name="HQS-LT-S1-APIVAL", label="test 3")
     c = Circuit()
     q1 = Qubit("q1", 0)
     q2 = Qubit("q2", 0)
@@ -124,7 +127,7 @@ def test_multireg() -> None:
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_default_pass() -> None:
-    b = HoneywellBackend(device_name="HQS-LT-S1-APIVAL")
+    b = QuantinuumBackend(device_name="HQS-LT-S1-APIVAL")
     for ol in range(3):
         comp_pass = b.default_compilation_pass(ol)
         c = Circuit(3, 3)
@@ -140,7 +143,7 @@ def test_default_pass() -> None:
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_cancel() -> None:
-    b = HoneywellBackend(device_name="HQS-LT-S1-APIVAL", label="test cancel")
+    b = QuantinuumBackend(device_name="HQS-LT-S1-APIVAL", label="test cancel")
     c = Circuit(2, 2).H(0).CX(0, 1).measure_all()
     c = b.get_compiled_circuit(c)
     handle = b.process_circuit(c, 10)
@@ -197,7 +200,7 @@ def circuits(
 @settings(max_examples=5, deadline=None)
 def test_cost_estimate(c: Circuit, n_shots: int) -> None:
 
-    b = HoneywellBackend("HQS-LT-S1-APIVAL")
+    b = QuantinuumBackend("HQS-LT-S1-APIVAL")
     c = b.get_compiled_circuit(c)
     estimate = b.cost_estimate(c, n_shots)
     status = b.circuit_status(b.process_circuit(c, n_shots))
@@ -233,7 +236,7 @@ def test_classical() -> None:
     c.X(0, condition=reg_geq(a, 1))
     c.X(0, condition=reg_leq(a, 1))
 
-    b = HoneywellBackend("HQS-LT-S1-APIVAL")
+    b = QuantinuumBackend("HQS-LT-S1-APIVAL")
 
     c = b.get_compiled_circuit(c)
     assert b.run_circuit(c, n_shots=10).get_counts()
@@ -241,7 +244,7 @@ def test_classical() -> None:
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_postprocess() -> None:
-    b = HoneywellBackend("HQS-LT-S1-APIVAL")
+    b = QuantinuumBackend("HQS-LT-S1-APIVAL")
     assert b.supports_contextual_optimisation
     c = Circuit(2, 2)
     c.add_gate(OpType.PhasedX, [1, 1], [0])
@@ -265,12 +268,12 @@ def test_postprocess() -> None:
 )
 def test_shots_bits_edgecases(n_shots, n_bits) -> None:
 
-    honeywell_backend = HoneywellBackend("HQS-LT-S1-APIVAL", machine_debug=True)
+    quantinuum_backend = QuantinuumBackend("HQS-LT-S1-APIVAL", machine_debug=True)
     c = Circuit(n_bits, n_bits)
 
     # TODO TKET-813 add more shot based backends and move to integration tests
-    h = honeywell_backend.process_circuit(c, n_shots)
-    res = honeywell_backend.get_result(h)
+    h = quantinuum_backend.process_circuit(c, n_shots)
+    res = quantinuum_backend.get_result(h)
 
     correct_shots = np.zeros((n_shots, n_bits), dtype=int)
     correct_shape = (n_shots, n_bits)
@@ -281,7 +284,7 @@ def test_shots_bits_edgecases(n_shots, n_bits) -> None:
     assert res.get_counts() == correct_counts
 
     # Direct
-    res = honeywell_backend.run_circuit(c, n_shots=n_shots)
+    res = quantinuum_backend.run_circuit(c, n_shots=n_shots)
     assert np.array_equal(res.get_shots(), correct_shots)
     assert res.get_shots().shape == correct_shape
     assert res.get_counts() == correct_counts
@@ -301,8 +304,8 @@ def test_split_utf8(utf_str: str, chunksize: int) -> None:
 def test_simulator() -> None:
     circ = Circuit(2, name="sim_test").H(0).CX(0, 1).measure_all()
     n_shots = 1000
-    state_backend = HoneywellBackend("HQS-LT-S1-SIM")
-    stabilizer_backend = HoneywellBackend("HQS-LT-S1-SIM", simulator="stabilizer")
+    state_backend = QuantinuumBackend("HQS-LT-S1-SIM")
+    stabilizer_backend = QuantinuumBackend("HQS-LT-S1-SIM", simulator="stabilizer")
 
     circ = state_backend.get_compiled_circuit(circ)
 
@@ -338,17 +341,17 @@ def test_simulator() -> None:
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_retrieve_available_devices() -> None:
-    backend_infos = HoneywellBackend.available_devices()
+    backend_infos = QuantinuumBackend.available_devices()
     assert len(backend_infos) > 0
-    api_handler = HoneywellQAPI()
-    backend_infos = HoneywellBackend.available_devices(api_handler=api_handler)
+    api_handler = QuantinuumQAPI()
+    backend_infos = QuantinuumBackend.available_devices(api_handler=api_handler)
     assert len(backend_infos) > 0
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_batching() -> None:
     circ = Circuit(2, name="batching_test").H(0).CX(0, 1).measure_all()
-    state_backend = HoneywellBackend("HQS-LT-S1-SIM")
+    state_backend = QuantinuumBackend("HQS-LT-S1-SIM")
     circ = state_backend.get_compiled_circuit(circ)
 
     handles = state_backend.process_circuits([circ, circ], 10)
@@ -358,13 +361,13 @@ def test_batching() -> None:
 # hard to run as it involves removing credentials
 # def test_delete_authentication():
 #     print("first login")
-#     b = HoneywellBackend()
+#     b = QuantinuumBackend()
 #     print("delete login")
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_submission_with_group() -> None:
-    b = HoneywellBackend(device_name="HQS-LT-S1-APIVAL")
+    b = QuantinuumBackend(device_name="HQS-LT-S1-APIVAL")
     c = Circuit(2, 2, "test 2")
     c.H(0)
     c.CX(0, 1)
@@ -378,7 +381,7 @@ def test_submission_with_group() -> None:
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_zzphase() -> None:
-    backend = HoneywellBackend(
+    backend = QuantinuumBackend(
         device_name="HQS-LT-S1-APIVAL", machine_debug=skip_remote_tests
     )
     c = Circuit(2, 2, "test rzz")
@@ -393,7 +396,7 @@ def test_zzphase() -> None:
     assert c0.n_gates_of_type(OpType.ZZPhase) > 0
 
     # simulator does not yet support ZZPhase
-    backsim = HoneywellBackend(
+    backsim = QuantinuumBackend(
         device_name="HQS-LT-S1-SIM", machine_debug=skip_remote_tests
     )
     assert backsim.get_compiled_circuit(c, 0).n_gates_of_type(OpType.ZZPhase) == 0

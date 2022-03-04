@@ -1,0 +1,22 @@
+pytket-quantinuum
+==================================
+
+.. image:: CQCLogo.png
+   :width: 120px
+   :align: right
+
+``pytket-quantinuum`` is an extension to ``pytket`` that allows ``pytket`` circuits to
+be executed on Quantinuum's quantum devices.
+
+``pytket-quantinuum`` is available for Python 3.8, 3.9 and 3.10, on Linux, MacOS
+and Windows. To install, run:
+
+``pip install pytket-quantinuum``
+
+
+.. note::   Requires a `Quantinuum <https://www.quantinuum.com/>`_ account.
+            When initialising the backend for the first time, you will be prompted for your username and password.
+
+.. toctree::
+    api.rst
+    changelog.rst

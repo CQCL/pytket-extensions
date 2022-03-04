@@ -16,16 +16,16 @@ from typing import Tuple
 
 from requests_mock.mocker import Mocker
 
-from pytket.extensions.honeywell.backends.api_wrappers import HoneywellQAPI
+from pytket.extensions.quantinuum.backends.api_wrappers import QuantinuumQAPI
 
 
 def test_hqs_login(
-    mock_hqs_api_handler: HoneywellQAPI,
+    mock_hqs_api_handler: QuantinuumQAPI,
     mock_credentials: Tuple[str, str],
     mock_token: str,
 ) -> None:
     """Test that credentials are storable and deletable using
-    the HoneywellQAPI handler."""
+    the QuantinuumQAPI handler."""
 
     username, pwd = mock_credentials
 
@@ -43,14 +43,14 @@ def test_hqs_login(
 
 def test_machine_status(
     requests_mock: Mocker,
-    mock_hqs_api_handler: HoneywellQAPI,
+    mock_hqs_api_handler: QuantinuumQAPI,
 ) -> None:
-    """Test that we can retrieve the machine state via  Honeywell endpoint."""
+    """Test that we can retrieve the machine state via  Quantinuum endpoint."""
 
     machine_name = "HQS-LT-S1-APIVAL"
     mock_machine_state = "online"
 
-    mock_url = f"https://qapi.honeywell.com/v1/machine/{machine_name}"
+    mock_url = f"https://qapi.quantinuum.com/v1/machine/{machine_name}"
 
     requests_mock.register_uri(
         "GET",
