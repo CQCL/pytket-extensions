@@ -20,8 +20,8 @@ from _pytest.fixtures import SubRequest
 from requests_mock.mocker import Mocker
 import jwt
 
-from pytket.extensions.honeywell.backends.api_wrappers import HoneywellQAPI
-from pytket.extensions.honeywell.backends.credential_storage import (
+from pytket.extensions.quantinuum.backends.api_wrappers import QuantinuumQAPI
+from pytket.extensions.quantinuum.backends.credential_storage import (
     CredentialStorage,
     MemoryStorage,
     PersistentStorage,
@@ -30,7 +30,7 @@ from pytket.extensions.honeywell.backends.credential_storage import (
 
 @pytest.fixture()
 def mock_credentials() -> Tuple[str, str]:
-    username = "mark.honeywell@mail.com"
+    username = "mark.quantinuum@mail.com"
     pwd = "1906"
     return (username, pwd)
 
@@ -49,8 +49,8 @@ def fixture_mock_hqs_api_handler(
     requests_mock: Mocker,
     mock_credentials: Tuple[str, str],
     mock_token: str,
-) -> HoneywellQAPI:
-    """A logged-in HoneywellQAPI fixture.
+) -> QuantinuumQAPI:
+    """A logged-in QuantinuumQAPI fixture.
     After using this fixture in a test, call:
         mock_hqs_api_handler.delete_authentication()
     To remove mock tokens from the keyring.
@@ -83,8 +83,8 @@ def fixture_mock_hqs_api_handler(
         password=pwd,
     )
 
-    # Construct HoneywellQAPI and login
-    api_handler = HoneywellQAPI(
+    # Construct QuantinuumQAPI and login
+    api_handler = QuantinuumQAPI(
         persistent_credential=False,
         login=False,
     )

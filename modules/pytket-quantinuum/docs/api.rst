@@ -1,9 +1,9 @@
 API documentation
 ~~~~~~~~~~~~~~~~~
 
-.. automodule:: pytket.extensions.honeywell
+.. automodule:: pytket.extensions.quantinuum
     :special-members:
-    :members: HoneywellBackend
+    :members: QuantinuumBackend
 
-.. automodule:: pytket.extensions.honeywell.backends.config
+.. automodule:: pytket.extensions.quantinuum.backends.config
     :members:

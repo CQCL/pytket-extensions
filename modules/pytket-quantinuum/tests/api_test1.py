@@ -21,8 +21,8 @@ import pytest
 
 from requests_mock.mocker import Mocker
 
-from pytket.extensions.honeywell.backends.api_wrappers import HoneywellQAPI
-from pytket.extensions.honeywell.backends import HoneywellBackend
+from pytket.extensions.quantinuum.backends.api_wrappers import QuantinuumQAPI
+from pytket.extensions.quantinuum.backends import QuantinuumBackend
 from pytket.circuit import Circuit  # type: ignore
 
 
@@ -32,7 +32,7 @@ from pytket.circuit import Circuit  # type: ignore
 )
 def test_device_family(
     requests_mock: Mocker,
-    mock_hqs_api_handler: HoneywellQAPI,
+    mock_hqs_api_handler: QuantinuumQAPI,
     chosen_device: str,
     max_batch_cost: Optional[int],
 ) -> None:
@@ -56,7 +56,7 @@ def test_device_family(
         headers={"Content-Type": "application/json"},
     )
 
-    family_backend = HoneywellBackend(
+    family_backend = QuantinuumBackend(
         device_name=chosen_device,
         machine_debug=True,
     )

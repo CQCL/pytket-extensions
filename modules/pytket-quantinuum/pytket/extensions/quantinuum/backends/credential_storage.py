@@ -33,7 +33,7 @@ def split_utf8(s: str, n: int) -> Iterable[str]:
 
 
 class CredentialStorage(ABC):
-    """Abstract class for managing credentials and tokens for the Honeywell API."""
+    """Abstract class for managing credentials and tokens for the Quantinuum API."""
 
     @abstractmethod
     def save_login_credential(self, user_name: str, password: str) -> None:

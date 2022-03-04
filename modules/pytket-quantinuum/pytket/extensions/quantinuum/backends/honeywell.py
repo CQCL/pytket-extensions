@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Pytket Backend for Honeywell devices."""
+"""Pytket Backend for Quantinuum devices."""
 
 from ast import literal_eval
 import json
@@ -30,7 +30,7 @@ from pytket.backends.backendinfo import BackendInfo, fully_connected_backendinfo
 from pytket.backends.backendresult import BackendResult
 from pytket.backends.backend_exceptions import CircuitNotRunError
 from pytket.circuit import Circuit, OpType, Bit  # type: ignore
-from pytket.extensions.honeywell._metadata import __extension_version__
+from pytket.extensions.quantinuum._metadata import __extension_version__
 from pytket.qasm import circuit_to_qasm_str
 from pytket.passes import (  # type: ignore
     BasePass,
@@ -53,12 +53,12 @@ from pytket.predicates import (  # type: ignore
 from pytket.utils import prepare_circuit
 from pytket.utils.outcomearray import OutcomeArray
 
-from .config import set_honeywell_config
-from .api_wrappers import HQSAPIError, HoneywellQAPI
+from .config import set_quantinuum_config
+from .api_wrappers import HQSAPIError, QuantinuumQAPI
 from .credential_storage import PersistentStorage
 
 _DEBUG_HANDLE_PREFIX = "_MACHINE_DEBUG_"
-HONEYWELL_URL_PREFIX = "https://qapi.honeywell.com/"
+HONEYWELL_URL_PREFIX = "https://qapi.quantinuum.com/"
 DEVICE_FAMILY = "HQS-LT"
 
 _STATUS_MAP = {
@@ -97,9 +97,9 @@ class GetResultFailed(Exception):
     pass
 
 
-class HoneywellBackend(Backend):
+class QuantinuumBackend(Backend):
     """
-    Interface to a Honeywell device.
+    Interface to a Quantinuum device.
     """
 
     _supports_shots = True
@@ -115,7 +115,7 @@ class HoneywellBackend(Backend):
         simulator: str = "state-vector",
         machine_debug: bool = False,
     ):
-        """Construct a new Honeywell backend.
+        """Construct a new Quantinuum backend.
 
         :param device_name: Name of device, e.g. "HQS-LT-S1-APIVAL"
         :type device_name: str
@@ -136,7 +136,7 @@ class HoneywellBackend(Backend):
         if machine_debug:
             self._api_handler = None
         else:
-            self._api_handler = HoneywellQAPI(machine=device_name, login=login)
+            self._api_handler = QuantinuumQAPI(machine=device_name, login=login)
 
         self.simulator_type = simulator
         self._gate_set = _get_gateset(self._device_name)
@@ -154,20 +154,20 @@ class HoneywellBackend(Backend):
 
     @classmethod
     def _available_devices(
-        cls, _api_handler: Optional[HoneywellQAPI] = None
+        cls, _api_handler: Optional[QuantinuumQAPI] = None
     ) -> List[Dict[str, Any]]:
-        """List devices available from Honeywell.
+        """List devices available from Quantinuum.
 
-        >>> HoneywellBackend._available_devices()
+        >>> QuantinuumBackend._available_devices()
         e.g. [{'name': 'HQS-LT-1.0-APIVAL', 'n_qubits': 6}]
 
         :param _api_handler: Instance of API handler, defaults to None
-        :type _api_handler: Optional[HoneywellQAPI], optional
+        :type _api_handler: Optional[QuantinuumQAPI], optional
         :return: Dictionaries of machine name and number of qubits.
         :rtype: List[Dict[str, Any]]
         """
         if _api_handler is None:
-            _api_handler = HoneywellQAPI()
+            _api_handler = QuantinuumQAPI()
         id_token = _api_handler.login()
         res = requests.get(
             f"{_api_handler.url}machine/?config=true",
@@ -183,9 +183,9 @@ class HoneywellBackend(Backend):
         See :py:meth:`pytket.backends.Backend.available_devices`.
         Supported kwargs: `api_handler` (default none).
         """
-        api_handler: Optional[HoneywellQAPI] = kwargs.get("api_handler")
+        api_handler: Optional[QuantinuumQAPI] = kwargs.get("api_handler")
         if api_handler is None:
-            api_handler = HoneywellQAPI(login=False)
+            api_handler = QuantinuumQAPI(login=False)
         id_token = api_handler.login()
         res = requests.get(
             f"{api_handler.url}machine/?config=true",
@@ -220,22 +220,22 @@ class HoneywellBackend(Backend):
 
     @classmethod
     def device_state(
-        cls, device_name: str, _api_handler: Optional[HoneywellQAPI] = None
+        cls, device_name: str, _api_handler: Optional[QuantinuumQAPI] = None
     ) -> str:
         """Check the status of a device.
 
-        >>> HoneywellBackend.device_state('HQS-LT-1.0-APIVAL') # e.g. "online"
+        >>> QuantinuumBackend.device_state('HQS-LT-1.0-APIVAL') # e.g. "online"
 
 
         :param device_name: Name of the device.
         :type device_name: str
         :param _api_handler: Instance of API handler, defaults to None
-        :type _api_handler: Optional[HoneywellQAPI], optional
+        :type _api_handler: Optional[QuantinuumQAPI], optional
         :return: String of state, e.g. "online"
         :rtype: str
         """
         if _api_handler is None:
-            _api_handler = HoneywellQAPI()
+            _api_handler = QuantinuumQAPI()
 
         res = requests.get(
             f"{_api_handler.url}machine/{device_name}",
@@ -356,10 +356,10 @@ class HoneywellBackend(Backend):
                 ppcirc_rep = ppcirc.to_dict()
             else:
                 c0, ppcirc_rep = circ, None
-            honeywell_circ = circuit_to_qasm_str(c0, header="hqslib1")
+            quantinuum_circ = circuit_to_qasm_str(c0, header="hqslib1")
             body = basebody.copy()
             body["name"] = circ.name if circ.name else f"{self._label}_{i}"
-            body["program"] = honeywell_circ
+            body["program"] = quantinuum_circ
             body["count"] = n_shots
 
             if final_index > 0 and (
@@ -543,13 +543,13 @@ class HoneywellBackend(Backend):
         return cost
 
     def delete_authentication(self) -> None:
-        """Remove stored Honeywell Credentials, you will need to log in again."""
+        """Remove stored Quantinuum Credentials, you will need to log in again."""
 
         if self._api_handler is not None:
             self._api_handler.delete_authentication()
 
     def relogin(self) -> None:
-        """Remove stored Honeywell Credentials, and ask for credentials again."""
+        """Remove stored Quantinuum Credentials, and ask for credentials again."""
 
         if self._api_handler is not None:
             self.delete_authentication()
@@ -564,14 +564,14 @@ class HoneywellBackend(Backend):
 
         This is not advised, providing your credentials when prompted is more secure.
         """
-        set_honeywell_config(user_name)
+        set_quantinuum_config(user_name)
 
         keyring.set_password(PersistentStorage.KEYRING_SERVICE, user_name, pwd)  # type: ignore
 
     @staticmethod
     def clear_saved_login(user_name: str) -> None:
         """Delete saved password for user_name if it exists"""
-        set_honeywell_config(None)
+        set_quantinuum_config(None)
         try:
             keyring.delete_password(PersistentStorage.KEYRING_SERVICE, user_name)  # type: ignore
         except keyring.errors.PasswordDeleteError:
@@ -621,7 +621,7 @@ def _parse_status(response: Dict) -> CircuitStatus:
     return CircuitStatus(_STATUS_MAP[h_status], message)
 
 
-def _submit_job(api_handler: HoneywellQAPI, body: Dict) -> Response:
+def _submit_job(api_handler: QuantinuumQAPI, body: Dict) -> Response:
     id_token = api_handler.login()
     # send job request
     return requests.post(
