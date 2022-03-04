@@ -20,10 +20,8 @@ from typing import Dict, List, Set, Optional, Sequence, Union, Any, cast
 
 import numpy as np
 import requests
-import keyring  # type: ignore
 
 from pytket.backends import Backend, ResultHandle, CircuitStatus, StatusEnum
-from requests.models import Response
 from pytket.backends.backend import KwargTypes
 from pytket.backends.resulthandle import _ResultIdTuple
 from pytket.backends.backendinfo import BackendInfo, fully_connected_backendinfo
@@ -53,9 +51,7 @@ from pytket.predicates import (  # type: ignore
 from pytket.utils import prepare_circuit
 from pytket.utils.outcomearray import OutcomeArray
 
-from .config import set_quantinuum_config
 from .api_wrappers import HQSAPIError, QuantinuumQAPI
-from .credential_storage import PersistentStorage
 
 _DEBUG_HANDLE_PREFIX = "_MACHINE_DEBUG_"
 HONEYWELL_URL_PREFIX = "https://qapi.quantinuum.com/"
@@ -107,11 +103,14 @@ class QuantinuumBackend(Backend):
     _supports_contextual_optimisation = True
     _persistent_handles = True
 
+    # class variable to allow "global" login
+    # all instances share authenticated credentials
+    _api_handler: QuantinuumQAPI = QuantinuumQAPI()
+
     def __init__(
         self,
         device_name: str,
         label: Optional[str] = "job",
-        login: bool = True,
         simulator: str = "state-vector",
         machine_debug: bool = False,
     ):
@@ -121,8 +120,6 @@ class QuantinuumBackend(Backend):
         :type device_name: str
         :param label: Job labels used if Circuits have no name, defaults to "job"
         :type label: Optional[str], optional
-        :param login: Flag to attempt login on construction, defaults to True
-        :type login: bool, optional
         :param simulator: Only applies to simulator devices, options are
             "state-vector" or "stabilizer", defaults to "state-vector"
         :type simulator: str, optional
@@ -133,24 +130,10 @@ class QuantinuumBackend(Backend):
         self._label = label
 
         self._backend_info: Optional[BackendInfo] = None
-        if machine_debug:
-            self._api_handler = None
-        else:
-            self._api_handler = QuantinuumQAPI(machine=device_name, login=login)
+        self._MACHINE_DEBUG = machine_debug
 
         self.simulator_type = simulator
         self._gate_set = _get_gateset(self._device_name)
-
-    @property
-    def _MACHINE_DEBUG(self) -> bool:
-        return self._api_handler is None
-
-    @_MACHINE_DEBUG.setter
-    def _MACHINE_DEBUG(self, val: bool) -> None:
-        if val:
-            self._api_handler = None
-        elif self._api_handler is None:
-            raise RuntimeError("_MACHINE_DEBUG cannot be False with no _api_handler.")
 
     @classmethod
     def _available_devices(
@@ -166,8 +149,7 @@ class QuantinuumBackend(Backend):
         :return: Dictionaries of machine name and number of qubits.
         :rtype: List[Dict[str, Any]]
         """
-        if _api_handler is None:
-            _api_handler = QuantinuumQAPI()
+        _api_handler = _api_handler or cls._api_handler
         id_token = _api_handler.login()
         res = requests.get(
             f"{_api_handler.url}machine/?config=true",
@@ -183,9 +165,7 @@ class QuantinuumBackend(Backend):
         See :py:meth:`pytket.backends.Backend.available_devices`.
         Supported kwargs: `api_handler` (default none).
         """
-        api_handler: Optional[QuantinuumQAPI] = kwargs.get("api_handler")
-        if api_handler is None:
-            api_handler = QuantinuumQAPI(login=False)
+        api_handler = kwargs.get("api_handler", cls._api_handler)
         id_token = api_handler.login()
         res = requests.get(
             f"{api_handler.url}machine/?config=true",
@@ -234,8 +214,7 @@ class QuantinuumBackend(Backend):
         :return: String of state, e.g. "online"
         :rtype: str
         """
-        if _api_handler is None:
-            _api_handler = QuantinuumQAPI()
+        _api_handler = _api_handler or cls._api_handler
 
         res = requests.get(
             f"{_api_handler.url}machine/{device_name}",
@@ -375,7 +354,7 @@ class QuantinuumBackend(Backend):
 
             if circ.n_gates_of_type(OpType.ZZPhase) > 0:
                 body["options"]["compiler-options"] = {"parametrized_zz": True}
-            if self._api_handler is None:
+            if self._MACHINE_DEBUG:
                 handle_list.append(
                     ResultHandle(
                         _DEBUG_HANDLE_PREFIX + str((circ.n_qubits, n_shots)),
@@ -384,10 +363,7 @@ class QuantinuumBackend(Backend):
                 )
             else:
                 try:
-                    res = _submit_job(self._api_handler, body)
-                    if res.status_code != HTTPStatus.OK:
-                        self.relogin()
-                        res = _submit_job(self._api_handler, body)
+                    res = self._api_handler._submit_job(body)
 
                     jobdict = res.json()
                     if res.status_code != HTTPStatus.OK:
@@ -419,12 +395,7 @@ class QuantinuumBackend(Backend):
             raise RuntimeError("API handler not set")
         with self._api_handler.override_timeouts(timeout=timeout, retry_timeout=wait):
             # set and unset optional timeout parameters
-
-            try:
-                job_dict = self._api_handler.retrieve_job(jobid, use_websocket=True)
-            except HQSAPIError:
-                self.relogin()
-                job_dict = self._api_handler.retrieve_job(jobid, use_websocket=True)
+            job_dict = self._api_handler.retrieve_job(jobid, use_websocket=True)
 
         if job_dict is None:
             raise RuntimeError(f"Unable to retrieve job {jobid}")
@@ -446,13 +417,13 @@ class QuantinuumBackend(Backend):
     def circuit_status(self, handle: ResultHandle) -> CircuitStatus:
         self._check_handle_type(handle)
         jobid = str(handle[0])
-        if self._api_handler is None or jobid.startswith(_DEBUG_HANDLE_PREFIX):
+        if self._MACHINE_DEBUG or jobid.startswith(_DEBUG_HANDLE_PREFIX):
             return CircuitStatus(StatusEnum.COMPLETED)
         # TODO check queue position and add to message
         try:
             response = self._api_handler.retrieve_job_status(jobid, use_websocket=True)
         except HQSAPIError:
-            self.relogin()
+            self._api_handler.login()
             response = self._api_handler.retrieve_job_status(jobid, use_websocket=True)
 
         if response is None:
@@ -542,40 +513,21 @@ class QuantinuumBackend(Backend):
         cost: float = 5 + (n_1q + 10 * n_2q + 5 * n_m) * n_shots / 5000
         return cost
 
-    def delete_authentication(self) -> None:
-        """Remove stored Quantinuum Credentials, you will need to log in again."""
-
-        if self._api_handler is not None:
-            self._api_handler.delete_authentication()
-
-    def relogin(self) -> None:
-        """Remove stored Quantinuum Credentials, and ask for credentials again."""
-
-        if self._api_handler is not None:
-            self.delete_authentication()
-            self._api_handler.login()
-
-    @staticmethod
-    def save_login(user_name: str, pwd: str) -> None:
-        """NOT RECOMMENDED
-
-        Use this method to (somewhat) securely store your password on your system so you
-        don't have to login frequently. This uses the keyring package.
-
-        This is not advised, providing your credentials when prompted is more secure.
+    @classmethod
+    def login(cls) -> None:
+        """Log in to Quantinuum API. Requests username and password from stdin
+        (e.g. shell input or dialogue box in Jupytet notebooks.). Passwords are
+        not stored.
+        After log in you should not need to provide credentials again while that
+        session (script/notebook) is alive.
         """
-        set_quantinuum_config(user_name)
+        cls._api_handler.full_login()
 
-        keyring.set_password(PersistentStorage.KEYRING_SERVICE, user_name, pwd)  # type: ignore
-
-    @staticmethod
-    def clear_saved_login(user_name: str) -> None:
-        """Delete saved password for user_name if it exists"""
-        set_quantinuum_config(None)
-        try:
-            keyring.delete_password(PersistentStorage.KEYRING_SERVICE, user_name)  # type: ignore
-        except keyring.errors.PasswordDeleteError:
-            raise ValueError(f"No credentials stored for {user_name}")
+    @classmethod
+    def logout(cls) -> None:
+        """Clear stored JWT tokens from login. Will need to `login` again to
+        make API calls."""
+        cls._api_handler.delete_authentication()
 
 
 _xcirc = Circuit(1).add_gate(OpType.PhasedX, [1, 0], [0])
@@ -619,13 +571,3 @@ def _parse_status(response: Dict) -> CircuitStatus:
     }
     message = str(msgdict)
     return CircuitStatus(_STATUS_MAP[h_status], message)
-
-
-def _submit_job(api_handler: QuantinuumQAPI, body: Dict) -> Response:
-    id_token = api_handler.login()
-    # send job request
-    return requests.post(
-        f"{api_handler.url}job",
-        json.dumps(body),
-        headers={"Authorization": id_token},
-    )

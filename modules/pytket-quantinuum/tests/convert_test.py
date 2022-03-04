@@ -25,7 +25,7 @@ def test_convert() -> None:
     circ.add_barrier([2])
     circ.measure_all()
 
-    QuantinuumBackend("", login=False, machine_debug=True).rebase_pass().apply(circ)
+    QuantinuumBackend("", machine_debug=True).rebase_pass().apply(circ)
     circ_quum = circuit_to_qasm_str(circ, header="hqslib1")
     qasm_str = circ_quum.split("\n")[6:-1]
     assert all(
@@ -42,7 +42,7 @@ def test_convert_rzz() -> None:
     circ.add_gate(OpType.ZZMax, [2, 3])
     circ.measure_all()
 
-    QuantinuumBackend("", login=False, machine_debug=True).rebase_pass().apply(circ)
+    QuantinuumBackend("", machine_debug=True).rebase_pass().apply(circ)
     circ_quum = circuit_to_qasm_str(circ, header="hqslib1")
     qasm_str = circ_quum.split("\n")[6:-1]
     assert all(

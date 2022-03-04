@@ -15,7 +15,7 @@ and Windows. To install, run:
 
 
 .. note::   Requires a `Quantinuum <https://www.quantinuum.com/>`_ account.
-            When initialising the backend for the first time, you will be prompted for your username and password.
+            Use ``QuantinuumBackend.login()`` to log in using your email and password.
 
 .. toctree::
     api.rst

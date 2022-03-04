@@ -16,4 +16,3 @@
 """
 
 from .quantinuum import QuantinuumBackend
-from .credential_storage import split_utf8

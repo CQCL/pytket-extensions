@@ -5,20 +5,19 @@ Functions used to submit jobs with Quantinuum Quantum Solutions API.
 Adapted from original file provided by Quantinuum Quantum Solutions
 """
 
-import datetime
 import time
 from http import HTTPStatus
-from typing import Optional, Dict, Any, Tuple
+from typing import Optional, Dict, Tuple
 import asyncio
 import json
 import getpass
-import jwt
 import requests
+from requests.models import Response
 from websockets import connect, exceptions  # type: ignore
 import nest_asyncio  # type: ignore
 
 from .config import QuantinuumConfig
-from .credential_storage import CredentialStorage, MemoryStorage, PersistentStorage
+from .credential_storage import MemoryCredentialStorage
 
 # This is necessary for use in Jupyter notebooks to allow for nested asyncio loops
 nest_asyncio.apply()
@@ -57,81 +56,74 @@ class QuantinuumQAPI:
     JOB_DONE = ["failed", "completed", "canceled"]
 
     DEFAULT_API_URL = "https://qapi.quantinuum.com/"
-    DEFAULT_TIME_SAFETY = (
-        60  # Default safety factor (in seconds) to token expiration before a refresh
-    )
 
     def __init__(
         self,
-        user_name: Optional[str] = None,
-        token: Optional[str] = None,
-        machine: Optional[str] = None,
+        token_store: MemoryCredentialStorage = MemoryCredentialStorage(),
         api_url: Optional[str] = None,
         api_version: int = 1,
         use_websocket: bool = True,
-        time_safety: Optional[int] = None,
-        login: bool = True,
-        persistent_credential: bool = True,
+        __user_name: Optional[str] = None,
         __pwd: Optional[str] = None,
     ):
-        """Initialize and login to the Quantinuum Quantum API interface
+        """Initialize Qunatinuum API client.
 
-        All arguments are optional
-
-        Arguments:
-            user_name (str): User e-mail used to register
-            token (str): Token used to refresh id token
-            api_url (str): Url of the Quantum API:
-             https://qapi.quantinuum.com/
-            api_version (str): API version
-            use_websocket (bool): Whether to default to using websockets
-            to reduce traffic
-            time_safety (int): seconds before token expiration within which
-            to refresh tokens
-            login (bool): attempt to login during initialiasation
-            persistent_credential (bool): use keyring to store credentials
-            (instead of memory)
-            __pwd (str): password for the service. For debugging purposes only,
-            do not store password in source code.
+        :param token_store: JWT Token store, defaults to MemoryCredentialStorage()
+        :type token_store: MemoryCredentialStorage, optional
+        :param machine: Name of target, defaults to None
+        :type machine: Optional[str], optional
+        :param api_url: _description_, defaults to DEFAULT_API_URL
+        :type api_url: Optional[str], optional
+        :param api_version: API version, defaults to 1
+        :type api_version: int, optional
+        :param use_websocket: Whether to use websocket to retrieve, defaults to True
+        :type use_websocket: bool, optional
         """
         self.config = QuantinuumConfig.from_default_config_file()
 
-        self.url = (
-            f"{api_url}v{api_version}/"
-            if api_url
-            else f"{self.DEFAULT_API_URL}v{api_version}/"
-        )
-        self._cred_store: CredentialStorage = (
-            MemoryStorage() if not persistent_credential else PersistentStorage()
-        )
-        self.user_name = user_name if user_name else self.config.username
-        if self.user_name is not None and __pwd is not None:
-            self._cred_store.save_login_credential(self.user_name, __pwd)
+        self.url = f"{api_url if api_url else self.DEFAULT_API_URL}v{api_version}/"
 
-        refresh_token = token if token else self._cred_store.refresh_token
-        if refresh_token is not None:
-            self._cred_store.save_refresh_token(refresh_token)
+        self._cred_store = token_store
+        if __user_name is not None:
+            self.config.username = __user_name
+        if self.config.username is not None and __pwd is not None:
+            self._cred_store._save_login_credential(self.config.username, __pwd)
 
         self.api_version = api_version
-        self.machine = machine
         self.use_websocket = use_websocket
-        self.time_safety_factor = (
-            time_safety if time_safety else self.DEFAULT_TIME_SAFETY
-        )
+
         self.ws_timeout = 180
         self.retry_timeout = 5
         self.timeout: Optional[int] = None  # don't timeout by default
-
-        if login:
-            self.login()
 
     def override_timeouts(
         self, timeout: Optional[int] = None, retry_timeout: Optional[int] = None
     ) -> _OverrideManager:
         return _OverrideManager(self, timeout=timeout, retry_timeout=retry_timeout)
 
-    def _request_tokens(self, body: dict) -> Tuple[Optional[int], Optional[Any]]:
+    def _request_tokens(self, user: str, pwd: str) -> None:
         """Method to send login request to machine api and save tokens."""
+        body = {"email": user, "password": pwd}
+        try:
+            # send request to login
+            response = requests.post(
+                f"{self.url}login",
+                json.dumps(body),
+            )
+            self._response_check(response, "Login")
+            resp_dict = response.json()
+            self._cred_store.save_tokens(
+                resp_dict["id-token"], resp_dict["refresh-token"]
+            )
+
+        finally:
+            del user
+            del pwd
+            del body
+
+    def _refresh_id_token(self, refresh_token: str) -> None:
+        """Method to refresh ID token using a refresh token."""
+        body = {"refresh-token": refresh_token}
         try:
             # send request to login
             response = requests.post(
@@ -139,226 +131,80 @@ class QuantinuumQAPI:
                 json.dumps(body),
             )
 
-            # reset body to delete credentials
-            body = {}
+            message = response.json()
 
-            if response.status_code != HTTPStatus.OK:
-                return response.status_code, response.json()
+            if (
+                response.status_code == HTTPStatus.BAD_REQUEST
+                and message is not None
+                and "Invalid Refresh Token" in message["error"]["text"]
+            ):
+                # ask user for credentials to login again
+                self.full_login()
 
             else:
-                print("***Successfully logged in***")
+                self._response_check(response, "Token Refresh")
                 self._cred_store.save_tokens(
-                    response.json()["id-token"], response.json()["refresh-token"]
+                    message["id-token"], message["refresh-token"]
                 )
-                return response.status_code, None
 
-        except requests.exceptions.RequestException as e:
-            print(e)
-            return None, None
+        finally:
+            del refresh_token
+            del body
 
     def _get_credentials(self) -> Tuple[str, str]:
         """Method to ask for user's credentials"""
-        if self.config.username is not None:
-            pwd = self._cred_store.login_credential(self.config.username)  # type: ignore
-            if pwd:
-                self.user_name = self.config.username
-                return self.user_name, pwd
+        user_name = self._cred_store._user_name or self.config.username
+        if not user_name:
+            user_name = input("Enter your Quantinuum email: ")
+        pwd = self._cred_store._password
 
-        if not self.user_name:
-            user_name = input("Enter your email: ")
-            self.user_name = user_name
-
-        pwd = self._cred_store.login_credential(self.user_name)
         if not pwd:
-            pwd = getpass.getpass(prompt="Enter your password: ")
-            self._cred_store.save_login_credential(self.user_name, pwd)
-        return self.user_name, pwd
+            pwd = getpass.getpass(prompt="Enter your Quantinuum password: ")
 
-    def _authenticate(
-        self,
-        action: Optional[str] = None,
-        __user_name: Optional[str] = None,
-        __pwd: Optional[str] = None,
-    ) -> None:
-        """This method makes requests to refresh or get new id-token.
-        If a token refresh fails due to token being expired, credentials
-        get requested from user.
+        return user_name, pwd
 
-        The __user_name and __pwd parameters are there for debugging
-        purposes only, do not include your credentials in source code.
-        """
-        # login body
-        body = {}
-
-        if action == "refresh":
-            body["refresh-token"] = self._cred_store.refresh_token
-        else:
-            # ask user for crendentials before making login request
-            user_name: Optional[str]
-            pwd: Optional[str]
-            if __user_name and __pwd:
-                user_name = __user_name
-                pwd = __pwd
-            else:
-                user_name, pwd = self._get_credentials()
-            body["email"] = user_name
-            body["password"] = pwd
-
-            # clear credentials
-            user_name = None
-            pwd = None
-
-        # send login request to API
-        status_code, message = self._request_tokens(body)
-
-        body = {}
-
-        if status_code != HTTPStatus.OK:
-            # check if we got an error because refresh token has expired
-            if status_code == HTTPStatus.BAD_REQUEST:
-                if message is not None:
-                    if "Invalid Refresh Token" in message["error"]["text"]:
-                        # ask user for credentials to login again
-                        user_name, pwd = self._get_credentials()
-                        body["email"] = user_name
-                        body["password"] = pwd
-
-                        # send login request to API
-                        status_code, message = self._request_tokens(body)
-                else:
-                    raise HQSAPIError("No message with BAD_REQUEST")
-
-        if status_code != HTTPStatus.OK:
-            raise HQSAPIError(
-                "HTTP error while logging in: "
-                f"{status_code} {'' if message is None else message}"
-            )
+    def full_login(self) -> None:
+        """Ask for user credentials from std input and update JWT tokens"""
+        self._request_tokens(*self._get_credentials())
 
     def login(self) -> str:
         """This methods checks if we have a valid (non-expired) id-token
         and returns it, otherwise it gets a new one with refresh-token.
         If refresh-token doesn't exist, it asks user for credentials.
         """
+        # check if refresh_token exists
+        refresh_token = self._cred_store.refresh_token
+        if refresh_token is None:
+            self.full_login()
+            refresh_token = self._cred_store.refresh_token
+
+        if refresh_token is None:
+            raise HQSAPIError("Unable to retrieve refresh token or authenticate.")
+
         # check if id_token exists
         id_token = self._cred_store.id_token
         if id_token is None:
-            # authenticate against '/login' endpoint
-            self._authenticate()
-
-            # get id_token
+            self._refresh_id_token(refresh_token)
             id_token = self._cred_store.id_token
+
         if id_token is None:
-            raise HQSAPIError("Unable to retrieve id token.")
-        # check id_token is not expired yet
-        expiration_date = jwt.decode(id_token, verify=False)["exp"]
-        if expiration_date < (
-            datetime.datetime.now().timestamp() - self.time_safety_factor
-        ):
-            print("Your id token is expired. Refreshing...")
+            raise HQSAPIError("Unable to retrieve id token or refresh or login.")
 
-            # get refresh_token
-            refresh_token = self._cred_store.refresh_token
-            if refresh_token is not None:
-                self._authenticate("refresh")
-            else:
-                self._authenticate()
-
-            # get id_token
-            id_token = self._cred_store.id_token
-
-        return id_token  # type: ignore
+        return id_token
 
     def delete_authentication(self) -> None:
         """Remove stored credentials and tokens"""
-        if self.user_name:
-            self._cred_store.delete_login_credential(self.user_name)
+        self._cred_store._delete_login_credential()
         self._cred_store.delete_tokens()
 
-    def recent_jobs(
-        self,
-        start: Optional[str] = None,
-        end: Optional[str] = None,
-        days: Optional[int] = None,
-        jobs: Optional[int] = None,
-    ) -> Any:
+    def _submit_job(self, body: Dict) -> Response:
         id_token = self.login()
-        if start is not None and end is not None:
-            res = requests.get(
-                f"{self.url}metering?start={start}&end={end}",
-                headers={"Authorization": id_token},
-            )
-            self._response_check(res, f"metering between {start} and {end}")
-            return res.json()
-        elif days is not None:
-            res = requests.get(
-                f"{self.url}metering?days={days}", headers={"Authorization": id_token}
-            )
-            self._response_check(res, f"metering of last {days} days")
-            return res.json()
-        elif jobs is not None:
-            res = requests.get(
-                f"{self.url}metering?jobs={jobs}", headers={"Authorization": id_token}
-            )
-            self._response_check(res, f"metering of last {jobs} jobs")
-            return res.json()
-        else:
-            raise ValueError("Need more information to make a metering request")
-
-    def submit_job(
-        self,
-        qasm_str: str,
-        shots: Optional[int] = None,
-        machine: Optional[str] = None,
-        name: str = "job",
-        group: Optional[str] = None,
-    ) -> str:
-        """
-        Submits job to device and returns job ID.
-
-        Args:
-            qasm_str:   OpenQASM file to run
-            shots:      number of repetitions of qasm_str
-            machine:    machine to run on
-            name:       name of job (for error handling)
-            group:      identifier of a collection of jobs, can be used for usage
-                        tracking.
-
-        Returns:
-            (str):     id of job submitted
-
-        """
-        try:
-            if not machine and not self.machine:
-                raise ValueError("Must provide valid machine name")
-            # send job request
-            body = {
-                "machine": machine if machine else self.machine,
-                "name": name,
-                "language": "OPENQASM 2.0",
-                "program": qasm_str,
-                "priority": "normal",
-                "count": shots,
-                "options": None,
-            }
-            if group is not None:
-                body["group"] = group
-            id_token = self.login()
-            res = requests.post(
-                f"{self.url}job", json.dumps(body), headers={"Authorization": id_token}
-            )
-            self._response_check(res, "job submission")
-
-            # extract job ID from response
-            jr = res.json()
-            job_id: str = str(jr["job"])
-            print(
-                f"submitted {name} id={{job}}, submit date={{submit-date}}".format(**jr)
-            )
-
-        except ConnectionError as e:
-            raise e
-
-        return job_id
+        # send job request
+        return requests.post(
+            f"{self.url}job",
+            json.dumps(body),
+            headers={"Authorization": id_token},
+        )
 
     def _response_check(self, res: requests.Response, description: str) -> None:
         """Consolidate as much error-checking of response"""
@@ -503,42 +349,7 @@ class QuantinuumQAPI:
                         except KeyboardInterrupt:
                             raise RuntimeError("Keyboard Interrupted")
 
-    def run_job(
-        self,
-        qasm_str: str,
-        shots: int,
-        machine: str,
-        name: str = "job",
-        group: Optional[str] = None,
-    ) -> Optional[Dict]:
-        """
-        Submits a job and waits to receives job result dictionary.
-
-        Args:
-            qasm_file:  OpenQASM file to run
-            name:       name of job (for error handling)
-            shots:      number of repetitions of qasm_str
-            machine:    machine to run on
-            group:      identifier of a collection of jobs, can be used for usage
-                        tracking.
-
-        Returns:
-            jr:         (dict) output from API
-
-        """
-        job_id = self.submit_job(
-            qasm_str=qasm_str,
-            shots=shots,
-            machine=machine,
-            name=name,
-            group=group,
-        )
-
-        jr = self.retrieve_job(job_id)
-
-        return jr
-
-    def status(self, machine: Optional[str] = None) -> str:
+    def status(self, machine: str) -> str:
         """
         Check status of machine.
 
@@ -548,7 +359,7 @@ class QuantinuumQAPI:
         """
         id_token = self.login()
         res = requests.get(
-            f"{self.url}machine/{machine if machine else self.machine}",
+            f"{self.url}machine/{machine}",
             headers={"Authorization": id_token},
         )
         self._response_check(res, "get machine status")
