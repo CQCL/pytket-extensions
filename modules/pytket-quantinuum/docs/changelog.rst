@@ -6,6 +6,7 @@ Changelog
 
 * Module renamed from "pytket.extensions.honeywell" to
   "pytket.extensions.quantinumm", with corresponding name changes throughout.
+* Simplify authentication: use ``QuantinuumBackend.login()`` to log in once per session.
 
 Old changelog for "pytket-honeywell":
 

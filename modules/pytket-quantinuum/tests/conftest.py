@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sys
+import os
 from typing import Tuple
 
 import pytest
@@ -22,10 +22,10 @@ import jwt
 
 from pytket.extensions.quantinuum.backends.api_wrappers import QuantinuumQAPI
 from pytket.extensions.quantinuum.backends.credential_storage import (
-    CredentialStorage,
-    MemoryStorage,
-    PersistentStorage,
+    MemoryCredentialStorage,
 )
+
+skip_remote_tests: bool = os.getenv("PYTKET_RUN_REMOTE_TESTS") is None
 
 
 @pytest.fixture()
@@ -70,27 +70,17 @@ def fixture_mock_quum_api_handler(
         headers={"Content-Type": "application/json"},
     )
 
-    cred_store: CredentialStorage
-    # Skip testing keyring service if running on linux
-    if request.param and sys.platform != "linux":
-        cred_store = PersistentStorage()
-        cred_store.KEYRING_SERVICE = "HQS_API_MOCK"
-    else:
-        cred_store = MemoryStorage()
-
-    cred_store.save_login_credential(
+    cred_store = MemoryCredentialStorage()
+    cred_store._save_login_credential(
         user_name=username,
         password=pwd,
     )
 
     # Construct QuantinuumQAPI and login
-    api_handler = QuantinuumQAPI(
-        persistent_credential=False,
-        login=False,
-    )
+    api_handler = QuantinuumQAPI()
 
     # Add the credential storage seperately in line with fixture parameters
-    api_handler.user_name = username
+    api_handler.config.username = username
     api_handler._cred_store = cred_store
     api_handler.login()
 

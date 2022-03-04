@@ -58,7 +58,6 @@ def test_device_family(
 
     family_backend = QuantinuumBackend(
         device_name=chosen_device,
-        machine_debug=True,
     )
     family_backend._api_handler = mock_quum_api_handler
 

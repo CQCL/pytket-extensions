@@ -45,7 +45,6 @@ setup(
         "nest_asyncio >= 1.2",
         "pyjwt >= 1.7, < 2.0",
         "types-jwt",
-        "keyring >= 19.0",
     ],
     classifiers=[
         "Environment :: Console",
