@@ -510,9 +510,9 @@ class QuantinuumBackend(Backend):
 
     def cost_estimate(self, circuit: Circuit, n_shots: int) -> float:
         """
-        Estimate the cost in Honeywell Quantum Credits (HQC) to complete this `circuit`
-        with `n_shots` repeats. The estimate is based on hard-coded constants, which may
-        be out of date, invalidating the estimate. Use with caution.
+        Estimate the cost in HQC to complete this `circuit` with `n_shots` repeats. The
+        estimate is based on hard-coded constants, which may be out of date,
+        invalidating the estimate. Use with caution.
 
         With 𝑁1𝑞 PhasedX gates, 𝑁2𝑞 ZZMax gates, 𝑁𝑚 state preparations and measurements,
         and 𝐶 shots:
