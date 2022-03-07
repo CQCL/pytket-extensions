@@ -19,8 +19,8 @@ from requests_mock.mocker import Mocker
 from pytket.extensions.quantinuum.backends.api_wrappers import QuantinuumQAPI
 
 
-def test_hqs_login(
-    mock_hqs_api_handler: QuantinuumQAPI,
+def test_quum_login(
+    mock_quum_api_handler: QuantinuumQAPI,
     mock_credentials: Tuple[str, str],
     mock_token: str,
 ) -> None:
@@ -30,20 +30,20 @@ def test_hqs_login(
     username, pwd = mock_credentials
 
     # Check credentials are retrievable
-    assert mock_hqs_api_handler._cred_store.login_credential(username) == pwd
-    assert mock_hqs_api_handler._cred_store.refresh_token == mock_token
-    assert mock_hqs_api_handler._cred_store.id_token == mock_token
+    assert mock_quum_api_handler._cred_store.login_credential(username) == pwd
+    assert mock_quum_api_handler._cred_store.refresh_token == mock_token
+    assert mock_quum_api_handler._cred_store.id_token == mock_token
 
     # Delete authentication and verify
-    mock_hqs_api_handler.delete_authentication()
-    assert mock_hqs_api_handler._cred_store.id_token == None
-    assert mock_hqs_api_handler._cred_store.login_credential(username) == None
-    assert mock_hqs_api_handler._cred_store.refresh_token == None
+    mock_quum_api_handler.delete_authentication()
+    assert mock_quum_api_handler._cred_store.id_token == None
+    assert mock_quum_api_handler._cred_store.login_credential(username) == None
+    assert mock_quum_api_handler._cred_store.refresh_token == None
 
 
 def test_machine_status(
     requests_mock: Mocker,
-    mock_hqs_api_handler: QuantinuumQAPI,
+    mock_quum_api_handler: QuantinuumQAPI,
 ) -> None:
     """Test that we can retrieve the machine state via  Quantinuum endpoint."""
 
@@ -59,7 +59,7 @@ def test_machine_status(
         headers={"Content-Type": "application/json"},
     )
 
-    assert mock_hqs_api_handler.status(machine_name) == mock_machine_state
+    assert mock_quum_api_handler.status(machine_name) == mock_machine_state
 
     # Delete authentication tokens to clean them from the keyring
-    mock_hqs_api_handler.delete_authentication()
+    mock_quum_api_handler.delete_authentication()

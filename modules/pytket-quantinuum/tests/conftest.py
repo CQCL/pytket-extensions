@@ -43,8 +43,8 @@ def mock_token() -> str:
     return mock_token
 
 
-@pytest.fixture(name="mock_hqs_api_handler", params=[True, False])
-def fixture_mock_hqs_api_handler(
+@pytest.fixture(name="mock_quum_api_handler", params=[True, False])
+def fixture_mock_quum_api_handler(
     request: SubRequest,
     requests_mock: Mocker,
     mock_credentials: Tuple[str, str],
@@ -52,7 +52,7 @@ def fixture_mock_hqs_api_handler(
 ) -> QuantinuumQAPI:
     """A logged-in QuantinuumQAPI fixture.
     After using this fixture in a test, call:
-        mock_hqs_api_handler.delete_authentication()
+        mock_quum_api_handler.delete_authentication()
     To remove mock tokens from the keyring.
     """
 

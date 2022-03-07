@@ -32,7 +32,7 @@ from pytket.circuit import Circuit  # type: ignore
 )
 def test_device_family(
     requests_mock: Mocker,
-    mock_hqs_api_handler: QuantinuumQAPI,
+    mock_quum_api_handler: QuantinuumQAPI,
     chosen_device: str,
     max_batch_cost: Optional[int],
 ) -> None:
@@ -60,7 +60,7 @@ def test_device_family(
         device_name=chosen_device,
         machine_debug=True,
     )
-    family_backend._api_handler = mock_hqs_api_handler
+    family_backend._api_handler = mock_quum_api_handler
 
     circ = Circuit(2, name="batching_test").H(0).CX(0, 1).measure_all()
     circ = family_backend.get_compiled_circuit(circ)
