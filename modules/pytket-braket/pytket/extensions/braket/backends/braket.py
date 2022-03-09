@@ -739,10 +739,15 @@ class BraketBackend(Backend):
 
     @property
     def characterisation(self) -> Optional[Dict[str, Any]]:
+        node_errors = self._backend_info.all_node_gate_errors
+        edge_errors = self._backend_info.all_edge_gate_errors
+        readout_errors = self._backend_info.all_readout_errors
+        if node_errors is None and edge_errors is None and readout_errors is None:
+            return None
         return {
-            "NodeErrors": self._backend_info.all_node_gate_errors,
-            "EdgeErrors": self._backend_info.all_edge_gate_errors,
-            "ReadoutErrors": self._backend_info.all_readout_errors,
+            "NodeErrors": node_errors,
+            "EdgeErrors": edge_errors,
+            "ReadoutErrors": readout_errors,
         }
 
     @property
