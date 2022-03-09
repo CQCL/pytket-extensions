@@ -39,7 +39,7 @@ from pyquil.gates import (
     MEASURE,
 )
 from pyquil.quilbase import Measurement
-from sympy import pi, Symbol  # type: ignore
+from sympy import pi, Symbol
 
 from pytket.circuit import Circuit  # type: ignore
 from pytket.extensions.pyquil import pyquil_to_tk, tk_to_pyquil
@@ -157,8 +157,8 @@ def test_measures_are_last() -> None:
     skip_qvm_tests, reason="Can only run Rigetti QVM if docker is installed"  # type: ignore
 )
 def test_symbolic(qvm) -> None:
-    pi2 = Symbol("pi2")
-    pi3 = Symbol("pi3")
+    pi2 = Symbol("pi2")  # type: ignore
+    pi3 = Symbol("pi3")  # type: ignore
 
     tkc = Circuit(2).Rx(pi2, 1).Rx(-pi3, 1).CX(1, 0)
     RemoveRedundancies().apply(tkc)
