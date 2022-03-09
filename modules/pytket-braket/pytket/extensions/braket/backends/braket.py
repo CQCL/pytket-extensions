@@ -458,7 +458,7 @@ class BraketBackend(Backend):
                 get_node_error = lambda n: 1.0 - cast(
                     float, specs1q[f"{n.index[0]}"].get("f1QRB", 1.0)
                 )
-                get_readout_error = lambda n: cast(
+                get_readout_error = lambda n: 1.0 - cast(
                     float, specs1q[f"{n.index[0]}"].get("fRO", 1.0)
                 )
                 get_link_error = lambda n0, n1: 1.0 - cast(
