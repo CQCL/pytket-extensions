@@ -70,6 +70,20 @@ def test_simulator() -> None:
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
+def test_dm_simulator() -> None:
+    b = BraketBackend(device_type="quantum-simulator", provider="amazon", device="dm1")
+    assert b.supports_density_matrix
+    c = Circuit(2).H(0).SWAP(0, 1)
+    cc = b.get_compiled_circuit(c)
+    h = b.process_circuit(cc)
+    r = b.get_result(h)
+    m = r.get_density_matrix()
+    m0 = np.zeros((4, 4), dtype=complex)
+    m0[0, 0] = m0[1, 0] = m0[0, 1] = m0[1, 1] = 0.5
+    assert np.allclose(m, m0)
+
+
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_ionq() -> None:
     b = BraketBackend(
         device_type="qpu",
