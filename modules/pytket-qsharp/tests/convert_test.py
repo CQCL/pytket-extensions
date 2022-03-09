@@ -16,7 +16,7 @@ import pytest
 from pytket.circuit import Circuit, PauliExpBox, fresh_symbol  # type: ignore
 from pytket.pauli import Pauli  # type: ignore
 from pytket.extensions.qsharp import tk_to_qsharp
-from sympy import Symbol  # type: ignore
+from sympy import Symbol
 
 
 def test_convert() -> None:
@@ -33,7 +33,7 @@ def test_convert() -> None:
 
 def test_convert_symbolic() -> None:
     c = Circuit(2)
-    alpha = Symbol("alpha")
+    alpha = Symbol("alpha")  # type: ignore
     c.Rx(alpha, 0)
     beta = fresh_symbol("alpha")
     c.Rz(beta * 2, 1)
