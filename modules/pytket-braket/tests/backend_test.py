@@ -165,6 +165,40 @@ def test_rigetti_with_rerouting() -> None:
     b.cancel(h)
 
 
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
+def test_oqc() -> None:
+    b = BraketBackend(
+        device_type="qpu", provider="oqc", device="Lucy", region="eu-west-2"
+    )
+    assert b.persistent_handles
+    assert b.supports_shots
+    assert not b.supports_state
+
+    chars = b.characterisation
+    assert chars is not None
+    assert all(s in chars for s in ["NodeErrors", "EdgeErrors", "ReadoutErrors"])
+
+    c = (
+        Circuit(3)
+        .add_gate(OpType.CCX, [0, 1, 2])
+        .add_gate(OpType.U1, 0.5, [1])
+        .add_gate(OpType.ISWAP, 0.5, [0, 2])
+        .add_gate(OpType.XXPhase, 0.5, [1, 2])
+    )
+    assert not b.valid_circuit(c)
+    c = b.get_compiled_circuit(c)
+    assert b.valid_circuit(c)
+    h = b.process_circuit(c, 10)
+    _ = b.circuit_status(h)
+    b.cancel(h)
+
+    # Circuit with unused qubits
+    c = Circuit(7).H(5).CX(5, 6)
+    c = b.get_compiled_circuit(c)
+    h = b.process_circuit(c, 10)
+    b.cancel(h)
+
+
 def test_local_simulator() -> None:
     b = BraketBackend(local=True)
     assert b.supports_shots

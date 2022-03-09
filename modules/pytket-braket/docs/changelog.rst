@@ -6,6 +6,7 @@ Changelog
 
 * Add optional "region" argument for initializing BraketBackend.
 * Update requirements for amazon-braket-sdk and amazon-braket-schemas.
+* Add support for oqc provider.
 
 0.16.0 (February 2022)
 ----------------------
