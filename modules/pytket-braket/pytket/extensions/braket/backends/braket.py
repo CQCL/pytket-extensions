@@ -83,6 +83,7 @@ from braket.circuits.qubit_set import QubitSet  # type: ignore
 from braket.circuits.result_type import ResultType  # type: ignore
 from braket.device_schema import DeviceActionType  # type: ignore
 from braket.devices import LocalSimulator  # type: ignore
+from braket.ir.jaqcd.results import DensityMatrix  # type: ignore
 from braket.tasks.local_quantum_task import LocalQuantumTask  # type: ignore
 import boto3  # type: ignore
 import numpy as np
@@ -213,9 +214,25 @@ def _get_result(
         if want_state:
             kwargs["state"] = result.get_value_by_result_type(ResultType.StateVector())
         if want_dm:
-            kwargs["density_matrix"] = result.get_value_by_result_type(
-                ResultType.DensityMatrix()
-            )
+            # kwargs["density_matrix"] = result.get_value_by_result_type(
+            #     ResultType.DensityMatrix()
+            # )
+            # The above looks like the right way to do it, but does not work. Instead,
+            # resort to a hack:
+            result_types = result.result_types
+            for rt in result_types:
+                if type(rt.type) is DensityMatrix:
+                    m = rt.value
+                    a = []
+                    for row in m:
+                        a_row = []
+                        for z in row:
+                            if hasattr(z, "__len__"):
+                                a_row.append(complex(z[0], z[1]))
+                            else:
+                                a_row.append(z)
+                        a.append(a_row)
+                    kwargs["density_matrix"] = np.array(a, dtype=complex)
     else:
         kwargs["shots"] = OutcomeArray.from_readouts(result.measurements)
         kwargs["ppcirc"] = ppcirc
