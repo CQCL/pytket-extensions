@@ -370,22 +370,6 @@ def test_shots_bits_edgecases(n_shots, n_bits) -> None:
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_postprocess_sim() -> None:
-    b = BraketBackend(
-        device_type="quantum-simulator",
-        provider="amazon",
-        device="sv1",
-    )
-    assert b.supports_contextual_optimisation
-    c = Circuit(2).H(0).CX(0, 1).Y(0)
-    c = b.get_compiled_circuit(c)
-    h = b.process_circuit(c, n_shots=10, postprocess=True)
-    r = b.get_result(h)
-    shots = r.get_shots()
-    assert all(shot[0] != shot[1] for shot in shots)
-
-
-@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_postprocess_ionq() -> None:
     b = BraketBackend(
         device_type="qpu",

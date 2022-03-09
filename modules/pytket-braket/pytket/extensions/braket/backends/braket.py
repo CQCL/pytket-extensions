@@ -370,6 +370,9 @@ class BraketBackend(Backend):
             elif rtname == "DensityMatrix":
                 self._supports_density_matrix = True
                 # Always use n_shots = 0 for DensityMatrix
+        # Don't use contextual optimization for non-QPU backends
+        if self._device_type != _DeviceType.QPU:
+            self._supports_contextual_optimisation = False
 
         self._singleqs, self._multiqs = self._get_gate_set(
             supported_ops, self._device_type
