@@ -70,8 +70,6 @@ class QuantinuumQAPI:
 
         :param token_store: JWT Token store, defaults to MemoryCredentialStorage()
         :type token_store: MemoryCredentialStorage, optional
-        :param machine: Name of target, defaults to None
-        :type machine: Optional[str], optional
         :param api_url: _description_, defaults to DEFAULT_API_URL
         :type api_url: Optional[str], optional
         :param api_version: API version, defaults to 1
