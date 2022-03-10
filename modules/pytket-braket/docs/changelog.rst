@@ -7,6 +7,7 @@ Changelog
 * Add optional "region" argument for initializing BraketBackend.
 * Update requirements for amazon-braket-sdk and amazon-braket-schemas.
 * Add support for oqc provider.
+* Correct readout errors reported for Rigetti devices.
 
 0.16.0 (February 2022)
 ----------------------
