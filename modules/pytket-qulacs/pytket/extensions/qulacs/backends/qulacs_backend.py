@@ -19,7 +19,7 @@ from typing import List, Optional, Sequence, Union
 from logging import warning
 from uuid import uuid4
 import numpy as np
-from sympy import Expr  # type: ignore
+from sympy import Expr
 from qulacs import Observable, QuantumState  # type: ignore
 from pytket.backends import (
     Backend,
@@ -259,7 +259,7 @@ class QulacsBackend(Backend):
 
             qulacs_qps = " ".join(_items)
             if isinstance(coeff, Expr):
-                qulacs_coeff = complex(coeff.evalf())
+                qulacs_coeff = complex(coeff.evalf())  # type: ignore
             else:
                 qulacs_coeff = complex(coeff)
             observable.add_operator(qulacs_coeff, qulacs_qps)
