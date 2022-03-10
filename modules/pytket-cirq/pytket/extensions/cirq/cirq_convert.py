@@ -17,7 +17,7 @@ Methods to allow conversion between Cirq and tket data types, including Circuits
 Devices
 """
 
-from typing import List, Dict, FrozenSet, cast, Any
+from typing import List, Dict, FrozenSet, cast, Any, Union
 import cmath
 from logging import warning
 from cirq.devices import LineQubit, GridQubit
@@ -25,7 +25,7 @@ import cirq.ops
 import cirq_google
 from pytket.circuit import Circuit, OpType, Qubit, Bit, Node  # type: ignore
 from pytket.architecture import Architecture  # type: ignore
-from sympy import pi  # type: ignore
+from sympy import pi, Basic, Symbol
 
 # For translating cirq circuits to tket circuits
 cirq_common = cirq.ops.common_gates
@@ -166,7 +166,7 @@ def cirq_to_tk(circuit: cirq.circuits.Circuit) -> Circuit:
                     raise NotImplementedError(
                         "Operation not supported by tket: " + str(op.gate)
                     ) from error
-                params = []
+                params: List[Union[float, Basic, Symbol]] = []
             elif isinstance(gate, cirq_common.MeasurementGate):
                 uid = Bit(gate.key)
                 tkcirc.add_bit(uid)

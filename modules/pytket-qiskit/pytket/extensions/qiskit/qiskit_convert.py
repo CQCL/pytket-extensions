@@ -35,7 +35,7 @@ from uuid import UUID
 
 import numpy as np
 
-import sympy  # type: ignore
+import sympy
 import qiskit.circuit.library.standard_gates as qiskit_gates  # type: ignore
 from qiskit import (
     ClassicalRegister,
@@ -380,11 +380,11 @@ def param_to_tk(p: Union[float, ParameterExpression]) -> sympy.Expr:
     if isinstance(p, ParameterExpression):
         symexpr = p._symbol_expr
         try:
-            return symexpr._sympy_() / sympy.pi
+            return symexpr._sympy_() / sympy.pi  # type: ignore
         except AttributeError:
-            return symexpr / sympy.pi
+            return symexpr / sympy.pi  # type: ignore
     else:
-        return p / sympy.pi
+        return p / sympy.pi  # type: ignore
 
 
 def param_to_qiskit(
