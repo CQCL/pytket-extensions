@@ -101,6 +101,10 @@ RIGETTI_SCHEMA = {
     "name": "braket.device_schema.rigetti.rigetti_provider_properties",
     "version": "1",
 }
+OQC_SCHEMA = {
+    "name": "braket.device_schema.oqc.oqc_provider_properties",
+    "version": "1",
+}
 
 _gate_types = {
     "ccnot": OpType.CCX,
@@ -113,6 +117,7 @@ _gate_types = {
     "cv": OpType.CV,
     "cy": OpType.CY,
     "cz": OpType.CZ,
+    "ecr": OpType.ECR,
     "end_verbatim_box": None,
     "h": OpType.H,
     "i": OpType.noop,
@@ -151,6 +156,7 @@ _multiq_gate_types = {
     "cv",
     "cy",
     "cz",
+    "ecr",
     "iswap",
     "pswap",
     "swap",
@@ -239,7 +245,8 @@ class BraketBackend(Backend):
         :param s3_folder: name of folder ("key") in S3 bucket to store results in
         :param device_type: device type from device ARN (e.g. "qpu"),
             default: "quantum-simulator"
-        :param provider: provider name from device ARN (e.g. "ionq", "rigetti", ...),
+        :param provider: provider name from device ARN (e.g. "ionq", "rigetti", "oqc",
+            ...),
             default: "amazon"
         :param aws_session: braket AwsSession object, to pass credentials in if not
             configured on local machine
@@ -458,7 +465,7 @@ class BraketBackend(Backend):
                 get_node_error = lambda n: 1.0 - cast(
                     float, specs1q[f"{n.index[0]}"].get("f1QRB", 1.0)
                 )
-                get_readout_error = lambda n: cast(
+                get_readout_error = lambda n: 1.0 - cast(
                     float, specs1q[f"{n.index[0]}"].get("fRO", 1.0)
                 )
                 get_link_error = lambda n0, n1: 1.0 - cast(
@@ -466,6 +473,18 @@ class BraketBackend(Backend):
                     specs2q[
                         f"{min(n0.index[0],n1.index[0])}-{max(n0.index[0],n1.index[0])}"
                     ].get("fCZ", 1.0),
+                )
+            elif schema == OQC_SCHEMA:
+                properties = characteristics["properties"]
+                props1q, props2q = properties["one_qubit"], properties["two_qubit"]
+                get_node_error = lambda n: 1.0 - cast(
+                    float, props1q[f"{n.index[0]}"]["fRB"]
+                )
+                get_readout_error = lambda n: 1.0 - cast(
+                    float, props1q[f"{n.index[0]}"]["fRO"]
+                )
+                get_link_error = lambda n0, n1: 1.0 - cast(
+                    float, props2q[f"{n0.index[0]}-{n1.index[0]}"]["fCX"]
                 )
             # readout error as symmetric 2x2 matrix
             to_sym_mat: Callable[[float], List[List[float]]] = lambda x: [

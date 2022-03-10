@@ -41,7 +41,6 @@ from pytket.extensions.quantinuum.backends.quantinuum import (
     GetResultFailed,
     _GATE_SET,
 )
-from pytket.extensions.quantinuum import split_utf8
 from pytket.extensions.quantinuum.backends.api_wrappers import (
     HQSAPIError,
     QuantinuumQAPI,
@@ -49,6 +48,7 @@ from pytket.extensions.quantinuum.backends.api_wrappers import (
 from pytket.backends.status import StatusEnum
 
 skip_remote_tests: bool = os.getenv("PYTKET_RUN_REMOTE_TESTS") is None
+
 REASON = (
     "PYTKET_RUN_REMOTE_TESTS not set (requires configuration of Quantinuum username)"
 )
@@ -288,16 +288,6 @@ def test_shots_bits_edgecases(n_shots, n_bits) -> None:
     assert np.array_equal(res.get_shots(), correct_shots)
     assert res.get_shots().shape == correct_shape
     assert res.get_counts() == correct_counts
-
-
-@given(
-    utf_str=st.text(min_size=0, max_size=3000),
-    chunksize=st.integers(min_value=4, max_value=1030),
-)
-def test_split_utf8(utf_str: str, chunksize: int) -> None:
-    split = list(split_utf8(utf_str, chunksize))
-    assert max(len(i) for i in split) <= chunksize
-    assert "".join(split) == utf_str
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)

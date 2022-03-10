@@ -25,9 +25,9 @@ def test_convert() -> None:
     circ.add_barrier([2])
     circ.measure_all()
 
-    QuantinuumBackend("", login=False, machine_debug=True).rebase_pass().apply(circ)
-    circ_hqs = circuit_to_qasm_str(circ, header="hqslib1")
-    qasm_str = circ_hqs.split("\n")[6:-1]
+    QuantinuumBackend("", machine_debug=True).rebase_pass().apply(circ)
+    circ_quum = circuit_to_qasm_str(circ, header="hqslib1")
+    qasm_str = circ_quum.split("\n")[6:-1]
     assert all(
         any(com.startswith(gate) for gate in ("rz", "U1q", "ZZ", "measure", "barrier"))
         for com in qasm_str
@@ -42,9 +42,9 @@ def test_convert_rzz() -> None:
     circ.add_gate(OpType.ZZMax, [2, 3])
     circ.measure_all()
 
-    QuantinuumBackend("", login=False, machine_debug=True).rebase_pass().apply(circ)
-    circ_hqs = circuit_to_qasm_str(circ, header="hqslib1")
-    qasm_str = circ_hqs.split("\n")[6:-1]
+    QuantinuumBackend("", machine_debug=True).rebase_pass().apply(circ)
+    circ_quum = circuit_to_qasm_str(circ, header="hqslib1")
+    qasm_str = circ_quum.split("\n")[6:-1]
     assert all(
         any(com.startswith(gate) for gate in ("rz", "U1q", "ZZ", "measure", "RZZ"))
         for com in qasm_str

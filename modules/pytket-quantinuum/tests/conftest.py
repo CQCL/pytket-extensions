@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sys
+import os
 from typing import Tuple
 
 import pytest
@@ -22,10 +22,10 @@ import jwt
 
 from pytket.extensions.quantinuum.backends.api_wrappers import QuantinuumQAPI
 from pytket.extensions.quantinuum.backends.credential_storage import (
-    CredentialStorage,
-    MemoryStorage,
-    PersistentStorage,
+    MemoryCredentialStorage,
 )
+
+skip_remote_tests: bool = os.getenv("PYTKET_RUN_REMOTE_TESTS") is None
 
 
 @pytest.fixture()
@@ -43,8 +43,8 @@ def mock_token() -> str:
     return mock_token
 
 
-@pytest.fixture(name="mock_hqs_api_handler", params=[True, False])
-def fixture_mock_hqs_api_handler(
+@pytest.fixture(name="mock_quum_api_handler", params=[True, False])
+def fixture_mock_quum_api_handler(
     request: SubRequest,
     requests_mock: Mocker,
     mock_credentials: Tuple[str, str],
@@ -52,7 +52,7 @@ def fixture_mock_hqs_api_handler(
 ) -> QuantinuumQAPI:
     """A logged-in QuantinuumQAPI fixture.
     After using this fixture in a test, call:
-        mock_hqs_api_handler.delete_authentication()
+        mock_quum_api_handler.delete_authentication()
     To remove mock tokens from the keyring.
     """
 
@@ -70,27 +70,17 @@ def fixture_mock_hqs_api_handler(
         headers={"Content-Type": "application/json"},
     )
 
-    cred_store: CredentialStorage
-    # Skip testing keyring service if running on linux
-    if request.param and sys.platform != "linux":
-        cred_store = PersistentStorage()
-        cred_store.KEYRING_SERVICE = "HQS_API_MOCK"
-    else:
-        cred_store = MemoryStorage()
-
-    cred_store.save_login_credential(
+    cred_store = MemoryCredentialStorage()
+    cred_store._save_login_credential(
         user_name=username,
         password=pwd,
     )
 
     # Construct QuantinuumQAPI and login
-    api_handler = QuantinuumQAPI(
-        persistent_credential=False,
-        login=False,
-    )
+    api_handler = QuantinuumQAPI()
 
     # Add the credential storage seperately in line with fixture parameters
-    api_handler.user_name = username
+    api_handler.config.username = username
     api_handler._cred_store = cred_store
     api_handler.login()
 
