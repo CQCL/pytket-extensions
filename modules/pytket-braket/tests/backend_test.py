@@ -70,6 +70,20 @@ def test_simulator() -> None:
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
+def test_dm_simulator() -> None:
+    b = BraketBackend(device_type="quantum-simulator", provider="amazon", device="dm1")
+    assert b.supports_density_matrix
+    c = Circuit(2).H(0).SWAP(0, 1)
+    cc = b.get_compiled_circuit(c)
+    h = b.process_circuit(cc)
+    r = b.get_result(h)
+    m = r.get_density_matrix()
+    m0 = np.zeros((4, 4), dtype=complex)
+    m0[0, 0] = m0[1, 0] = m0[0, 1] = m0[1, 1] = 0.5
+    assert np.allclose(m, m0)
+
+
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_ionq() -> None:
     b = BraketBackend(
         device_type="qpu",
@@ -370,22 +384,6 @@ def test_shots_bits_edgecases(n_shots, n_bits) -> None:
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_postprocess_sim() -> None:
-    b = BraketBackend(
-        device_type="quantum-simulator",
-        provider="amazon",
-        device="sv1",
-    )
-    assert b.supports_contextual_optimisation
-    c = Circuit(2).H(0).CX(0, 1).Y(0)
-    c = b.get_compiled_circuit(c)
-    h = b.process_circuit(c, n_shots=10, postprocess=True)
-    r = b.get_result(h)
-    shots = r.get_shots()
-    assert all(shot[0] != shot[1] for shot in shots)
-
-
-@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_postprocess_ionq() -> None:
     b = BraketBackend(
         device_type="qpu",
@@ -396,7 +394,7 @@ def test_postprocess_ionq() -> None:
     c = Circuit(2).H(0).CX(0, 1).Y(0)
     c = b.get_compiled_circuit(c)
     h = b.process_circuit(c, n_shots=10, postprocess=True)
-    ppcirc = Circuit.from_dict(json.loads(cast(str, h[2])))
+    ppcirc = Circuit.from_dict(json.loads(cast(str, h[4])))
     ppcmds = ppcirc.get_commands()
     assert len(ppcmds) > 0
     assert all(ppcmd.op.type == OpType.ClassicalTransform for ppcmd in ppcmds)
