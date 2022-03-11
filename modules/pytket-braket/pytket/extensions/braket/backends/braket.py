@@ -83,7 +83,6 @@ from braket.circuits.qubit_set import QubitSet  # type: ignore
 from braket.circuits.result_type import ResultType  # type: ignore
 from braket.device_schema import DeviceActionType  # type: ignore
 from braket.devices import LocalSimulator  # type: ignore
-from braket.ir.jaqcd.results import DensityMatrix  # type: ignore
 from braket.tasks.local_quantum_task import LocalQuantumTask  # type: ignore
 import boto3  # type: ignore
 import numpy as np
