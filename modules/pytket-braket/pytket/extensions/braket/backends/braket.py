@@ -203,6 +203,7 @@ def _obs_from_qpo(operator: QubitPauliOperator, n_qubits: int) -> Observable:
 
 def _get_result(
     completed_task: Union[AwsQuantumTask, LocalQuantumTask],
+    n_qubits: int,
     want_state: bool,
     want_dm: bool,
     ppcirc: Optional[Circuit] = None,
@@ -214,25 +215,15 @@ def _get_result(
         if want_state:
             kwargs["state"] = result.get_value_by_result_type(ResultType.StateVector())
         if want_dm:
-            # kwargs["density_matrix"] = result.get_value_by_result_type(
-            #     ResultType.DensityMatrix()
-            # )
-            # The above looks like the right way to do it, but does not work. Instead,
-            # resort to a hack:
-            result_types = result.result_types
-            for rt in result_types:
-                if type(rt.type) is DensityMatrix:
-                    m = rt.value
-                    a = []
-                    for row in m:
-                        a_row = []
-                        for z in row:
-                            if hasattr(z, "__len__"):
-                                a_row.append(complex(z[0], z[1]))
-                            else:
-                                a_row.append(z)
-                        a.append(a_row)
-                    kwargs["density_matrix"] = np.array(a, dtype=complex)
+            m = result.get_value_by_result_type(
+                ResultType.DensityMatrix(target=list(range(n_qubits)))
+            )
+            if type(completed_task) == AwsQuantumTask:
+                kwargs["density_matrix"] = np.array(
+                    [[complex(x, y) for x, y in row] for row in m], dtype=complex
+                )
+            else:
+                kwargs["density_matrix"] = m
     else:
         kwargs["shots"] = OutcomeArray.from_readouts(result.measurements)
         kwargs["ppcirc"] = ppcirc
@@ -615,7 +606,7 @@ class BraketBackend(Backend):
     def _result_id_type(self) -> _ResultIdTuple:
         # (task ID, whether state vector / density matrix are wanted, serialized ppcirc
         # or "null")
-        return (str, bool, bool, str)
+        return (str, int, bool, bool, str)
 
     def _run(
         self, bkcirc: braket.circuits.Circuit, n_shots: int = 0, **kwargs: KwargTypes
@@ -691,7 +682,9 @@ class BraketBackend(Backend):
                 # Results are available now. Put them in the cache.
                 if task is not None:
                     assert task.state() == "COMPLETED"
-                    results = _get_result(task, want_state, want_dm, ppcirc)
+                    results = _get_result(
+                        task, bkcirc.qubit_count, want_state, want_dm, ppcirc
+                    )
                 else:
                     results = {"result": self.empty_result(circ, n_shots=n_shots)}
             else:
@@ -699,10 +692,16 @@ class BraketBackend(Backend):
                 results = {}
             if task is not None:
                 handle = ResultHandle(
-                    task.id, want_state, want_dm, json.dumps(ppcirc_rep)
+                    task.id,
+                    bkcirc.qubit_count,
+                    want_state,
+                    want_dm,
+                    json.dumps(ppcirc_rep),
                 )
             else:
-                handle = ResultHandle(str(uuid4()), False, False, json.dumps(None))
+                handle = ResultHandle(
+                    str(uuid4()), bkcirc.qubit_count, False, False, json.dumps(None)
+                )
             self._cache[handle] = results
             handles.append(handle)
         return handles
@@ -718,7 +717,7 @@ class BraketBackend(Backend):
     def circuit_status(self, handle: ResultHandle) -> CircuitStatus:
         if self._device_type == _DeviceType.LOCAL:
             return CircuitStatus(StatusEnum.COMPLETED)
-        task_id, want_state, want_dm, ppcirc_str = handle
+        task_id, n_qubits, want_state, want_dm, ppcirc_str = handle
         ppcirc_rep = json.loads(ppcirc_str)
         ppcirc = Circuit.from_dict(ppcirc_rep) if ppcirc_rep is not None else None
         task = AwsQuantumTask(task_id, aws_session=self._aws_session)
@@ -729,7 +728,7 @@ class BraketBackend(Backend):
             return CircuitStatus(StatusEnum.CANCELLED)
         elif state == "COMPLETED":
             self._update_cache_result(
-                handle, _get_result(task, want_state, want_dm, ppcirc)
+                handle, _get_result(task, n_qubits, want_state, want_dm, ppcirc)
             )
             return CircuitStatus(StatusEnum.COMPLETED)
         elif state == "QUEUED" or state == "CREATED":
