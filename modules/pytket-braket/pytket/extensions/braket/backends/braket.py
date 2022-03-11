@@ -677,8 +677,7 @@ class BraketBackend(Backend):
         task = AwsQuantumTask(task_id, aws_session=self._aws_session)
         state = task.state()
         if state == "FAILED":
-            result = task.result()
-            return CircuitStatus(StatusEnum.ERROR, result.task_metadata.failureReason)
+            return CircuitStatus(StatusEnum.ERROR, task.metadata()["failureReason"])
         elif state == "CANCELLED":
             return CircuitStatus(StatusEnum.CANCELLED)
         elif state == "COMPLETED":
