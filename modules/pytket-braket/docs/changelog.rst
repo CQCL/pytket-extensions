@@ -9,7 +9,7 @@ Changelog
 * Add support for oqc provider.
 * Correct readout errors reported for Rigetti devices.
 * Add support for density-matrix simulators.
-* Update pytket version requirement to 1.0.
+* Updated pytket version requirement to 1.0.
 
 0.16.0 (February 2022)
 ----------------------
