@@ -229,6 +229,21 @@ def test_local_simulator() -> None:
     assert sum(counts.values()) == n_shots
 
 
+def test_local_dm_simulator() -> None:
+    b = BraketBackend(local=True, local_device="braket_dm")
+    assert b.supports_shots
+    assert b.supports_counts
+    assert b.supports_density_matrix
+    c = Circuit(2).H(0).CX(0, 1)
+    c = b.get_compiled_circuit(c)
+    h = b.process_circuit(c)
+    res = b.get_result(h)
+    dm = res.get_density_matrix()
+    dm0 = np.zeros((4, 4), dtype=complex)
+    dm0[0, 0] = dm0[0, 3] = dm0[3, 0] = dm0[3, 3] = 0.5
+    assert np.allclose(dm, dm0)
+
+
 def test_expectation() -> None:
     b = BraketBackend(local=True)
     assert b.supports_expectation
