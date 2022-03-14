@@ -41,6 +41,7 @@ setup(
         "pytket ~= 1.0",
         "amazon-braket-sdk~=1.16",
         "amazon-braket-schemas~=1.7",
+        "amazon-braket-default-simulator~=1.5",
     ],
     classifiers=[
         "Environment :: Console",
