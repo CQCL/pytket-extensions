@@ -16,7 +16,6 @@ subdirectory of the `modules` directory:
 * `pytket-aqt`
 * `pytket-braket`
 * `pytket-cirq`
-* `pytket-honeywell`
 * `pytket-ionq`
 * `pytket-iqm`
 * `pytket-projectq`
@@ -24,6 +23,7 @@ subdirectory of the `modules` directory:
 * `pytket-pyzx`
 * `pytket-qiskit`
 * `pytket-qsharp`
+* `pytket-quantinumm`
 * `pytket-qulacs`
 * `pytket-stim`
 

@@ -54,7 +54,9 @@ from pytket.passes import (  # type: ignore
     SquashCustom,
     DecomposeBoxes,
     SimplifyInitial,
+    NaivePlacementPass,
 )
+from pytket._tket.circuit._library import _TK1_to_RzRx  # type: ignore
 from pytket.pauli import Pauli, QubitPauliString  # type: ignore
 from pytket.predicates import (  # type: ignore
     ConnectivityPredicate,
@@ -66,7 +68,8 @@ from pytket.predicates import (  # type: ignore
     NoSymbolsPredicate,
     Predicate,
 )
-from pytket.routing import Architecture, NoiseAwarePlacement  # type: ignore
+from pytket.architecture import Architecture  # type: ignore
+from pytket.placement import NoiseAwarePlacement  # type: ignore
 from pytket.utils import prepare_circuit
 from pytket.utils.operators import QubitPauliOperator
 from pytket.utils.outcomearray import OutcomeArray
@@ -98,8 +101,14 @@ RIGETTI_SCHEMA = {
     "name": "braket.device_schema.rigetti.rigetti_provider_properties",
     "version": "1",
 }
+OQC_SCHEMA = {
+    "name": "braket.device_schema.oqc.oqc_provider_properties",
+    "version": "1",
+}
 
 _gate_types = {
+    "amplitude_damping": None,
+    "bit_flip": None,
     "ccnot": OpType.CCX,
     "cnot": OpType.CX,
     "cphaseshift": OpType.CU1,
@@ -110,11 +119,18 @@ _gate_types = {
     "cv": OpType.CV,
     "cy": OpType.CY,
     "cz": OpType.CZ,
+    "depolarizing": None,
+    "ecr": OpType.ECR,
     "end_verbatim_box": None,
+    "generalized_amplitude_damping": None,
     "h": OpType.H,
     "i": OpType.noop,
     "iswap": OpType.ISWAPMax,
+    "kraus": None,
+    "pauli_channel": None,
     "pswap": None,
+    "phase_damping": None,
+    "phase_flip": None,
     "phaseshift": OpType.U1,
     "rx": OpType.Rx,
     "ry": OpType.Ry,
@@ -125,6 +141,8 @@ _gate_types = {
     "swap": OpType.SWAP,
     "t": OpType.T,
     "ti": OpType.Tdg,
+    "two_qubit_dephasing": None,
+    "two_qubit_depolarizing": None,
     "unitary": None,
     "v": OpType.V,
     "vi": OpType.Vdg,
@@ -148,9 +166,12 @@ _multiq_gate_types = {
     "cv",
     "cy",
     "cz",
+    "ecr",
     "iswap",
     "pswap",
     "swap",
+    "two_qubit_dephasing",
+    "two_qubit_depolarizing",
     "unitary",
     "xx",
     "xy",
@@ -181,14 +202,27 @@ def _obs_from_qpo(operator: QubitPauliOperator, n_qubits: int) -> Observable:
 
 def _get_result(
     completed_task: Union[AwsQuantumTask, LocalQuantumTask],
+    n_qubits: int,
     want_state: bool,
+    want_dm: bool,
     ppcirc: Optional[Circuit] = None,
 ) -> Dict[str, BackendResult]:
     result = completed_task.result()
     kwargs = {}
-    if want_state:
-        kwargs["state"] = result.get_value_by_result_type(ResultType.StateVector())
+    if want_state or want_dm:
         assert ppcirc is None
+        if want_state:
+            kwargs["state"] = result.get_value_by_result_type(ResultType.StateVector())
+        if want_dm:
+            m = result.get_value_by_result_type(
+                ResultType.DensityMatrix(target=list(range(n_qubits)))
+            )
+            if type(completed_task) == AwsQuantumTask:
+                kwargs["density_matrix"] = np.array(
+                    [[complex(x, y) for x, y in row] for row in m], dtype=complex
+                )
+            else:
+                kwargs["density_matrix"] = m
     else:
         kwargs["shots"] = OutcomeArray.from_readouts(result.measurements)
         kwargs["ppcirc"] = ppcirc
@@ -210,6 +244,7 @@ class BraketBackend(Backend):
         self,
         local: bool = False,
         device: Optional[str] = None,
+        region: str = "",
         s3_bucket: Optional[str] = None,
         s3_folder: Optional[str] = None,
         device_type: Optional[str] = None,
@@ -235,7 +270,8 @@ class BraketBackend(Backend):
         :param s3_folder: name of folder ("key") in S3 bucket to store results in
         :param device_type: device type from device ARN (e.g. "qpu"),
             default: "quantum-simulator"
-        :param provider: provider name from device ARN (e.g. "ionq", "rigetti", ...),
+        :param provider: provider name from device ARN (e.g. "ionq", "rigetti", "oqc",
+            ...),
             default: "amazon"
         :param aws_session: braket AwsSession object, to pass credentials in if not
             configured on local machine
@@ -268,7 +304,9 @@ class BraketBackend(Backend):
             self._device_type = _DeviceType.LOCAL
         else:
             self._device = AwsDevice(
-                "arn:aws:braket:::"
+                "arn:aws:braket:"
+                + region
+                + "::"
                 + "/".join(
                     ["device", device_type, provider, device],
                 ),
@@ -319,6 +357,12 @@ class BraketBackend(Backend):
             elif rtname == "Variance":
                 self._variance_min_shots = rtminshots
                 self._variance_max_shots = rtmaxshots
+            elif rtname == "DensityMatrix":
+                self._supports_density_matrix = True
+                # Always use n_shots = 0 for DensityMatrix
+        # Don't use contextual optimization for non-QPU backends
+        if self._device_type != _DeviceType.QPU:
+            self._supports_contextual_optimisation = False
 
         self._singleqs, self._multiqs = self._get_gate_set(
             supported_ops, self._device_type
@@ -355,14 +399,13 @@ class BraketBackend(Backend):
             self._req_preds.append(ConnectivityPredicate(arch))
 
         self._rebase_pass = RebaseCustom(
-            self._multiqs,
+            self._multiqs | self._singleqs,
             Circuit(),
-            self._singleqs,
-            lambda a, b, c: Circuit(1).Rz(c, 0).Rx(b, 0).Rz(a, 0),
+            _TK1_to_RzRx,
         )
         self._squash_pass = SquashCustom(
             self._singleqs,
-            lambda a, b, c: Circuit(1).Rz(c, 0).Rx(b, 0).Rz(a, 0),
+            _TK1_to_RzRx,
         )
 
     @staticmethod
@@ -453,7 +496,7 @@ class BraketBackend(Backend):
                 get_node_error = lambda n: 1.0 - cast(
                     float, specs1q[f"{n.index[0]}"].get("f1QRB", 1.0)
                 )
-                get_readout_error = lambda n: cast(
+                get_readout_error = lambda n: 1.0 - cast(
                     float, specs1q[f"{n.index[0]}"].get("fRO", 1.0)
                 )
                 get_link_error = lambda n0, n1: 1.0 - cast(
@@ -461,6 +504,18 @@ class BraketBackend(Backend):
                     specs2q[
                         f"{min(n0.index[0],n1.index[0])}-{max(n0.index[0],n1.index[0])}"
                     ].get("fCZ", 1.0),
+                )
+            elif schema == OQC_SCHEMA:
+                properties = characteristics["properties"]
+                props1q, props2q = properties["one_qubit"], properties["two_qubit"]
+                get_node_error = lambda n: 1.0 - cast(
+                    float, props1q[f"{n.index[0]}"]["fRB"]
+                )
+                get_readout_error = lambda n: 1.0 - cast(
+                    float, props1q[f"{n.index[0]}"]["fRO"]
+                )
+                get_link_error = lambda n0, n1: 1.0 - cast(
+                    float, props2q[f"{n0.index[0]}-{n1.index[0]}"]["fCX"]
                 )
             # readout error as symmetric 2x2 matrix
             to_sym_mat: Callable[[float], List[List[float]]] = lambda x: [
@@ -526,6 +581,7 @@ class BraketBackend(Backend):
                     delay_measures=True,
                 )
             )
+            passes.append(NaivePlacementPass(arch))
             # If CX weren't supported by the device then we'd need to do another
             # rebase_pass here. But we checked above that it is.
         if optimisation_level == 1:
@@ -547,8 +603,9 @@ class BraketBackend(Backend):
 
     @property
     def _result_id_type(self) -> _ResultIdTuple:
-        # (task ID, whether state vector is wanted, serialized ppcirc or "null")
-        return (str, bool, str)
+        # (task ID, whether state vector / density matrix are wanted, serialized ppcirc
+        # or "null")
+        return (str, int, bool, bool, str)
 
     def _run(
         self, bkcirc: braket.circuits.Circuit, n_shots: int = 0, **kwargs: KwargTypes
@@ -602,7 +659,8 @@ class BraketBackend(Backend):
 
         handles = []
         for circ, n_shots in zip(circuits, n_shots_list):
-            want_state = n_shots == 0
+            want_state = (n_shots == 0) and self.supports_state
+            want_dm = (n_shots == 0) and self.supports_density_matrix
             if postprocess:
                 circ_measured = circ.copy()
                 circ_measured.measure_all()
@@ -613,6 +671,8 @@ class BraketBackend(Backend):
             bkcirc = self._to_bkcirc(c0)
             if want_state:
                 bkcirc.add_result_type(ResultType.StateVector())
+            if want_dm:
+                bkcirc.add_result_type(ResultType.DensityMatrix(target=bkcirc.qubits))
             if not bkcirc.instructions and len(circ.bits) == 0:
                 task = None
             else:
@@ -621,16 +681,26 @@ class BraketBackend(Backend):
                 # Results are available now. Put them in the cache.
                 if task is not None:
                     assert task.state() == "COMPLETED"
-                    results = _get_result(task, want_state, ppcirc)
+                    results = _get_result(
+                        task, bkcirc.qubit_count, want_state, want_dm, ppcirc
+                    )
                 else:
                     results = {"result": self.empty_result(circ, n_shots=n_shots)}
             else:
                 # Task is asynchronous. Must wait for results.
                 results = {}
             if task is not None:
-                handle = ResultHandle(task.id, want_state, json.dumps(ppcirc_rep))
+                handle = ResultHandle(
+                    task.id,
+                    bkcirc.qubit_count,
+                    want_state,
+                    want_dm,
+                    json.dumps(ppcirc_rep),
+                )
             else:
-                handle = ResultHandle(str(uuid4()), False, json.dumps(None))
+                handle = ResultHandle(
+                    str(uuid4()), bkcirc.qubit_count, False, False, json.dumps(None)
+                )
             self._cache[handle] = results
             handles.append(handle)
         return handles
@@ -646,18 +716,19 @@ class BraketBackend(Backend):
     def circuit_status(self, handle: ResultHandle) -> CircuitStatus:
         if self._device_type == _DeviceType.LOCAL:
             return CircuitStatus(StatusEnum.COMPLETED)
-        task_id, want_state, ppcirc_str = handle
+        task_id, n_qubits, want_state, want_dm, ppcirc_str = handle
         ppcirc_rep = json.loads(ppcirc_str)
         ppcirc = Circuit.from_dict(ppcirc_rep) if ppcirc_rep is not None else None
         task = AwsQuantumTask(task_id, aws_session=self._aws_session)
         state = task.state()
         if state == "FAILED":
-            result = task.result()
-            return CircuitStatus(StatusEnum.ERROR, result.task_metadata.failureReason)
+            return CircuitStatus(StatusEnum.ERROR, task.metadata()["failureReason"])
         elif state == "CANCELLED":
             return CircuitStatus(StatusEnum.CANCELLED)
         elif state == "COMPLETED":
-            self._update_cache_result(handle, _get_result(task, want_state, ppcirc))
+            self._update_cache_result(
+                handle, _get_result(task, n_qubits, want_state, want_dm, ppcirc)
+            )
             return CircuitStatus(StatusEnum.COMPLETED)
         elif state == "QUEUED" or state == "CREATED":
             return CircuitStatus(StatusEnum.QUEUED)
@@ -668,10 +739,15 @@ class BraketBackend(Backend):
 
     @property
     def characterisation(self) -> Optional[Dict[str, Any]]:
+        node_errors = self._backend_info.all_node_gate_errors
+        edge_errors = self._backend_info.all_edge_gate_errors
+        readout_errors = self._backend_info.all_readout_errors
+        if node_errors is None and edge_errors is None and readout_errors is None:
+            return None
         return {
-            "NodeErrors": self._backend_info.all_node_gate_errors,
-            "EdgeErrors": self._backend_info.all_edge_gate_errors,
-            "ReadoutErrors": self._backend_info.all_readout_errors,
+            "NodeErrors": node_errors,
+            "EdgeErrors": edge_errors,
+            "ReadoutErrors": readout_errors,
         }
 
     @property

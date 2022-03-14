@@ -55,7 +55,7 @@ from pytket.predicates import (  # type: ignore
     NoSymbolsPredicate,
     Predicate,
 )
-from pytket.routing import Architecture  # type: ignore
+from pytket.architecture import Architecture  # type: ignore
 from pytket.utils import prepare_circuit
 from pytket.utils.outcomearray import OutcomeArray
 from .config import IQMConfig
@@ -103,7 +103,7 @@ class IQMBackend(Backend):
 
         Requires a valid username and API key. These can either be provided as
         parameters or set in config using
-        :py:meth:`pytket.extensions.iqm.set_aqt_config`.
+        :py:meth:`pytket.extensions.iqm.set_iqm_config`.
 
         :param url: base URL for requests
         :param device: path of JSON file containing device settings
@@ -343,7 +343,7 @@ def _iqm_rebase() -> BasePass:
         .add_gate(OpType.PhasedX, [1 + b, a], [0])
     )
 
-    return RebaseCustom({OpType.CZ}, c_cx, {OpType.PhasedX}, c_tk1)
+    return RebaseCustom({OpType.CZ, OpType.PhasedX}, c_cx, c_tk1)
 
 
 _xcirc = Circuit(1).add_gate(OpType.PhasedX, [1, 0], [0]).add_phase(0.5)

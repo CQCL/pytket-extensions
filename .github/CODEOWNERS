@@ -1,7 +1,6 @@
 /modules/pytket-aqt/ @cqc-melf
 /modules/pytket-braket/ @cqc-alec
 /modules/pytket-cirq/ @sjdilkes
-/modules/pytket-honeywell/ @ss2165
 /modules/pytket-ionq/ @Roland-djee
 /modules/pytket-iqm/ @cqc-alec
 /modules/pytket-projectq/ @lmondada
@@ -9,5 +8,6 @@
 /modules/pytket-pyzx/ @cqc-alec
 /modules/pytket-qiskit/ @ss2165
 /modules/pytket-qsharp/ @cqc-alec
+/modules/pytket-quantinuum/ @ss2165
 /modules/pytket-qulacs/ @Roland-djee
 /modules/pytket-stim/ @cqc-alec

@@ -19,7 +19,7 @@ from typing import List, Optional, Sequence, Union
 from logging import warning
 from uuid import uuid4
 import numpy as np
-from sympy import Expr  # type: ignore
+from sympy import Expr
 from qulacs import Observable, QuantumState  # type: ignore
 from pytket.backends import (
     Backend,
@@ -39,7 +39,6 @@ from pytket.passes import (  # type: ignore
     SynthesiseTket,
     SequencePass,
     DecomposeBoxes,
-    RebaseCustom,
     FullPeepholeOptimise,
     FlattenRegisters,
 )
@@ -53,8 +52,9 @@ from pytket.predicates import (  # type: ignore
     Predicate,
 )
 from pytket.circuit import Pauli  # type: ignore
+from pytket.passes import auto_rebase_pass
 from pytket.pauli import QubitPauliString  # type: ignore
-from pytket.routing import Architecture  # type: ignore
+from pytket.architecture import Architecture  # type: ignore
 from pytket.utils.operators import QubitPauliOperator
 from pytket.utils.outcomearray import OutcomeArray
 from pytket.extensions.qulacs.qulacs_convert import (
@@ -137,12 +137,7 @@ class QulacsBackend(Backend):
         ]
 
     def rebase_pass(self) -> BasePass:
-        return RebaseCustom(
-            set(_TWO_QUBIT_GATES),
-            Circuit(2).CX(0, 1),
-            _1Q_GATES,
-            _tk1_to_u,
-        )
+        return auto_rebase_pass(set(_TWO_QUBIT_GATES) | _1Q_GATES)
 
     def default_compilation_pass(self, optimisation_level: int = 1) -> BasePass:
         assert optimisation_level in range(3)
@@ -264,7 +259,7 @@ class QulacsBackend(Backend):
 
             qulacs_qps = " ".join(_items)
             if isinstance(coeff, Expr):
-                qulacs_coeff = complex(coeff.evalf())
+                qulacs_coeff = complex(coeff.evalf())  # type: ignore
             else:
                 qulacs_coeff = complex(coeff)
             observable.add_operator(qulacs_coeff, qulacs_qps)

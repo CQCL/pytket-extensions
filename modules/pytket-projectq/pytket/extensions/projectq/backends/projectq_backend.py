@@ -45,7 +45,6 @@ from pytket.backends.resulthandle import _ResultIdTuple
 from pytket.backends.backendresult import BackendResult
 from pytket.passes import (  # type: ignore
     BasePass,
-    RebaseProjectQ,
     SequencePass,
     SynthesiseTket,
     FullPeepholeOptimise,
@@ -62,8 +61,8 @@ from pytket.predicates import (  # type: ignore
     DefaultRegisterPredicate,
     Predicate,
 )
-from pytket.routing import Architecture  # type: ignore
-from pytket.extensions.projectq.projectq_convert import tk_to_projectq  # type: ignore
+from pytket.architecture import Architecture  # type: ignore
+from pytket.extensions.projectq.projectq_convert import tk_to_projectq, _REBASE  # type: ignore
 from pytket.extensions.projectq._metadata import __extension_version__  # type: ignore
 from pytket.utils.operators import QubitPauliOperator
 from pytket.utils.results import KwargTypes
@@ -134,7 +133,7 @@ class ProjectQBackend(Backend):
         ]
 
     def rebase_pass(self) -> BasePass:
-        return RebaseProjectQ()
+        return _REBASE
 
     def default_compilation_pass(self, optimisation_level: int = 1) -> BasePass:
         assert optimisation_level in range(3)

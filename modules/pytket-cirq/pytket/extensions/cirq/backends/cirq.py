@@ -32,7 +32,7 @@ from pytket.circuit import Circuit, OpType, Qubit  # type: ignore
 from pytket.transform import Transform  # type: ignore
 from pytket.passes import (  # type: ignore
     BasePass,
-    RebaseCirq,
+    auto_rebase_pass,
     SequencePass,
     RebaseCustom,
     SquashCustom,
@@ -42,6 +42,7 @@ from pytket.passes import (  # type: ignore
     RemoveRedundancies,
     FullPeepholeOptimise,
 )
+from pytket._tket.circuit._library import _TK1_to_PhasedXRz, _CX  # type: ignore
 from pytket.predicates import (  # type: ignore
     GateSetPredicate,
     NoClassicalControlPredicate,
@@ -89,7 +90,7 @@ class _CirqBaseBackend(Backend):
         self._gate_set_predicate = _regular_gate_set_predicate
 
     def rebase_pass(self) -> BasePass:
-        return RebaseCirq()
+        return auto_rebase_pass({OpType.CZ, OpType.PhasedX, OpType.Rz})
 
     @property
     def required_predicates(self) -> List[Predicate]:
@@ -498,16 +499,8 @@ class CirqCliffordSimBackend(_CirqSimBackend):
         return all_backres
 
 
-def _tk1_to_phasedxrz(a: float, b: float, c: float) -> Circuit:
-    circ = Circuit(1)
-    circ.Rz(a + c, 0)
-    circ.add_gate(OpType.PhasedX, [b, a], [0])
-    RemoveRedundancies().apply(circ)
-    return circ
-
-
 _cirq_squash = SquashCustom(
-    {OpType.PhasedX, OpType.Rz, OpType.Rx, OpType.Ry}, _tk1_to_phasedxrz
+    {OpType.PhasedX, OpType.Rz, OpType.Rx, OpType.Ry}, _TK1_to_PhasedXRz
 )
 
 _regular_gate_set_predicate = GateSetPredicate(
@@ -559,14 +552,12 @@ _clifford_gate_set_predicate = GateSetPredicate(
 
 
 def _tk1_to_phasedxrz_clifford(a: float, b: float, c: float) -> Circuit:
-    circ = _tk1_to_phasedxrz(a, b, c)
+    circ = _TK1_to_PhasedXRz(a, b, c)
     Transform.RebaseToCliffordSingles().apply(circ)
     return circ
 
 
 _partial_clifford_rebase = RebaseCustom(
-    {OpType.CX, OpType.CZ},
-    Circuit(2).CX(0, 1),
     {
         OpType.PhasedX,
         OpType.Rz,
@@ -580,6 +571,9 @@ _partial_clifford_rebase = RebaseCustom(
         OpType.S,
         OpType.Sdg,
         OpType.H,
+        OpType.CX,
+        OpType.CZ,
     },
+    _CX(),
     _tk1_to_phasedxrz_clifford,
 )

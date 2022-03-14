@@ -1,6 +1,12 @@
 Changelog
 ~~~~~~~~~
 
+0.19.0 (March 2022)
+-------------------
+
+* Updated pyzx version requirement to 0.7.
+* Updated pytket version requirement to 1.0.
+
 0.18.0 (February 2022)
 ----------------------
 

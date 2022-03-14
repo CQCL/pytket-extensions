@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sys
+import os
 from typing import Tuple
 
 import pytest
@@ -20,17 +20,17 @@ from _pytest.fixtures import SubRequest
 from requests_mock.mocker import Mocker
 import jwt
 
-from pytket.extensions.honeywell.backends.api_wrappers import HoneywellQAPI
-from pytket.extensions.honeywell.backends.credential_storage import (
-    CredentialStorage,
-    MemoryStorage,
-    PersistentStorage,
+from pytket.extensions.quantinuum.backends.api_wrappers import QuantinuumQAPI
+from pytket.extensions.quantinuum.backends.credential_storage import (
+    MemoryCredentialStorage,
 )
+
+skip_remote_tests: bool = os.getenv("PYTKET_RUN_REMOTE_TESTS") is None
 
 
 @pytest.fixture()
 def mock_credentials() -> Tuple[str, str]:
-    username = "mark.honeywell@mail.com"
+    username = "mark.quantinuum@mail.com"
     pwd = "1906"
     return (username, pwd)
 
@@ -43,22 +43,22 @@ def mock_token() -> str:
     return mock_token
 
 
-@pytest.fixture(name="mock_hqs_api_handler", params=[True, False])
-def fixture_mock_hqs_api_handler(
+@pytest.fixture(name="mock_quum_api_handler", params=[True, False])
+def fixture_mock_quum_api_handler(
     request: SubRequest,
     requests_mock: Mocker,
     mock_credentials: Tuple[str, str],
     mock_token: str,
-) -> HoneywellQAPI:
-    """A logged-in HoneywellQAPI fixture.
+) -> QuantinuumQAPI:
+    """A logged-in QuantinuumQAPI fixture.
     After using this fixture in a test, call:
-        mock_hqs_api_handler.delete_authentication()
+        mock_quum_api_handler.delete_authentication()
     To remove mock tokens from the keyring.
     """
 
     username, pwd = mock_credentials
 
-    mock_url = "https://qapi.honeywell.com/v1/login"
+    mock_url = "https://qapi.quantinuum.com/v1/login"
 
     requests_mock.register_uri(
         "POST",
@@ -70,27 +70,17 @@ def fixture_mock_hqs_api_handler(
         headers={"Content-Type": "application/json"},
     )
 
-    cred_store: CredentialStorage
-    # Skip testing keyring service if running on linux
-    if request.param and sys.platform != "linux":
-        cred_store = PersistentStorage()
-        cred_store.KEYRING_SERVICE = "HQS_API_MOCK"
-    else:
-        cred_store = MemoryStorage()
-
-    cred_store.save_login_credential(
+    cred_store = MemoryCredentialStorage()
+    cred_store._save_login_credential(
         user_name=username,
         password=pwd,
     )
 
-    # Construct HoneywellQAPI and login
-    api_handler = HoneywellQAPI(
-        persistent_credential=False,
-        login=False,
-    )
+    # Construct QuantinuumQAPI and login
+    api_handler = QuantinuumQAPI()
 
     # Add the credential storage seperately in line with fixture parameters
-    api_handler.user_name = username
+    api_handler.config.username = username
     api_handler._cred_store = cred_store
     api_handler.login()
 

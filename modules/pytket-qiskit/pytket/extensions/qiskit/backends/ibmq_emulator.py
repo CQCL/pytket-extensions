@@ -15,7 +15,6 @@
 import json
 from typing import (
     cast,
-    Any,
     Dict,
     Optional,
     List,
@@ -91,10 +90,6 @@ class IBMQEmulatorBackend(AerBackend):
 
         # cache of results keyed by job id and circuit index
         self._ibm_res_cache: Dict[Tuple[str, int], ExperimentResult] = dict()
-
-    @property
-    def characterisation(self) -> Optional[Dict[str, Any]]:
-        return self._ibmq.characterisation
 
     @property
     def backend_info(self) -> BackendInfo:

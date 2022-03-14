@@ -48,13 +48,22 @@ from pytket.extensions.qiskit.result_convert import (
     backendresult_to_qiskit_resultdata,
     _gen_uids,
 )
-from sympy import Symbol  # type: ignore
+from sympy import Symbol
 from pytket.passes import RebaseTket, DecomposeBoxes, FullPeepholeOptimise, SequencePass  # type: ignore
 from pytket.utils.results import compare_statevectors
 
 skip_remote_tests: bool = (
     not IBMQ.stored_account() or os.getenv("PYTKET_RUN_REMOTE_TESTS") is None
 )
+
+
+def test_convert_circuit_with_complex_params() -> None:
+    with pytest.raises(ValueError):
+        qiskit_op = PauliSumOp.from_list([("Z", 1j)])
+        evolved_op = qiskit_op.exp_i()
+        evolution_circ = PauliTrotterEvolution(reps=1).convert(evolved_op).to_circuit()
+        tk_circ = qiskit_to_tk(evolution_circ)
+        DecomposeBoxes().apply(tk_circ)
 
 
 def get_test_circuit(measure: bool, reset: bool = True) -> QuantumCircuit:
@@ -130,11 +139,11 @@ def test_convert() -> None:
 
 
 def test_symbolic() -> None:
-    pi2 = Symbol("pi2")
-    pi3 = Symbol("pi3")
-    pi0 = Symbol("pi0")
+    pi2 = Symbol("pi2")  # type: ignore
+    pi3 = Symbol("pi3")  # type: ignore
+    pi0 = Symbol("pi0")  # type: ignore
     tkc = Circuit(3, 3, name="test").Ry(pi2, 1).Rx(pi3, 1).CX(1, 0)
-    tkc.add_phase(Symbol("pi0") * 2)
+    tkc.add_phase(Symbol("pi0") * 2)  # type: ignore
     RebaseTket().apply(tkc)
 
     qc = tk_to_qiskit(tkc)
@@ -393,7 +402,7 @@ def test_gate_str_2_optype() -> None:
 
 
 def test_customgate() -> None:
-    a = Symbol("a")
+    a = Symbol("a")  # type: ignore
     def_circ = Circuit(2)
     def_circ.CZ(0, 1)
     def_circ.Rx(a, 1)

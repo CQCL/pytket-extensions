@@ -11,38 +11,36 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Pytket Backend for Honeywell devices."""
+"""Pytket Backend for Quantinuum devices."""
 
 from ast import literal_eval
 import json
 from http import HTTPStatus
-from typing import Dict, List, Optional, Sequence, Union, Any, cast
+from typing import Dict, List, Set, Optional, Sequence, Union, Any, cast
 
 import numpy as np
 import requests
-import keyring  # type: ignore
 
 from pytket.backends import Backend, ResultHandle, CircuitStatus, StatusEnum
-from requests.models import Response
 from pytket.backends.backend import KwargTypes
 from pytket.backends.resulthandle import _ResultIdTuple
 from pytket.backends.backendinfo import BackendInfo, fully_connected_backendinfo
 from pytket.backends.backendresult import BackendResult
 from pytket.backends.backend_exceptions import CircuitNotRunError
 from pytket.circuit import Circuit, OpType, Bit  # type: ignore
-from pytket.extensions.honeywell._metadata import __extension_version__
+from pytket.extensions.quantinuum._metadata import __extension_version__
 from pytket.qasm import circuit_to_qasm_str
 from pytket.passes import (  # type: ignore
     BasePass,
     SequencePass,
     SynthesiseTket,
     RemoveRedundancies,
-    RebaseHQS,
-    SquashHQS,
     FullPeepholeOptimise,
     DecomposeBoxes,
     DecomposeClassicalExp,
     SimplifyInitial,
+    auto_rebase_pass,
+    auto_squash_pass,
 )
 from pytket.predicates import (  # type: ignore
     GateSetPredicate,
@@ -53,12 +51,11 @@ from pytket.predicates import (  # type: ignore
 from pytket.utils import prepare_circuit
 from pytket.utils.outcomearray import OutcomeArray
 
-from .config import set_honeywell_config
-from .api_wrappers import HQSAPIError, HoneywellQAPI
-from .credential_storage import PersistentStorage
+from .api_wrappers import HQSAPIError, QuantinuumQAPI
 
 _DEBUG_HANDLE_PREFIX = "_MACHINE_DEBUG_"
-HONEYWELL_URL_PREFIX = "https://qapi.honeywell.com/"
+HONEYWELL_URL_PREFIX = "https://qapi.quantinuum.com/"
+DEVICE_FAMILY = "HQS-LT"
 
 _STATUS_MAP = {
     "queued": StatusEnum.QUEUED,
@@ -73,6 +70,7 @@ _GATE_SET = {
     OpType.Rz,
     OpType.PhasedX,
     OpType.ZZMax,
+    OpType.ZZPhase,
     OpType.Reset,
     OpType.Measure,
     OpType.Barrier,
@@ -84,13 +82,20 @@ _GATE_SET = {
 }
 
 
+def _get_gateset(machine_name: str) -> Set[OpType]:
+    gs = _GATE_SET.copy()
+    if "sim" in machine_name.lower():
+        gs.remove(OpType.ZZPhase)
+    return gs
+
+
 class GetResultFailed(Exception):
     pass
 
 
-class HoneywellBackend(Backend):
+class QuantinuumBackend(Backend):
     """
-    Interface to a Honeywell device.
+    Interface to a Quantinuum device.
     """
 
     _supports_shots = True
@@ -98,22 +103,23 @@ class HoneywellBackend(Backend):
     _supports_contextual_optimisation = True
     _persistent_handles = True
 
+    # class variable to allow "global" login
+    # all instances share authenticated credentials
+    _api_handler: QuantinuumQAPI = QuantinuumQAPI()
+
     def __init__(
         self,
         device_name: str,
         label: Optional[str] = "job",
-        login: bool = True,
         simulator: str = "state-vector",
         machine_debug: bool = False,
     ):
-        """Construct a new Honeywell backend.
+        """Construct a new Quantinuum backend.
 
         :param device_name: Name of device, e.g. "HQS-LT-S1-APIVAL"
         :type device_name: str
         :param label: Job labels used if Circuits have no name, defaults to "job"
         :type label: Optional[str], optional
-        :param login: Flag to attempt login on construction, defaults to True
-        :type login: bool, optional
         :param simulator: Only applies to simulator devices, options are
             "state-vector" or "stabilizer", defaults to "state-vector"
         :type simulator: str, optional
@@ -124,40 +130,26 @@ class HoneywellBackend(Backend):
         self._label = label
 
         self._backend_info: Optional[BackendInfo] = None
-        if machine_debug:
-            self._api_handler = None
-        else:
-            self._api_handler = HoneywellQAPI(machine=device_name, login=login)
+        self._MACHINE_DEBUG = machine_debug
 
         self.simulator_type = simulator
-
-    @property
-    def _MACHINE_DEBUG(self) -> bool:
-        return self._api_handler is None
-
-    @_MACHINE_DEBUG.setter
-    def _MACHINE_DEBUG(self, val: bool) -> None:
-        if val:
-            self._api_handler = None
-        elif self._api_handler is None:
-            raise RuntimeError("_MACHINE_DEBUG cannot be False with no _api_handler.")
+        self._gate_set = _get_gateset(self._device_name)
 
     @classmethod
     def _available_devices(
-        cls, _api_handler: Optional[HoneywellQAPI] = None
+        cls, _api_handler: Optional[QuantinuumQAPI] = None
     ) -> List[Dict[str, Any]]:
-        """List devices available from Honeywell.
+        """List devices available from Quantinuum.
 
-        >>> HoneywellBackend._available_devices()
+        >>> QuantinuumBackend._available_devices()
         e.g. [{'name': 'HQS-LT-1.0-APIVAL', 'n_qubits': 6}]
 
         :param _api_handler: Instance of API handler, defaults to None
-        :type _api_handler: Optional[HoneywellQAPI], optional
+        :type _api_handler: Optional[QuantinuumQAPI], optional
         :return: Dictionaries of machine name and number of qubits.
         :rtype: List[Dict[str, Any]]
         """
-        if _api_handler is None:
-            _api_handler = HoneywellQAPI()
+        _api_handler = _api_handler or cls._api_handler
         id_token = _api_handler.login()
         res = requests.get(
             f"{_api_handler.url}machine/?config=true",
@@ -173,9 +165,7 @@ class HoneywellBackend(Backend):
         See :py:meth:`pytket.backends.Backend.available_devices`.
         Supported kwargs: `api_handler` (default none).
         """
-        api_handler: Optional[HoneywellQAPI] = kwargs.get("api_handler")
-        if api_handler is None:
-            api_handler = HoneywellQAPI(login=False)
+        api_handler = kwargs.get("api_handler", cls._api_handler)
         id_token = api_handler.login()
         res = requests.get(
             f"{api_handler.url}machine/?config=true",
@@ -189,7 +179,7 @@ class HoneywellBackend(Backend):
                 machine["name"],
                 __extension_version__,
                 machine["n_qubits"],
-                _GATE_SET,
+                _get_gateset(machine["name"]),
             )
             for machine in jr
         ]
@@ -205,27 +195,26 @@ class HoneywellBackend(Backend):
             machine,
             __extension_version__,
             self._machine_info["n_qubits"],
-            _GATE_SET,
+            self._gate_set,
         )
 
     @classmethod
     def device_state(
-        cls, device_name: str, _api_handler: Optional[HoneywellQAPI] = None
+        cls, device_name: str, _api_handler: Optional[QuantinuumQAPI] = None
     ) -> str:
         """Check the status of a device.
 
-        >>> HoneywellBackend.device_state('HQS-LT-1.0-APIVAL') # e.g. "online"
+        >>> QuantinuumBackend.device_state('HQS-LT-1.0-APIVAL') # e.g. "online"
 
 
         :param device_name: Name of the device.
         :type device_name: str
         :param _api_handler: Instance of API handler, defaults to None
-        :type _api_handler: Optional[HoneywellQAPI], optional
+        :type _api_handler: Optional[QuantinuumQAPI], optional
         :return: String of state, e.g. "online"
         :rtype: str
         """
-        if _api_handler is None:
-            _api_handler = HoneywellQAPI()
+        _api_handler = _api_handler or cls._api_handler
 
         res = requests.get(
             f"{_api_handler.url}machine/{device_name}",
@@ -245,7 +234,7 @@ class HoneywellBackend(Backend):
     def required_predicates(self) -> List[Predicate]:
         preds = [
             NoSymbolsPredicate(),
-            GateSetPredicate(_GATE_SET),
+            GateSetPredicate(self._gate_set),
         ]
         if not self._MACHINE_DEBUG:
             assert self.backend_info is not None
@@ -254,11 +243,12 @@ class HoneywellBackend(Backend):
         return preds
 
     def rebase_pass(self) -> BasePass:
-        return RebaseHQS()
+        return auto_rebase_pass(self._gate_set)
 
     def default_compilation_pass(self, optimisation_level: int = 1) -> BasePass:
         assert optimisation_level in range(3)
         passlist = [DecomposeClassicalExp(), DecomposeBoxes()]
+        squash = auto_squash_pass({OpType.PhasedX, OpType.Rz})
         if optimisation_level == 0:
             return SequencePass(passlist + [self.rebase_pass()])
         elif optimisation_level == 1:
@@ -268,7 +258,7 @@ class HoneywellBackend(Backend):
                     SynthesiseTket(),
                     self.rebase_pass(),
                     RemoveRedundancies(),
-                    SquashHQS(),
+                    squash,
                     SimplifyInitial(
                         allow_classical=False, create_all_qubits=True, xcirc=_xcirc
                     ),
@@ -281,7 +271,7 @@ class HoneywellBackend(Backend):
                     FullPeepholeOptimise(),
                     self.rebase_pass(),
                     RemoveRedundancies(),
-                    SquashHQS(),
+                    squash,
                     SimplifyInitial(
                         allow_classical=False, create_all_qubits=True, xcirc=_xcirc
                     ),
@@ -345,19 +335,26 @@ class HoneywellBackend(Backend):
                 ppcirc_rep = ppcirc.to_dict()
             else:
                 c0, ppcirc_rep = circ, None
-            honeywell_circ = circuit_to_qasm_str(c0, header="hqslib1")
+            quantinuum_circ = circuit_to_qasm_str(c0, header="hqslib1")
             body = basebody.copy()
             body["name"] = circ.name if circ.name else f"{self._label}_{i}"
-            body["program"] = honeywell_circ
+            body["program"] = quantinuum_circ
             body["count"] = n_shots
 
-            if final_index > 0:
-                # only set batch fields if more than one job submitted
+            if final_index > 0 and (
+                self._device_name != DEVICE_FAMILY or "max_batch_cost" in kwargs
+            ):
+                # Don't set default batch fields if:
+                #  - Submitting to the device family
+                #  - Less than one job submitted
                 body["batch-exec"] = batch_exec
                 if i == final_index:
                     # flag to signal end of batch
                     body["batch-end"] = True
-            if self._api_handler is None:
+
+            if circ.n_gates_of_type(OpType.ZZPhase) > 0:
+                body["options"]["compiler-options"] = {"parametrized_zz": True}
+            if self._MACHINE_DEBUG:
                 handle_list.append(
                     ResultHandle(
                         _DEBUG_HANDLE_PREFIX + str((circ.n_qubits, n_shots)),
@@ -366,10 +363,7 @@ class HoneywellBackend(Backend):
                 )
             else:
                 try:
-                    res = _submit_job(self._api_handler, body)
-                    if res.status_code != HTTPStatus.OK:
-                        self.relogin()
-                        res = _submit_job(self._api_handler, body)
+                    res = self._api_handler._submit_job(body)
 
                     jobdict = res.json()
                     if res.status_code != HTTPStatus.OK:
@@ -401,12 +395,7 @@ class HoneywellBackend(Backend):
             raise RuntimeError("API handler not set")
         with self._api_handler.override_timeouts(timeout=timeout, retry_timeout=wait):
             # set and unset optional timeout parameters
-
-            try:
-                job_dict = self._api_handler.retrieve_job(jobid, use_websocket=True)
-            except HQSAPIError:
-                self.relogin()
-                job_dict = self._api_handler.retrieve_job(jobid, use_websocket=True)
+            job_dict = self._api_handler.retrieve_job(jobid, use_websocket=True)
 
         if job_dict is None:
             raise RuntimeError(f"Unable to retrieve job {jobid}")
@@ -428,13 +417,13 @@ class HoneywellBackend(Backend):
     def circuit_status(self, handle: ResultHandle) -> CircuitStatus:
         self._check_handle_type(handle)
         jobid = str(handle[0])
-        if self._api_handler is None or jobid.startswith(_DEBUG_HANDLE_PREFIX):
+        if self._MACHINE_DEBUG or jobid.startswith(_DEBUG_HANDLE_PREFIX):
             return CircuitStatus(StatusEnum.COMPLETED)
         # TODO check queue position and add to message
         try:
             response = self._api_handler.retrieve_job_status(jobid, use_websocket=True)
         except HQSAPIError:
-            self.relogin()
+            self._api_handler.login()
             response = self._api_handler.retrieve_job_status(jobid, use_websocket=True)
 
         if response is None:
@@ -492,9 +481,9 @@ class HoneywellBackend(Backend):
 
     def cost_estimate(self, circuit: Circuit, n_shots: int) -> float:
         """
-        Estimate the cost in Honeywell Quantum Credits (HQC) to complete this `circuit`
-        with `n_shots` repeats. The estimate is based on hard-coded constants, which may
-        be out of date, invalidating the estimate. Use with caution.
+        Estimate the cost in HQC to complete this `circuit` with `n_shots` repeats. The
+        estimate is based on hard-coded constants, which may be out of date,
+        invalidating the estimate. Use with caution.
 
         With 𝑁1𝑞 PhasedX gates, 𝑁2𝑞 ZZMax gates, 𝑁𝑚 state preparations and measurements,
         and 𝐶 shots:
@@ -524,40 +513,21 @@ class HoneywellBackend(Backend):
         cost: float = 5 + (n_1q + 10 * n_2q + 5 * n_m) * n_shots / 5000
         return cost
 
-    def delete_authentication(self) -> None:
-        """Remove stored Honeywell Credentials, you will need to log in again."""
-
-        if self._api_handler is not None:
-            self._api_handler.delete_authentication()
-
-    def relogin(self) -> None:
-        """Remove stored Honeywell Credentials, and ask for credentials again."""
-
-        if self._api_handler is not None:
-            self.delete_authentication()
-            self._api_handler.login()
-
-    @staticmethod
-    def save_login(user_name: str, pwd: str) -> None:
-        """NOT RECOMMENDED
-
-        Use this method to (somewhat) securely store your password on your system so you
-        don't have to login frequently. This uses the keyring package.
-
-        This is not advised, providing your credentials when prompted is more secure.
+    @classmethod
+    def login(cls) -> None:
+        """Log in to Quantinuum API. Requests username and password from stdin
+        (e.g. shell input or dialogue box in Jupytet notebooks.). Passwords are
+        not stored.
+        After log in you should not need to provide credentials again while that
+        session (script/notebook) is alive.
         """
-        set_honeywell_config(user_name)
+        cls._api_handler.full_login()
 
-        keyring.set_password(PersistentStorage.KEYRING_SERVICE, user_name, pwd)  # type: ignore
-
-    @staticmethod
-    def clear_saved_login(user_name: str) -> None:
-        """Delete saved password for user_name if it exists"""
-        set_honeywell_config(None)
-        try:
-            keyring.delete_password(PersistentStorage.KEYRING_SERVICE, user_name)  # type: ignore
-        except keyring.errors.PasswordDeleteError:
-            raise ValueError(f"No credentials stored for {user_name}")
+    @classmethod
+    def logout(cls) -> None:
+        """Clear stored JWT tokens from login. Will need to `login` again to
+        make API calls."""
+        cls._api_handler.delete_authentication()
 
 
 _xcirc = Circuit(1).add_gate(OpType.PhasedX, [1, 0], [0])
@@ -601,13 +571,3 @@ def _parse_status(response: Dict) -> CircuitStatus:
     }
     message = str(msgdict)
     return CircuitStatus(_STATUS_MAP[h_status], message)
-
-
-def _submit_job(api_handler: HoneywellQAPI, body: Dict) -> Response:
-    id_token = api_handler.login()
-    # send job request
-    return requests.post(
-        f"{api_handler.url}job",
-        json.dumps(body),
-        headers={"Authorization": id_token},
-    )

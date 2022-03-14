@@ -39,6 +39,7 @@ from pytket.passes import (  # type: ignore
     DecomposeBoxes,
     RenameQubitsPass,
     SimplifyInitial,
+    auto_rebase_pass,
 )
 from pytket.predicates import (  # type: ignore
     GateSetPredicate,
@@ -376,19 +377,8 @@ def _translate_aqt(circ: Circuit) -> Tuple[List[List], str]:
     return (gates, json.dumps(measures))
 
 
-def _aqt_rebase() -> BasePass:
-    # CX replacement
-    c_cx = Circuit(2)
-    c_cx.Ry(0.5, 0).Rx(0.5, 0)
-    c_cx.Rx(-0.5, 1)
-    c_cx.add_gate(OpType.XXPhase, 0.5, [0, 1])
-    c_cx.Ry(0.5, 0).Rx(-1, 0)
-    c_cx.add_phase(-0.25)
-
-    # TK1 replacement
-    c_tk1 = lambda a, b, c: Circuit(1).Rx(-0.5, 0).Ry(c, 0).Rx(b, 0).Ry(a, 0).Rx(0.5, 0)
-
-    return RebaseCustom({OpType.XXPhase}, c_cx, {OpType.Rx, OpType.Ry}, c_tk1)
+def _aqt_rebase() -> RebaseCustom:
+    return auto_rebase_pass({OpType.XXPhase, OpType.Rx, OpType.Ry})
 
 
 _xcirc = Circuit(1).Rx(1, 0)

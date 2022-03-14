@@ -42,9 +42,10 @@ from pytket.passes import (  # type: ignore
     CXMappingPass,
     DecomposeBoxes,
     FullPeepholeOptimise,
-    RebaseCustom,
     SequencePass,
     SynthesiseTket,
+    auto_rebase_pass,
+    NaivePlacementPass,
 )
 from pytket.pauli import Pauli, QubitPauliString  # type: ignore
 from pytket.predicates import (  # type: ignore
@@ -57,14 +58,13 @@ from pytket.predicates import (  # type: ignore
 )
 from pytket.extensions.qiskit.qiskit_convert import (
     tk_to_qiskit,
-    _qiskit_gates_1q,
-    _qiskit_gates_2q,
     _gate_str_2_optype,
     get_avg_characterisation,
 )
 from pytket.extensions.qiskit.result_convert import qiskit_result_to_backendresult
 from pytket.extensions.qiskit._metadata import __extension_version__
-from pytket.routing import Architecture, NoiseAwarePlacement  # type: ignore
+from pytket.architecture import Architecture  # type: ignore
+from pytket.placement import NoiseAwarePlacement  # type: ignore
 from pytket.utils.operators import QubitPauliOperator
 from pytket.utils.results import KwargTypes, permute_basis_indexing
 from qiskit import Aer  # type: ignore
@@ -90,15 +90,6 @@ def _default_q_index(q: Qubit) -> int:
 
 
 _required_gates: Set[OpType] = {OpType.CX, OpType.U1, OpType.U2, OpType.U3}
-_1q_gates: Set[OpType] = set(_qiskit_gates_1q.values())
-_2q_gates: Set[OpType] = set(_qiskit_gates_2q.values())
-
-
-def _tk1_to_u(a: float, b: float, c: float) -> Circuit:
-    circ = Circuit(1)
-    circ.add_gate(OpType.U3, [b, a - 0.5, c + 0.5], [0])
-    circ.add_phase(-0.5 * (a + c))
-    return circ
 
 
 class _AerBaseBackend(Backend):
@@ -139,20 +130,12 @@ class _AerBaseBackend(Backend):
         return (str, int)
 
     @property
-    def characterisation(self) -> Optional[Dict[str, Any]]:
-        char = self._backend_info.get_misc("characterisation")
-        return cast(Dict[str, Any], char) if char else None
-
-    @property
     def backend_info(self) -> BackendInfo:
         return self._backend_info
 
     def rebase_pass(self) -> BasePass:
-        return RebaseCustom(
-            self._gate_set & _2q_gates,
-            Circuit(2).CX(0, 1),
-            self._gate_set & _1q_gates,
-            _tk1_to_u,
+        return auto_rebase_pass(
+            self._gate_set,
         )
 
     def process_circuits(
@@ -447,12 +430,9 @@ class AerBackend(_AerBaseBackend):
                 "GenericOneQubitQErrors",
                 "GenericTwoQubitQErrors",
             ]
-            arch = characterisation["Architecture"]
             # filter entries to keep
             characterisation = {
-                k: dict(v)
-                for k, v in characterisation.items()
-                if k in characterisation_keys
+                k: v for k, v in characterisation.items() if k in characterisation_keys
             }
             self._backend_info.misc["characterisation"] = characterisation
 
@@ -493,7 +473,7 @@ class AerBackend(_AerBaseBackend):
         else:
             passlist.append(FullPeepholeOptimise())
         arch = self._backend_info.architecture
-        if arch.coupling and self.characterisation:
+        if arch.coupling and self._backend_info.get_misc("characterisation"):
             # architecture is non-trivial
             passlist.append(
                 CXMappingPass(
@@ -508,6 +488,7 @@ class AerBackend(_AerBaseBackend):
                     delay_measures=False,
                 )
             )
+            passlist.append(NaivePlacementPass(arch))
             if optimisation_level == 0:
                 passlist.append(self.rebase_pass())
             elif optimisation_level == 1:
@@ -664,7 +645,7 @@ def _process_model(noise_model: NoiseModel, gate_set: Set[OpType]) -> dict:
             if error["type"] == "qerror":
                 node_errors[q].update({optype: 1 - gate_fid})
                 generic_single_qerrors_dict[q].append(
-                    (error["instructions"], error["probabilities"])
+                    [error["instructions"], error["probabilities"]]
                 )
             elif error["type"] == "roerror":
                 readout_errors[q] = error["probabilities"]
@@ -681,7 +662,7 @@ def _process_model(noise_model: NoiseModel, gate_set: Set[OpType]) -> dict:
             # to simulate a worse reverse direction square the fidelity
             link_errors[(q1, q0)].update({optype: 1 - gate_fid ** 2})
             generic_2q_qerrors_dict[(q0, q1)].append(
-                (error["instructions"], error["probabilities"])
+                [error["instructions"], error["probabilities"]]
             )
             coupling_map.append(qubits)
 
@@ -707,12 +688,16 @@ def _process_model(noise_model: NoiseModel, gate_set: Set[OpType]) -> dict:
     link_errors = convert_keys(lambda p: (Node(p[0]), Node(p[1])), link_errors)
     readout_errors = convert_keys(lambda q: Node(q), readout_errors)
 
-    characterisation = {}
+    characterisation: Dict[str, Any] = {}
     characterisation["NodeErrors"] = node_errors
     characterisation["EdgeErrors"] = link_errors
     characterisation["ReadoutErrors"] = readout_errors
-    characterisation["GenericOneQubitQErrors"] = generic_single_qerrors_dict
-    characterisation["GenericTwoQubitQErrors"] = generic_2q_qerrors_dict
+    characterisation["GenericOneQubitQErrors"] = [
+        [k, v] for k, v in generic_single_qerrors_dict.items()
+    ]
+    characterisation["GenericTwoQubitQErrors"] = [
+        [list(k), v] for k, v in generic_2q_qerrors_dict.items()
+    ]
     characterisation["Architecture"] = Architecture(coupling_map)
 
     return characterisation

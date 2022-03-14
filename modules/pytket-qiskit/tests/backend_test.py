@@ -15,7 +15,7 @@ import json
 import os
 import sys
 from collections import Counter
-from typing import Dict, Any, cast
+from typing import Dict, cast
 import math
 import cmath
 import pickle
@@ -25,7 +25,8 @@ from pytket.circuit import Circuit, OpType, BasisOrder, Qubit, reg_eq  # type: i
 from pytket.passes import CliffordSimp  # type: ignore
 from pytket.pauli import Pauli, QubitPauliString  # type: ignore
 from pytket.predicates import CompilationUnit, NoMidMeasurePredicate  # type: ignore
-from pytket.routing import Architecture, route  # type: ignore
+from pytket.architecture import Architecture  # type: ignore
+from pytket.mapping import MappingManager, LexiLabellingMethod, LexiRouteRoutingMethod  # type: ignore
 from pytket.transform import Transform  # type: ignore
 from pytket.backends import (
     ResultHandle,
@@ -207,7 +208,7 @@ def test_process_characterisation() -> None:
 def test_process_characterisation_no_noise_model() -> None:
     my_noise_model = NoiseModel()
     back = AerBackend(my_noise_model)
-    assert back.characterisation is None
+    assert back.backend_info.get_misc("characterisation") is None
 
     c = Circuit(4).CX(0, 1).H(2).CX(2, 1).H(3).CX(0, 3).H(1).X(0)
     c = back.get_compiled_circuit(c)
@@ -303,14 +304,14 @@ def test_process_characterisation_complete_noise_model() -> None:
     )
 
     back = AerBackend(my_noise_model)
-    char = cast(Dict[str, Any], back.characterisation)
+    char = back.backend_info.get_misc("characterisation")
 
     node_errors = cast(Dict, back.backend_info.all_node_gate_errors)
     link_errors = cast(Dict, back.backend_info.all_edge_gate_errors)
     arch = back.backend_info.architecture
 
-    gqe2 = cast(Dict, char["GenericTwoQubitQErrors"])
-    gqe1 = cast(Dict, char["GenericOneQubitQErrors"])
+    gqe2 = {tuple(qs): errs for qs, errs in char["GenericTwoQubitQErrors"]}
+    gqe1 = {q: errs for q, errs in char["GenericOneQubitQErrors"]}
 
     assert round(gqe2[(0, 1)][0][1][15], 5) == 0.0375
     assert round(gqe2[(0, 1)][0][1][0], 5) == 0.4375
@@ -523,12 +524,13 @@ def test_aer_default_pass() -> None:
 
 def test_routing_measurements() -> None:
     qc = get_test_circuit(True)
-    circ = qiskit_to_tk(qc)
+    physical_c = qiskit_to_tk(qc)
     sim = AerBackend()
-    original_results = sim.run_circuit(circ, n_shots=10, seed=4).get_shots()
+    original_results = sim.run_circuit(physical_c, n_shots=10, seed=4).get_shots()
     coupling = [[1, 0], [2, 0], [2, 1], [3, 2], [3, 4], [4, 2]]
     arc = Architecture(coupling)
-    physical_c = route(circ, arc)
+    mm = MappingManager(arc)
+    mm.route_circuit(physical_c, [LexiLabellingMethod(), LexiRouteRoutingMethod()])
     Transform.DecomposeSWAPtoCX().apply(physical_c)
     Transform.DecomposeCXDirected(arc).apply(physical_c)
     Transform.OptimisePostRouting().apply(physical_c)
@@ -540,14 +542,13 @@ def test_routing_measurements() -> None:
 def test_routing_no_cx() -> None:
     circ = Circuit(2, 2)
     circ.H(1)
-    # c.CX(1, 2)
     circ.Rx(0.2, 0)
     circ.measure_all()
     coupling = [[1, 0], [2, 0], [2, 1], [3, 2], [3, 4], [4, 2]]
     arc = Architecture(coupling)
-    physical_c = route(circ, arc)
-
-    assert len(physical_c.get_commands()) == 4
+    mm = MappingManager(arc)
+    mm.route_circuit(circ, [LexiRouteRoutingMethod()])
+    assert len(circ.get_commands()) == 4
 
 
 def test_counts() -> None:
@@ -1084,3 +1085,47 @@ def test_available_devices() -> None:
 
     backend_info_list = IBMQBackend.available_devices()
     assert len(backend_info_list) > 0
+
+
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
+def test_backendinfo_serialization1() -> None:
+    # https://github.com/CQCL/tket/issues/192
+    backend = IBMQEmulatorBackend(
+        "ibmq_santiago", hub="ibm-q", group="open", project="main"
+    )
+    backend_info_json = backend.backend_info.to_dict()
+    s = json.dumps(backend_info_json)
+    backend_info_json1 = json.loads(s)
+    assert backend_info_json == backend_info_json1
+
+
+def test_backendinfo_serialization2() -> None:
+    # https://github.com/CQCL/tket/issues/192
+    my_noise_model = NoiseModel()
+    my_noise_model.add_readout_error(
+        [
+            [0.8, 0.2],
+            [0.2, 0.8],
+        ],
+        [0],
+    )
+    my_noise_model.add_readout_error(
+        [
+            [0.7, 0.3],
+            [0.3, 0.7],
+        ],
+        [1],
+    )
+    my_noise_model.add_quantum_error(depolarizing_error(0.6, 2), ["cx"], [0, 1])
+    my_noise_model.add_quantum_error(depolarizing_error(0.5, 1), ["u3"], [0])
+    my_noise_model.add_quantum_error(
+        pauli_error([("X", 0.35), ("Z", 0.65)]), ["u2"], [0]
+    )
+    my_noise_model.add_quantum_error(
+        pauli_error([("X", 0.35), ("Y", 0.65)]), ["u1"], [0]
+    )
+    backend = AerBackend(my_noise_model)
+    backend_info_json = backend.backend_info.to_dict()
+    s = json.dumps(backend_info_json)
+    backend_info_json1 = json.loads(s)
+    assert backend_info_json == backend_info_json1

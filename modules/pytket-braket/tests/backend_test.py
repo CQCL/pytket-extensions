@@ -70,6 +70,20 @@ def test_simulator() -> None:
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
+def test_dm_simulator() -> None:
+    b = BraketBackend(device_type="quantum-simulator", provider="amazon", device="dm1")
+    assert b.supports_density_matrix
+    c = Circuit(2).H(0).SWAP(0, 1)
+    cc = b.get_compiled_circuit(c)
+    h = b.process_circuit(cc)
+    r = b.get_result(h)
+    m = r.get_density_matrix()
+    m0 = np.zeros((4, 4), dtype=complex)
+    m0[0, 0] = m0[1, 0] = m0[0, 1] = m0[1, 1] = 0.5
+    assert np.allclose(m, m0)
+
+
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_ionq() -> None:
     b = BraketBackend(
         device_type="qpu",
@@ -122,9 +136,7 @@ def test_ionq() -> None:
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_rigetti() -> None:
     b = BraketBackend(
-        device_type="qpu",
-        provider="rigetti",
-        device="Aspen-11",
+        device_type="qpu", provider="rigetti", device="Aspen-M-1", region="us-west-1"
     )
     assert b.persistent_handles
     assert b.supports_shots
@@ -159,11 +171,43 @@ def test_rigetti() -> None:
 def test_rigetti_with_rerouting() -> None:
     # A circuit that requires rerouting to a non-fully-connected architecture
     b = BraketBackend(
-        device_type="qpu",
-        provider="rigetti",
-        device="Aspen-11",
+        device_type="qpu", provider="rigetti", device="Aspen-M-1", region="us-west-1"
     )
     c = Circuit(4).CX(0, 1).CX(0, 2).CX(0, 3).CX(1, 2).CX(1, 3).CX(2, 3)
+    c = b.get_compiled_circuit(c)
+    h = b.process_circuit(c, 10)
+    b.cancel(h)
+
+
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
+def test_oqc() -> None:
+    b = BraketBackend(
+        device_type="qpu", provider="oqc", device="Lucy", region="eu-west-2"
+    )
+    assert b.persistent_handles
+    assert b.supports_shots
+    assert not b.supports_state
+
+    chars = b.characterisation
+    assert chars is not None
+    assert all(s in chars for s in ["NodeErrors", "EdgeErrors", "ReadoutErrors"])
+
+    c = (
+        Circuit(3)
+        .add_gate(OpType.CCX, [0, 1, 2])
+        .add_gate(OpType.U1, 0.5, [1])
+        .add_gate(OpType.ISWAP, 0.5, [0, 2])
+        .add_gate(OpType.XXPhase, 0.5, [1, 2])
+    )
+    assert not b.valid_circuit(c)
+    c = b.get_compiled_circuit(c)
+    assert b.valid_circuit(c)
+    h = b.process_circuit(c, 10)
+    _ = b.circuit_status(h)
+    b.cancel(h)
+
+    # Circuit with unused qubits
+    c = Circuit(7).H(5).CX(5, 6)
     c = b.get_compiled_circuit(c)
     h = b.process_circuit(c, 10)
     b.cancel(h)
@@ -340,22 +384,6 @@ def test_shots_bits_edgecases(n_shots, n_bits) -> None:
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_postprocess_sim() -> None:
-    b = BraketBackend(
-        device_type="quantum-simulator",
-        provider="amazon",
-        device="sv1",
-    )
-    assert b.supports_contextual_optimisation
-    c = Circuit(2).H(0).CX(0, 1).Y(0)
-    c = b.get_compiled_circuit(c)
-    h = b.process_circuit(c, n_shots=10, postprocess=True)
-    r = b.get_result(h)
-    shots = r.get_shots()
-    assert all(shot[0] != shot[1] for shot in shots)
-
-
-@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_postprocess_ionq() -> None:
     b = BraketBackend(
         device_type="qpu",
@@ -366,7 +394,7 @@ def test_postprocess_ionq() -> None:
     c = Circuit(2).H(0).CX(0, 1).Y(0)
     c = b.get_compiled_circuit(c)
     h = b.process_circuit(c, n_shots=10, postprocess=True)
-    ppcirc = Circuit.from_dict(json.loads(cast(str, h[2])))
+    ppcirc = Circuit.from_dict(json.loads(cast(str, h[4])))
     ppcmds = ppcirc.get_commands()
     assert len(ppcmds) > 0
     assert all(ppcmd.op.type == OpType.ClassicalTransform for ppcmd in ppcmds)

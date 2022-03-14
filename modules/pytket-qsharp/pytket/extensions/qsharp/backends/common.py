@@ -45,6 +45,7 @@ from pytket.passes import (  # type: ignore
     FullPeepholeOptimise,
     FlattenRegisters,
 )
+from pytket._tket.circuit._library import _TK1_to_RzRx  # type: ignore
 from pytket.predicates import (  # type: ignore
     GateSetPredicate,
     NoClassicalControlPredicate,
@@ -53,20 +54,12 @@ from pytket.predicates import (  # type: ignore
     NoMidMeasurePredicate,
     NoSymbolsPredicate,
 )
-from pytket.routing import Architecture  # type: ignore
+from pytket.architecture import Architecture  # type: ignore
 from pytket.extensions.qsharp._metadata import __extension_version__
 from pytket.extensions.qsharp.qsharp_convert import tk_to_qsharp
 
 if TYPE_CHECKING:
     from qsharp.loader import QSharpCallable  # type: ignore
-
-
-def _from_tk1(a: float, b: float, c: float) -> Circuit:
-    circ = Circuit(1)
-    circ.Rz(c, 0)
-    circ.Rx(b, 0)
-    circ.Rz(a, 0)
-    return circ
 
 
 def qs_predicates(gate_set: Set[OpType]) -> List[Predicate]:
@@ -124,9 +117,6 @@ class _QsharpBaseBackend(Backend):
                 OpType.PauliExpBox,
                 OpType.SWAP,
                 OpType.CnX,
-            },  # multiqs
-            Circuit(),  # cx_replacement (irrelevant)
-            {
                 OpType.H,
                 OpType.Rx,
                 OpType.Ry,
@@ -136,8 +126,9 @@ class _QsharpBaseBackend(Backend):
                 OpType.X,
                 OpType.Y,
                 OpType.Z,
-            },  # singleqs
-            _from_tk1,
+            },
+            Circuit(),  # cx_replacement (irrelevant)
+            _TK1_to_RzRx,
         )  # tk1_replacement
 
     def default_compilation_pass(self, optimisation_level: int = 1) -> BasePass:

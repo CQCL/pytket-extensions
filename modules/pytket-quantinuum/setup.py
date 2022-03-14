@@ -21,7 +21,7 @@ with open("_metadata.py") as fp:
     exec(fp.read(), metadata)
 shutil.copy(
     "_metadata.py",
-    os.path.join("pytket", "extensions", "honeywell", "_metadata.py"),
+    os.path.join("pytket", "extensions", "quantinuum", "_metadata.py"),
 )
 
 setup(
@@ -31,21 +31,20 @@ setup(
     author_email="seyon.sivarajah@cambridgequantum.com",
     python_requires=">=3.8",
     url="https://github.com/CQCL/pytket-extensions",
-    description="Extension for pytket, providing access to Honeywell backends",
+    description="Extension for pytket, providing access to Quantinuum backends",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
     license="Apache 2",
     packages=find_namespace_packages(include=["pytket.*"]),
     include_package_data=True,
     install_requires=[
-        "pytket ~= 0.19.0",
+        "pytket ~= 1.0",
         "requests >= 2.2",
         "types-requests",
         "websockets >= 7.0",
         "nest_asyncio >= 1.2",
         "pyjwt >= 1.7, < 2.0",
         "types-jwt",
-        "keyring >= 19.0",
     ],
     classifiers=[
         "Environment :: Console",

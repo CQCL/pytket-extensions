@@ -135,6 +135,18 @@ def test_swaps_basisorder() -> None:
         assert np.allclose(s_dlo, correct_dlo)
 
 
+def from_OpenFermion(openf_op: "QubitOperator") -> QubitPauliOperator:
+    """Convert OpenFermion QubitOperator to pytket QubitPauliOperator."""
+    STRING_TO_PAULI = {"I": Pauli.I, "X": Pauli.X, "Y": Pauli.Y, "Z": Pauli.Z}
+    tk_op = dict()
+    for term, coeff in openf_op.terms.items():
+        string = QubitPauliString(
+            {Qubit(qubitnum): STRING_TO_PAULI[paulisym] for qubitnum, paulisym in term}
+        )
+        tk_op[string] = coeff
+    return QubitPauliOperator(tk_op)
+
+
 @pytest.mark.filterwarnings("ignore::PendingDeprecationWarning")
 def test_statevector_expectation() -> None:
     hamiltonian = QubitOperator()
@@ -155,9 +167,7 @@ def test_statevector_expectation() -> None:
     circ = h2_3q_circ(PARAM)
     for b in backends:
         circ = b.get_compiled_circuit(circ)
-        energy = b.get_operator_expectation_value(
-            circ, QubitPauliOperator.from_OpenFermion(hamiltonian)
-        )
+        energy = b.get_operator_expectation_value(circ, from_OpenFermion(hamiltonian))
         assert np.isclose(energy, target)
 
 

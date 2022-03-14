@@ -45,7 +45,7 @@ from pytket.passes import (  # type: ignore
     BasePass,
     EulerAngleReduction,
     CXMappingPass,
-    RebaseQuil,
+    auto_rebase_pass,
     SequencePass,
     SynthesiseTket,
     DecomposeBoxes,
@@ -53,6 +53,7 @@ from pytket.passes import (  # type: ignore
     CliffordSimp,
     FlattenRegisters,
     SimplifyInitial,
+    NaivePlacementPass,
 )
 from pytket.pauli import QubitPauliString  # type: ignore
 from pytket.predicates import (  # type: ignore
@@ -70,7 +71,8 @@ from pytket.extensions.pyquil.pyquil_convert import (
     get_avg_characterisation,
     tk_to_pyquil,
 )
-from pytket.routing import NoiseAwarePlacement, Architecture  # type: ignore
+from pytket.placement import NoiseAwarePlacement  # type: ignore
+from pytket.architecture import Architecture  # type: ignore
 from pytket.utils import prepare_circuit
 from pytket.utils.operators import QubitPauliOperator
 from pytket.utils.outcomearray import OutcomeArray
@@ -126,7 +128,7 @@ class ForestBackend(Backend):
         ]
 
     def rebase_pass(self) -> BasePass:
-        return RebaseQuil()
+        return auto_rebase_pass({OpType.CZ, OpType.Rz, OpType.Rx})
 
     def default_compilation_pass(self, optimisation_level: int = 1) -> BasePass:
         assert optimisation_level in range(3)
@@ -150,6 +152,7 @@ class ForestBackend(Backend):
                 delay_measures=True,
             )
         )
+        passlist.append(NaivePlacementPass(self.backend_info.architecture))
         if optimisation_level == 2:
             passlist.append(CliffordSimp(False))
         if optimisation_level > 0:
@@ -339,7 +342,7 @@ class ForestStateBackend(Backend):
         ]
 
     def rebase_pass(self) -> BasePass:
-        return RebaseQuil()
+        return auto_rebase_pass({OpType.CZ, OpType.Rz, OpType.Rx})
 
     def default_compilation_pass(self, optimisation_level: int = 1) -> BasePass:
         assert optimisation_level in range(3)

@@ -49,10 +49,10 @@ from pyquil.quilatom import (
     Function as Function_,
 )
 from pyquil.quilbase import Declare, Gate, Halt, Measurement, Pragma
-from sympy import pi, Expr, Symbol, sin, cos, Number, Add, Mul, Pow  # type: ignore
+from sympy import pi, Expr, Symbol, sin, cos, Number, Add, Mul, Pow
 
 from pytket.circuit import Circuit, Node, OpType, Qubit, Bit  # type: ignore
-from pytket.routing import Architecture  # type: ignore
+from pytket.architecture import Architecture  # type: ignore
 
 _known_quil_gate = {
     "X": OpType.X,
@@ -118,11 +118,11 @@ def param_to_pyquil(p: Union[float, Expr]) -> Union[float, Expression]:
 
 
 def param_from_pyquil(p: Union[float, Expression]) -> Expr:
-    def to_sympy(e: Union[float, Expression]) -> Expr:
+    def to_sympy(e: Any) -> Union[float, int, Expr, Symbol]:
         if isinstance(e, (float, int)):
             return e
         elif isinstance(e, MemoryReference):
-            return Symbol(e.name)
+            return Symbol(e.name)  # type: ignore
         elif isinstance(e, Function_):
             if e.name == "SIN":
                 return sin(to_sympy(e.expression))  # type: ignore
@@ -150,7 +150,7 @@ def param_from_pyquil(p: Union[float, Expression]) -> Expr:
                 + str(e)
             )
 
-    return to_sympy(p) / pi
+    return to_sympy(p) / pi  # type: ignore
 
 
 def pyquil_to_tk(prog: Program) -> Circuit:

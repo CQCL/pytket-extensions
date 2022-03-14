@@ -1,6 +1,13 @@
 Changelog
 ~~~~~~~~~
 
+0.23.0 (March 2022)
+-------------------
+
+* Removed ``characterisation`` property of backends. (Use `backend_info`
+  instead.)
+* Updated pytket version requirement to 1.0.
+
 0.22.2 (February 2022)
 ----------------------
 

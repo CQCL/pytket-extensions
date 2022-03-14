@@ -29,7 +29,6 @@ from typing import (
 )
 from warnings import warn
 
-from sympy import Expr  # type: ignore
 import qiskit  # type: ignore
 from qiskit import IBMQ
 from qiskit.qobj import QobjExperimentHeader  # type: ignore
@@ -51,7 +50,7 @@ from pytket.extensions.qiskit.qiskit_convert import (
 from pytket.extensions.qiskit._metadata import __extension_version__
 from pytket.passes import (  # type: ignore
     BasePass,
-    RebaseCustom,
+    auto_rebase_pass,
     RemoveRedundancies,
     SequencePass,
     SynthesiseTket,
@@ -60,6 +59,7 @@ from pytket.passes import (  # type: ignore
     FullPeepholeOptimise,
     CliffordSimp,
     SimplifyInitial,
+    NaivePlacementPass,
 )
 from pytket.predicates import (  # type: ignore
     NoMidMeasurePredicate,
@@ -73,7 +73,8 @@ from pytket.extensions.qiskit.qiskit_convert import tk_to_qiskit, _tk_gate_set
 from pytket.extensions.qiskit.result_convert import (
     qiskit_experimentresult_to_backendresult,
 )
-from pytket.routing import FullyConnected, NoiseAwarePlacement  # type: ignore
+from pytket.architecture import FullyConnected  # type: ignore
+from pytket.placement import NoiseAwarePlacement  # type: ignore
 from pytket.utils import prepare_circuit
 from pytket.utils.results import KwargTypes
 from .ibm_utils import _STATUS_MAP, _batch_circuits
@@ -123,76 +124,6 @@ class NoIBMQAccountError(Exception):
             "No IBMQ credentials found on disk, store your account using qiskit,"
             " or using :py:meth:`pytket.extensions.qiskit.set_ibmq_config` first."
         )
-
-
-def _approx_0_mod_2(x: Union[float, Expr], eps: float = 1e-10) -> bool:
-    if isinstance(x, Expr) and not x.is_constant():
-        return False
-    x = float(x)
-    x %= 2
-    return min(x, 2 - x) < eps
-
-
-def int_half(angle: float) -> int:
-    # assume float is approximately an even integer, and return the half
-    two_x = round(angle)
-    assert not two_x % 2
-    return two_x // 2
-
-
-def _tk1_to_x_sx_rz(
-    a: Union[float, Expr], b: Union[float, Expr], c: Union[float, Expr]
-) -> Circuit:
-    circ = Circuit(1)
-    correction_phase = 0.0
-
-    # all phase identities use, for integer k,
-    # Rx(2k) = Rz(2k) = (-1)^{k}I
-
-    # _approx_0_mod_2 checks if parameters are constant
-    # so they can be assumed to be constant
-    if _approx_0_mod_2(b):
-        circ.Rz(a + c, 0)
-        # b = 2k, if k is odd, then Rx(b) = -I
-        correction_phase += int_half(float(b))
-
-    elif _approx_0_mod_2(b + 1):
-        # Use Rx(2k-1) = i(-1)^{k}X
-        correction_phase += -0.5 + int_half(float(b) - 1)
-        if _approx_0_mod_2(a - c):
-            circ.X(0)
-            # a - c = 2m
-            # overall operation is (-1)^{m}Rx(2k -1)
-            correction_phase += int_half(float(a - c))
-
-        else:
-            circ.Rz(c, 0).X(0).Rz(a, 0)
-
-    elif _approx_0_mod_2(b - 0.5) and _approx_0_mod_2(a) and _approx_0_mod_2(c):
-        # a = 2k, b = 2m+0.5, c = 2n
-        # Rz(2k)Rx(2m + 0.5)Rz(2n) = (-1)^{k+m+n}e^{-i \pi /4} SX
-        circ.SX(0)
-        correction_phase += (
-            int_half(float(b) - 0.5) + int_half(float(a)) + int_half(float(c)) - 0.25
-        )
-
-    elif _approx_0_mod_2(b + 0.5) and _approx_0_mod_2(a) and _approx_0_mod_2(c):
-        # a = 2k, b = 2m-0.5, c = 2n
-        # Rz(2k)Rx(2m - 0.5)Rz(2n) = (-1)^{k+m+n}e^{i \pi /4} X.SX
-        circ.X(0).SX(0)
-        correction_phase += (
-            int_half(float(b) + 0.5) + int_half(float(a)) + int_half(float(c)) + 0.25
-        )
-    elif _approx_0_mod_2(a - 0.5) and _approx_0_mod_2(c - 0.5):
-        # Rz(2k + 0.5)Rx(b)Rz(2m + 0.5) = -i(-1)^{k+m}SX.Rz(1-b).SX
-        circ.SX(0).Rz(1 - b, 0).SX(0)
-        correction_phase += int_half(float(a) - 0.5) + int_half(float(c) - 0.5) - 0.5
-    else:
-        circ.Rz(c + 0.5, 0).SX(0).Rz(b - 1, 0).SX(0).Rz(a + 0.5, 0)
-        correction_phase += -0.5
-
-    circ.add_phase(correction_phase)
-    return circ
 
 
 class IBMQBackend(Backend):
@@ -308,10 +239,6 @@ class IBMQBackend(Backend):
         return provider
 
     @property
-    def characterisation(self) -> Dict[str, Any]:
-        return cast(Dict[str, Any], self._backend_info.get_misc("characterisation"))
-
-    @property
     def backend_info(self) -> BackendInfo:
         return self._backend_info
 
@@ -417,6 +344,7 @@ class IBMQBackend(Backend):
                     delay_measures=(not mid_measure),
                 )
             )
+            passlist.append(NaivePlacementPass(arch))
         if optimisation_level == 1:
             passlist.append(SynthesiseTket())
         if optimisation_level == 2:
@@ -434,11 +362,8 @@ class IBMQBackend(Backend):
         return (str, int, str)
 
     def rebase_pass(self) -> BasePass:
-        return RebaseCustom(
-            {OpType.CX},
-            Circuit(2).CX(0, 1),
-            {OpType.X, OpType.SX, OpType.Rz},
-            _tk1_to_x_sx_rz,
+        return auto_rebase_pass(
+            {OpType.CX, OpType.X, OpType.SX, OpType.Rz},
         )
 
     def process_circuits(
