@@ -243,6 +243,7 @@ class BraketBackend(Backend):
     def __init__(
         self,
         local: bool = False,
+        local_device: str = "default",
         device: Optional[str] = None,
         region: str = "",
         s3_bucket: Optional[str] = None,
@@ -264,6 +265,8 @@ class BraketBackend(Backend):
 
         :param local: use simulator running on local machine,
             default: False
+        :param local_device: name of local device (ignored if local=False) -- e.g.
+            "braket_sv" (default) or "braket_dm".
         :param device: device name from device ARN (e.g. "ionQdevice", "Aspen-8", ...),
             default: "sv1"
         :param s3_bucket: name of S3 bucket to store results
@@ -300,7 +303,7 @@ class BraketBackend(Backend):
         self._aws_session = aws_session
 
         if local:
-            self._device = LocalSimulator()
+            self._device = LocalSimulator(backend=local_device)
             self._device_type = _DeviceType.LOCAL
         else:
             self._device = AwsDevice(
