@@ -143,6 +143,7 @@ _gate_types = {
     "ti": OpType.Tdg,
     "two_qubit_dephasing": None,
     "two_qubit_depolarizing": None,
+    "two_qubit_pauli_channel": None,
     "unitary": None,
     "v": OpType.V,
     "vi": OpType.Vdg,
