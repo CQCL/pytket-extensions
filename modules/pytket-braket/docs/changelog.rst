@@ -1,6 +1,11 @@
 Changelog
 ~~~~~~~~~
 
+0.18.0 (unreleased)
+-------------------
+
+* Allow user to specify different local backends.
+
 0.17.0 (March 2022)
 -------------------
 
