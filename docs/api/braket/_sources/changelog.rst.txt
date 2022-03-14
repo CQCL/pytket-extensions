@@ -1,6 +1,16 @@
 Changelog
 ~~~~~~~~~
 
+0.17.0 (March 2022)
+-------------------
+
+* Add optional "region" argument for initializing BraketBackend.
+* Update requirements for amazon-braket-sdk and amazon-braket-schemas.
+* Add support for oqc provider.
+* Correct readout errors reported for Rigetti devices.
+* Add support for density-matrix simulators.
+* Updated pytket version requirement to 1.0.
+
 0.16.0 (February 2022)
 ----------------------
 

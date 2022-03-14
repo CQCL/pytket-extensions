@@ -1,6 +1,23 @@
 Changelog
 ~~~~~~~~~
 
+0.23.0 (March 2022)
+-------------------
+
+* Removed ``characterisation`` property of backends. (Use `backend_info`
+  instead.)
+* Updated pytket version requirement to 1.0.
+
+0.22.2 (February 2022)
+----------------------
+
+* Fixed :py:meth:`IBMQEmulatorBackend.rebase_pass`.
+
+0.22.1 (February 2022)
+----------------------
+
+* Added :py:meth:`IBMQEmulatorBackend.rebase_pass`.
+
 0.22.0 (February 2022)
 ----------------------
 
