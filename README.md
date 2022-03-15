@@ -23,7 +23,7 @@ subdirectory of the `modules` directory:
 * `pytket-pyzx`
 * `pytket-qiskit`
 * `pytket-qsharp`
-* `pytket-quantinumm`
+* `pytket-quantinuum`
 * `pytket-qulacs`
 * `pytket-stim`
 
