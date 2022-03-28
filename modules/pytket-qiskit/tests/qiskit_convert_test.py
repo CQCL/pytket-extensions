@@ -63,6 +63,7 @@ def test_barrier_conversion() -> None:
         c.add_barrier([0], [0])
         tk_to_qiskit(c)
 
+
 def test_convert_circuit_with_complex_params() -> None:
     with pytest.raises(ValueError):
         qiskit_op = PauliSumOp.from_list([("Z", 1j)])

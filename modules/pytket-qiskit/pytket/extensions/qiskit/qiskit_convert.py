@@ -452,7 +452,9 @@ def append_tk_command_to_qiskit(
     if optype == OpType.Barrier:
         for q in args:
             if q.type == UnitType.bit:
-                raise NotImplementedError("Qiskit Barriers are not defined for classical bits.")
+                raise NotImplementedError(
+                    "Qiskit Barriers are not defined for classical bits."
+                )
         qargs = [qregmap[q.reg_name][q.index[0]] for q in args]
         g = Barrier(len(args))
         return qcirc.append(g, qargs=qargs)
