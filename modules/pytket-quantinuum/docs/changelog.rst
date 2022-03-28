@@ -1,12 +1,13 @@
 Changelog
 ~~~~~~~~~
 
-0.1.0 (unreleased)
+0.1.0 (March 2022)
 ------------------
 
 * Module renamed from "pytket.extensions.honeywell" to
   "pytket.extensions.quantinumm", with corresponding name changes throughout.
 * Simplify authentication: use ``QuantinuumBackend.login()`` to log in once per session.
+* Updated pytket version requirement to 1.0.
 
 Old changelog for "pytket-honeywell":
 

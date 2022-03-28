@@ -103,7 +103,7 @@ class IQMBackend(Backend):
 
         Requires a valid username and API key. These can either be provided as
         parameters or set in config using
-        :py:meth:`pytket.extensions.iqm.set_aqt_config`.
+        :py:meth:`pytket.extensions.iqm.set_iqm_config`.
 
         :param url: base URL for requests
         :param device: path of JSON file containing device settings
