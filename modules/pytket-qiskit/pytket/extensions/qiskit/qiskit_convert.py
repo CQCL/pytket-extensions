@@ -300,8 +300,10 @@ class CircuitBuilder:
             if optype == OpType.Unitary2qBox:
                 u = i.to_matrix()
                 ubox = Unitary2qBox(u)
+                # Note reversal of qubits, to account for endianness (pytket unitaries
+                # are ILO-BE == DLO-LE; qiskit unitaries are ILO-LE == DLO-BE).
                 self.tkc.add_unitary2qbox(
-                    ubox, qubits[0], qubits[1], **condition_kwargs
+                    ubox, qubits[1], qubits[0], **condition_kwargs
                 )
             elif type(i) == PauliEvolutionGate:
                 qpo = _qpo_from_peg(i, qubits)
@@ -444,7 +446,9 @@ def append_tk_command_to_qiskit(
         qargs = [qregmap[q.reg_name][q.index[0]] for q in args]
         u = op.get_matrix()
         g = UnitaryGate(u, label="unitary")
-        return qcirc.append(g, qargs=qargs)
+        # Note reversal of qubits, to account for endianness (pytket unitaries are
+        # ILO-BE == DLO-LE; qiskit unitaries are ILO-LE == DLO-BE).
+        return qcirc.append(g, qargs=list(reversed(qargs)))
     if optype == OpType.Barrier:
         qargs = [qregmap[q.reg_name][q.index[0]] for q in args]
         g = Barrier(len(args))

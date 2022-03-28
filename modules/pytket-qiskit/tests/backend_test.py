@@ -21,7 +21,7 @@ import cmath
 import pickle
 from hypothesis import given, strategies
 import numpy as np
-from pytket.circuit import Circuit, OpType, BasisOrder, Qubit, reg_eq  # type: ignore
+from pytket.circuit import Circuit, OpType, BasisOrder, Qubit, reg_eq, Unitary2qBox  # type: ignore
 from pytket.passes import CliffordSimp  # type: ignore
 from pytket.pauli import Pauli, QubitPauliString  # type: ignore
 from pytket.predicates import CompilationUnit, NoMidMeasurePredicate  # type: ignore
@@ -583,6 +583,21 @@ def test_ilo() -> None:
     assert (res.get_shots(basis=BasisOrder.dlo) == np.asarray([[1, 0], [1, 0]])).all()
     assert res.get_counts() == {(0, 1): 2}
     assert res.get_counts(basis=BasisOrder.dlo) == {(1, 0): 2}
+
+
+def test_ubox() -> None:
+    # https://github.com/CQCL/pytket-extensions/issues/342
+    u = np.array(
+        [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0]], dtype=complex
+    )
+    ubox = Unitary2qBox(u)
+    c = Circuit(2)
+    c.add_unitary2qbox(ubox, 0, 1)
+    b = AerUnitaryBackend()
+    h = b.process_circuit(c)
+    r = b.get_result(h)
+    u1 = r.get_unitary()
+    assert np.allclose(u, u1)
 
 
 def test_swaps_basisorder() -> None:
