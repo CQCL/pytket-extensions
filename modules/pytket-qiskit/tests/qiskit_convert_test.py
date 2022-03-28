@@ -220,7 +220,7 @@ def test_Unitary2qBox() -> None:
     qc.save_unitary()
     job = execute(qc, back).result()
     a = job.get_unitary(qc)
-    u1 = permute_rows_cols_in_unitary(a, [1, 0])  # correct for endianness
+    u1 = permute_rows_cols_in_unitary(a, (1, 0))  # correct for endianness
     assert np.allclose(u1, u)
 
 
