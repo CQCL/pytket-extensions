@@ -114,7 +114,7 @@ class IonQBackend(Backend):
             raise IonQAuthenticationError()
         if device_name is "simulator":
             IONQ_N_QUBITS = 29
-        
+
         self._header = {"Authorization": f"apiKey {api_key}"}
         self._backend_info = fully_connected_backendinfo(
             type(self).__name__,
