@@ -50,7 +50,7 @@ from pytket.extensions.qiskit.result_convert import (
 )
 from sympy import Symbol
 from pytket.passes import RebaseTket, DecomposeBoxes, FullPeepholeOptimise, SequencePass  # type: ignore
-from pytket.utils.results import compare_statevectors
+from pytket.utils.results import compare_statevectors, permute_rows_cols_in_unitary
 
 skip_remote_tests: bool = (
     not IBMQ.stored_account() or os.getenv("PYTKET_RUN_REMOTE_TESTS") is None
@@ -220,7 +220,8 @@ def test_Unitary2qBox() -> None:
     qc.save_unitary()
     job = execute(qc, back).result()
     a = job.get_unitary(qc)
-    assert np.allclose(a, u)
+    u1 = permute_rows_cols_in_unitary(a, [1, 0])  # correct for endianness
+    assert np.allclose(u1, u)
 
 
 def test_gates_phase() -> None:
