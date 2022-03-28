@@ -54,8 +54,8 @@ from pytket.utils.outcomearray import OutcomeArray
 from .api_wrappers import HQSAPIError, QuantinuumQAPI
 
 _DEBUG_HANDLE_PREFIX = "_MACHINE_DEBUG_"
-HONEYWELL_URL_PREFIX = "https://qapi.quantinuum.com/"
-DEVICE_FAMILY = "HQS-LT"
+QUANTINUUM_URL_PREFIX = "https://qapi.quantinuum.com/"
+DEVICE_FAMILY = "H1"
 
 _STATUS_MAP = {
     "queued": StatusEnum.QUEUED,
