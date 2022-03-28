@@ -53,8 +53,6 @@ from .config import IonQConfig
 
 IONQ_JOBS_URL = "https://api.ionq.co/v0.1/jobs/"
 
-IONQ_N_QUBITS = 11
-
 _STATUS_MAP = {
     "completed": StatusEnum.COMPLETED,
     "failed": StatusEnum.ERROR,
@@ -112,7 +110,11 @@ class IonQBackend(Backend):
             api_key = config.api_key
         if api_key is None:
             raise IonQAuthenticationError()
-
+        if device_name == "qpu":
+            IONQ_N_QUBITS = 11
+        else:
+            IONQ_N_QUBITS = 29
+        
         self._header = {"Authorization": f"apiKey {api_key}"}
         self._backend_info = fully_connected_backendinfo(
             type(self).__name__,
