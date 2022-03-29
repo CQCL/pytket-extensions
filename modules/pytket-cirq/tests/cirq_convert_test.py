@@ -87,7 +87,7 @@ def test_device() -> None:
 
 def test_parallel_ops() -> None:
     q0, q1, q2 = [cirq.LineQubit(i) for i in range(3)]
-    circ = cirq.Circuit([cirq.ops.ParallelGate(cirq.Y ** 0.3, 3).on(q0, q1, q2)])
+    circ = cirq.Circuit([cirq.ops.ParallelGate(cirq.Y**0.3, 3).on(q0, q1, q2)])
     c_tk = cirq_to_tk(circ)
     assert c_tk.n_gates_of_type(OpType.Ry) == 3
     assert c_tk.n_gates == 3
