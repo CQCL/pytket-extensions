@@ -57,6 +57,13 @@ skip_remote_tests: bool = (
 )
 
 
+def test_classical_barrier_error() -> None:
+    c = Circuit(1, 1)
+    c.add_barrier([0], [0])
+    with pytest.raises(NotImplementedError):
+        tk_to_qiskit(c)
+
+
 def test_convert_circuit_with_complex_params() -> None:
     with pytest.raises(ValueError):
         qiskit_op = PauliSumOp.from_list([("Z", 1j)])
