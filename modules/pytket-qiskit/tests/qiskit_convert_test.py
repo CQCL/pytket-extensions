@@ -57,10 +57,10 @@ skip_remote_tests: bool = (
 )
 
 
-def test_barrier_conversion() -> None:
+def test_classical_barrier_error() -> None:
+    c = Circuit(1, 1)
+    c.add_barrier([0], [0])
     with pytest.raises(NotImplementedError):
-        c = Circuit(1, 1)
-        c.add_barrier([0], [0])
         tk_to_qiskit(c)
 
 
