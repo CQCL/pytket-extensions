@@ -28,7 +28,7 @@ from pytket.circuit import Circuit  # type: ignore
 
 @pytest.mark.parametrize(
     "chosen_device,max_batch_cost",
-    [("HQS-LT", 300), ("HQS-LT", None), ("HQS-LT-S1", 300), ("HQS-LT-S1", None)],
+    [("H1", 300), ("H1", None), ("H1-1", 300), ("H1-1", None)],
 )
 def test_device_family(
     requests_mock: Mocker,
@@ -38,7 +38,7 @@ def test_device_family(
 ) -> None:
     """Test that batch params are NOT supplied by default
     if we are submitting to a device family.
-    Doing so will get an error response from the HQS API."""
+    Doing so will get an error response from the Quantinuum API."""
 
     fake_job_id = "abc-123"
 
@@ -75,7 +75,7 @@ def test_device_family(
     if requests_mock.last_request:
         submitted_json = requests_mock.last_request.json()
 
-    if chosen_device == "HQS-LT" and max_batch_cost is None:
+    if chosen_device == "H1" and max_batch_cost is None:
         assert "batch-exec" not in submitted_json.keys()
         assert "batch-end" not in submitted_json.keys()
     else:

@@ -42,7 +42,7 @@ from pytket.extensions.quantinuum.backends.quantinuum import (
     _GATE_SET,
 )
 from pytket.extensions.quantinuum.backends.api_wrappers import (
-    HQSAPIError,
+    QuantinuumAPIError,
     QuantinuumQAPI,
 )
 from pytket.backends.status import StatusEnum
@@ -55,9 +55,7 @@ REASON = (
 
 
 def test_quantinuum() -> None:
-    backend = QuantinuumBackend(
-        device_name="HQS-LT-S1-APIVAL", machine_debug=skip_remote_tests
-    )
+    backend = QuantinuumBackend(device_name="H1-1SC", machine_debug=skip_remote_tests)
     c = Circuit(4, 4, "test 1")
     c.H(0)
     c.CX(0, 1)
@@ -90,7 +88,7 @@ def test_quantinuum() -> None:
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_bell() -> None:
-    b = QuantinuumBackend(device_name="HQS-LT-S1-APIVAL")
+    b = QuantinuumBackend(device_name="H1-1SC")
     c = Circuit(2, 2, "test 2")
     c.H(0)
     c.CX(0, 1)
@@ -104,7 +102,7 @@ def test_bell() -> None:
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_multireg() -> None:
-    b = QuantinuumBackend(device_name="HQS-LT-S1-APIVAL", label="test 3")
+    b = QuantinuumBackend(device_name="H1-1SC", label="test 3")
     c = Circuit()
     q1 = Qubit("q1", 0)
     q2 = Qubit("q2", 0)
@@ -127,7 +125,7 @@ def test_multireg() -> None:
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_default_pass() -> None:
-    b = QuantinuumBackend(device_name="HQS-LT-S1-APIVAL")
+    b = QuantinuumBackend(device_name="H1-1SC")
     for ol in range(3):
         comp_pass = b.default_compilation_pass(ol)
         c = Circuit(3, 3)
@@ -143,14 +141,14 @@ def test_default_pass() -> None:
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_cancel() -> None:
-    b = QuantinuumBackend(device_name="HQS-LT-S1-APIVAL", label="test cancel")
+    b = QuantinuumBackend(device_name="H1-1SC", label="test cancel")
     c = Circuit(2, 2).H(0).CX(0, 1).measure_all()
     c = b.get_compiled_circuit(c)
     handle = b.process_circuit(c, 10)
     try:
         # will raise HTTP error if job is already completed
         b.cancel(handle)
-    except HQSAPIError as err:
+    except QuantinuumAPIError as err:
         check_completed = "job has completed already" in str(err)
         assert check_completed
         if not check_completed:
@@ -200,7 +198,7 @@ def circuits(
 @settings(max_examples=5, deadline=None)
 def test_cost_estimate(c: Circuit, n_shots: int) -> None:
 
-    b = QuantinuumBackend("HQS-LT-S1-APIVAL")
+    b = QuantinuumBackend("H1-1SC")
     c = b.get_compiled_circuit(c)
     estimate = b.cost_estimate(c, n_shots)
     status = b.circuit_status(b.process_circuit(c, n_shots))
@@ -213,7 +211,7 @@ def test_cost_estimate(c: Circuit, n_shots: int) -> None:
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_classical() -> None:
-    # circuit to cover capabilities covered in HQS example notebook
+    # circuit to cover capabilities covered in example notebook
     c = Circuit(1)
     a = c.add_c_register("a", 8)
     b = c.add_c_register("b", 10)
@@ -236,7 +234,7 @@ def test_classical() -> None:
     c.X(0, condition=reg_geq(a, 1))
     c.X(0, condition=reg_leq(a, 1))
 
-    b = QuantinuumBackend("HQS-LT-S1-APIVAL")
+    b = QuantinuumBackend("H1-1SC")
 
     c = b.get_compiled_circuit(c)
     assert b.run_circuit(c, n_shots=10).get_counts()
@@ -244,7 +242,7 @@ def test_classical() -> None:
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_postprocess() -> None:
-    b = QuantinuumBackend("HQS-LT-S1-APIVAL")
+    b = QuantinuumBackend("H1-1SC")
     assert b.supports_contextual_optimisation
     c = Circuit(2, 2)
     c.add_gate(OpType.PhasedX, [1, 1], [0])
@@ -268,7 +266,7 @@ def test_postprocess() -> None:
 )
 def test_shots_bits_edgecases(n_shots, n_bits) -> None:
 
-    quantinuum_backend = QuantinuumBackend("HQS-LT-S1-APIVAL", machine_debug=True)
+    quantinuum_backend = QuantinuumBackend("H1-1SC", machine_debug=True)
     c = Circuit(n_bits, n_bits)
 
     # TODO TKET-813 add more shot based backends and move to integration tests
@@ -294,8 +292,8 @@ def test_shots_bits_edgecases(n_shots, n_bits) -> None:
 def test_simulator() -> None:
     circ = Circuit(2, name="sim_test").H(0).CX(0, 1).measure_all()
     n_shots = 1000
-    state_backend = QuantinuumBackend("HQS-LT-S1-SIM")
-    stabilizer_backend = QuantinuumBackend("HQS-LT-S1-SIM", simulator="stabilizer")
+    state_backend = QuantinuumBackend("H1-1E")
+    stabilizer_backend = QuantinuumBackend("H1-1E", simulator="stabilizer")
 
     circ = state_backend.get_compiled_circuit(circ)
 
@@ -341,7 +339,7 @@ def test_retrieve_available_devices() -> None:
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_batching() -> None:
     circ = Circuit(2, name="batching_test").H(0).CX(0, 1).measure_all()
-    state_backend = QuantinuumBackend("HQS-LT-S1-SIM")
+    state_backend = QuantinuumBackend("H1-1E")
     circ = state_backend.get_compiled_circuit(circ)
 
     handles = state_backend.process_circuits([circ, circ], 10)
@@ -357,7 +355,7 @@ def test_batching() -> None:
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_submission_with_group() -> None:
-    b = QuantinuumBackend(device_name="HQS-LT-S1-APIVAL")
+    b = QuantinuumBackend(device_name="H1-1SC")
     c = Circuit(2, 2, "test 2")
     c.H(0)
     c.CX(0, 1)
@@ -371,9 +369,7 @@ def test_submission_with_group() -> None:
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_zzphase() -> None:
-    backend = QuantinuumBackend(
-        device_name="HQS-LT-S1-APIVAL", machine_debug=skip_remote_tests
-    )
+    backend = QuantinuumBackend(device_name="H1-1SC", machine_debug=skip_remote_tests)
     c = Circuit(2, 2, "test rzz")
     c.H(0)
     c.CX(0, 1)
@@ -386,9 +382,7 @@ def test_zzphase() -> None:
     assert c0.n_gates_of_type(OpType.ZZPhase) > 0
 
     # simulator does not yet support ZZPhase
-    backsim = QuantinuumBackend(
-        device_name="HQS-LT-S1-SIM", machine_debug=skip_remote_tests
-    )
+    backsim = QuantinuumBackend(device_name="H1-1E", machine_debug=skip_remote_tests)
     assert backsim.get_compiled_circuit(c, 0).n_gates_of_type(OpType.ZZPhase) == 0
 
     n_shots = 4
