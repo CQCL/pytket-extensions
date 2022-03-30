@@ -1,6 +1,11 @@
 Changelog
 ~~~~~~~~~
 
+0.22.0 (unreleased)
+-------------------
+
+* Updated cirq version requirement to 0.14.
+
 0.21.0 (March 2022)
 -------------------
 
