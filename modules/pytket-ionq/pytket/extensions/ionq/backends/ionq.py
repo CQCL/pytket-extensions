@@ -53,8 +53,6 @@ from .config import IonQConfig
 
 IONQ_JOBS_URL = "https://api.ionq.co/v0.1/jobs/"
 
-IONQ_N_QUBITS = 11
-
 _STATUS_MAP = {
     "completed": StatusEnum.COMPLETED,
     "failed": StatusEnum.ERROR,
@@ -64,6 +62,19 @@ _STATUS_MAP = {
 }
 
 _DEBUG_HANDLE_PREFIX = "_MACHINE_DEBUG_"
+
+
+def _get_qubit_count(device_name: str, header: str):
+    if device_name == "qpu":
+        device_name = "qpu.s11"
+    backends_api_response = get("https://api.ionq.co/v0.2/backends", headers=header)
+    backends_api_response = backends_api_response.content.decode()
+    ionq_devices = json.loads(backends_api_response)
+    print(ionq_devices)
+    device_info = next(
+        (device for device in ionq_devices if device_name == device["backend"]), 11
+    )
+    return device_info["qubits"]
 
 
 class IonQAuthenticationError(Exception):
@@ -112,13 +123,12 @@ class IonQBackend(Backend):
             api_key = config.api_key
         if api_key is None:
             raise IonQAuthenticationError()
-
         self._header = {"Authorization": f"apiKey {api_key}"}
         self._backend_info = fully_connected_backendinfo(
             type(self).__name__,
             device_name,
             __extension_version__,
-            IONQ_N_QUBITS,
+            _get_qubit_count(device_name=device_name, header=self._header),
             ionq_gates,
         )
         self._qm = {Qubit(i): node for i, node in enumerate(self._backend_info.nodes)}
@@ -135,7 +145,7 @@ class IonQBackend(Backend):
                 cls.__name__,
                 "qpu",
                 __extension_version__,
-                IONQ_N_QUBITS,
+                11,
                 ionq_gates,
             )
         ]
