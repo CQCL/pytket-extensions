@@ -70,7 +70,6 @@ def _get_qubit_count(device_name: str, header: str):
     backends_api_response = get("https://api.ionq.co/v0.2/backends", headers=header)
     backends_api_response = backends_api_response.content.decode()
     ionq_devices = json.loads(backends_api_response)
-    print(ionq_devices)
     device_info = next(
         (device for device in ionq_devices if device_name == device["backend"]), 11
     )
