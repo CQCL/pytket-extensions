@@ -30,7 +30,7 @@ class QuantinuumAPIError(Exception):
 class _OverrideManager:
     def __init__(
         self,
-        api_handler: "QuantinuumQAPI",
+        api_handler: "QuantinuumAPI",
         timeout: Optional[int] = None,
         retry_timeout: Optional[int] = None,
     ):

@@ -43,7 +43,7 @@ from pytket.extensions.quantinuum.backends.quantinuum import (
 )
 from pytket.extensions.quantinuum.backends.api_wrappers import (
     QuantinuumAPIError,
-    QuantinuumQAPI,
+    QuantinuumAPI,
 )
 from pytket.backends.status import StatusEnum
 
@@ -331,7 +331,7 @@ def test_simulator() -> None:
 def test_retrieve_available_devices() -> None:
     backend_infos = QuantinuumBackend.available_devices()
     assert len(backend_infos) > 0
-    api_handler = QuantinuumQAPI()
+    api_handler = QuantinuumAPI()
     backend_infos = QuantinuumBackend.available_devices(api_handler=api_handler)
     assert len(backend_infos) > 0
 

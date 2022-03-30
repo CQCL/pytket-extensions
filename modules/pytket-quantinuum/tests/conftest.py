@@ -20,7 +20,7 @@ from _pytest.fixtures import SubRequest
 from requests_mock.mocker import Mocker
 import jwt
 
-from pytket.extensions.quantinuum.backends.api_wrappers import QuantinuumQAPI
+from pytket.extensions.quantinuum.backends.api_wrappers import QuantinuumAPI
 from pytket.extensions.quantinuum.backends.credential_storage import (
     MemoryCredentialStorage,
 )
@@ -49,7 +49,7 @@ def fixture_mock_quum_api_handler(
     requests_mock: Mocker,
     mock_credentials: Tuple[str, str],
     mock_token: str,
-) -> QuantinuumQAPI:
+) -> QuantinuumAPI:
     """A logged-in QuantinuumQAPI fixture.
     After using this fixture in a test, call:
         mock_quum_api_handler.delete_authentication()
@@ -77,7 +77,7 @@ def fixture_mock_quum_api_handler(
     )
 
     # Construct QuantinuumQAPI and login
-    api_handler = QuantinuumQAPI()
+    api_handler = QuantinuumAPI()
 
     # Add the credential storage seperately in line with fixture parameters
     api_handler.config.username = username

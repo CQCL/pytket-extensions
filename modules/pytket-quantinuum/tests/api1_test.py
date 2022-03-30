@@ -21,7 +21,7 @@ import pytest
 
 from requests_mock.mocker import Mocker
 
-from pytket.extensions.quantinuum.backends.api_wrappers import QuantinuumQAPI
+from pytket.extensions.quantinuum.backends.api_wrappers import QuantinuumAPI
 from pytket.extensions.quantinuum.backends import QuantinuumBackend
 from pytket.circuit import Circuit  # type: ignore
 
@@ -32,7 +32,7 @@ from pytket.circuit import Circuit  # type: ignore
 )
 def test_device_family(
     requests_mock: Mocker,
-    mock_quum_api_handler: QuantinuumQAPI,
+    mock_quum_api_handler: QuantinuumAPI,
     chosen_device: str,
     max_batch_cost: Optional[int],
 ) -> None:
