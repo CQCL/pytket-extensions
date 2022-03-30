@@ -119,13 +119,13 @@ def cirq_to_tk(circuit: cirq.circuits.Circuit) -> Circuit:
         qmap.update({qb: uid})
     for moment in circuit:
         for op in moment.operations:
-            if isinstance(op, cirq.ops.GlobalPhaseOperation):
-                tkcirc.add_phase(cmath.phase(op.coefficient) / pi)
-                continue
             gate = op.gate
             gatetype = type(gate)
             qb_lst = [qmap[q] for q in op.qubits]
 
+            if isinstance(gate, cirq.ops.global_phase_op.GlobalPhaseGate):
+                tkcirc.add_phase(cmath.phase(gate.coefficient) / pi)
+                continue
             if isinstance(gate, cirq_common.HPowGate) and gate.exponent == 1:
                 gate = cirq_common.H
             elif (
@@ -272,12 +272,12 @@ def tk_to_cirq(tkcirc: Circuit, copy_all_qubits: bool = False) -> cirq.circuits.
     try:
 
         coeff = cmath.exp(float(tkcirc.phase) * cmath.pi * 1j)
-        if coeff.real < 1e-8:  # tolerance permitted by cirq for GlobalPhaseOperation
+        if coeff.real < 1e-8:  # tolerance permitted by cirq for GlobalPhaseGate
             coeff = coeff.imag * 1j
         if coeff.imag < 1e-8:
             coeff = coeff.real
         if coeff != 1.0:
-            oplst.append(cirq.ops.GlobalPhaseOperation(coeff))
+            oplst.append(cirq.global_phase_operation(coeff))
     except ValueError:
         warning(
             "Global phase is dependent on a symbolic parameter, so cannot adjust for "

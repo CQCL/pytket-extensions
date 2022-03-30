@@ -52,7 +52,7 @@ def get_match_circuit() -> cirq.Circuit:
             cirq.PhasedISwapPowGate(phase_exponent=0.7, exponent=0.8)(
                 qubits[3], qubits[4]
             ),
-            cirq.GlobalPhaseOperation(1j),
+            cirq.global_phase_operation(1j),
             cirq.measure_each(*qubits[3:-2]),
         ],
         strategy=InsertStrategy.EARLIEST,
