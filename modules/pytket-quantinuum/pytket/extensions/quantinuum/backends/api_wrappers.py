@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """"
-Functions used to submit jobs with Quantinuum Quantum Solutions API.
+Functions used to submit jobs with Quantinuum API.
 
-Adapted from original file provided by Quantinuum Quantum Solutions
+Adapted from original file provided by Quantinuum
 """
 
 import time
@@ -51,7 +51,7 @@ class _OverrideManager:
         self.api_handler.retry_timeout = self._orig_retry
 
 
-class QuantinuumQAPI:
+class QuantinuumAPI:
 
     JOB_DONE = ["failed", "completed", "canceled"]
 
