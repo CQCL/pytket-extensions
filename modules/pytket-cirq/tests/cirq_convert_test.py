@@ -52,7 +52,7 @@ def get_match_circuit() -> cirq.Circuit:
             cirq.PhasedISwapPowGate(phase_exponent=0.7, exponent=0.8)(
                 qubits[3], qubits[4]
             ),
-            cirq.GlobalPhaseOperation(1j),
+            cirq.global_phase_operation(1j),
             cirq.measure_each(*qubits[3:-2]),
         ],
         strategy=InsertStrategy.EARLIEST,
@@ -79,10 +79,10 @@ def test_conversions() -> None:
 
 
 def test_device() -> None:
-    fox = cirq_google.Foxtail
-    char = process_characterisation(fox)
+    syc = cirq_google.devices.Sycamore
+    char = process_characterisation(syc)
     arc = char.get("Architecture", Architecture([]))
-    assert str(arc) == "<tket::Architecture, nodes=22>"
+    assert str(arc) == "<tket::Architecture, nodes=54>"
 
 
 def test_parallel_ops() -> None:
