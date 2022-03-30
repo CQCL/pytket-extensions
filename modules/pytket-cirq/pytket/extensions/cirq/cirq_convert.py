@@ -25,7 +25,7 @@ import cirq.ops
 import cirq_google
 from pytket.circuit import Circuit, OpType, Qubit, Bit, Node  # type: ignore
 from pytket.architecture import Architecture  # type: ignore
-from sympy import pi, Basic, Symbol
+from sympy import pi, Basic, Symbol  # type: ignore
 
 # For translating cirq circuits to tket circuits
 cirq_common = cirq.ops.common_gates
@@ -306,7 +306,7 @@ def process_characterisation(
     :return: A dictionary containing device characteristics
     """
     data = device.metadata
-    qubits = data.qubit_set
+    qubits: FrozenSet[GridQubit] = data.qubit_set  # type: ignore
     qubit_graph = data.nx_graph
 
     qb_map = {q: Node("q", q.row, q.col) for q in qubits}
