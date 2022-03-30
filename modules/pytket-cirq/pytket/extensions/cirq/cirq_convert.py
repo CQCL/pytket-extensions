@@ -295,21 +295,26 @@ def _sort_row_col(qubits: FrozenSet[GridQubit]) -> List[GridQubit]:
     return sorted(qubits, key=lambda x: (x.row, x.col))
 
 
-def process_characterisation(xmon: cirq_google.XmonDevice) -> dict:
+def process_characterisation(
+    device: cirq_google.devices.serializable_device.SerializableDevice,
+) -> dict:
     """Generates a tket dictionary containing device characteristics for a Cirq
-    :py:class:`XmonDevice`.
+    :py:class:`SerializableDevice`.
 
-    :param xmon: The device to convert
+    :param device: The device to convert
 
     :return: A dictionary containing device characteristics
     """
-    qb_map = {q: Node("q", q.row, q.col) for q in xmon.qubits}
+    data = device.metadata
+    qubits = data.qubit_set
+    qubit_graph = data.nx_graph
 
-    indexed_qubits = _sort_row_col(xmon.qubits)
+    qb_map = {q: Node("q", q.row, q.col) for q in qubits}
+
+    indexed_qubits = _sort_row_col(qubits)
     coupling_map = []
     for qb in indexed_qubits:
-        neighbours = xmon.neighbors_of(qb)
-        for x in neighbours:
+        for x in qubit_graph.neighbors(qb):
             coupling_map.append((qb_map[qb], qb_map[x]))
     arc = Architecture(coupling_map)
 

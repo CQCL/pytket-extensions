@@ -5,6 +5,8 @@ Changelog
 -------------------
 
 * Updated cirq version requirement to 0.14.
+* Changed `process_characterisation()` so that it expects a `SerializableDevice`
+  instead of an `XmonDevice`.
 
 0.21.0 (March 2022)
 -------------------

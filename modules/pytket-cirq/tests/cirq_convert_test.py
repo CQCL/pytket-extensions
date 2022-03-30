@@ -79,10 +79,10 @@ def test_conversions() -> None:
 
 
 def test_device() -> None:
-    fox = cirq_google.Foxtail
-    char = process_characterisation(fox)
+    syc = cirq_google.devices.Sycamore
+    char = process_characterisation(syc)
     arc = char.get("Architecture", Architecture([]))
-    assert str(arc) == "<tket::Architecture, nodes=22>"
+    assert str(arc) == "<tket::Architecture, nodes=54>"
 
 
 def test_parallel_ops() -> None:
