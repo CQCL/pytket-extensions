@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import cast, Optional, List, Sequence, Union, Counter, Any
+from typing import cast, Optional, List, Sequence, Union, Counter, Any, Dict
 import json
 import time
 from ast import literal_eval
@@ -64,16 +64,17 @@ _STATUS_MAP = {
 _DEBUG_HANDLE_PREFIX = "_MACHINE_DEBUG_"
 
 
-def _get_qubit_count(device_name: str, header: str):
+def _get_qubit_count(device_name: str, header: Dict[str, str]):
     if device_name == "qpu":
         device_name = "qpu.s11"
     backends_api_response = get("https://api.ionq.co/v0.2/backends", headers=header)
-    backends_api_response = backends_api_response.content.decode()
-    ionq_devices = json.loads(backends_api_response)
+    backends_api_response = str(backends_api_response.content.decode())  # type: ignore
+    ionq_devices = json.loads(backends_api_response)  # type: ignore
     device_info = next(
         (device for device in ionq_devices if device_name == device["backend"]), 11
-    )
-    return device_info["qubits"]
+    )  # type: ignore
+    n_qubits = device_info["qubits"]  # type:ignore
+    return n_qubits
 
 
 class IonQAuthenticationError(Exception):
@@ -141,11 +142,7 @@ class IonQBackend(Backend):
     def available_devices(cls, **kwargs: Any) -> List[BackendInfo]:
         return [
             fully_connected_backendinfo(
-                cls.__name__,
-                "qpu",
-                __extension_version__,
-                11,
-                ionq_gates,
+                cls.__name__, "qpu", __extension_version__, 11, ionq_gates,
             )
         ]
 
@@ -194,10 +191,7 @@ class IonQBackend(Backend):
                     FlattenRegisters(),
                     RenameQubitsPass(self._qm),
                     self.rebase_pass(),
-                    SquashCustom(
-                        ionq_singleqs,
-                        _TK1_to_RzRx,
-                    ),
+                    SquashCustom(ionq_singleqs, _TK1_to_RzRx,),
                     SimplifyInitial(allow_classical=False, create_all_qubits=True),
                 ]
             )
@@ -220,9 +214,7 @@ class IonQBackend(Backend):
         """
         circuits = list(circuits)
         n_shots_list = Backend._get_n_shots_as_list(
-            n_shots,
-            len(circuits),
-            optional=False,
+            n_shots, len(circuits), optional=False,
         )
 
         if valid_check:
@@ -298,9 +290,7 @@ class IonQBackend(Backend):
             n_qubits: int = literal_eval(jobid[len(_DEBUG_HANDLE_PREFIX) :])
             zero_counts: Counter = Counter()
             zero_array = OutcomeArray.from_ints(
-                ints=[0],
-                width=n_qubits,
-                big_endian=False,
+                ints=[0], width=n_qubits, big_endian=False,
             )
             zero_counts[zero_array] = n_shots
             if handle in self._cache:
