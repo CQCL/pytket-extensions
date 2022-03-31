@@ -48,7 +48,7 @@ jobs:
         docker pull rigetti/qvm
     - name: Install dotnet SDK
       if: contains(env.MODULES_TO_TEST, 'pytket-qsharp')
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v2
       with:
         dotnet-version: '3.1.x'
     - name: Install iqsharp
@@ -113,7 +113,7 @@ jobs:
 
     - name: Install dotnet SDK
       if: contains(env.MODULES_TO_TEST, 'pytket-qsharp')
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v2
       with:
         dotnet-version: '3.1.x'
     - name: Install iqsharp
@@ -180,7 +180,7 @@ jobs:
 
     - name: Install dotnet SDK
       if: contains(env.MODULES_TO_TEST, 'pytket-qsharp')
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v2
       with:
         dotnet-version: '3.1.x'
     - name: Install iqsharp
@@ -261,7 +261,7 @@ jobs:
     - name: Install extensions
       run: for w in `find wheelhouse/ -type f -name "*.whl"` ; do pip install $w ; done
     - name: Install dotnet SDK
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v2
       with:
         dotnet-version: '3.1.x'
     - name: Install iqsharp
