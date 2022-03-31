@@ -1,4 +1,4 @@
-# Copyright 2020-2022 Cambridge Quantum Computing
+# Copyright 2020-2022 Cambridge Quantum ComputinAAAg
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -203,20 +203,21 @@ def _obs_from_qpo(operator: QubitPauliOperator, n_qubits: int) -> Observable:
 
 def _get_result(
     completed_task: Union[AwsQuantumTask, LocalQuantumTask],
-    target_qubits: tuple,
+    target_qubits: str,
     want_state: bool,
     want_dm: bool,
     ppcirc: Optional[Circuit] = None,
 ) -> Dict[str, BackendResult]:
     result = completed_task.result()
     kwargs = {}
+    target_qubits = json.loads(target_qubits)
     if want_state or want_dm:
         assert ppcirc is None
         if want_state:
             kwargs["state"] = result.get_value_by_result_type(ResultType.StateVector())
         if want_dm:
             m = result.get_value_by_result_type(
-                ResultType.DensityMatrix(target=list(target_qubits))
+                ResultType.DensityMatrix(target=target_qubits)
             )
             if type(completed_task) == AwsQuantumTask:
                 kwargs["density_matrix"] = np.array(
@@ -225,7 +226,7 @@ def _get_result(
             else:
                 kwargs["density_matrix"] = m
     else:
-        measurements = result.measurements[:, list(target_qubits)]
+        measurements = result.measurements[:, target_qubits]
         kwargs["shots"] = OutcomeArray.from_readouts(measurements)
         kwargs["ppcirc"] = ppcirc
     return {"result": BackendResult(**kwargs)}
@@ -610,7 +611,7 @@ class BraketBackend(Backend):
     def _result_id_type(self) -> _ResultIdTuple:
         # (task ID, whether state vector / density matrix are wanted, serialized ppcirc
         # or "null")
-        return (str, tuple, bool, bool, str)
+        return (str, str, bool, bool, str)
 
     def _run(
         self, bkcirc: braket.circuits.Circuit, n_shots: int = 0, **kwargs: KwargTypes
@@ -668,7 +669,7 @@ class BraketBackend(Backend):
             want_dm = (n_shots == 0) and self.supports_density_matrix
             problem_qubits = [x.index[0] for x in circ.qubits]
             device_qubits = [x.index[0] for x in self._backend_info.nodes]
-            target_qubits = tuple(device_qubits.index(x) for x in problem_qubits)
+            target_qubits = json.dumps([device_qubits.index(x) for x in problem_qubits])
             if postprocess:
                 circ_measured = circ.copy()
                 circ_measured.measure_all()
