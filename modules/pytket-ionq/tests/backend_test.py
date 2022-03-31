@@ -154,7 +154,7 @@ def test_postprocess() -> None:
     n_bits=strategies.integers(min_value=0, max_value=10),
 )
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_shots_bits_edgecases(n_shots, n_bits) -> None:
+def test_shots_bits_edgecases(n_shots: int, n_bits: int) -> None:
     ionq_backend = IonQBackend(device_name="simulator", label="test 5")
     ionq_backend._MACHINE_DEBUG = True
     c = Circuit(n_bits, n_bits)
