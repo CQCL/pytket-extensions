@@ -17,11 +17,11 @@ from typing import Any, Tuple
 
 from requests_mock.mocker import Mocker
 
-from pytket.extensions.quantinuum.backends.api_wrappers import QuantinuumQAPI
+from pytket.extensions.quantinuum.backends.api_wrappers import QuantinuumAPI
 
 
 def test_quum_login(
-    mock_quum_api_handler: QuantinuumQAPI,
+    mock_quum_api_handler: QuantinuumAPI,
     mock_credentials: Tuple[str, str],
     mock_token: str,
 ) -> None:
@@ -44,7 +44,7 @@ def test_quum_login(
 
 def test_machine_status(
     requests_mock: Mocker,
-    mock_quum_api_handler: QuantinuumQAPI,
+    mock_quum_api_handler: QuantinuumAPI,
 ) -> None:
     """Test that we can retrieve the machine state via  Quantinuum endpoint."""
 
@@ -90,7 +90,7 @@ def test_full_login(
     monkeypatch.setattr("sys.stdin", StringIO(username + "\n"))
     monkeypatch.setattr("getpass.getpass", lambda prompt: pwd)
 
-    api_handler = QuantinuumQAPI()
+    api_handler = QuantinuumAPI()
     # emulate no pytket config stored email address
     api_handler.config.username = None
     api_handler.full_login()
