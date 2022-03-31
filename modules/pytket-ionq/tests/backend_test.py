@@ -63,6 +63,7 @@ def test_big_circuit_ionq() -> None:
     counts = backend.run_circuit(circ, n_shots=100).get_counts()
     assert counts[(0, 0, 0, 0)] == 100
 
+
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_invalid_token() -> None:
     b = IonQBackend(api_key=token, device_name="simulator", label="test 3")
