@@ -64,7 +64,7 @@ _STATUS_MAP = {
 _DEBUG_HANDLE_PREFIX = "_MACHINE_DEBUG_"
 
 
-def _get_qubit_count(device_name: str, header: Dict[str, str]):
+def _get_qubit_count(device_name: str, header: Dict[str, str]) -> int:
     if device_name == "qpu":
         device_name = "qpu.s11"
     backends_api_response = get("https://api.ionq.co/v0.2/backends", headers=header)
