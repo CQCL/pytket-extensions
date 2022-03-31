@@ -31,7 +31,11 @@ from .config import QuantinuumConfig
 from .credential_storage import MemoryCredentialStorage
 
 # This is necessary for use in Jupyter notebooks to allow for nested asyncio loops
-nest_asyncio.apply()
+try:
+    nest_asyncio.apply()
+except RuntimeError:
+    # May fail in some cloud environments: ignore.
+    pass
 
 
 class QuantinuumAPIError(Exception):
