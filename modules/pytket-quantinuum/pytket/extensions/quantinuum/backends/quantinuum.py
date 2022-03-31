@@ -51,11 +51,11 @@ from pytket.predicates import (  # type: ignore
 from pytket.utils import prepare_circuit
 from pytket.utils.outcomearray import OutcomeArray
 
-from .api_wrappers import HQSAPIError, QuantinuumQAPI
+from .api_wrappers import QuantinuumAPIError, QuantinuumAPI
 
 _DEBUG_HANDLE_PREFIX = "_MACHINE_DEBUG_"
-HONEYWELL_URL_PREFIX = "https://qapi.quantinuum.com/"
-DEVICE_FAMILY = "HQS-LT"
+QUANTINUUM_URL_PREFIX = "https://qapi.quantinuum.com/"
+DEVICE_FAMILY = "H1"
 
 _STATUS_MAP = {
     "queued": StatusEnum.QUEUED,
@@ -84,7 +84,7 @@ _GATE_SET = {
 
 def _get_gateset(machine_name: str) -> Set[OpType]:
     gs = _GATE_SET.copy()
-    if "sim" in machine_name.lower():
+    if machine_name.endswith("E"):
         gs.remove(OpType.ZZPhase)
     return gs
 
@@ -105,7 +105,7 @@ class QuantinuumBackend(Backend):
 
     # class variable to allow "global" login
     # all instances share authenticated credentials
-    _api_handler: QuantinuumQAPI = QuantinuumQAPI()
+    _api_handler: QuantinuumAPI = QuantinuumAPI()
 
     def __init__(
         self,
@@ -116,7 +116,7 @@ class QuantinuumBackend(Backend):
     ):
         """Construct a new Quantinuum backend.
 
-        :param device_name: Name of device, e.g. "HQS-LT-S1-APIVAL"
+        :param device_name: Name of device, e.g. "H1"
         :type device_name: str
         :param label: Job labels used if Circuits have no name, defaults to "job"
         :type label: Optional[str], optional
@@ -137,15 +137,15 @@ class QuantinuumBackend(Backend):
 
     @classmethod
     def _available_devices(
-        cls, _api_handler: Optional[QuantinuumQAPI] = None
+        cls, _api_handler: Optional[QuantinuumAPI] = None
     ) -> List[Dict[str, Any]]:
         """List devices available from Quantinuum.
 
         >>> QuantinuumBackend._available_devices()
-        e.g. [{'name': 'HQS-LT-1.0-APIVAL', 'n_qubits': 6}]
+        e.g. [{'name': 'H1', 'n_qubits': 6}]
 
         :param _api_handler: Instance of API handler, defaults to None
-        :type _api_handler: Optional[QuantinuumQAPI], optional
+        :type _api_handler: Optional[QuantinuumAPI], optional
         :return: Dictionaries of machine name and number of qubits.
         :rtype: List[Dict[str, Any]]
         """
@@ -200,17 +200,17 @@ class QuantinuumBackend(Backend):
 
     @classmethod
     def device_state(
-        cls, device_name: str, _api_handler: Optional[QuantinuumQAPI] = None
+        cls, device_name: str, _api_handler: Optional[QuantinuumAPI] = None
     ) -> str:
         """Check the status of a device.
 
-        >>> QuantinuumBackend.device_state('HQS-LT-1.0-APIVAL') # e.g. "online"
+        >>> QuantinuumBackend.device_state('H1') # e.g. "online"
 
 
         :param device_name: Name of the device.
         :type device_name: str
         :param _api_handler: Instance of API handler, defaults to None
-        :type _api_handler: Optional[QuantinuumQAPI], optional
+        :type _api_handler: Optional[QuantinuumAPI], optional
         :return: String of state, e.g. "online"
         :rtype: str
         """
@@ -367,7 +367,7 @@ class QuantinuumBackend(Backend):
 
                     jobdict = res.json()
                     if res.status_code != HTTPStatus.OK:
-                        raise HQSAPIError(
+                        raise QuantinuumAPIError(
                             f'HTTP error submitting job, {jobdict["error"]}'
                         )
                 except ConnectionError:
@@ -422,7 +422,7 @@ class QuantinuumBackend(Backend):
         # TODO check queue position and add to message
         try:
             response = self._api_handler.retrieve_job_status(jobid, use_websocket=True)
-        except HQSAPIError:
+        except QuantinuumAPIError:
             self._api_handler.login()
             response = self._api_handler.retrieve_job_status(jobid, use_websocket=True)
 

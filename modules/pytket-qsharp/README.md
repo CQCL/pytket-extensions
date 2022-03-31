@@ -21,10 +21,10 @@ Windows (except for Windows with 3.10). To install, run:
 ```pip install pytket-qsharp```
 
 In order to use `pytket-qsharp` you will first need to install the `dotnet` SDK
-(3.1) and the `iqsharp` tool. On some Linux systems it is also necessary to
+(6.0) and the `iqsharp` tool. On some Linux systems it is also necessary to
 modify your `PATH`:
 
-1. See [this page](https://dotnet.microsoft.com/download/dotnet-core/3.1) for
+1. See [this page](https://dotnet.microsoft.com/download/dotnet-core/6.0) for
 instructions on installing the SDK on your operating system.
 
 2. On Linux, ensure that the `dotnet` tools directory is on your path. Typically

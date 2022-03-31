@@ -25,7 +25,7 @@ import cirq.ops
 import cirq_google
 from pytket.circuit import Circuit, OpType, Qubit, Bit, Node  # type: ignore
 from pytket.architecture import Architecture  # type: ignore
-from sympy import pi, Basic, Symbol
+from sympy import pi, Basic, Symbol  # type: ignore
 
 # For translating cirq circuits to tket circuits
 cirq_common = cirq.ops.common_gates
@@ -119,13 +119,13 @@ def cirq_to_tk(circuit: cirq.circuits.Circuit) -> Circuit:
         qmap.update({qb: uid})
     for moment in circuit:
         for op in moment.operations:
-            if isinstance(op, cirq.ops.GlobalPhaseOperation):
-                tkcirc.add_phase(cmath.phase(op.coefficient) / pi)
-                continue
             gate = op.gate
             gatetype = type(gate)
             qb_lst = [qmap[q] for q in op.qubits]
 
+            if isinstance(gate, cirq.ops.global_phase_op.GlobalPhaseGate):
+                tkcirc.add_phase(cmath.phase(gate.coefficient) / pi)
+                continue
             if isinstance(gate, cirq_common.HPowGate) and gate.exponent == 1:
                 gate = cirq_common.H
             elif (
@@ -272,12 +272,12 @@ def tk_to_cirq(tkcirc: Circuit, copy_all_qubits: bool = False) -> cirq.circuits.
     try:
 
         coeff = cmath.exp(float(tkcirc.phase) * cmath.pi * 1j)
-        if coeff.real < 1e-8:  # tolerance permitted by cirq for GlobalPhaseOperation
+        if coeff.real < 1e-8:  # tolerance permitted by cirq for GlobalPhaseGate
             coeff = coeff.imag * 1j
         if coeff.imag < 1e-8:
             coeff = coeff.real
         if coeff != 1.0:
-            oplst.append(cirq.ops.GlobalPhaseOperation(coeff))
+            oplst.append(cirq.global_phase_operation(coeff))
     except ValueError:
         warning(
             "Global phase is dependent on a symbolic parameter, so cannot adjust for "
@@ -295,21 +295,26 @@ def _sort_row_col(qubits: FrozenSet[GridQubit]) -> List[GridQubit]:
     return sorted(qubits, key=lambda x: (x.row, x.col))
 
 
-def process_characterisation(xmon: cirq_google.XmonDevice) -> dict:
+def process_characterisation(
+    device: cirq_google.devices.serializable_device.SerializableDevice,
+) -> dict:
     """Generates a tket dictionary containing device characteristics for a Cirq
-    :py:class:`XmonDevice`.
+    :py:class:`SerializableDevice`.
 
-    :param xmon: The device to convert
+    :param device: The device to convert
 
     :return: A dictionary containing device characteristics
     """
-    qb_map = {q: Node("q", q.row, q.col) for q in xmon.qubits}
+    data = device.metadata
+    qubits: FrozenSet[GridQubit] = data.qubit_set  # type: ignore
+    qubit_graph = data.nx_graph
 
-    indexed_qubits = _sort_row_col(xmon.qubits)
+    qb_map = {q: Node("q", q.row, q.col) for q in qubits}
+
+    indexed_qubits = _sort_row_col(qubits)
     coupling_map = []
     for qb in indexed_qubits:
-        neighbours = xmon.neighbors_of(qb)
-        for x in neighbours:
+        for x in qubit_graph.neighbors(qb):
             coupling_map.append((qb_map[qb], qb_map[x]))
     arc = Architecture(coupling_map)
 
