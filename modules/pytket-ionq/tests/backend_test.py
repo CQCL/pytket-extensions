@@ -66,7 +66,7 @@ def test_big_circuit_ionq() -> None:
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_invalid_token() -> None:
-    b = IonQBackend(api_key=token, device_name="simulator", label="test 3")
+    b = IonQBackend(api_key="invalid", device_name="simulator", label="test 3")
     c = Circuit(2, 2).H(0).CX(0, 1)
     c.measure_all()
     c = b.get_compiled_circuit(c)
