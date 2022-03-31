@@ -63,9 +63,8 @@ def test_big_circuit_ionq() -> None:
     counts = backend.run_circuit(circ, n_shots=100).get_counts()
     assert counts[(0, 0, 0, 0)] == 100
 
-
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_invalid_token() -> None:
-    token = "invalid"
     b = IonQBackend(api_key=token, device_name="simulator", label="test 3")
     c = Circuit(2, 2).H(0).CX(0, 1)
     c.measure_all()
@@ -85,8 +84,9 @@ def test_invalid_request() -> None:
         assert "does not satisfy GateSetPredicate" in str(excinfo.value)
 
 
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_machine_debug() -> None:
-    b = IonQBackend(api_key="invalid", device_name="simulator", label="test 5")
+    b = IonQBackend(device_name="simulator", label="test 5")
     b._MACHINE_DEBUG = True
     c = Circuit(2)
     c.H(0)
@@ -112,8 +112,9 @@ def test_cancellation() -> None:
     b.cancel(h)
 
 
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_default_pass() -> None:
-    b = IonQBackend(api_key="invalid", device_name="simulator")
+    b = IonQBackend(device_name="simulator")
     for ol in range(3):
         comp_pass = b.default_compilation_pass(ol)
         c = Circuit(3, 3)
@@ -151,10 +152,9 @@ def test_postprocess() -> None:
     n_shots=strategies.integers(min_value=1, max_value=10),  # type: ignore
     n_bits=strategies.integers(min_value=0, max_value=10),
 )
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_shots_bits_edgecases(n_shots, n_bits) -> None:
-    ionq_backend = IonQBackend(
-        api_key="invalid", device_name="simulator", label="test 5"
-    )
+    ionq_backend = IonQBackend(device_name="simulator", label="test 5")
     ionq_backend._MACHINE_DEBUG = True
     c = Circuit(n_bits, n_bits)
     # TODO TKET-813 add more shot based backends and move to integration tests
@@ -176,8 +176,9 @@ def test_shots_bits_edgecases(n_shots, n_bits) -> None:
     assert res.get_counts() == correct_counts
 
 
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_nshots_ionq() -> None:
-    b = IonQBackend(api_key="invalid", device_name="simulator", label="test 8")
+    b = IonQBackend(device_name="simulator", label="test 8")
     b._MACHINE_DEBUG = True
     circuit = Circuit(1, 1).Measure(0, 0)
     n_shots = [1, 2, 3]
