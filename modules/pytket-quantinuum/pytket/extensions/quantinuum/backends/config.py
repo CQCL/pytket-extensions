@@ -35,7 +35,7 @@ class QuantinuumConfig(PytketExtConfig):
 
 
 def set_quantinuum_config(username: Optional[str]) -> None:
-    """Set default value for HQS username.
+    """Set default value for Quantinuum username.
     Can be overriden in backend construction."""
     hconfig = QuantinuumConfig.from_default_config_file()
     hconfig.username = username

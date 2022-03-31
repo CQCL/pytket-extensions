@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """"
-Functions used to submit jobs with Quantinuum Quantum Solutions API.
+Functions used to submit jobs with Quantinuum API.
 
-Adapted from original file provided by Quantinuum Quantum Solutions
+Adapted from original file provided by Quantinuum
 """
 
 import time
@@ -23,14 +23,14 @@ from .credential_storage import MemoryCredentialStorage
 nest_asyncio.apply()
 
 
-class HQSAPIError(Exception):
+class QuantinuumAPIError(Exception):
     pass
 
 
 class _OverrideManager:
     def __init__(
         self,
-        api_handler: "QuantinuumQAPI",
+        api_handler: "QuantinuumAPI",
         timeout: Optional[int] = None,
         retry_timeout: Optional[int] = None,
     ):
@@ -51,7 +51,7 @@ class _OverrideManager:
         self.api_handler.retry_timeout = self._orig_retry
 
 
-class QuantinuumQAPI:
+class QuantinuumAPI:
 
     JOB_DONE = ["failed", "completed", "canceled"]
 
@@ -177,7 +177,9 @@ class QuantinuumQAPI:
             refresh_token = self._cred_store.refresh_token
 
         if refresh_token is None:
-            raise HQSAPIError("Unable to retrieve refresh token or authenticate.")
+            raise QuantinuumAPIError(
+                "Unable to retrieve refresh token or authenticate."
+            )
 
         # check if id_token exists
         id_token = self._cred_store.id_token
@@ -186,7 +188,7 @@ class QuantinuumQAPI:
             id_token = self._cred_store.id_token
 
         if id_token is None:
-            raise HQSAPIError("Unable to retrieve id token or refresh or login.")
+            raise QuantinuumAPIError("Unable to retrieve id token or refresh or login.")
 
         return id_token
 
@@ -209,7 +211,7 @@ class QuantinuumQAPI:
         # check if token has expired or is generally unauthorized
         if res.status_code == HTTPStatus.UNAUTHORIZED:
             jr = res.json()
-            raise HQSAPIError(
+            raise QuantinuumAPIError(
                 (
                     f"Authorization failure attempting: {description}."
                     "\n\nServer Response: {jr}"
@@ -217,7 +219,7 @@ class QuantinuumQAPI:
             )
         elif res.status_code != HTTPStatus.OK:
             jr = res.json()
-            raise HQSAPIError(
+            raise QuantinuumAPIError(
                 f"HTTP error attempting: {description}.\n\nServer Response: {jr}"
             )
 
@@ -266,7 +268,7 @@ class QuantinuumQAPI:
         """
         jr = self.retrieve_job_status(job_id, use_websocket)
         if not jr:
-            raise HQSAPIError(f"Unable to retrive job {job_id}")
+            raise QuantinuumAPIError(f"Unable to retrive job {job_id}")
         if "status" in jr and jr["status"] in self.JOB_DONE:
             return jr
 
