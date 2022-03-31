@@ -142,7 +142,11 @@ class IonQBackend(Backend):
     def available_devices(cls, **kwargs: Any) -> List[BackendInfo]:
         return [
             fully_connected_backendinfo(
-                cls.__name__, "qpu", __extension_version__, 11, ionq_gates,
+                cls.__name__,
+                "qpu",
+                __extension_version__,
+                11,
+                ionq_gates,
             )
         ]
 
@@ -191,7 +195,10 @@ class IonQBackend(Backend):
                     FlattenRegisters(),
                     RenameQubitsPass(self._qm),
                     self.rebase_pass(),
-                    SquashCustom(ionq_singleqs, _TK1_to_RzRx,),
+                    SquashCustom(
+                        ionq_singleqs,
+                        _TK1_to_RzRx,
+                    ),
                     SimplifyInitial(allow_classical=False, create_all_qubits=True),
                 ]
             )
@@ -214,7 +221,9 @@ class IonQBackend(Backend):
         """
         circuits = list(circuits)
         n_shots_list = Backend._get_n_shots_as_list(
-            n_shots, len(circuits), optional=False,
+            n_shots,
+            len(circuits),
+            optional=False,
         )
 
         if valid_check:
@@ -290,7 +299,9 @@ class IonQBackend(Backend):
             n_qubits: int = literal_eval(jobid[len(_DEBUG_HANDLE_PREFIX) :])
             zero_counts: Counter = Counter()
             zero_array = OutcomeArray.from_ints(
-                ints=[0], width=n_qubits, big_endian=False,
+                ints=[0],
+                width=n_qubits,
+                big_endian=False,
             )
             zero_counts[zero_array] = n_shots
             if handle in self._cache:
