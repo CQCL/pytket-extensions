@@ -1,6 +1,11 @@
 Changelog
 ~~~~~~~~~
 
+0.24.0 (unreleased)
+-------------------
+
+* Fix two-qubit unitary conversions.
+
 0.23.0 (March 2022)
 -------------------
 

@@ -5,7 +5,6 @@ Changelog
 -------------------
 
 * Allow user to specify different local backends.
-* Fix two-qubit unitary conversions.
 
 0.17.0 (March 2022)
 -------------------
