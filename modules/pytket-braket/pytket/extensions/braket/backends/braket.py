@@ -1,4 +1,4 @@
-# Copyright 2020-2022 Cambridge Quantum ComputinAAAg
+# Copyright 2020-2022 Cambridge Quantum Computing
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -210,14 +210,14 @@ def _get_result(
 ) -> Dict[str, BackendResult]:
     result = completed_task.result()
     kwargs = {}
-    target_qubits = json.loads(target_qubits)
+    qubits_index = json.loads(target_qubits)
     if want_state or want_dm:
         assert ppcirc is None
         if want_state:
             kwargs["state"] = result.get_value_by_result_type(ResultType.StateVector())
         if want_dm:
             m = result.get_value_by_result_type(
-                ResultType.DensityMatrix(target=target_qubits)
+                ResultType.DensityMatrix(target=qubits_index)
             )
             if type(completed_task) == AwsQuantumTask:
                 kwargs["density_matrix"] = np.array(
@@ -226,7 +226,7 @@ def _get_result(
             else:
                 kwargs["density_matrix"] = m
     else:
-        measurements = result.measurements[:, target_qubits]
+        measurements = result.measurements[:, qubits_index]
         kwargs["shots"] = OutcomeArray.from_readouts(measurements)
         kwargs["ppcirc"] = ppcirc
     return {"result": BackendResult(**kwargs)}

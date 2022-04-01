@@ -5,7 +5,6 @@ Changelog
 -------------------
 
 * Allow user to specify different local backends.
-* Fix two-qubit unitary conversions.
 * Fix dimension mismatch for measurements for Braket QPU results
 
 0.17.0 (March 2022)
