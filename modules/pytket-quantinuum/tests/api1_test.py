@@ -81,3 +81,56 @@ def test_device_family(
     else:
         assert "batch-exec" in submitted_json.keys()
         assert "batch-end" in submitted_json.keys()
+
+
+def test_resumed_batching(
+    requests_mock: Mocker,
+    mock_quum_api_handler: QuantinuumAPI,
+) -> None:
+    """Test that you can resume using a batch."""
+
+    fake_job_id = "abc-123"
+
+    requests_mock.register_uri(
+        "POST",
+        "https://qapi.quantinuum.com/v1/job",
+        json={"job": fake_job_id},
+        headers={"Content-Type": "application/json"},
+    )
+
+    requests_mock.register_uri(
+        "GET",
+        f"https://qapi.quantinuum.com/v1/job/{fake_job_id}?websocket=true",
+        json={"job": fake_job_id},
+        headers={"Content-Type": "application/json"},
+    )
+
+    backend = QuantinuumBackend(
+        device_name="H1-1E",
+    )
+    backend._api_handler = mock_quum_api_handler
+
+    circ = Circuit(2, name="batching_test").H(0).CX(0, 1).measure_all()
+    circ = backend.get_compiled_circuit(circ)
+
+    [h1, _] = backend.process_circuits(
+        circuits=[circ, circ], n_shots=10, valid_check=False, close_batch=False
+    )
+
+    submitted_json = {}
+    if requests_mock.last_request:
+        print(requests_mock.last_request)
+        submitted_json = requests_mock.last_request.json()
+
+    assert "batch-exec" in submitted_json
+    assert submitted_json["batch-exec"] == backend.get_jobid(h1)
+    assert "batch-end" not in submitted_json
+
+    _ = backend.process_circuit(
+        circ, n_shots=10, valid_check=False, batch_id=backend.get_jobid(h1)
+    )
+
+    if requests_mock.last_request:
+        submitted_json = requests_mock.last_request.json()
+    assert submitted_json["batch-exec"] == backend.get_jobid(h1)
+    assert "batch-end" in submitted_json

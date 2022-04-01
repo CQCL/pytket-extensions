@@ -282,6 +282,16 @@ class QuantinuumBackend(Backend):
     def _result_id_type(self) -> _ResultIdTuple:
         return tuple((str, str))
 
+    def get_jobid(self, handle: ResultHandle) -> str:
+        """Return the corresponding Quantinuum Job ID from a ResultHandle.
+
+        :param handle: result handle.
+        :type handle: ResultHandle
+        :return: Qunatinuum API Job ID string.
+        :rtype: str
+        """
+        return cast(str, handle[0])
+
     def process_circuits(
         self,
         circuits: Sequence[Circuit],
@@ -299,7 +309,13 @@ class QuantinuumBackend(Backend):
           perform noisy simulation with an error model (default value is `True`).
         * `group`: string identifier of a collection of jobs, can be used for usage
           tracking.
-        * `max_batch_cost`: maximum HQC usable by submitted batch, default is 500.
+        * `max_batch_cost`: maximum HQC usable by submitted batch, default is
+          500.
+        * `batch_id`: first jobid of the batch
+          to which this batch of circuits should be submitted. Job IDs can be
+          retrieved from ResultHandle using ```backend.get_jobid(handle)```.
+        * `close_batch`: boolean flag to close the batch after the last circuit
+        in the job, default=True.
         """
         circuits = list(circuits)
         n_shots_list = Backend._get_n_shots_as_list(
@@ -327,7 +343,11 @@ class QuantinuumBackend(Backend):
             basebody["group"] = group
 
         handle_list = []
-        batch_exec: Union[int, str] = cast(int, kwargs.get("max_batch_cost", 500))
+        batch_exec: Union[int, str]
+        if "batch_id" in kwargs:
+            batch_exec = cast(str, kwargs["batch_id"])
+        else:
+            batch_exec = cast(int, kwargs.get("max_batch_cost", 500))
         final_index = len(circuits) - 1
         for i, (circ, n_shots) in enumerate(zip(circuits, n_shots_list)):
             if postprocess:
@@ -341,14 +361,16 @@ class QuantinuumBackend(Backend):
             body["program"] = quantinuum_circ
             body["count"] = n_shots
 
-            if final_index > 0 and (
-                self._device_name != DEVICE_FAMILY or "max_batch_cost" in kwargs
+            if (final_index > 0 or "batch_id" in kwargs) and (
+                (self._device_name != DEVICE_FAMILY or "max_batch_cost" in kwargs)
+                and (not self._device_name.endswith("SC"))
             ):
                 # Don't set default batch fields if:
-                #  - Submitting to the device family
-                #  - Less than one job submitted
+                #  - Submitting to the device family or syntax checker
+                #  - Less than one job submitted and no batch handle provided
+
                 body["batch-exec"] = batch_exec
-                if i == final_index:
+                if i == final_index and kwargs.get("close_batch", True):
                     # flag to signal end of batch
                     body["batch-end"] = True
 
@@ -377,7 +399,7 @@ class QuantinuumBackend(Backend):
 
                 # extract job ID from response
                 jobid = cast(str, jobdict["job"])
-                if i == 0:
+                if i == 0 and "batch_id" not in kwargs:
                     # `batch-exec` field set to max batch cost for first job of batch
                     # and to the id of first job of batch otherwise
                     _ = self._api_handler.retrieve_job_status(jobid, use_websocket=True)
