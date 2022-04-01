@@ -22,6 +22,7 @@ import numpy as np
 import pytest
 import hypothesis.strategies as st
 from hypothesis.strategies._internal import SearchStrategy
+from hypothesis import HealthCheck
 
 from pytket.circuit import (  # type: ignore
     Circuit,
@@ -54,8 +55,14 @@ REASON = (
 )
 
 
-def test_quantinuum() -> None:
-    backend = QuantinuumBackend(device_name="H1-1SC", machine_debug=skip_remote_tests)
+@pytest.mark.parametrize("authenticated_quum_backend", [None], indirect=True)
+def test_quantinuum(
+    authenticated_quum_backend: QuantinuumBackend,
+) -> None:
+    if skip_remote_tests:
+        backend = QuantinuumBackend(device_name="H1-1SC", machine_debug=True)
+    else:
+        backend = authenticated_quum_backend
     c = Circuit(4, 4, "test 1")
     c.H(0)
     c.CX(0, 1)
@@ -87,8 +94,13 @@ def test_quantinuum() -> None:
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_bell() -> None:
-    b = QuantinuumBackend(device_name="H1-1SC")
+@pytest.mark.parametrize(
+    "authenticated_quum_backend", [{"device_name": "H1-1SC"}], indirect=True
+)
+def test_bell(
+    authenticated_quum_backend: QuantinuumBackend,
+) -> None:
+    b = authenticated_quum_backend
     c = Circuit(2, 2, "test 2")
     c.H(0)
     c.CX(0, 1)
@@ -101,8 +113,15 @@ def test_bell() -> None:
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_multireg() -> None:
-    b = QuantinuumBackend(device_name="H1-1SC", label="test 3")
+@pytest.mark.parametrize(
+    "authenticated_quum_backend",
+    [{"device_name": "H1-1SC", "label": "test 3"}],
+    indirect=True,
+)
+def test_multireg(
+    authenticated_quum_backend: QuantinuumBackend,
+) -> None:
+    b = authenticated_quum_backend
     c = Circuit()
     q1 = Qubit("q1", 0)
     q2 = Qubit("q2", 0)
@@ -124,8 +143,13 @@ def test_multireg() -> None:
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_default_pass() -> None:
-    b = QuantinuumBackend(device_name="H1-1SC")
+@pytest.mark.parametrize(
+    "authenticated_quum_backend", [{"device_name": "H1-1SC"}], indirect=True
+)
+def test_default_pass(
+    authenticated_quum_backend: QuantinuumBackend,
+) -> None:
+    b = authenticated_quum_backend
     for ol in range(3):
         comp_pass = b.default_compilation_pass(ol)
         c = Circuit(3, 3)
@@ -140,8 +164,15 @@ def test_default_pass() -> None:
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_cancel() -> None:
-    b = QuantinuumBackend(device_name="H1-1SC", label="test cancel")
+@pytest.mark.parametrize(
+    "authenticated_quum_backend",
+    [{"device_name": "H1-1SC", "label": "test cancel"}],
+    indirect=True,
+)
+def test_cancel(
+    authenticated_quum_backend: QuantinuumBackend,
+) -> None:
+    b = authenticated_quum_backend
     c = Circuit(2, 2).H(0).CX(0, 1).measure_all()
     c = b.get_compiled_circuit(c)
     handle = b.process_circuit(c, 10)
@@ -191,14 +222,26 @@ def circuits(
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
-@given(
-    circuits(),  # pylint: disable=no-value-for-parameter
-    st.integers(min_value=1, max_value=10000),
+@pytest.mark.parametrize(
+    "authenticated_quum_backend",
+    [{"device_name": "H1-1SC"}],
+    indirect=["authenticated_quum_backend"],
 )
-@settings(max_examples=5, deadline=None)
-def test_cost_estimate(c: Circuit, n_shots: int) -> None:
-
-    b = QuantinuumBackend("H1-1SC")
+@given(
+    c=circuits(),  # pylint: disable=no-value-for-parameter
+    n_shots=st.integers(min_value=1, max_value=10000),
+)
+@settings(
+    max_examples=5,
+    deadline=None,
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+)
+def test_cost_estimate(
+    authenticated_quum_backend: QuantinuumBackend,
+    c: Circuit,
+    n_shots: int,
+) -> None:
+    b = authenticated_quum_backend
     c = b.get_compiled_circuit(c)
     estimate = b.cost_estimate(c, n_shots)
     status = b.circuit_status(b.process_circuit(c, n_shots))
@@ -210,7 +253,12 @@ def test_cost_estimate(c: Circuit, n_shots: int) -> None:
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_classical() -> None:
+@pytest.mark.parametrize(
+    "authenticated_quum_backend", [{"device_name": "H1-1SC"}], indirect=True
+)
+def test_classical(
+    authenticated_quum_backend: QuantinuumBackend,
+) -> None:
     # circuit to cover capabilities covered in example notebook
     c = Circuit(1)
     a = c.add_c_register("a", 8)
@@ -234,15 +282,20 @@ def test_classical() -> None:
     c.X(0, condition=reg_geq(a, 1))
     c.X(0, condition=reg_leq(a, 1))
 
-    b = QuantinuumBackend("H1-1SC")
+    b = authenticated_quum_backend
 
     c = b.get_compiled_circuit(c)
     assert b.run_circuit(c, n_shots=10).get_counts()
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_postprocess() -> None:
-    b = QuantinuumBackend("H1-1SC")
+@pytest.mark.parametrize(
+    "authenticated_quum_backend", [{"device_name": "H1-1SC"}], indirect=True
+)
+def test_postprocess(
+    authenticated_quum_backend: QuantinuumBackend,
+) -> None:
+    b = authenticated_quum_backend
     assert b.supports_contextual_optimisation
     c = Circuit(2, 2)
     c.add_gate(OpType.PhasedX, [1, 1], [0])
@@ -289,10 +342,15 @@ def test_shots_bits_edgecases(n_shots, n_bits) -> None:
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_simulator() -> None:
+@pytest.mark.parametrize(
+    "authenticated_quum_backend", [{"device_name": "H1-1E"}], indirect=True
+)
+def test_simulator(
+    authenticated_quum_backend: QuantinuumBackend,
+) -> None:
     circ = Circuit(2, name="sim_test").H(0).CX(0, 1).measure_all()
     n_shots = 1000
-    state_backend = QuantinuumBackend("H1-1E")
+    state_backend = authenticated_quum_backend
     stabilizer_backend = QuantinuumBackend("H1-1E", simulator="stabilizer")
 
     circ = state_backend.get_compiled_circuit(circ)
@@ -328,8 +386,11 @@ def test_simulator() -> None:
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_retrieve_available_devices() -> None:
-    backend_infos = QuantinuumBackend.available_devices()
+@pytest.mark.parametrize("authenticated_quum_backend", [None], indirect=True)
+def test_retrieve_available_devices(
+    authenticated_quum_backend: QuantinuumBackend,
+) -> None:
+    backend_infos = authenticated_quum_backend.available_devices()
     assert len(backend_infos) > 0
     api_handler = QuantinuumAPI()
     backend_infos = QuantinuumBackend.available_devices(api_handler=api_handler)
@@ -337,9 +398,14 @@ def test_retrieve_available_devices() -> None:
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_batching() -> None:
+@pytest.mark.parametrize(
+    "authenticated_quum_backend", [{"device_name": "H1-1E"}], indirect=True
+)
+def test_batching(
+    authenticated_quum_backend: QuantinuumBackend,
+) -> None:
     circ = Circuit(2, name="batching_test").H(0).CX(0, 1).measure_all()
-    state_backend = QuantinuumBackend("H1-1E")
+    state_backend = authenticated_quum_backend
     circ = state_backend.get_compiled_circuit(circ)
 
     handles = state_backend.process_circuits([circ, circ], 10)
@@ -354,8 +420,13 @@ def test_batching() -> None:
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_submission_with_group() -> None:
-    b = QuantinuumBackend(device_name="H1-1SC")
+@pytest.mark.parametrize(
+    "authenticated_quum_backend", [{"device_name": "H1-1SC"}], indirect=True
+)
+def test_submission_with_group(
+    authenticated_quum_backend: QuantinuumBackend,
+) -> None:
+    b = authenticated_quum_backend
     c = Circuit(2, 2, "test 2")
     c.H(0)
     c.CX(0, 1)
@@ -368,8 +439,13 @@ def test_submission_with_group() -> None:
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_zzphase() -> None:
-    backend = QuantinuumBackend(device_name="H1-1SC", machine_debug=skip_remote_tests)
+@pytest.mark.parametrize(
+    "authenticated_quum_backend", [{"device_name": "H1-1SC"}], indirect=True
+)
+def test_zzphase(
+    authenticated_quum_backend: QuantinuumBackend,
+) -> None:
+    backend = authenticated_quum_backend
     c = Circuit(2, 2, "test rzz")
     c.H(0)
     c.CX(0, 1)
