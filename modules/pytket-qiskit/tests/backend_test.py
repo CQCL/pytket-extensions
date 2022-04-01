@@ -460,6 +460,7 @@ def test_nshots() -> None:
         )
     for b in backends:
         circuit = Circuit(1).X(0)
+        circuit.measure_all()
         n_shots = [1, 2, 3]
         results = b.get_results(b.process_circuits([circuit] * 3, n_shots=n_shots))
         assert [len(r.get_shots()) for r in results] == n_shots
