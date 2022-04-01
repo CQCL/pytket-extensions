@@ -143,11 +143,15 @@ def test_measures() -> None:
     assert all_zeros
 
 
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_noise() -> None:
-    with open(os.path.join(sys.path[0], "ibmqx2_properties.pickle"), "rb") as f:
-        properties = pickle.load(f)
+    if not IBMQ.active_account():
+        IBMQ.load_account()
 
-    noise_model = NoiseModel.from_backend(properties)
+    provider = IBMQ.providers(hub="ibm-q", group="open")[0]
+    back = provider.get_backend("ibmq_santiago")
+
+    noise_model = NoiseModel.from_backend(back)
     n_qbs = 5
     c = Circuit(n_qbs, n_qbs)
     x_qbs = [2, 0, 4]
@@ -501,11 +505,15 @@ def test_default_pass(santiago_backend: IBMQBackend) -> None:
             assert pred.verify(c)
 
 
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_aer_default_pass() -> None:
-    with open(os.path.join(sys.path[0], "ibmqx2_properties.pickle"), "rb") as f:
-        properties = pickle.load(f)
+    if not IBMQ.active_account():
+        IBMQ.load_account()
 
-    noise_model = NoiseModel.from_backend(properties)
+    provider = IBMQ.providers(hub="ibm-q", group="open")[0]
+    back = provider.get_backend("ibmq_santiago")
+
+    noise_model = NoiseModel.from_backend(back)
     for nm in [None, noise_model]:
         b = AerBackend(nm)
         for ol in range(3):
@@ -767,6 +775,7 @@ def test_mixed_circuit() -> None:
         assert key in {(0, 1), (1, 0)}
 
 
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_aer_placed_expectation() -> None:
     # bug TKET-695
     n_qbs = 3
@@ -784,10 +793,14 @@ def test_aer_placed_expectation() -> None:
         }
     )
     assert b.get_operator_expectation_value(c, operator) == (-0.5 + 0j)
-    with open(os.path.join(sys.path[0], "ibmqx2_properties.pickle"), "rb") as f:
-        properties = pickle.load(f)
 
-    noise_model = NoiseModel.from_backend(properties)
+    if not IBMQ.active_account():
+        IBMQ.load_account()
+
+    provider = IBMQ.providers(hub="ibm-q", group="open")[0]
+    back = provider.get_backend("ibmq_santiago")
+
+    noise_model = NoiseModel.from_backend(back)
 
     noise_b = AerBackend(noise_model)
 
