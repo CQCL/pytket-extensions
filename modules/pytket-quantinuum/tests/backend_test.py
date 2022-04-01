@@ -345,12 +345,13 @@ def test_batching() -> None:
     handles = state_backend.process_circuits([circ, circ], 10)
     assert state_backend.get_results(handles)
 
+    # test batch can be resumed
 
-# hard to run as it involves removing credentials
-# def test_delete_authentication():
-#     print("first login")
-#     b = QuantinuumBackend()
-#     print("delete login")
+    [h1, _] = state_backend.process_circuits([circ, circ], 10, close_batch=False)
+
+    h2 = state_backend.process_circuit(circ, 10, batch_id=state_backend.get_jobid(h1))
+
+    assert state_backend.get_results([h1, h2])
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
