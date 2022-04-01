@@ -5,6 +5,7 @@ Changelog
 -------------------
 
 * Fix two-qubit unitary conversions.
+* Update qiskit version to 0.35.
 
 0.23.0 (March 2022)
 -------------------
