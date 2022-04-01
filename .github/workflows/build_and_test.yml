@@ -39,10 +39,8 @@ jobs:
         ALL_MODULES=`echo ${LS_MODULES} | sed -e 's/\///g'`
         echo "MODULES_TO_TEST=${ALL_MODULES}" >> $GITHUB_ENV
     - name: Determine changed modules
-      if: github.event_name == 'pull_request'
       shell: bash
       run: |
-        MM=`python .github/workflows/changed_modules.py origin/${{ github.base_ref }} ${{ github.sha }}`
         echo "MODULES_TO_TEST=pytket-qsharp" >> $GITHUB_ENV
 
     - name: Install dotnet SDK
