@@ -15,7 +15,7 @@
 from typing import cast, List, Optional, Sequence, Union
 from uuid import uuid4
 import numpy as np
-from pysimplex import Simplex
+from pysimplex import Simplex  # type: ignore
 from pytket.backends import (
     Backend,
     CircuitNotRunError,
