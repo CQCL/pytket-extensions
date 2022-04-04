@@ -59,20 +59,9 @@ import pytest
 
 # TODO add tests for `get_operator_expectation_value`
 
-skip_remote_tests: bool = (
-    not IBMQ.stored_account() or os.getenv("PYTKET_RUN_REMOTE_TESTS") is None
-)
+skip_remote_tests: bool = os.getenv("PYTKET_RUN_REMOTE_TESTS") is None
+
 REASON = "PYTKET_RUN_REMOTE_TESTS not set (requires configuration of IBMQ account)"
-
-
-@pytest.fixture(scope="module")
-def santiago_backend() -> IBMQBackend:
-    return IBMQBackend("ibmq_santiago", hub="ibm-q", group="open", project="main")
-
-
-@pytest.fixture(scope="module")
-def lima_backend() -> IBMQBackend:
-    return IBMQBackend("ibmq_lima", hub="ibm-q", group="open", project="main")
 
 
 def circuit_gen(measure: bool = False) -> Circuit:
@@ -82,7 +71,6 @@ def circuit_gen(measure: bool = False) -> Circuit:
     if measure:
         c.measure_all()
     return c
-
 
 def get_test_circuit(measure: bool) -> QuantumCircuit:
     qr = QuantumRegister(5)
