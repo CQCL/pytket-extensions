@@ -107,7 +107,7 @@ def fixture_authenticated_quum_backend(
     else:
         backend = QuantinuumBackend(**request.param)
 
-    backend._api_handler = QuantinuumAPI( # pylint: disable=unexpected-keyword-arg
+    backend._api_handler = QuantinuumAPI(  # pylint: disable=unexpected-keyword-arg
         _QuantinuumAPI__user_name=os.getenv("PYTKET_REMOTE_QUANTINUUM_USERNAME"),
         _QuantinuumAPI__pwd=os.getenv("PYTKET_REMOTE_QUANTINUUM_PASSWORD"),
     )

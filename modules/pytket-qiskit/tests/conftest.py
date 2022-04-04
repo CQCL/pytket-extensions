@@ -17,7 +17,8 @@ import pytest
 from qiskit import IBMQ  # type: ignore
 from pytket.extensions.qiskit import IBMQBackend
 
-@pytest.fixture(autouse=True, scope='session')
+
+@pytest.fixture(autouse=True, scope="session")
 def setup_qiskit_account():
     if os.getenv("PYTKET_RUN_REMOTE_TESTS") is not None:
         # The remote tests require an active IBMQ account
@@ -29,6 +30,7 @@ def setup_qiskit_account():
             token = os.getenv("PYTKET_REMOTE_QISKIT_TOKEN")
             if token:
                 IBMQ.enable_account(token)
+
 
 @pytest.fixture(scope="module")
 def santiago_backend() -> IBMQBackend:

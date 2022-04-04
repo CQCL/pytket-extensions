@@ -72,6 +72,7 @@ def circuit_gen(measure: bool = False) -> Circuit:
         c.measure_all()
     return c
 
+
 def get_test_circuit(measure: bool) -> QuantumCircuit:
     qr = QuantumRegister(5)
     cr = ClassicalRegister(5)
