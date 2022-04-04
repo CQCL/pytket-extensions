@@ -24,9 +24,9 @@ REASON = "PYTKET_RUN_REMOTE_TESTS not set (requires configuration of IQM credent
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_iqm() -> None:
+def test_iqm(authenticated_iqm_backend: IQMBackend) -> None:
     # Run a circuit on the demo device.
-    b = IQMBackend()
+    b = authenticated_iqm_backend
     c = Circuit(4, 4)
     c.H(0)
     c.CX(0, 1)
@@ -56,8 +56,8 @@ def test_invalid_cred() -> None:
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_handles() -> None:
-    b = IQMBackend()
+def test_handles(authenticated_iqm_backend: IQMBackend) -> None:
+    b = authenticated_iqm_backend
     c = Circuit(2, 2)
     c.H(0)
     c.CX(0, 1)
@@ -84,8 +84,8 @@ def test_handles() -> None:
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_none_nshots() -> None:
-    b = IQMBackend()
+def test_none_nshots(authenticated_iqm_backend: IQMBackend) -> None:
+    b = authenticated_iqm_backend
     c = Circuit(2, 2)
     c.H(0)
     c.CX(0, 1)
@@ -112,8 +112,8 @@ def test_default_pass() -> None:
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_postprocess() -> None:
-    b = IQMBackend()
+def test_postprocess(authenticated_iqm_backend: IQMBackend) -> None:
+    b = authenticated_iqm_backend
     assert b.supports_contextual_optimisation
     c = Circuit(2, 2)
     c.Y(0)
