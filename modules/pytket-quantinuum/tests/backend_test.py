@@ -336,7 +336,11 @@ def test_retrieve_available_devices() -> None:
     assert len(backend_infos) > 0
 
 
-@pytest.mark.skipif(skip_remote_tests, reason=REASON)
+# @pytest.mark.skipif(skip_remote_tests, reason=REASON)
+@pytest.mark.skip(
+    reason="Batching is only enabled for certain accounts."
+    " See api1_test.py for intended behaviour."
+)
 def test_batching() -> None:
     circ = Circuit(2, name="batching_test").H(0).CX(0, 1).measure_all()
     state_backend = QuantinuumBackend("H1-1E")
