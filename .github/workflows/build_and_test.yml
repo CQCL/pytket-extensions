@@ -16,6 +16,7 @@ on:
 
 env:
   IQSHARP_TELEMETRY_OPT_OUT: 1
+  PYTKET_RUN_REMOTE_TESTS: 1
 
 jobs:
 
