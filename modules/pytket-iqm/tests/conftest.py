@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import os
+from pathlib import Path
 import pytest
 from pytket.extensions.iqm import IQMBackend
 
@@ -24,9 +25,9 @@ def fixture_authenticated_iqm_backend() -> IQMBackend:
     # PYTKET_REMOTE_IQM_USERNAME and PYTKET_REMOTE_IQM_APIKEY
 
     # By default, the backend is created with the device_settings in
-    # tests/../pytket/extensions/iqm/backends/demo_settings.json
+    # ../pytket/extensions/iqm/backends/demo_settings.json
     return IQMBackend(
-        device="../pytket/extensions/iqm/backends/demo_settings.json",
+        device=Path('..') / 'pytket' / 'extensions' / 'iqm' / 'backends' / 'demo_settings.json',
         username=os.getenv("PYTKET_REMOTE_IQM_USERNAME"),
         api_key=os.getenv("PYTKET_REMOTE_IQM_APIKEY"),
     )

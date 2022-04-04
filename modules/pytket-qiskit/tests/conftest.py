@@ -19,7 +19,7 @@ from pytket.extensions.qiskit import IBMQBackend
 
 
 @pytest.fixture(autouse=True, scope="session")
-def setup_qiskit_account():
+def setup_qiskit_account() -> None:
     if os.getenv("PYTKET_RUN_REMOTE_TESTS") is not None:
         # The remote tests require an active IBMQ account
         # We check if an IBMQ account is already saved, otherwise we try
