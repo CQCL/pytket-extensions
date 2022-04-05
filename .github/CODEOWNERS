@@ -5,6 +5,7 @@
 /modules/pytket-iqm/ @cqc-alec
 /modules/pytket-projectq/ @lmondada
 /modules/pytket-pyquil/ @sjdilkes @lmondada
+/modules/pytket-pysimplex/ @cqc-alec
 /modules/pytket-pyzx/ @cqc-alec
 /modules/pytket-qiskit/ @ss2165
 /modules/pytket-qsharp/ @cqc-alec
