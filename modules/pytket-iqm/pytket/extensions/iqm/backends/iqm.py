@@ -62,8 +62,6 @@ from .config import IQMConfig
 
 _GATE_SET = {OpType.PhasedX, OpType.CZ, OpType.Measure}
 
-_DEFAULT_SETTINGS = Path(__file__).resolve().parent / "demo_settings.json"
-
 # https://iqm-finland.github.io/cirq-on-iqm/api/cirq_iqm.devices.adonis.Adonis.html
 _DEFAULT_COUPLING = [
     ("QB1", "QB3"),
@@ -93,7 +91,7 @@ class IQMBackend(Backend):
     def __init__(
         self,
         url: str,
-        settings: PathLike = _DEFAULT_SETTINGS,
+        settings: PathLike,
         arch: Optional[List[Tuple[str, str]]] = None,
         username: Optional[str] = None,
         api_key: Optional[str] = None,
