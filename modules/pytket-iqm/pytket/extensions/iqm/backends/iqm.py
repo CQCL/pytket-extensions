@@ -93,7 +93,7 @@ class IQMBackend(Backend):
     def __init__(
         self,
         url: str = "https://cortex-demo.qc.iqm.fi/",
-        device: PathLike = _DEFAULT_SETTINGS,
+        settings: PathLike = _DEFAULT_SETTINGS,
         arch: Optional[List[Tuple[str, str]]] = None,
         username: Optional[str] = None,
         api_key: Optional[str] = None,
@@ -106,7 +106,7 @@ class IQMBackend(Backend):
         :py:meth:`pytket.extensions.iqm.set_iqm_config`.
 
         :param url: base URL for requests
-        :param device: path of JSON file containing device settings
+        :param settings: path of JSON file containing device settings
         :param arch: list of couplings between the qubits defined in the device settings
             (default: [("QB1", "QB3"), ("QB2", "QB3"), ("QB4", "QB3"), ("QB5", "QB3")],
             i.e. a 5-qubit star topology centred on "QB3")
@@ -126,7 +126,7 @@ class IQMBackend(Backend):
         if api_key is None:
             raise IqmAuthenticationError()
 
-        with open(device) as f:
+        with open(settings) as f:
             settings = json.load(f)
         self._client = IQMClient(
             self._url, settings=settings, username=username, api_key=api_key
