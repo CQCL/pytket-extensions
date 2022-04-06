@@ -1,6 +1,11 @@
 Changelog
 ~~~~~~~~~
 
+0.1.2 (April 2022)
+------------------
+
+* Fix batch handling in ``process_circuits()``.
+
 0.1.1 (March 2022)
 ------------------
 
