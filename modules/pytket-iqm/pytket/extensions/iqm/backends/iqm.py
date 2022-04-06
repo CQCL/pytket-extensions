@@ -92,7 +92,7 @@ class IQMBackend(Backend):
 
     def __init__(
         self,
-        url: str = "https://cortex-demo.qc.iqm.fi/",
+        url: str,
         settings: PathLike = _DEFAULT_SETTINGS,
         arch: Optional[List[Tuple[str, str]]] = None,
         username: Optional[str] = None,

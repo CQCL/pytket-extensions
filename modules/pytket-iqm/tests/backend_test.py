@@ -26,7 +26,7 @@ REASON = "PYTKET_RUN_REMOTE_TESTS not set (requires configuration of IQM credent
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_iqm() -> None:
     # Run a circuit on the demo device.
-    b = IQMBackend()
+    b = IQMBackend(url="https://cortex-demo.qc.iqm.fi/")
     c = Circuit(4, 4)
     c.H(0)
     c.CX(0, 1)
@@ -47,7 +47,9 @@ def test_iqm() -> None:
 
 
 def test_invalid_cred() -> None:
-    b = IQMBackend(username="invalid", api_key="invalid")
+    b = IQMBackend(
+        url="https://cortex-demo.qc.iqm.fi/", username="invalid", api_key="invalid"
+    )
     c = Circuit(2, 2).H(0).CX(0, 1)
     c.measure_all()
     c = b.get_compiled_circuit(c)
@@ -57,7 +59,7 @@ def test_invalid_cred() -> None:
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_handles() -> None:
-    b = IQMBackend()
+    b = IQMBackend(url="https://cortex-demo.qc.iqm.fi/")
     c = Circuit(2, 2)
     c.H(0)
     c.CX(0, 1)
@@ -85,7 +87,7 @@ def test_handles() -> None:
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_none_nshots() -> None:
-    b = IQMBackend()
+    b = IQMBackend(url="https://cortex-demo.qc.iqm.fi/")
     c = Circuit(2, 2)
     c.H(0)
     c.CX(0, 1)
@@ -97,7 +99,9 @@ def test_none_nshots() -> None:
 
 
 def test_default_pass() -> None:
-    b = IQMBackend(username="invalid", api_key="invalid")
+    b = IQMBackend(
+        url="https://cortex-demo.qc.iqm.fi/", username="invalid", api_key="invalid"
+    )
     for ol in range(3):
         comp_pass = b.default_compilation_pass(ol)
         c = Circuit(3, 3)
@@ -113,7 +117,7 @@ def test_default_pass() -> None:
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_postprocess() -> None:
-    b = IQMBackend()
+    b = IQMBackend(url="https://cortex-demo.qc.iqm.fi/")
     assert b.supports_contextual_optimisation
     c = Circuit(2, 2)
     c.Y(0)
@@ -128,7 +132,9 @@ def test_postprocess() -> None:
 
 
 def test_backendinfo() -> None:
-    b = IQMBackend(username="invalid", api_key="invalid")
+    b = IQMBackend(
+        url="https://cortex-demo.qc.iqm.fi/", username="invalid", api_key="invalid"
+    )
     info = b.backend_info
     assert info.name == type(b).__name__
     assert len(info.gate_set) >= 3
