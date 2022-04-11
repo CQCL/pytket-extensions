@@ -27,7 +27,6 @@ from pytket.utils.expectations import (
     get_operator_expectation_value,
 )
 from pytket.utils.operators import QubitPauliOperator
-from braket.aws.aws_session import AwsSession
 
 # To test on AWS backends, first set up auth using boto3, then set the S3 bucket and
 # folder in pytket config. See:
