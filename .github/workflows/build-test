@@ -38,9 +38,6 @@ function unsupported() {
         pytket-aqt)
             true
             ;;
-        pytket-braket)
-            true
-            ;;
         pytket-ionq)
             true
             ;;
