@@ -27,6 +27,7 @@ from pytket.utils.expectations import (
     get_operator_expectation_value,
 )
 from pytket.utils.operators import QubitPauliOperator
+from braket.aws.aws_session import AwsSession
 
 # To test on AWS backends, first set up auth using boto3, then set the S3 bucket and
 # folder in pytket config. See:
@@ -37,12 +38,13 @@ REASON = "PYTKET_RUN_REMOTE_TESTS not set (requires configuration of AWS storage
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_simulator() -> None:
-    b = BraketBackend(
-        device_type="quantum-simulator",
-        provider="amazon",
-        device="sv1",
-    )
+@pytest.mark.parametrize(
+    "authenticated_braket_backend",
+    [{"device_type": "quantum-simulator", "provider": "amazon", "device": "sv1"}],
+    indirect=True,
+)
+def test_simulator(authenticated_braket_backend: BraketBackend) -> None:
+    b = authenticated_braket_backend
     assert b.supports_shots
     c = Circuit(2).H(0).CX(0, 1)
     c = b.get_compiled_circuit(c)
@@ -70,8 +72,13 @@ def test_simulator() -> None:
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_dm_simulator() -> None:
-    b = BraketBackend(device_type="quantum-simulator", provider="amazon", device="dm1")
+@pytest.mark.parametrize(
+    "authenticated_braket_backend",
+    [{"device_type": "quantum-simulator", "provider": "amazon", "device": "dm1"}],
+    indirect=True,
+)
+def test_dm_simulator(authenticated_braket_backend: BraketBackend) -> None:
+    b = authenticated_braket_backend
     assert b.supports_density_matrix
     c = Circuit(2).H(0).SWAP(0, 1)
     cc = b.get_compiled_circuit(c)
@@ -84,12 +91,13 @@ def test_dm_simulator() -> None:
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_tn1_simulator() -> None:
-    b = BraketBackend(
-        device_type="quantum-simulator",
-        provider="amazon",
-        device="tn1",
-    )
+@pytest.mark.parametrize(
+    "authenticated_braket_backend",
+    [{"device_type": "quantum-simulator", "provider": "amazon", "device": "tn1"}],
+    indirect=True,
+)
+def test_tn1_simulator(authenticated_braket_backend: BraketBackend) -> None:
+    b = authenticated_braket_backend
     assert b.supports_shots
     c = Circuit(2).H(0).CX(0, 1)
     c = b.get_compiled_circuit(c)
@@ -112,12 +120,13 @@ def test_tn1_simulator() -> None:
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_ionq() -> None:
-    b = BraketBackend(
-        device_type="qpu",
-        provider="ionq",
-        device="ionQdevice",
-    )
+@pytest.mark.parametrize(
+    "authenticated_braket_backend",
+    [{"device_type": "qpu", "provider": "ionq", "device": "ionQdevice"}],
+    indirect=True,
+)
+def test_ionq(authenticated_braket_backend: BraketBackend) -> None:
+    b = authenticated_braket_backend
     assert b.persistent_handles
     assert b.supports_shots
     assert not b.supports_state
@@ -162,10 +171,20 @@ def test_ionq() -> None:
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_rigetti() -> None:
-    b = BraketBackend(
-        device_type="qpu", provider="rigetti", device="Aspen-M-1", region="us-west-1"
-    )
+@pytest.mark.parametrize(
+    "authenticated_braket_backend",
+    [
+        {
+            "device_type": "qpu",
+            "provider": "rigetti",
+            "device": "Aspen-M-1",
+            "region": "us-west-1",
+        }
+    ],
+    indirect=True,
+)
+def test_rigetti(authenticated_braket_backend: BraketBackend) -> None:
+    b = authenticated_braket_backend
     assert b.persistent_handles
     assert b.supports_shots
     assert not b.supports_state
@@ -196,11 +215,21 @@ def test_rigetti() -> None:
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_rigetti_with_rerouting() -> None:
+@pytest.mark.parametrize(
+    "authenticated_braket_backend",
+    [
+        {
+            "device_type": "qpu",
+            "provider": "rigetti",
+            "device": "Aspen-M-1",
+            "region": "us-west-1",
+        }
+    ],
+    indirect=True,
+)
+def test_rigetti_with_rerouting(authenticated_braket_backend: BraketBackend) -> None:
     # A circuit that requires rerouting to a non-fully-connected architecture
-    b = BraketBackend(
-        device_type="qpu", provider="rigetti", device="Aspen-M-1", region="us-west-1"
-    )
+    b = authenticated_braket_backend
     c = Circuit(4).CX(0, 1).CX(0, 2).CX(0, 3).CX(1, 2).CX(1, 3).CX(2, 3)
     c = b.get_compiled_circuit(c)
     h = b.process_circuit(c, 10)
@@ -208,10 +237,20 @@ def test_rigetti_with_rerouting() -> None:
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_oqc() -> None:
-    b = BraketBackend(
-        device_type="qpu", provider="oqc", device="Lucy", region="eu-west-2"
-    )
+@pytest.mark.parametrize(
+    "authenticated_braket_backend",
+    [
+        {
+            "device_type": "qpu",
+            "provider": "oqc",
+            "device": "Lucy",
+            "region": "eu-west-2",
+        }
+    ],
+    indirect=True,
+)
+def test_oqc(authenticated_braket_backend: BraketBackend) -> None:
+    b = authenticated_braket_backend
     assert b.persistent_handles
     assert b.supports_shots
     assert not b.supports_state
@@ -427,12 +466,13 @@ def test_shots_bits_edgecases(n_shots, n_bits) -> None:
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_postprocess_ionq() -> None:
-    b = BraketBackend(
-        device_type="qpu",
-        provider="ionq",
-        device="ionQdevice",
-    )
+@pytest.mark.parametrize(
+    "authenticated_braket_backend",
+    [{"device_type": "qpu", "provider": "ionq", "device": "ionQdevice"}],
+    indirect=True,
+)
+def test_postprocess_ionq(authenticated_braket_backend: BraketBackend) -> None:
+    b = authenticated_braket_backend
     assert b.supports_contextual_optimisation
     c = Circuit(2).H(0).CX(0, 1).Y(0)
     c = b.get_compiled_circuit(c)
@@ -445,9 +485,16 @@ def test_postprocess_ionq() -> None:
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_retrieve_available_devices() -> None:
-    backend_infos = BraketBackend.available_devices()
+@pytest.mark.parametrize("authenticated_braket_backend", [None], indirect=True)
+def test_retrieve_available_devices(
+    authenticated_braket_backend: BraketBackend,
+) -> None:
+    backend_infos = authenticated_braket_backend.available_devices(
+        aws_session=authenticated_braket_backend._aws_session
+    )
     assert len(backend_infos) > 0
     # Test annealers are filtered out.
-    backend_infos = BraketBackend.available_devices(region="us-west-2")
+    backend_infos = authenticated_braket_backend.available_devices(
+        region="us-west-2", aws_session=authenticated_braket_backend._aws_session
+    )
     assert len(backend_infos) > 0
