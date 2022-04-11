@@ -51,6 +51,7 @@ from pytket.predicates import (  # type: ignore
     GateSetPredicate,
     NoClassicalControlPredicate,
     NoFastFeedforwardPredicate,
+    NoBarriersPredicate,
     NoMidMeasurePredicate,
     NoSymbolsPredicate,
     Predicate,
@@ -156,6 +157,7 @@ class IQMBackend(Backend):
         return [
             NoClassicalControlPredicate(),
             NoFastFeedforwardPredicate(),
+            NoBarriersPredicate(),
             NoMidMeasurePredicate(),
             NoSymbolsPredicate(),
             GateSetPredicate(_GATE_SET),
