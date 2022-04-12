@@ -65,11 +65,6 @@ function skip_tests() {
     case "$1" in
         pytket-qsharp)
             case "${PLAT}" in
-                Windows)
-                    # https://github.com/CQCL/pytket-extensions/issues/180
-                    # https://github.com/microsoft/iqsharp/issues/512
-                    true && return
-                    ;;
                 Darwin)
                     # Test timeout issues
                     [[ ${PYVER} == "3.10" ]] && return

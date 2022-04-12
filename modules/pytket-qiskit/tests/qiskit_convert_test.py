@@ -48,7 +48,7 @@ from pytket.extensions.qiskit.result_convert import (
     backendresult_to_qiskit_resultdata,
     _gen_uids,
 )
-from sympy import Symbol
+from sympy import Symbol  # type: ignore
 from pytket.passes import RebaseTket, DecomposeBoxes, FullPeepholeOptimise, SequencePass  # type: ignore
 from pytket.utils.results import compare_statevectors, permute_rows_cols_in_unitary
 
@@ -225,7 +225,7 @@ def test_Unitary2qBox() -> None:
     qc.save_unitary()
     job = execute(qc, back).result()
     a = job.get_unitary(qc)
-    u1 = permute_rows_cols_in_unitary(a, (1, 0))  # correct for endianness
+    u1 = permute_rows_cols_in_unitary(np.asarray(a), (1, 0))  # correct for endianness
     assert np.allclose(u1, u)
 
 

@@ -35,7 +35,7 @@ from uuid import UUID
 
 import numpy as np
 
-import sympy
+import sympy  # type: ignore
 import qiskit.circuit.library.standard_gates as qiskit_gates  # type: ignore
 from qiskit import (
     ClassicalRegister,

@@ -1,11 +1,12 @@
 Changelog
 ~~~~~~~~~
 
-0.18.0 (unreleased)
+0.18.0 (April 2022)
 -------------------
 
 * Allow user to specify different local backends.
-* Fix two-qubit unitary conversions.
+* Fix dimension mismatch for measurements for Braket QPU results.
+* Updated pytket version requirement to 1.1.
 
 0.17.0 (March 2022)
 -------------------

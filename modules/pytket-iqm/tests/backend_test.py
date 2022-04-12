@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import os
+from pathlib import Path
 import pytest
 from pytket.circuit import Circuit  # type: ignore
 from pytket.backends import StatusEnum
@@ -21,6 +22,8 @@ from requests import HTTPError
 
 skip_remote_tests: bool = os.getenv("PYTKET_RUN_REMOTE_TESTS") is None
 REASON = "PYTKET_RUN_REMOTE_TESTS not set (requires configuration of IQM credentials)"
+
+curr_file_path = Path(__file__).resolve().parent
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
@@ -47,7 +50,12 @@ def test_iqm(authenticated_iqm_backend: IQMBackend) -> None:
 
 
 def test_invalid_cred() -> None:
-    b = IQMBackend(username="invalid", api_key="invalid")
+    b = IQMBackend(
+        url="https://cortex-demo.qc.iqm.fi/",
+        settings=curr_file_path / "demo_settings.json",
+        username="invalid",
+        api_key="invalid",
+    )
     c = Circuit(2, 2).H(0).CX(0, 1)
     c.measure_all()
     c = b.get_compiled_circuit(c)
@@ -97,7 +105,12 @@ def test_none_nshots(authenticated_iqm_backend: IQMBackend) -> None:
 
 
 def test_default_pass() -> None:
-    b = IQMBackend(username="invalid", api_key="invalid")
+    b = IQMBackend(
+        url="https://cortex-demo.qc.iqm.fi/",
+        settings=curr_file_path / "demo_settings.json",
+        username="invalid",
+        api_key="invalid",
+    )
     for ol in range(3):
         comp_pass = b.default_compilation_pass(ol)
         c = Circuit(3, 3)
@@ -128,7 +141,12 @@ def test_postprocess(authenticated_iqm_backend: IQMBackend) -> None:
 
 
 def test_backendinfo() -> None:
-    b = IQMBackend(username="invalid", api_key="invalid")
+    b = IQMBackend(
+        url="https://cortex-demo.qc.iqm.fi/",
+        settings=curr_file_path / "demo_settings.json",
+        username="invalid",
+        api_key="invalid",
+    )
     info = b.backend_info
     assert info.name == type(b).__name__
     assert len(info.gate_set) >= 3

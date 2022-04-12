@@ -14,7 +14,6 @@
 
 import json
 from os import PathLike
-from pathlib import Path
 from typing import cast, Dict, List, Optional, Sequence, Tuple, Union
 from uuid import UUID
 from iqm_client.iqm_client import Circuit as IQMCircuit  # type: ignore
@@ -51,6 +50,7 @@ from pytket.predicates import (  # type: ignore
     GateSetPredicate,
     NoClassicalControlPredicate,
     NoFastFeedforwardPredicate,
+    NoBarriersPredicate,
     NoMidMeasurePredicate,
     NoSymbolsPredicate,
     Predicate,
@@ -61,8 +61,6 @@ from pytket.utils.outcomearray import OutcomeArray
 from .config import IQMConfig
 
 _GATE_SET = {OpType.PhasedX, OpType.CZ, OpType.Measure}
-
-_DEFAULT_SETTINGS = Path(__file__).resolve().parent / "demo_settings.json"
 
 # https://iqm-finland.github.io/cirq-on-iqm/api/cirq_iqm.devices.adonis.Adonis.html
 _DEFAULT_COUPLING = [
@@ -92,8 +90,8 @@ class IQMBackend(Backend):
 
     def __init__(
         self,
-        url: str = "https://cortex-demo.qc.iqm.fi/",
-        device: PathLike = _DEFAULT_SETTINGS,
+        url: str,
+        settings: PathLike,
         arch: Optional[List[Tuple[str, str]]] = None,
         username: Optional[str] = None,
         api_key: Optional[str] = None,
@@ -106,7 +104,7 @@ class IQMBackend(Backend):
         :py:meth:`pytket.extensions.iqm.set_iqm_config`.
 
         :param url: base URL for requests
-        :param device: path of JSON file containing device settings
+        :param settings: path of JSON file containing device settings
         :param arch: list of couplings between the qubits defined in the device settings
             (default: [("QB1", "QB3"), ("QB2", "QB3"), ("QB4", "QB3"), ("QB5", "QB3")],
             i.e. a 5-qubit star topology centred on "QB3")
@@ -126,13 +124,15 @@ class IQMBackend(Backend):
         if api_key is None:
             raise IqmAuthenticationError()
 
-        with open(device) as f:
-            settings = json.load(f)
+        with open(settings) as f:
+            settings_json = json.load(f)
         self._client = IQMClient(
-            self._url, settings=settings, username=username, api_key=api_key
+            self._url, settings=settings_json, username=username, api_key=api_key
         )
         self._qubits = [
-            _as_node(qb) for qb in settings["subtrees"].keys() if qb.startswith("QB")
+            _as_node(qb)
+            for qb in settings_json["subtrees"].keys()
+            if qb.startswith("QB")
         ]
         self._n_qubits = len(self._qubits)
         if arch is None:
@@ -143,7 +143,7 @@ class IQMBackend(Backend):
         self._arch = Architecture(coupling)
         self._backendinfo = BackendInfo(
             type(self).__name__,
-            settings["name"],
+            settings_json["name"],
             __extension_version__,
             self._arch,
             _GATE_SET,
@@ -158,6 +158,7 @@ class IQMBackend(Backend):
         return [
             NoClassicalControlPredicate(),
             NoFastFeedforwardPredicate(),
+            NoBarriersPredicate(),
             NoMidMeasurePredicate(),
             NoSymbolsPredicate(),
             GateSetPredicate(_GATE_SET),
