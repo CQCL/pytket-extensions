@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>pytket-qsharp &mdash; pytket-qsharp 0.23.0 documentation</title>
+  <title>pytket-qsharp &mdash; pytket-qsharp 0.24.0 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -29,7 +29,7 @@
             <a href="#" class="icon icon-home"> pytket-qsharp
           </a>
               <div class="version">
-                0.23
+                0.24
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -46,19 +46,20 @@
 <p class="caption" role="heading"><span class="caption-text">Extensions:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference external" href="../index.html#http://">Introduction</a></li>
-<li class="toctree-l1"><a class="reference external" href="../iqm/index.html#http://">pytket-iqm</a></li>
-<li class="toctree-l1"><a class="reference external" href="../quantinuum/index.html#http://">pytket-quantinuum</a></li>
-<li class="toctree-l1"><a class="reference external" href="../ionq/index.html#http://">pytket-ionq</a></li>
-<li class="toctree-l1"><a class="reference external" href="../pyquil/index.html#http://">pytket-pyquil</a></li>
-<li class="toctree-l1"><a class="reference external" href="../stim/index.html#http://">pytket-stim</a></li>
-<li class="toctree-l1"><a class="reference external" href="../qulacs/index.html#http://">pytket-qulacs</a></li>
 <li class="toctree-l1"><a class="reference external" href="../aqt/index.html#http://">pytket-aqt</a></li>
-<li class="toctree-l1"><a class="reference external" href="../qiskit/index.html#http://">pytket-qiskit</a></li>
-<li class="toctree-l1"><a class="reference external" href="../braket/index.html#http://">pytket-braket</a></li>
-<li class="toctree-l1"><a class="reference external" href="../pyzx/index.html#http://">pytket-pyzx</a></li>
-<li class="toctree-l1"><a class="reference external" href="../projectq/index.html#http://">pytket-projectq</a></li>
-<li class="toctree-l1"><a class="reference external" href="../cirq/index.html#http://">pytket-cirq</a></li>
+<li class="toctree-l1"><a class="reference external" href="../stim/index.html#http://">pytket-stim</a></li>
+<li class="toctree-l1"><a class="reference external" href="../ionq/index.html#http://">pytket-ionq</a></li>
 <li class="toctree-l1"><a class="reference external" href="../qsharp/index.html#http://">pytket-qsharp</a></li>
+<li class="toctree-l1"><a class="reference external" href="../braket/index.html#http://">pytket-braket</a></li>
+<li class="toctree-l1"><a class="reference external" href="../cirq/index.html#http://">pytket-cirq</a></li>
+<li class="toctree-l1"><a class="reference external" href="../pysimplex/index.html#http://">pytket-pysimplex</a></li>
+<li class="toctree-l1"><a class="reference external" href="../iqm/index.html#http://">pytket-iqm</a></li>
+<li class="toctree-l1"><a class="reference external" href="../qiskit/index.html#http://">pytket-qiskit</a></li>
+<li class="toctree-l1"><a class="reference external" href="../qulacs/index.html#http://">pytket-qulacs</a></li>
+<li class="toctree-l1"><a class="reference external" href="../quantinuum/index.html#http://">pytket-quantinuum</a></li>
+<li class="toctree-l1"><a class="reference external" href="../pyquil/index.html#http://">pytket-pyquil</a></li>
+<li class="toctree-l1"><a class="reference external" href="../projectq/index.html#http://">pytket-projectq</a></li>
+<li class="toctree-l1"><a class="reference external" href="../pyzx/index.html#http://">pytket-pyzx</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">More documentation:</span></p>
 <ul>
@@ -100,10 +101,10 @@ executed on simulators and resource estimators from the Microsoft QDK.</p>
 Windows (except for Windows with 3.10). To install, run:</p>
 <p><code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">pytket-qsharp</span></code></p>
 <p>In order to use <code class="docutils literal notranslate"><span class="pre">pytket-qsharp</span></code> you will first need to install the <code class="docutils literal notranslate"><span class="pre">dotnet</span></code> SDK
-(3.1) and the <code class="docutils literal notranslate"><span class="pre">iqsharp</span></code> tool. On some Linux systems it is also necessary to
+(6.0) and the <code class="docutils literal notranslate"><span class="pre">iqsharp</span></code> tool. On some Linux systems it is also necessary to
 modify your <code class="docutils literal notranslate"><span class="pre">PATH</span></code>:</p>
 <ol class="arabic simple">
-<li><p>See <a class="reference external" href="https://dotnet.microsoft.com/download/dotnet-core/3.1">this</a> page for instructions on installing the SDK on your operating system.</p></li>
+<li><p>See <a class="reference external" href="https://dotnet.microsoft.com/download/dotnet-core/6.0">this</a> page for instructions on installing the SDK on your operating system.</p></li>
 <li><p>On Linux, ensure that the <cite>dotnet</cite> tools directory is on your path. Typically this will be <code class="docutils literal notranslate"><span class="pre">~/.dotnet/tools</span></code>.</p></li>
 <li><p>Run <code class="docutils literal notranslate"><span class="pre">dotnet</span> <span class="pre">tool</span> <span class="pre">install</span> <span class="pre">-g</span> <span class="pre">Microsoft.Quantum.IQSharp</span></code>.</p></li>
 <li><p>Run <code class="docutils literal notranslate"><span class="pre">dotnet</span> <span class="pre">iqsharp</span> <span class="pre">install</span> <span class="pre">--user</span></code>.</p></li>
@@ -112,6 +113,7 @@ modify your <code class="docutils literal notranslate"><span class="pre">PATH</s
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="api.html">API documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#april-2022">0.24.0 (April 2022)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="changelog.html#march-2022">0.23.0 (March 2022)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="changelog.html#unreleased">0.22.0 (unreleased)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="changelog.html#february-2022">0.21.0 (February 2022)</a></li>
@@ -134,19 +136,20 @@ modify your <code class="docutils literal notranslate"><span class="pre">PATH</s
 <p class="caption" role="heading"><span class="caption-text">Extensions:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference external" href="../index.html#http://">Introduction</a></li>
-<li class="toctree-l1"><a class="reference external" href="../iqm/index.html#http://">pytket-iqm</a></li>
-<li class="toctree-l1"><a class="reference external" href="../quantinuum/index.html#http://">pytket-quantinuum</a></li>
-<li class="toctree-l1"><a class="reference external" href="../ionq/index.html#http://">pytket-ionq</a></li>
-<li class="toctree-l1"><a class="reference external" href="../pyquil/index.html#http://">pytket-pyquil</a></li>
-<li class="toctree-l1"><a class="reference external" href="../stim/index.html#http://">pytket-stim</a></li>
-<li class="toctree-l1"><a class="reference external" href="../qulacs/index.html#http://">pytket-qulacs</a></li>
 <li class="toctree-l1"><a class="reference external" href="../aqt/index.html#http://">pytket-aqt</a></li>
-<li class="toctree-l1"><a class="reference external" href="../qiskit/index.html#http://">pytket-qiskit</a></li>
-<li class="toctree-l1"><a class="reference external" href="../braket/index.html#http://">pytket-braket</a></li>
-<li class="toctree-l1"><a class="reference external" href="../pyzx/index.html#http://">pytket-pyzx</a></li>
-<li class="toctree-l1"><a class="reference external" href="../projectq/index.html#http://">pytket-projectq</a></li>
-<li class="toctree-l1"><a class="reference external" href="../cirq/index.html#http://">pytket-cirq</a></li>
+<li class="toctree-l1"><a class="reference external" href="../stim/index.html#http://">pytket-stim</a></li>
+<li class="toctree-l1"><a class="reference external" href="../ionq/index.html#http://">pytket-ionq</a></li>
 <li class="toctree-l1"><a class="reference external" href="../qsharp/index.html#http://">pytket-qsharp</a></li>
+<li class="toctree-l1"><a class="reference external" href="../braket/index.html#http://">pytket-braket</a></li>
+<li class="toctree-l1"><a class="reference external" href="../cirq/index.html#http://">pytket-cirq</a></li>
+<li class="toctree-l1"><a class="reference external" href="../pysimplex/index.html#http://">pytket-pysimplex</a></li>
+<li class="toctree-l1"><a class="reference external" href="../iqm/index.html#http://">pytket-iqm</a></li>
+<li class="toctree-l1"><a class="reference external" href="../qiskit/index.html#http://">pytket-qiskit</a></li>
+<li class="toctree-l1"><a class="reference external" href="../qulacs/index.html#http://">pytket-qulacs</a></li>
+<li class="toctree-l1"><a class="reference external" href="../quantinuum/index.html#http://">pytket-quantinuum</a></li>
+<li class="toctree-l1"><a class="reference external" href="../pyquil/index.html#http://">pytket-pyquil</a></li>
+<li class="toctree-l1"><a class="reference external" href="../projectq/index.html#http://">pytket-projectq</a></li>
+<li class="toctree-l1"><a class="reference external" href="../pyzx/index.html#http://">pytket-pyzx</a></li>
 </ul>
 </div>
 <div class="toctree-wrapper compound">

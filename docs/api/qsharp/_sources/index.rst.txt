@@ -17,10 +17,10 @@ Windows (except for Windows with 3.10). To install, run:
 ``pip install pytket-qsharp``
 
 In order to use ``pytket-qsharp`` you will first need to install the ``dotnet`` SDK
-(3.1) and the ``iqsharp`` tool. On some Linux systems it is also necessary to
+(6.0) and the ``iqsharp`` tool. On some Linux systems it is also necessary to
 modify your ``PATH``:
 
-1. See `this <https://dotnet.microsoft.com/download/dotnet-core/3.1>`_ page for instructions on installing the SDK on your operating system.
+1. See `this <https://dotnet.microsoft.com/download/dotnet-core/6.0>`_ page for instructions on installing the SDK on your operating system.
 2. On Linux, ensure that the `dotnet` tools directory is on your path. Typically this will be ``~/.dotnet/tools``.
 3. Run ``dotnet tool install -g Microsoft.Quantum.IQSharp``.
 4. Run ``dotnet iqsharp install --user``.
@@ -34,19 +34,20 @@ modify your ``PATH``:
 	:maxdepth: 1
 
 	Introduction <../index.html#http://>
-	pytket-iqm <../iqm/index.html#http://>
-	pytket-quantinuum <../quantinuum/index.html#http://>
-	pytket-ionq <../ionq/index.html#http://>
-	pytket-pyquil <../pyquil/index.html#http://>
-	pytket-stim <../stim/index.html#http://>
-	pytket-qulacs <../qulacs/index.html#http://>
 	pytket-aqt <../aqt/index.html#http://>
-	pytket-qiskit <../qiskit/index.html#http://>
-	pytket-braket <../braket/index.html#http://>
-	pytket-pyzx <../pyzx/index.html#http://>
-	pytket-projectq <../projectq/index.html#http://>
-	pytket-cirq <../cirq/index.html#http://>
+	pytket-stim <../stim/index.html#http://>
+	pytket-ionq <../ionq/index.html#http://>
 	pytket-qsharp <../qsharp/index.html#http://>
+	pytket-braket <../braket/index.html#http://>
+	pytket-cirq <../cirq/index.html#http://>
+	pytket-pysimplex <../pysimplex/index.html#http://>
+	pytket-iqm <../iqm/index.html#http://>
+	pytket-qiskit <../qiskit/index.html#http://>
+	pytket-qulacs <../qulacs/index.html#http://>
+	pytket-quantinuum <../quantinuum/index.html#http://>
+	pytket-pyquil <../pyquil/index.html#http://>
+	pytket-projectq <../projectq/index.html#http://>
+	pytket-pyzx <../pyzx/index.html#http://>
 
 .. toctree::
 	:caption: More documentation:

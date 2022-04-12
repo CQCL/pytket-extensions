@@ -22,19 +22,20 @@ Windows. To install, run:
 	:maxdepth: 1
 
 	Introduction <../index.html#http://>
-	pytket-iqm <../iqm/index.html#http://>
-	pytket-quantinuum <../quantinuum/index.html#http://>
-	pytket-ionq <../ionq/index.html#http://>
-	pytket-pyquil <../pyquil/index.html#http://>
-	pytket-stim <../stim/index.html#http://>
-	pytket-qulacs <../qulacs/index.html#http://>
 	pytket-aqt <../aqt/index.html#http://>
-	pytket-qiskit <../qiskit/index.html#http://>
-	pytket-braket <../braket/index.html#http://>
-	pytket-pyzx <../pyzx/index.html#http://>
-	pytket-projectq <../projectq/index.html#http://>
-	pytket-cirq <../cirq/index.html#http://>
+	pytket-stim <../stim/index.html#http://>
+	pytket-ionq <../ionq/index.html#http://>
 	pytket-qsharp <../qsharp/index.html#http://>
+	pytket-braket <../braket/index.html#http://>
+	pytket-cirq <../cirq/index.html#http://>
+	pytket-pysimplex <../pysimplex/index.html#http://>
+	pytket-iqm <../iqm/index.html#http://>
+	pytket-qiskit <../qiskit/index.html#http://>
+	pytket-qulacs <../qulacs/index.html#http://>
+	pytket-quantinuum <../quantinuum/index.html#http://>
+	pytket-pyquil <../pyquil/index.html#http://>
+	pytket-projectq <../projectq/index.html#http://>
+	pytket-pyzx <../pyzx/index.html#http://>
 
 .. toctree::
 	:caption: More documentation:
