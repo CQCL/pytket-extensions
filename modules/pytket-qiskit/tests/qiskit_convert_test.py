@@ -48,7 +48,7 @@ from pytket.extensions.qiskit.result_convert import (
     backendresult_to_qiskit_resultdata,
     _gen_uids,
 )
-from sympy import Symbol
+from sympy import Symbol  # type: ignore
 from pytket.passes import RebaseTket, DecomposeBoxes, FullPeepholeOptimise, SequencePass  # type: ignore
 from pytket.utils.results import compare_statevectors, permute_rows_cols_in_unitary
 

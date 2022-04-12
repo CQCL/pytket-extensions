@@ -39,7 +39,7 @@ from pyquil.gates import (
     MEASURE,
 )
 from pyquil.quilbase import Measurement
-from sympy import pi, Symbol
+from sympy import pi, Symbol  # type: ignore
 
 from pytket.circuit import Circuit  # type: ignore
 from pytket.extensions.pyquil import pyquil_to_tk, tk_to_pyquil
