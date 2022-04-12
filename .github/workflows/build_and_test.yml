@@ -30,13 +30,36 @@ env:
   PYTKET_REMOTE_BRAKET_FOLDER: ${{ secrets.PYTKET_REMOTE_BRAKET_FOLDER }}
 
 jobs:
+  set-all-modules-matrix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: '0'
+      - run: git fetch --depth=1 origin +refs/tags/*:refs/tags/* +refs/heads/*:refs/remotes/origin/*
+      - name: Get json list of all the pytket extensions
+        id: set-all-modules-matrix
+        run: |
+          sudo apt-get install jq
+          cd ${GITHUB_WORKSPACE}/modules
+          LS_MODULES=`ls -d */`
+          ALL_MODULES=`echo ${LS_MODULES} | sed -e 's/\///g'`
+          ALL_MODULES_LIST=($ALL_MODULES)
+          echo "::set-output name=all-modules::$(printf '%s\n' ${ALL_MODULES_LIST[@]} | jq -R . | jq -cs .)"
+    outputs:
+      matrix: ${{ steps.set-all-modules-matrix.outputs.all-modules }}
+
 
   linux:
     name: Build and test (Linux)
+    needs: set-all-modules-matrix
     runs-on: ubuntu-20.04
 
-    steps:
+    strategy:
+      matrix:
+        module: ${{ fromJson(needs.set-all-modules-matrix.outputs.matrix) }}
 
+    steps:
     - uses: actions/checkout@v2
       with:
         fetch-depth: '0'
@@ -52,19 +75,18 @@ jobs:
       run : |
         MM=`python3 .github/workflows/changed_modules.py origin/${{ github.base_ref }} ${{ github.sha }}`
         echo "MODULES_TO_TEST=${MM}" >> $GITHUB_ENV
-
     - name: Pull docker images
-      if: contains(env.MODULES_TO_TEST, 'pytket-pyquil')
+      if: ${{ matrix.module == 'pytket-pyquil' }} && contains(env.MODULES_TO_TEST, 'pytket-pyquil')
       run: |
         docker pull rigetti/quilc
         docker pull rigetti/qvm
     - name: Install dotnet SDK
-      if: contains(env.MODULES_TO_TEST, 'pytket-qsharp')
+      if: ${{ matrix.module == 'pytket-qsharp' }} && contains(env.MODULES_TO_TEST, 'pytket-qsharp')
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: '3.1.x'
     - name: Install iqsharp
-      if: contains(env.MODULES_TO_TEST, 'pytket-qsharp')
+      if: ${{ matrix.module == 'pytket-qsharp' }} && contains(env.MODULES_TO_TEST, 'pytket-qsharp')
       run: dotnet tool install -g Microsoft.Quantum.IQSharp
 
     - name: Set up Python 3.8
@@ -76,6 +98,8 @@ jobs:
       if: github.event_name == 'push'
       run: |
         ./.github/workflows/build-test nomypy
+      env:
+        MODULES_TO_TEST: ${{ matrix.module }}
     - name: Set up Python 3.9
       if: github.event_name == 'pull_request' || github.event_name == 'release' || contains(github.ref, 'refs/heads/wheel')
       uses: actions/setup-python@v2
@@ -85,6 +109,8 @@ jobs:
       if: github.event_name == 'pull_request' || github.event_name == 'release' || contains(github.ref, 'refs/heads/wheel')
       run: |
         ./.github/workflows/build-test nomypy
+      env:
+        MODULES_TO_TEST: ${{ matrix.module }}
     - name: Set up Python 3.10
       if: github.event_name == 'push' || github.event_name == 'pull_request'
       uses: actions/setup-python@v2
@@ -94,6 +120,8 @@ jobs:
       if: github.event_name == 'push' || github.event_name == 'pull_request'
       run: |
         ./.github/workflows/build-test nomypy
+      env:
+        MODULES_TO_TEST: ${{ matrix.module }}
     - uses: actions/upload-artifact@v2
       if: github.event_name == 'release' || contains(github.ref, 'refs/heads/wheel')
       with:
