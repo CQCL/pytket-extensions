@@ -1,12 +1,13 @@
 Changelog
 ~~~~~~~~~
 
-0.22.0 (unreleased)
+0.22.0 (April 2022)
 -------------------
 
 * Updated cirq version requirement to 0.14.
 * Changed `process_characterisation()` so that it expects a `SerializableDevice`
   instead of an `XmonDevice`.
+* Updated pytket version requirement to 1.1.
 
 0.21.0 (March 2022)
 -------------------
