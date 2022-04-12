@@ -14,7 +14,6 @@
 
 import json
 from os import PathLike
-from pathlib import Path
 from typing import cast, Dict, List, Optional, Sequence, Tuple, Union
 from uuid import UUID
 from iqm_client.iqm_client import Circuit as IQMCircuit  # type: ignore
