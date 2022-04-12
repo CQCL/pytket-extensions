@@ -125,12 +125,14 @@ class IQMBackend(Backend):
             raise IqmAuthenticationError()
 
         with open(settings) as f:
-            settings = json.load(f)
+            settings_json = json.load(f)
         self._client = IQMClient(
-            self._url, settings=settings, username=username, api_key=api_key
+            self._url, settings=settings_json, username=username, api_key=api_key
         )
         self._qubits = [
-            _as_node(qb) for qb in settings["subtrees"].keys() if qb.startswith("QB")
+            _as_node(qb)
+            for qb in settings_json["subtrees"].keys()
+            if qb.startswith("QB")
         ]
         self._n_qubits = len(self._qubits)
         if arch is None:
@@ -141,7 +143,7 @@ class IQMBackend(Backend):
         self._arch = Architecture(coupling)
         self._backendinfo = BackendInfo(
             type(self).__name__,
-            settings["name"],
+            settings_json["name"],
             __extension_version__,
             self._arch,
             _GATE_SET,
