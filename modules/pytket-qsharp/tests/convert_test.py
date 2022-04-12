@@ -16,7 +16,7 @@ import pytest
 from pytket.circuit import Circuit, PauliExpBox, fresh_symbol  # type: ignore
 from pytket.pauli import Pauli  # type: ignore
 from pytket.extensions.qsharp import tk_to_qsharp
-from sympy import Symbol
+from sympy import Symbol  # type: ignore
 
 
 def test_convert() -> None:

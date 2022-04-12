@@ -48,13 +48,20 @@ from pytket.extensions.qiskit.result_convert import (
     backendresult_to_qiskit_resultdata,
     _gen_uids,
 )
-from sympy import Symbol
+from sympy import Symbol  # type: ignore
 from pytket.passes import RebaseTket, DecomposeBoxes, FullPeepholeOptimise, SequencePass  # type: ignore
-from pytket.utils.results import compare_statevectors
+from pytket.utils.results import compare_statevectors, permute_rows_cols_in_unitary
 
 skip_remote_tests: bool = (
     not IBMQ.stored_account() or os.getenv("PYTKET_RUN_REMOTE_TESTS") is None
 )
+
+
+def test_classical_barrier_error() -> None:
+    c = Circuit(1, 1)
+    c.add_barrier([0], [0])
+    with pytest.raises(NotImplementedError):
+        tk_to_qiskit(c)
 
 
 def test_convert_circuit_with_complex_params() -> None:
@@ -220,7 +227,8 @@ def test_Unitary2qBox() -> None:
     qc.save_unitary()
     job = execute(qc, back).result()
     a = job.get_unitary(qc)
-    assert np.allclose(a, u)
+    u1 = permute_rows_cols_in_unitary(np.asarray(a), (1, 0))  # correct for endianness
+    assert np.allclose(u1, u)
 
 
 def test_gates_phase() -> None:

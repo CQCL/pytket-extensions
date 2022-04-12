@@ -13,15 +13,13 @@
 # limitations under the License.
 import json
 import os
-import sys
 from collections import Counter
 from typing import Dict, cast
 import math
 import cmath
-import pickle
 from hypothesis import given, strategies
 import numpy as np
-from pytket.circuit import Circuit, OpType, BasisOrder, Qubit, reg_eq  # type: ignore
+from pytket.circuit import Circuit, OpType, BasisOrder, Qubit, reg_eq, Unitary2qBox  # type: ignore
 from pytket.passes import CliffordSimp  # type: ignore
 from pytket.pauli import Pauli, QubitPauliString  # type: ignore
 from pytket.predicates import CompilationUnit, NoMidMeasurePredicate  # type: ignore
@@ -143,11 +141,15 @@ def test_measures() -> None:
     assert all_zeros
 
 
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_noise() -> None:
-    with open(os.path.join(sys.path[0], "ibmqx2_properties.pickle"), "rb") as f:
-        properties = pickle.load(f)
+    if not IBMQ.active_account():
+        IBMQ.load_account()
 
-    noise_model = NoiseModel.from_backend(properties)
+    provider = IBMQ.providers(hub="ibm-q", group="open")[0]
+    back = provider.get_backend("ibmq_santiago")
+
+    noise_model = NoiseModel.from_backend(back)
     n_qbs = 5
     c = Circuit(n_qbs, n_qbs)
     x_qbs = [2, 0, 4]
@@ -456,6 +458,7 @@ def test_nshots() -> None:
         )
     for b in backends:
         circuit = Circuit(1).X(0)
+        circuit.measure_all()
         n_shots = [1, 2, 3]
         results = b.get_results(b.process_circuits([circuit] * 3, n_shots=n_shots))
         assert [len(r.get_shots()) for r in results] == n_shots
@@ -501,11 +504,15 @@ def test_default_pass(santiago_backend: IBMQBackend) -> None:
             assert pred.verify(c)
 
 
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_aer_default_pass() -> None:
-    with open(os.path.join(sys.path[0], "ibmqx2_properties.pickle"), "rb") as f:
-        properties = pickle.load(f)
+    if not IBMQ.active_account():
+        IBMQ.load_account()
 
-    noise_model = NoiseModel.from_backend(properties)
+    provider = IBMQ.providers(hub="ibm-q", group="open")[0]
+    back = provider.get_backend("ibmq_santiago")
+
+    noise_model = NoiseModel.from_backend(back)
     for nm in [None, noise_model]:
         b = AerBackend(nm)
         for ol in range(3):
@@ -583,6 +590,21 @@ def test_ilo() -> None:
     assert (res.get_shots(basis=BasisOrder.dlo) == np.asarray([[1, 0], [1, 0]])).all()
     assert res.get_counts() == {(0, 1): 2}
     assert res.get_counts(basis=BasisOrder.dlo) == {(1, 0): 2}
+
+
+def test_ubox() -> None:
+    # https://github.com/CQCL/pytket-extensions/issues/342
+    u = np.array(
+        [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0]], dtype=complex
+    )
+    ubox = Unitary2qBox(u)
+    c = Circuit(2)
+    c.add_unitary2qbox(ubox, 0, 1)
+    b = AerUnitaryBackend()
+    h = b.process_circuit(c)
+    r = b.get_result(h)
+    u1 = r.get_unitary()
+    assert np.allclose(u, u1)
 
 
 def test_swaps_basisorder() -> None:
@@ -752,6 +774,7 @@ def test_mixed_circuit() -> None:
         assert key in {(0, 1), (1, 0)}
 
 
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_aer_placed_expectation() -> None:
     # bug TKET-695
     n_qbs = 3
@@ -769,10 +792,14 @@ def test_aer_placed_expectation() -> None:
         }
     )
     assert b.get_operator_expectation_value(c, operator) == (-0.5 + 0j)
-    with open(os.path.join(sys.path[0], "ibmqx2_properties.pickle"), "rb") as f:
-        properties = pickle.load(f)
 
-    noise_model = NoiseModel.from_backend(properties)
+    if not IBMQ.active_account():
+        IBMQ.load_account()
+
+    provider = IBMQ.providers(hub="ibm-q", group="open")[0]
+    back = provider.get_backend("ibmq_santiago")
+
+    noise_model = NoiseModel.from_backend(back)
 
     noise_b = AerBackend(noise_model)
 

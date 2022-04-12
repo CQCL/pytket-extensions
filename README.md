@@ -20,10 +20,11 @@ subdirectory of the `modules` directory:
 * `pytket-iqm`
 * `pytket-projectq`
 * `pytket-pyquil`
+* `pytket-pysimplex`
 * `pytket-pyzx`
 * `pytket-qiskit`
 * `pytket-qsharp`
-* `pytket-quantinumm`
+* `pytket-quantinuum`
 * `pytket-qulacs`
 * `pytket-stim`
 

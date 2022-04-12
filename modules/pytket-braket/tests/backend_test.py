@@ -84,6 +84,34 @@ def test_dm_simulator() -> None:
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
+def test_tn1_simulator() -> None:
+    b = BraketBackend(
+        device_type="quantum-simulator",
+        provider="amazon",
+        device="tn1",
+    )
+    assert b.supports_shots
+    c = Circuit(2).H(0).CX(0, 1)
+    c = b.get_compiled_circuit(c)
+    n_shots = 100
+    h0, h1 = b.process_circuits([c, c], n_shots)
+    res0 = b.get_result(h0)
+    readouts = res0.get_shots()
+    assert all(readouts[i][0] == readouts[i][1] for i in range(n_shots))
+    res1 = b.get_result(h1)
+    counts = res1.get_counts()
+    assert len(counts) <= 2
+    assert sum(counts.values()) == n_shots
+    # Circuit with unused qubits
+    c = Circuit(3).H(1).CX(1, 2)
+    c = b.get_compiled_circuit(c)
+    h = b.process_circuit(c, 1)
+    res = b.get_result(h)
+    readout = res.get_shots()[0]
+    assert readout[1] == readout[2]
+
+
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_ionq() -> None:
     b = BraketBackend(
         device_type="qpu",
@@ -227,6 +255,21 @@ def test_local_simulator() -> None:
     counts = res.get_counts()
     assert len(counts) <= 2
     assert sum(counts.values()) == n_shots
+
+
+def test_local_dm_simulator() -> None:
+    b = BraketBackend(local=True, local_device="braket_dm")
+    assert b.supports_shots
+    assert b.supports_counts
+    assert b.supports_density_matrix
+    c = Circuit(2).H(0).CX(0, 1)
+    c = b.get_compiled_circuit(c)
+    h = b.process_circuit(c)
+    res = b.get_result(h)
+    dm = res.get_density_matrix()
+    dm0 = np.zeros((4, 4), dtype=complex)
+    dm0[0, 0] = dm0[0, 3] = dm0[3, 0] = dm0[3, 3] = 0.5
+    assert np.allclose(dm, dm0)
 
 
 def test_expectation() -> None:

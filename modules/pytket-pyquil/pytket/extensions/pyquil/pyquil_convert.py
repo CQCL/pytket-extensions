@@ -49,7 +49,7 @@ from pyquil.quilatom import (
     Function as Function_,
 )
 from pyquil.quilbase import Declare, Gate, Halt, Measurement, Pragma
-from sympy import pi, Expr, Symbol, sin, cos, Number, Add, Mul, Pow
+from sympy import pi, Expr, Symbol, sin, cos, Number, Add, Mul, Pow  # type: ignore
 
 from pytket.circuit import Circuit, Node, OpType, Qubit, Bit  # type: ignore
 from pytket.architecture import Architecture  # type: ignore

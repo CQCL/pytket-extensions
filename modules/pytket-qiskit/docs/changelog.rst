@@ -1,6 +1,13 @@
 Changelog
 ~~~~~~~~~
 
+0.24.0 (April 2022)
+-------------------
+
+* Fix two-qubit unitary conversions.
+* Update qiskit version to 0.36.
+* Updated pytket version requirement to 1.1.
+
 0.23.0 (March 2022)
 -------------------
 

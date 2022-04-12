@@ -118,7 +118,7 @@ def qiskit_experimentresult_to_backendresult(
             state = np.asarray(datadict["statevector"])
 
         if "unitary" in datadict:
-            unitary = datadict["unitary"]
+            unitary = np.asarray(datadict["unitary"])
 
     return BackendResult(
         c_bits=c_bits,
