@@ -24,15 +24,11 @@ def fixture_authenticated_iqm_backend() -> IQMBackend:
     # The credentials are taken from the env variables:
     # PYTKET_REMOTE_IQM_USERNAME and PYTKET_REMOTE_IQM_APIKEY
 
-    # By default, the backend is created with the device_settings in
-    # ../pytket/extensions/iqm/backends/demo_settings.json
+    # By default, the backend is created with the device settings in
+    # pytket-iqm/tests/demo_settings.json
+    curr_file_path = Path(__file__).resolve().parent
     return IQMBackend(
-        settings=Path("..")
-        / "pytket"
-        / "extensions"
-        / "iqm"
-        / "backends"
-        / "demo_settings.json",
+        settings=curr_file_path / "demo_settings.json",
         url="https://cortex-demo.qc.iqm.fi/",
         username=os.getenv("PYTKET_REMOTE_IQM_USERNAME"),
         api_key=os.getenv("PYTKET_REMOTE_IQM_APIKEY"),
