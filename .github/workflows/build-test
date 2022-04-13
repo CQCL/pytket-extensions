@@ -35,25 +35,17 @@ python -m pip install --upgrade pip wheel build
 
 function unsupported() {
     case "$1" in
-        pytket-aqt)
-            true
-            ;;
-        pytket-ionq)
-            true
-            ;;
         pytket-iqm)
             # The iqm-client package is only available for 3.9.
             [[ "${PYVER}" != "3.9" ]] && return
             ;;
         pytket-qsharp)
             # Cannot install qsharp on Windows with 3.10.
-            #[[ "${PLAT}" == "Windows" && ${PYVER} == "3.10" ]] && return
-            true
+            [[ "${PLAT}" == "Windows" && ${PYVER} == "3.10" ]] && return
             ;;
         pytket-qulacs)
             # Cannot install qulacs on MacOS or Windows with 3.10.
-            #[[ "${PLAT}" != "Linux" && "${PYVER}" == "3.10" ]] && return
-            true
+            [[ "${PLAT}" != "Linux" && "${PYVER}" == "3.10" ]] && return
             ;;
         *)
             false
@@ -110,6 +102,11 @@ for MODULE in $MODULES_TO_TEST; do
             if [[ "${MODULE}" = "pytket-qsharp" && "${PLAT}" != "Darwin" ]]
             then
                 dotnet iqsharp install --user
+            fi
+
+            # Disable the remote tests for pytket-aqt and pytket-ionq for now
+            if [[ "${MODULE}" = "pytket-aqt" || "${MODULE}" = "pytket-ionq" ]]; then
+                unset PYTKET_RUN_REMOTE_TESTS
             fi
 
             pytest --doctest-modules
