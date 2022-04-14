@@ -108,7 +108,7 @@ for MODULE in $MODULES_TO_TEST; do
             if [[ "${MODULE}" = "pytket-aqt" || "${MODULE}" = "pytket-ionq" ]]; then
                 unset PYTKET_RUN_REMOTE_TESTS; pytest --doctest-modules
             else
-                pytket --doctest-modules -rA
+                pytest --doctest-modules -rA
             fi
 
             if [[ "${MYPY}" = "mypy" ]]
