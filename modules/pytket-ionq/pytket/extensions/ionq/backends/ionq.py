@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from typing import cast, Optional, List, Sequence, Union, Counter, Any, Dict
+import typing
 import json
 import time
 from ast import literal_eval
@@ -52,6 +53,7 @@ from .ionq_convert import ionq_rebase_pass, ionq_gates, ionq_singleqs, tk_to_ion
 from .config import IonQConfig
 
 IONQ_JOBS_URL = "https://api.ionq.co/v0.1/jobs/"
+IONQ_BACKEND_URL = "https://api.ionq.co/v0.2/backends"
 
 _STATUS_MAP = {
     "completed": StatusEnum.COMPLETED,
@@ -64,16 +66,17 @@ _STATUS_MAP = {
 _DEBUG_HANDLE_PREFIX = "_MACHINE_DEBUG_"
 
 
-def _get_qubit_count(device_name: str, header: Dict[str, str]) -> Any:
+@typing.no_type_check
+def _get_qubit_count(device_name: str, header: Dict[str, str]) -> int:
     if device_name == "qpu":
         device_name = "qpu.s11"
-    backends_api_response = get("https://api.ionq.co/v0.2/backends", headers=header)
-    backends_api_response = backends_api_response.content.decode()  # type: ignore
-    ionq_devices = json.loads(backends_api_response)  # type: ignore
+    backends_api_response = get(IONQ_BACKEND_URL, headers=header)
+    backends_api_response = backends_api_response.content.decode()
+    ionq_devices = json.loads(backends_api_response)
     device_info = next(
         (device for device in ionq_devices if device_name == device["backend"]), 11
-    )  # type: ignore
-    n_qubits = device_info["qubits"]  # type:ignore
+    )
+    n_qubits = device_info["qubits"]
     return n_qubits
 
 
@@ -138,17 +141,26 @@ class IonQBackend(Backend):
     def backend_info(self) -> Optional[BackendInfo]:
         return self._backend_info
 
+    @typing.no_type_check
     @classmethod
     def available_devices(cls, **kwargs: Any) -> List[BackendInfo]:
-        return [
-            fully_connected_backendinfo(
-                cls.__name__,
-                "qpu",
-                __extension_version__,
-                11,
-                ionq_gates,
+        backend_response = backends_api_response = get(
+            IONQ_BACKEND_URL, headers=cls._header
+        )
+        backends_api_response = backends_api_response.content.decode()
+        devices_dict = json.loads(backends_api_response)
+        backend_infos = []
+        for device in devices_dict:
+            backend_infos.append(
+                fully_connected_backendinfo(
+                    cls.__name__,
+                    device["backend"],
+                    __extension_version__,
+                    device["qubits"],
+                    ionq_gates,
+                )
             )
-        ]
+        return backend_infos
 
     @property
     def required_predicates(self) -> List[Predicate]:
