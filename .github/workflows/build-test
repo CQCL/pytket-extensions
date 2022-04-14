@@ -105,11 +105,11 @@ for MODULE in $MODULES_TO_TEST; do
             fi
 
             # Disable the remote tests for pytket-aqt and pytket-ionq for now
-            if [[ "${MODULE}" = "pytket-aqt" || "${MODULE}" = "pytket-ionq" || "${MODULE}" = "pytket-qsharp" ]]; then
-                unset PYTKET_RUN_REMOTE_TESTS
+            if [[ "${MODULE}" = "pytket-aqt" || "${MODULE}" = "pytket-ionq" ]]; then
+                unset PYTKET_RUN_REMOTE_TESTS; pytest --doctest-modules
+            else
+                pytket --doctest-modules -rA
             fi
-
-            pytest --doctest-modules
 
             if [[ "${MYPY}" = "mypy" ]]
             then

@@ -19,11 +19,12 @@ from typing import cast
 from pytket.backends.status import StatusEnum
 from pytket.circuit import Circuit, OpType  # type: ignore
 from pytket.extensions.qsharp import AzureBackend
+import logging
 
 skip_remote_tests: bool = os.getenv("PYTKET_RUN_REMOTE_TESTS") is None
 
-
-def test_azure_backend(authenticated_azure_backend: AzureBackend) -> None:
+def test_azure_backend(authenticated_azure_backend: AzureBackend, caplog) -> None:
+    caplog.set_level(logging.DEBUG)
     # TODO investigate bug when not all bits are measured to
     c = (
         Circuit(4, 3, "test_name")
@@ -37,8 +38,6 @@ def test_azure_backend(authenticated_azure_backend: AzureBackend) -> None:
     if skip_remote_tests:
         b = AzureBackend("ionq.simulator", machine_debug=True)
     else:
-        # assumed environment is authenticated and
-        # resourceId in config file
         b = authenticated_azure_backend
     c = b.get_compiled_circuit(c)
     h = b.process_circuit(c, 10)
@@ -61,7 +60,8 @@ def test_azure_backend(authenticated_azure_backend: AzureBackend) -> None:
         assert counts == Counter({(0, 0, 0): 5, (0, 1, 1): 5})
 
 
-def test_postprocess(authenticated_azure_backend: AzureBackend) -> None:
+def test_postprocess(authenticated_azure_backend: AzureBackend, caplog) -> None:
+    caplog.set_level(logging.DEBUG)
     if skip_remote_tests:
         b = AzureBackend("ionq.simulator", machine_debug=True)
     else:
