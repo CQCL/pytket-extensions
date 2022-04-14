@@ -82,6 +82,8 @@ def _get_qubit_count(device_name: str, header: Dict[str, str]) -> int:
     backends_api_response = get(IONQ_BACKEND_URL, headers=header)
     backends_api_response = backends_api_response.content.decode()
     ionq_devices = json.loads(backends_api_response)
+    if ionq_devices.get("error") != None:
+        raise RuntimeError(f"Invalid key provided")
     device_info = next(
         (device for device in ionq_devices if device_name == device["backend"]), 11
     )
@@ -151,15 +153,18 @@ class IonQBackend(Backend):
         return self._backend_info
 
     @no_type_check
-    def available_devices(self, **kwargs: Any) -> List[BackendInfo]:
-        backends_api_response = get(IONQ_BACKEND_URL, headers=self._header)
+    @classmethod
+    def available_devices(cls, **kwargs: Any) -> List[BackendInfo]:
+        config = IonQConfig.from_default_config_file()
+        header = {"Authorization": f"apiKey {config.api_key }"}
+        backends_api_response = get(IONQ_BACKEND_URL, headers=header)
         backends_api_response = backends_api_response.content.decode()
         devices_dict = json.loads(backends_api_response)
         backend_infos = []
         for device in devices_dict:
             backend_infos.append(
                 fully_connected_backendinfo(
-                    type(self).__name__,
+                    cls.__name__,
                     device["backend"],
                     __extension_version__,
                     device["qubits"],

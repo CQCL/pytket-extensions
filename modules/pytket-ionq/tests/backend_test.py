@@ -64,14 +64,10 @@ def test_big_circuit_ionq() -> None:
     assert counts[(0, 0, 0, 0)] == 100
 
 
-@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_invalid_token() -> None:
-    b = IonQBackend(api_key="invalid", device_name="simulator", label="test 3")
-    c = Circuit(2, 2).H(0).CX(0, 1)
-    c.measure_all()
-    c = b.get_compiled_circuit(c)
+    token = "invalid"
     with pytest.raises(RuntimeError) as excinfo:
-        b.process_circuits([c], 1)
+        IonQBackend(api_key=token, device_name="simulator", label="test 3")
         assert "Invalid key provided" in str(excinfo.value)
 
 
@@ -149,12 +145,12 @@ def test_postprocess() -> None:
     assert sum(counts.values()) == 10
 
 
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 @given(
     n_shots=strategies.integers(min_value=1, max_value=10),  # type: ignore
     n_bits=strategies.integers(min_value=0, max_value=10),
 )
-@pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_shots_bits_edgecases(n_shots: int, n_bits: int) -> None:
+def test_shots_bits_edgecases(n_shots, n_bits) -> None:
     ionq_backend = IonQBackend(device_name="simulator", label="test 5")
     ionq_backend._MACHINE_DEBUG = True
     c = Circuit(n_bits, n_bits)
@@ -193,9 +189,7 @@ def test_nshots_ionq() -> None:
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_retrieve_available_devices() -> None:
-    backend_infos = IonQBackend(
-        device_name="simulator", label="test 9"
-    ).available_devices()
+    backend_infos = IonQBackend.available_devices()
     assert len(backend_infos) > 0
     assert backend_infos[0].name == "IonQBackend"
     assert type(backend_infos[0].device_name) == str
