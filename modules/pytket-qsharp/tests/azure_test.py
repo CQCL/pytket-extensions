@@ -23,7 +23,7 @@ from pytket.extensions.qsharp import AzureBackend
 skip_remote_tests: bool = os.getenv("PYTKET_RUN_REMOTE_TESTS") is None
 
 
-def test_azure_backend() -> None:
+def test_azure_backend(authenticated_azure_backend: AzureBackend) -> None:
     # TODO investigate bug when not all bits are measured to
     c = (
         Circuit(4, 3, "test_name")
@@ -39,7 +39,7 @@ def test_azure_backend() -> None:
     else:
         # assumed environment is authenticated and
         # resourceId in config file
-        b = AzureBackend("ionq.simulator")
+        b = authenticated_azure_backend
     c = b.get_compiled_circuit(c)
     h = b.process_circuit(c, 10)
     assert b.circuit_status(h).status in (
@@ -61,8 +61,11 @@ def test_azure_backend() -> None:
         assert counts == Counter({(0, 0, 0): 5, (0, 1, 1): 5})
 
 
-def test_postprocess() -> None:
-    b = AzureBackend("ionq.simulator", machine_debug=skip_remote_tests)
+def test_postprocess(authenticated_azure_backend: AzureBackend) -> None:
+    if skip_remote_tests:
+        b = AzureBackend("ionq.simulator", machine_debug=True)
+    else:
+        b = authenticated_azure_backend
     assert b.supports_contextual_optimisation
     assert b.supports_counts
     c = Circuit(2, 2)
