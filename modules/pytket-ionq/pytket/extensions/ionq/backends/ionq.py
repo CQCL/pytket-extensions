@@ -12,8 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import cast, Optional, List, Sequence, Union, Counter, Any, Dict
-import typing
+from typing import (
+    cast,
+    Optional,
+    List,
+    Sequence,
+    Union,
+    Counter,
+    Any,
+    Dict,
+    no_type_check,
+)
 import json
 import time
 from ast import literal_eval
@@ -66,7 +75,7 @@ _STATUS_MAP = {
 _DEBUG_HANDLE_PREFIX = "_MACHINE_DEBUG_"
 
 
-@typing.no_type_check
+@no_type_check
 def _get_qubit_count(device_name: str, header: Dict[str, str]) -> int:
     if device_name == "qpu":
         device_name = "qpu.s11"
@@ -141,7 +150,7 @@ class IonQBackend(Backend):
     def backend_info(self) -> Optional[BackendInfo]:
         return self._backend_info
 
-    @typing.no_type_check
+    @no_type_check
     def available_devices(self, **kwargs: Any) -> List[BackendInfo]:
         backends_api_response = get(IONQ_BACKEND_URL, headers=self._header)
         backends_api_response = backends_api_response.content.decode()
