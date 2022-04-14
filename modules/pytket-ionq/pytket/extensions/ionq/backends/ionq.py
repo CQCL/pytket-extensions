@@ -142,16 +142,15 @@ class IonQBackend(Backend):
         return self._backend_info
 
     @typing.no_type_check
-    @classmethod
-    def available_devices(cls, **kwargs: Any) -> List[BackendInfo]:
-        backends_api_response = get(IONQ_BACKEND_URL, headers=cls._header)
+    def available_devices(self, **kwargs: Any) -> List[BackendInfo]:
+        backends_api_response = get(IONQ_BACKEND_URL, headers=self._header)
         backends_api_response = backends_api_response.content.decode()
         devices_dict = json.loads(backends_api_response)
         backend_infos = []
         for device in devices_dict:
             backend_infos.append(
                 fully_connected_backendinfo(
-                    cls.__name__,
+                    type(self).__name__,
                     device["backend"],
                     __extension_version__,
                     device["qubits"],

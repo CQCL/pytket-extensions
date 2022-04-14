@@ -191,7 +191,12 @@ def test_nshots_ionq() -> None:
     assert [get_nshots(h) for h in handles] == n_shots
 
 
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_retrieve_available_devices() -> None:
-    backend_infos = IonQBackend.available_devices()
-    assert len(backend_infos) == 1
-    assert backend_infos[0].device_name == "qpu"
+    backend_infos = IonQBackend(
+        device_name="simulator", label="test 9"
+    ).available_devices()
+    assert len(backend_infos) > 0
+    assert backend_infos[0].name == "IonQBackend"
+    assert type(backend_infos[0].device_name) == str
+    assert type(backend_infos[0].n_nodes) == int
