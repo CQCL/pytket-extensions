@@ -144,7 +144,7 @@ class IonQBackend(Backend):
     @typing.no_type_check
     @classmethod
     def available_devices(cls, **kwargs: Any) -> List[BackendInfo]:
-        backend_response = backends_api_response = get(
+        backend_api_response = backends_api_response = get(
             IONQ_BACKEND_URL, headers=cls._header
         )
         backends_api_response = backends_api_response.content.decode()
