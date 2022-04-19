@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
 import json
 from collections import Counter
 import os
@@ -19,9 +20,9 @@ from typing import cast
 from pytket.backends.status import StatusEnum
 from pytket.circuit import Circuit, OpType  # type: ignore
 from pytket.extensions.qsharp import AzureBackend
-import logging
 
 skip_remote_tests: bool = os.getenv("PYTKET_RUN_REMOTE_TESTS") is None
+
 
 def test_azure_backend(authenticated_azure_backend: AzureBackend, caplog) -> None:
     caplog.set_level(logging.DEBUG)

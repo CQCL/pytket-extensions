@@ -29,15 +29,19 @@ def fixture_authenticated_azure_backend() -> AzureBackend:
     # a backend using the local config settings
     #
     # Note: by default, the target is the 'ionq_sumulator'
-    env_vars = ("PYTKET_REMOTE_QSHARP_RESOURCE_ID",
-                "PYTKET_REMOTE_QSHARP_LOCATION",
-                "PYTKET_REMOTE_QSHARP_STORAGE",)
+    env_vars = (
+        "PYTKET_REMOTE_QSHARP_RESOURCE_ID",
+        "PYTKET_REMOTE_QSHARP_LOCATION",
+        "PYTKET_REMOTE_QSHARP_STORAGE",
+    )
     required_env_vars = [os.getenv(var, default=None) for var in env_vars]
     if any(var is None for var in required_env_vars):
         backend = AzureBackend(target_name="ionq.simulator")
     else:
-        backend = AzureBackend(target_name="ionq.simulator",
-                               resourceId=os.getenv("PYTKET_REMOTE_QSHARP_RESOURCE_ID"),
-                               location=os.getenv("PYTKET_REMOTE_QSHARP_LOCATION"),
-                               storage=os.getenv("PYTKET_REMOTE_QSHARP_STORAGE"),)
+        backend = AzureBackend(
+            target_name="ionq.simulator",
+            resourceId=os.getenv("PYTKET_REMOTE_QSHARP_RESOURCE_ID"),
+            location=os.getenv("PYTKET_REMOTE_QSHARP_LOCATION"),
+            storage=os.getenv("PYTKET_REMOTE_QSHARP_STORAGE"),
+        )
     return backend
