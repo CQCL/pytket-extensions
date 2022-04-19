@@ -19,6 +19,11 @@ from pytket.extensions.qsharp import AzureBackend
 
 @pytest.fixture(name="authenticated_azure_backend")
 def fixture_authenticated_azure_backend() -> AzureBackend:
+    # Return an unauthenticated backend if the PYTKET_RUN_REMOTE_TESTS env
+    # variable is not set
+    if os.getenv("PYTKET_RUN_REMOTE_TESTS" ) is None:
+        return AzureBackend("ionq.simulator", machine_debug=True)
+
     # Authenticated AzureBackend used for the remote tests
     # The following env variables are used to create the backend (if they exist):
     #  - PYTKET_REMOTE_QSHARP_RESOURCE_ID
