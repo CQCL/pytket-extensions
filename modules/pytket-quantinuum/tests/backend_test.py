@@ -14,7 +14,6 @@
 
 from collections import Counter
 from typing import cast, Callable, Any  # pylint: disable=unused-import
-from ast import literal_eval
 import json
 import os
 from hypothesis import given, settings, strategies
@@ -39,6 +38,7 @@ from pytket.circuit import (  # type: ignore
 )
 from pytket.extensions.quantinuum import QuantinuumBackend
 from pytket.extensions.quantinuum.backends.quantinuum import (
+    DEVICE_FAMILY,
     GetResultFailed,
     _GATE_SET,
 )
@@ -53,6 +53,8 @@ skip_remote_tests: bool = os.getenv("PYTKET_RUN_REMOTE_TESTS") is None
 REASON = (
     "PYTKET_RUN_REMOTE_TESTS not set (requires configuration of Quantinuum username)"
 )
+
+ALL_DEVICE_NAMES = ["H1-1SC", "H1-2SC", "H1", "H1-1", "H1-2", "H1-1E", "H1-2E"]
 
 
 @pytest.mark.parametrize("authenticated_quum_backend", [None], indirect=True)
@@ -224,7 +226,7 @@ def circuits(
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
 @pytest.mark.parametrize(
     "authenticated_quum_backend",
-    [{"device_name": "H1-1SC"}],
+    [{"device_name": name for name in ALL_DEVICE_NAMES}],
     indirect=["authenticated_quum_backend"],
 )
 @given(
@@ -243,13 +245,17 @@ def test_cost_estimate(
 ) -> None:
     b = authenticated_quum_backend
     c = b.get_compiled_circuit(c)
-    estimate = b.cost_estimate(c, n_shots)
-    status = b.circuit_status(b.process_circuit(c, n_shots))
-    status_msg = status.message
-    message_dict = literal_eval(status_msg)
-    if message_dict["cost"] is not None:
-        api_cost = float(message_dict["cost"])
-        assert estimate == api_cost
+    if b._device_name == DEVICE_FAMILY:
+        with pytest.raises(ValueError) as e:
+            _ = b.cost(c, n_shots)
+        assert "Cannot find syntax checker" in str(e.value)
+        estimate = b.cost(c, n_shots, syntax_checker="H1-1SC")
+    else:
+        estimate = b.cost(c, n_shots)
+    if estimate is None:
+        pytest.skip("API is flaky, sometimes returns None unexpectedly.")
+    assert isinstance(estimate, float)
+    assert estimate > 0.0
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)

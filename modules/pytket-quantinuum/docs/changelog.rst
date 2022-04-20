@@ -1,6 +1,12 @@
 Changelog
 ~~~~~~~~~
 
+0.3.0 (UNRELEASED)
+----------
+
+* ``QuantinuumBackend.cost_estimate`` deprecated, new ``QuantinuumBackend.cost``
+  method now uses the syntax checker devices to directly return the cost.
+
 0.2.0 (April 2022)
 ------------------
 

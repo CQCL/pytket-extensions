@@ -14,9 +14,11 @@
 """Pytket Backend for Quantinuum devices."""
 
 from ast import literal_eval
+from dataclasses import dataclass
 import json
 from http import HTTPStatus
 from typing import Dict, List, Set, Optional, Sequence, Union, Any, cast
+import warnings
 
 import numpy as np
 import requests
@@ -91,6 +93,11 @@ def _get_gateset(machine_name: str) -> Set[OpType]:
 
 class GetResultFailed(Exception):
     pass
+
+
+@dataclass
+class DeviceNotAvailable(Exception):
+    device_name: str
 
 
 class QuantinuumBackend(Backend):
@@ -189,7 +196,7 @@ class QuantinuumBackend(Backend):
         try:
             self._machine_info = next(entry for entry in jr if entry["name"] == machine)
         except StopIteration:
-            raise RuntimeError(f"Device {machine} is not available.")
+            raise DeviceNotAvailable(machine)
         return fully_connected_backendinfo(
             type(self).__name__,
             machine,
@@ -501,22 +508,37 @@ class QuantinuumBackend(Backend):
             self._update_cache_result(handle, backres)
             return backres
 
-    def cost_estimate(self, circuit: Circuit, n_shots: int) -> float:
+    def cost_estimate(self, circuit: Circuit, n_shots: int) -> Optional[float]:
+        """Deprecated, use ``cost``."""
+
+        warnings.warn(
+            "cost_estimate is deprecated, use cost instead", DeprecationWarning
+        )
+
+        return self.cost(circuit, n_shots)
+
+    def cost(
+        self, circuit: Circuit, n_shots: int, syntax_checker: Optional[str] = None
+    ) -> Optional[float]:
         """
-        Estimate the cost in HQC to complete this `circuit` with `n_shots` repeats. The
-        estimate is based on hard-coded constants, which may be out of date,
-        invalidating the estimate. Use with caution.
-
-        With 𝑁1𝑞 PhasedX gates, 𝑁2𝑞 ZZMax gates, 𝑁𝑚 state preparations and measurements,
-        and 𝐶 shots:
-
-        𝐻𝑄𝐶= 5 + (𝑁1𝑞 + 10𝑁2𝑞 + 5𝑁𝑚)*𝐶/5000
+        Return the cost in HQC to complete this `circuit` with `n_shots`
+        repeats.
+        If the backend is not a syntax checker (backend name does not end with
+        "SC"), it is automatically appended
+        to check against the relevant syntax checker.
+        Sometimes it may not be possible to find the relevant syntax checker,
+         for example for device families. In which case you may need to set
+         the ``syntax_checker`` kwarg to the appropriate syntax checker name.
 
         :param circuit: Circuit to calculate runtime estimate for. Must be valid for
             backend.
         :type circuit: Circuit
         :param n_shots: Number of shots.
         :type n_shots: int
+        :param syntax_checker: Optional.Name of the syntax checker to use to get cost.
+            For example for the "H1-1" device that would be "H1-1SC".
+             For most devices this is automatically inferred, default=None.
+        :type syntax_checker: str
         :raises ValueError: Circuit is not valid, needs to be compiled.
         :return: Cost in HQC to execute the shots.
         :rtype: float
@@ -526,14 +548,26 @@ class QuantinuumBackend(Backend):
                 "Circuit does not satisfy predicates of backend."
                 + " Try running `backend.get_compiled_circuit` first"
             )
-        gate_counts: Dict[OpType, int] = {
-            g_type: circuit.n_gates_of_type(g_type) for g_type in _GATE_SET
-        }
-        n_1q = gate_counts[OpType.PhasedX]
-        n_m = circuit.n_qubits + gate_counts[OpType.Measure] + gate_counts[OpType.Reset]
-        n_2q = gate_counts[OpType.ZZMax]
-        cost: float = 5 + (n_1q + 10 * n_2q + 5 * n_m) * n_shots / 5000
-        return cost
+        if syntax_checker:
+            backend = QuantinuumBackend(syntax_checker)
+        else:
+            backend = QuantinuumBackend(_infer_syntax_checker(self._device_name))
+        try:
+            handle = backend.process_circuit(circuit, n_shots)
+        except DeviceNotAvailable as e:
+            raise ValueError(
+                f"Cannot find syntax checker for device {self._device_name}. "
+                "Try setting the `syntax_checker` key word argument"
+                " to the appropriate syntax checker for"
+                " your device explicitly. "
+                "For device families, you may need to pick the"
+                " syntax checker for the specific device,"
+                " e.g. 'H1-1SC' as opposed to 'H1SC'"
+            ) from e
+        _ = backend.get_result(handle)
+
+        cost = json.loads(backend.circuit_status(handle).message)["cost"]
+        return None if cost is None else float(cost)
 
     @classmethod
     def login(cls) -> None:
@@ -591,5 +625,13 @@ def _parse_status(response: Dict) -> CircuitStatus:
             "error",
         )
     }
-    message = str(msgdict)
+    message = json.dumps(msgdict)
     return CircuitStatus(_STATUS_MAP[h_status], message)
+
+
+def _infer_syntax_checker(device_name: str) -> str:
+    if device_name.endswith("SC"):
+        return device_name
+    if device_name.endswith("E"):
+        return device_name[:-1] + "SC"
+    return device_name + "SC"
