@@ -68,8 +68,8 @@ jobs:
     outputs:
       matrix: ${{ steps.set-json-modules-to-test.outputs.modules }}
 
-  linux:
-    name: Build and test (Linux)
+  linux-checks:
+    name: Linux - Build and test module
     needs: set-modules-to-test
     runs-on: ubuntu-20.04
 
@@ -137,9 +137,9 @@ jobs:
         name: artefacts
         path: wheelhouse/
 
-  macos:
+  macos-checks:
     if: github.event_name != 'release'
-    name: Build and test (MacOS)
+    name: MacOS - Build and test module
     needs: set-modules-to-test
     runs-on: macos-11
 
@@ -203,9 +203,9 @@ jobs:
       env:
         MODULE: ${{ matrix.module }}
 
-  windows:
+  windows-checks:
     if: github.event_name != 'release'
-    name: Build and test (Windows)
+    name: Windows - Build and test module
     needs: set-modules-to-test
     runs-on: windows-2019
 
@@ -267,6 +267,32 @@ jobs:
         ./.github/workflows/build-test nomypy
       env:
         MODULE: ${{ matrix.module }}
+
+  linux:
+    name: Build and test (Linux)
+    runs-on: ubuntu-20.04
+    needs: linux-checks
+    steps:
+      - name: All linux checks should have succeeded by now
+        run: exit 0
+
+  macos:
+    if: github.event_name != 'release'
+    name: Build and test (MacOS)
+    needs: macos-checks
+    runs-on: ubuntu-20.04
+    steps:
+      - name: All macos checks should have succeeded by now
+        run: exit 0
+
+  windows:
+    if: github.event_name != 'release'
+    name: Build and test (Windows)
+    needs: windows-checks
+    runs-on: ubuntu-20.04
+    steps:
+      - name: All windows checks should have succeeded by now
+        run: exit 0
 
   publish_to_pypi:
     name: Publish to pypi
