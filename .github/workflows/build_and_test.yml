@@ -104,30 +104,38 @@ jobs:
       run: |
         ./.github/workflows/build-test nomypy
       env:
-        MODULES_TO_TEST: ${{ matrix.module }}
+        MODULE: ${{ matrix.module }}
     - name: Set up Python 3.9
-      if: github.event_name == 'pull_request' || github.event_name == 'release' || contains(github.ref, 'refs/heads/wheel')
+      if: |
+        (github.event_name == 'pull_request' || github.event_name == 'release' || contains(github.ref, 'refs/heads/wheel'))
+        && contains(env.MODULES_TO_TEST, ${{ matrix.module }})
       uses: actions/setup-python@v2
       with:
         python-version: '3.9'
     - name: Build and test including remote checks (3.9)
-      if: github.event_name == 'pull_request' || github.event_name == 'release' || contains(github.ref, 'refs/heads/wheel')
+      if: |
+        (github.event_name == 'pull_request' || github.event_name == 'release' || contains(github.ref, 'refs/heads/wheel'))
+        && contains(env.MODULES_TO_TEST, ${{ matrix.module }})
       run: |
         ./.github/workflows/build-test nomypy
       env:
         PYTKET_RUN_REMOTE_TESTS: 1
-        MODULES_TO_TEST: ${{ matrix.module }}
+        MODULE: ${{ matrix.module }}
     - name: Set up Python 3.10
-      if: github.event_name == 'push' || github.event_name == 'pull_request'
+      if: |
+        github.event_name == 'push'
+        || (github.event_name == 'pull_request' && contains(env.MODULES_TO_TEST, ${{ matrix.module }}))
       uses: actions/setup-python@v2
       with:
         python-version: '3.10'
     - name: Build and test (3.10)
-      if: github.event_name == 'push' || github.event_name == 'pull_request'
+      if: |
+        github.event_name == 'push' 
+        || (github.event_name == 'pull_request' && contains(env.MODULES_TO_TEST, ${{ matrix.module }}))
       run: |
         ./.github/workflows/build-test nomypy
       env:
-        MODULES_TO_TEST: ${{ matrix.module }}
+        MODULE: ${{ matrix.module }}
     - uses: actions/upload-artifact@v2
       if: github.event_name == 'release' || contains(github.ref, 'refs/heads/wheel')
       with:
@@ -179,32 +187,36 @@ jobs:
       run: |
         ./.github/workflows/build-test nomypy
       env:
-        MODULES_TO_TEST: ${{ matrix.module }}
+        MODULE: ${{ matrix.module }}
 
     - name: Set up Python 3.9
-      if: github.event_name == 'pull_request'
+      if: github.event_name == 'pull_request' && contains(env.MODULES_TO_TEST, ${{ matrix.module }})
       uses: actions/setup-python@v2
       with:
         python-version: '3.9'
     - name: Build and test including remote checks and mypy (3.9)
-      if: github.event_name == 'pull_request'
+      if: github.event_name == 'pull_request' && contains(env.MODULES_TO_TEST, ${{ matrix.module }})
       run: |
         ./.github/workflows/build-test mypy
       env:
         PYTKET_RUN_REMOTE_TESTS: 1
-        MODULES_TO_TEST: ${{ matrix.module }}
+        MODULE: ${{ matrix.module }}
 
     - name: Set up Python 3.10
-      if: github.event_name == 'push' || github.event_name == 'pull_request'
+      if: |
+        github.event_name == 'push'
+        || (github.event_name == 'pull_request' && contains(env.MODULES_TO_TEST, ${{ matrix.module }}))
       uses: actions/setup-python@v2
       with:
         python-version: '3.10'
     - name: Build and test (3.10)
-      if: github.event_name == 'push' || github.event_name == 'pull_request'
+      if: |
+        github.event_name == 'push'
+        || (github.event_name == 'pull_request' && contains(env.MODULES_TO_TEST, ${{ matrix.module }}))
       run: |
         ./.github/workflows/build-test nomypy
       env:
-        MODULES_TO_TEST: ${{ matrix.module }}
+        MODULE: ${{ matrix.module }}
 
   windows:
     if: github.event_name != 'release'
@@ -250,32 +262,36 @@ jobs:
       run: |
         ./.github/workflows/build-test nomypy
       env:
-        MODULES_TO_TEST: ${{ matrix.module }}
+        MODULE: ${{ matrix.module }}
     - name: Set up Python 3.9
-      if: github.event_name == 'pull_request'
+      if: github.event_name == 'pull_request' && contains(env.MODULES_TO_TEST, ${{ matrix.module }})
       uses: actions/setup-python@v2
       with:
         python-version: '3.9'
     - name: Build and test including remote checks (3.9)
-      if: github.event_name == 'pull_request'
+      if: github.event_name == 'pull_request' && contains(env.MODULES_TO_TEST, ${{ matrix.module }})
       shell: bash
       run: |
         ./.github/workflows/build-test nomypy
       env:
         PYTKET_RUN_REMOTE_TESTS: 1
-        MODULES_TO_TEST: ${{ matrix.module }}
+        MODULE: ${{ matrix.module }}
     - name: Set up Python 3.10
-      if: github.event_name == 'push' || github.event_name == 'pull_request'
+      if: |
+        github.event_name == 'push'
+        || (github.event_name == 'pull_request' && contains(env.MODULES_TO_TEST, ${{ matrix.module }}))
       uses: actions/setup-python@v2
       with:
         python-version: '3.10'
     - name: Build and test (3.10)
-      if: github.event_name == 'push' || github.event_name == 'pull_request'
+      if: |
+        github.event_name == 'push'
+        || (github.event_name == 'pull_request' && contains(env.MODULES_TO_TEST, ${{ matrix.module }}))
       shell: bash
       run: |
         ./.github/workflows/build-test nomypy
       env:
-        MODULES_TO_TEST: ${{ matrix.module }}
+        MODULE: ${{ matrix.module }}
 
   publish_to_pypi:
     name: Publish to pypi
