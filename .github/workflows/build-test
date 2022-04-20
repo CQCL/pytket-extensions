@@ -9,7 +9,7 @@ set -evu
 # - mypy: include mypy check ("mypy" or "nomypy")
 #
 # Environment variables used:
-# - MODULES_TO_TEST: space-separated list of modules to test
+# - MODULE: single module to test
 # - GITHUB_WORKSPACE: workspace directory
 #
 # WARNING: running this locally will delete any local files that
@@ -23,7 +23,7 @@ PYVER=`python -c 'import sys; print(".".join(map(str, sys.version_info[:2])))'`
 
 git clean -dfx
 
-echo "Modules to test: ${MODULES_TO_TEST}"
+echo "Module to test: ${MODULE}"
 
 MODULEDIR="${GITHUB_WORKSPACE}/modules"
 
@@ -72,49 +72,45 @@ function skip_tests() {
     esac
 }
 
-# Generate and install packages:
-for MODULE in $MODULES_TO_TEST; do
-    if ! (unsupported ${MODULE}) ; then
-        echo "${MODULE}..."
-        cd ${MODULEDIR}/${MODULE}
-        python -m build
-        for w in dist/*.whl ; do
-            python -m pip install $w
-            cp $w ${ARTIFACTSDIR}
-        done
-    fi
-done
+# Generate and install the package
+if ! (unsupported ${MODULE}) ; then
+    echo "${MODULE}..."
+    cd ${MODULEDIR}/${MODULE}
+    python -m build
+    for w in dist/*.whl ; do
+        python -m pip install $w
+        cp $w ${ARTIFACTSDIR}
+    done
+fi
 
 # Test and mypy:
 if [[ "${MYPY}" = "mypy" ]]
 then
     python -m pip install --upgrade mypy
 fi
-for MODULE in $MODULES_TO_TEST; do
-    if ! (unsupported ${MODULE}) ; then
-        if ! (skip_tests ${MODULE}) ; then
-            echo "${MODULE}..."
+if ! (unsupported ${MODULE}) ; then
+    if ! (skip_tests ${MODULE}) ; then
+        echo "${MODULE}..."
 
-            cd ${MODULEDIR}/${MODULE}/tests
+        cd ${MODULEDIR}/${MODULE}/tests
 
-            python -m pip install --pre -r test-requirements.txt
+        python -m pip install --pre -r test-requirements.txt
 
-            if [[ "${MODULE}" = "pytket-qsharp" && "${PLAT}" != "Darwin" ]]
-            then
-                dotnet iqsharp install --user
-            fi
+        if [[ "${MODULE}" = "pytket-qsharp" && "${PLAT}" != "Darwin" ]]
+        then
+            dotnet iqsharp install --user
+        fi
 
-            # Disable the remote tests for pytket-aqt, -ionq, and -qsharp for now
-            if [[ "${MODULE}" = "pytket-aqt" || "${MODULE}" = "pytket-ionq" || "${MODULE}" = "pytket-qsharp" ]]; then
-                unset PYTKET_RUN_REMOTE_TESTS; pytest --doctest-modules
-            else
-                pytest --doctest-modules
-            fi
+        # Disable the remote tests for pytket-aqt, -ionq, and -qsharp for now
+        if [[ "${MODULE}" = "pytket-aqt" || "${MODULE}" = "pytket-ionq" || "${MODULE}" = "pytket-qsharp" ]]; then
+            unset PYTKET_RUN_REMOTE_TESTS; pytest --doctest-modules
+        else
+            pytest --doctest-modules
+        fi
 
-            if [[ "${MYPY}" = "mypy" ]]
-            then
-                ${MODULEDIR}/mypy-check ${MODULEDIR}/${MODULE}
-            fi
+        if [[ "${MYPY}" = "mypy" ]]
+        then
+            ${MODULEDIR}/mypy-check ${MODULEDIR}/${MODULE}
         fi
     fi
-done
+fi
