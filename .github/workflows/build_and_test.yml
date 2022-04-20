@@ -70,12 +70,12 @@ jobs:
 
   linux:
     name: Build and test (Linux)
-    needs: set-all-modules-matrix
+    needs: set-modules-to-test
     runs-on: ubuntu-20.04
 
     strategy:
       matrix:
-        module: ${{ fromJson(needs.set-all-modules-matrix.outputs.matrix) }}
+        module: ${{ fromJson(needs.set-modules-to-test.outputs.matrix) }}
       fail-fast: false
 
     steps:
@@ -140,12 +140,12 @@ jobs:
   macos:
     if: github.event_name != 'release'
     name: Build and test (MacOS)
-    needs: set-all-modules-matrix
+    needs: set-modules-to-test
     runs-on: macos-11
 
     strategy:
       matrix:
-        module: ${{ fromJson(needs.set-all-modules-matrix.outputs.matrix) }}
+        module: ${{ fromJson(needs.set-modules-to-test.outputs.matrix) }}
       fail-fast: false
 
     steps:
@@ -206,12 +206,12 @@ jobs:
   windows:
     if: github.event_name != 'release'
     name: Build and test (Windows)
-    needs: set-all-modules-matrix
+    needs: set-modules-to-test
     runs-on: windows-2019
 
     strategy:
       matrix:
-        module: ${{ fromJson(needs.set-all-modules-matrix.outputs.matrix) }}
+        module: ${{ fromJson(needs.set-modules-to-test.outputs.matrix) }}
       fail-fast: false
 
     steps:
