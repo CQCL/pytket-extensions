@@ -12,17 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import (
-    cast,
-    Optional,
-    List,
-    Sequence,
-    Union,
-    Counter,
-    Any,
-    Dict,
-    no_type_check,
-)
+from typing import cast, Optional, List, Sequence, Union, Counter, Any
 import json
 import time
 from ast import literal_eval
@@ -62,7 +52,8 @@ from .ionq_convert import ionq_rebase_pass, ionq_gates, ionq_singleqs, tk_to_ion
 from .config import IonQConfig
 
 IONQ_JOBS_URL = "https://api.ionq.co/v0.1/jobs/"
-IONQ_BACKEND_URL = "https://api.ionq.co/v0.2/backends"
+
+IONQ_N_QUBITS = 11
 
 _STATUS_MAP = {
     "completed": StatusEnum.COMPLETED,
@@ -74,20 +65,19 @@ _STATUS_MAP = {
 
 _DEBUG_HANDLE_PREFIX = "_MACHINE_DEBUG_"
 
+QPU_TO_N_QUBITS = {
+    "qpu": 11,
+    "qpu.s11": 11,
+    "qpu.aria.1": 23,
+    "qpu.harmony": 11,
+    "simulator": 19,
+}
 
-@no_type_check
-def _get_qubit_count(device_name: str, header: Dict[str, str]) -> int:
-    if device_name == "qpu":
-        device_name = "qpu.s11"
-    backends_api_response = get(IONQ_BACKEND_URL, headers=header)
-    backends_api_response = backends_api_response.content.decode()
-    ionq_devices = json.loads(backends_api_response)
-    if ionq_devices.get("error"):
-        raise RuntimeError(f"Invalid key provided")
-    device_info = next(
-        (device for device in ionq_devices if device_name == device["backend"]), 11
-    )
-    n_qubits = device_info["qubits"]
+
+def _get_qubit_count(device_name: str) -> int:
+    n_qubits = QPU_TO_N_QUBITS.get(device_name)
+    if n_qubits is None:
+        raise ValueError(f"{device_name} not found")
     return n_qubits
 
 
@@ -101,10 +91,8 @@ class IonQAuthenticationError(Exception):
 class IonQBackend(Backend):
     """
     Interface to an IonQ device.
-
     Requires a valid API key/access token, this can either be provided as a
     parameter or set in config using :py:meth:`pytket.extensions.ionq.set_ionq_config`
-
     """
 
     _supports_counts = True
@@ -119,7 +107,6 @@ class IonQBackend(Backend):
     ):
         """
         Construct a new IonQ backend.
-
         :param      device_name:  device name, either "qpu" or "simulator". Default is
             "qpu".
         :type       device_name:  Optional[string]
@@ -137,12 +124,13 @@ class IonQBackend(Backend):
             api_key = config.api_key
         if api_key is None:
             raise IonQAuthenticationError()
+
         self._header = {"Authorization": f"apiKey {api_key}"}
         self._backend_info = fully_connected_backendinfo(
             type(self).__name__,
             device_name,
             __extension_version__,
-            _get_qubit_count(device_name=device_name, header=self._header),
+            IONQ_N_QUBITS,
             ionq_gates,
         )
         self._qm = {Qubit(i): node for i, node in enumerate(self._backend_info.nodes)}
@@ -152,22 +140,17 @@ class IonQBackend(Backend):
     def backend_info(self) -> Optional[BackendInfo]:
         return self._backend_info
 
-    @no_type_check
     @classmethod
     def available_devices(cls, **kwargs: Any) -> List[BackendInfo]:
-        config = IonQConfig.from_default_config_file()
-        header = {"Authorization": f"apiKey {config.api_key }"}
-        backends_api_response = get(IONQ_BACKEND_URL, headers=header)
-        backends_api_response = backends_api_response.content.decode()
-        devices_dict = json.loads(backends_api_response)
         backend_infos = []
-        for device in devices_dict:
+        qpu_names = list(QPU_TO_N_QUBITS.keys())
+        for device in qpu_names:
             backend_infos.append(
                 fully_connected_backendinfo(
                     cls.__name__,
-                    device["backend"],
+                    device,
                     __extension_version__,
-                    device["qubits"],
+                    QPU_TO_N_QUBITS.get(device),
                     ionq_gates,
                 )
             )
