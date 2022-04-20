@@ -75,10 +75,7 @@ QPU_TO_N_QUBITS = {
 
 
 def _get_qubit_count(device_name: str) -> int:
-    n_qubits = QPU_TO_N_QUBITS.get(device_name)
-    if n_qubits is None:
-        raise ValueError(f"{device_name} not found")
-    return n_qubits
+    return QPU_TO_N_QUBITS.get(device_name, 11)
 
 
 class IonQAuthenticationError(Exception):
@@ -150,7 +147,7 @@ class IonQBackend(Backend):
                     cls.__name__,
                     device,
                     __extension_version__,
-                    QPU_TO_N_QUBITS.get(device),
+                    QPU_TO_N_QUBITS[device],
                     ionq_gates,
                 )
             )
