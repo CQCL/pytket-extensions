@@ -763,16 +763,26 @@ class BraketBackend(Backend):
     def available_devices(cls, **kwargs: Any) -> List[BackendInfo]:
         """
         See :py:meth:`pytket.backends.Backend.available_devices`.
-        Supported kwargs: `region` (default none).
-        The particular AWS region to search for devices (e.g. us-east-1).
-        Default to the region configured with AWS.
-        See the Braket docs for more details.
+        Supported kwargs:
+        - `region` (default None). The particular AWS region to search for
+          devices (e.g. us-east-1). Default to the region configured with AWS.
+          See the Braket docs for more details.
+        - `aws_session` (default None). The credentials of the provided session
+          will be used to create a new session with the specified region. Otherwise,
+          a default new session will be created
         """
         region: Optional[str] = kwargs.get("region")
-        if region is not None:
-            session = AwsSession(boto_session=boto3.Session(region_name=region))
+        aws_session: Optional[AwsSession] = kwargs.get("aws_session")
+        if aws_session is None:
+            if region is not None:
+                session = AwsSession(boto_session=boto3.Session(region_name=region))
+            else:
+                session = AwsSession()
         else:
-            session = AwsSession()
+            if region is not None:
+                session = aws_session.copy_session(region=region)
+            else:
+                session = aws_session.copy_session(region=aws_session.region)
 
         devices = session.search_devices(statuses=["ONLINE"])
 

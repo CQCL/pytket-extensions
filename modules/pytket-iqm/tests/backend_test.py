@@ -18,21 +18,25 @@ import pytest
 from pytket.circuit import Circuit  # type: ignore
 from pytket.backends import StatusEnum
 from pytket.extensions.iqm import IQMBackend
-from requests import HTTPError
+from requests import HTTPError, get
 
+curr_file_path = Path(__file__).resolve().parent
+iqm_demo_url = "https://cortex-demo.qc.iqm.fi/"
+
+# Skip remote tests if not specified
 skip_remote_tests: bool = os.getenv("PYTKET_RUN_REMOTE_TESTS") is None
 REASON = "PYTKET_RUN_REMOTE_TESTS not set (requires configuration of IQM credentials)"
 
-curr_file_path = Path(__file__).resolve().parent
+# Skip remote tests if the IQM demo site is unavailable
+if skip_remote_tests is False and get(iqm_demo_url).status_code != 401:
+    skip_remote_tests = True
+    REASON = "The IQM demo site/service is unavailable"
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_iqm() -> None:
+def test_iqm(authenticated_iqm_backend: IQMBackend) -> None:
     # Run a circuit on the demo device.
-    b = IQMBackend(
-        url="https://cortex-demo.qc.iqm.fi/",
-        settings=curr_file_path / "demo_settings.json",
-    )
+    b = authenticated_iqm_backend
     c = Circuit(4, 4)
     c.H(0)
     c.CX(0, 1)
@@ -52,9 +56,10 @@ def test_iqm() -> None:
     assert sum(counts.values()) == n_shots
 
 
+# @pytest.mark.skipif(skip_service_unavailable, reason=UNAVAILABLE_REASON)
 def test_invalid_cred() -> None:
     b = IQMBackend(
-        url="https://cortex-demo.qc.iqm.fi/",
+        url=iqm_demo_url,
         settings=curr_file_path / "demo_settings.json",
         username="invalid",
         api_key="invalid",
@@ -67,11 +72,8 @@ def test_invalid_cred() -> None:
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_handles() -> None:
-    b = IQMBackend(
-        url="https://cortex-demo.qc.iqm.fi/",
-        settings=curr_file_path / "demo_settings.json",
-    )
+def test_handles(authenticated_iqm_backend: IQMBackend) -> None:
+    b = authenticated_iqm_backend
     c = Circuit(2, 2)
     c.H(0)
     c.CX(0, 1)
@@ -98,11 +100,8 @@ def test_handles() -> None:
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_none_nshots() -> None:
-    b = IQMBackend(
-        url="https://cortex-demo.qc.iqm.fi/",
-        settings=curr_file_path / "demo_settings.json",
-    )
+def test_none_nshots(authenticated_iqm_backend: IQMBackend) -> None:
+    b = authenticated_iqm_backend
     c = Circuit(2, 2)
     c.H(0)
     c.CX(0, 1)
@@ -115,7 +114,7 @@ def test_none_nshots() -> None:
 
 def test_default_pass() -> None:
     b = IQMBackend(
-        url="https://cortex-demo.qc.iqm.fi/",
+        url=iqm_demo_url,
         settings=curr_file_path / "demo_settings.json",
         username="invalid",
         api_key="invalid",
@@ -134,11 +133,8 @@ def test_default_pass() -> None:
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_postprocess() -> None:
-    b = IQMBackend(
-        url="https://cortex-demo.qc.iqm.fi/",
-        settings=curr_file_path / "demo_settings.json",
-    )
+def test_postprocess(authenticated_iqm_backend: IQMBackend) -> None:
+    b = authenticated_iqm_backend
     assert b.supports_contextual_optimisation
     c = Circuit(2, 2)
     c.Y(0)
@@ -154,7 +150,7 @@ def test_postprocess() -> None:
 
 def test_backendinfo() -> None:
     b = IQMBackend(
-        url="https://cortex-demo.qc.iqm.fi/",
+        url=iqm_demo_url,
         settings=curr_file_path / "demo_settings.json",
         username="invalid",
         api_key="invalid",
