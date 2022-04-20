@@ -33,14 +33,13 @@ def fixture_authenticated_azure_backend() -> AzureBackend:
     # If any of the env variables does not exist, then we will try to create
     # a backend using the local config settings
     #
-    # Note: by default, the target is the 'ionq_sumulator'
-    env_vars = (
+    # Note: by default, the target is the 'ionq.simulator'
+    required_env_vars = (
         "PYTKET_REMOTE_QSHARP_RESOURCE_ID",
         "PYTKET_REMOTE_QSHARP_LOCATION",
         "PYTKET_REMOTE_QSHARP_STORAGE",
     )
-    required_env_vars = [os.getenv(var, default=None) for var in env_vars]
-    if any(var is None for var in required_env_vars):
+    if any(os.getenv(var) is None for var in required_env_vars):
         backend = AzureBackend(target_name="ionq.simulator")
     else:
         backend = AzureBackend(
