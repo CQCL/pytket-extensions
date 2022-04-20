@@ -1,6 +1,11 @@
 Changelog
 ~~~~~~~~~
 
+0.19.0 (unreleased)
+-------------------
+
+* Add optional "aws_session" parameter to the available_devices class method of BracketBackend.
+
 0.18.0 (April 2022)
 -------------------
 
