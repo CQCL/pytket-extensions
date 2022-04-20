@@ -40,25 +40,33 @@ env:
   PYTKET_REMOTE_QUANTINUUM_PASSWORD: ${{ secrets.PYTKET_REMOTE_QUANTINUUM_PASSWORD }}
 
 jobs:
-  set-all-modules-matrix:
+  set-modules-to-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
         with:
           fetch-depth: '0'
       - run: git fetch --depth=1 origin +refs/tags/*:refs/tags/* +refs/heads/*:refs/remotes/origin/*
-      - name: Get json list of all the pytket extensions
-        id: set-all-modules-matrix
+      - name: Set list of all the pytket extensions
+        if: github.event_name != 'pull_request'
         run: |
-          sudo apt-get install jq
           cd ${GITHUB_WORKSPACE}/modules
           LS_MODULES=`ls -d */`
           ALL_MODULES=`echo ${LS_MODULES} | sed -e 's/\///g'`
           echo "MODULES_TO_TEST=${ALL_MODULES}" >> $GITHUB_ENV
-          ALL_MODULES_LIST=($ALL_MODULES)
-          echo "::set-output name=all-modules::$(printf '%s\n' ${ALL_MODULES_LIST[@]} | jq -R . | jq -cs .)"
+      - name: Set list of the modified pytket extensions
+        if: github.event_name == 'pull_request'
+        run : |
+          MM=`python3 .github/workflows/changed_modules.py origin/${{ github.base_ref }} ${{ github.sha }}`
+          echo "MODULES_TO_TEST=${MM}" >> $GITHUB_ENV
+      - name: Set json list of modules to test
+        id: set-json-modules-to-test
+        run: |
+          sudo apt-get install jq
+          MODULES_TO_TEST_LIST=($MODULES_TO_TEST)
+          echo "::set-output name=modules::$(printf '%s\n' ${MODULES_TO_TEST_LIST[@]} | jq -R . | jq -cs .)"
     outputs:
-      matrix: ${{ steps.set-all-modules-matrix.outputs.all-modules }}
+      matrix: ${{ steps.set-json-modules-to-test.outputs.modules }}
 
   linux:
     name: Build and test (Linux)
@@ -75,23 +83,18 @@ jobs:
       with:
         fetch-depth: '0'
     - run: git fetch --depth=1 origin +refs/tags/*:refs/tags/* +refs/heads/*:refs/remotes/origin/*
-    - name: Only test modified modules for PRs
-      if: github.event_name == 'pull_request'
-      run : |
-        MM=`python3 .github/workflows/changed_modules.py origin/${{ github.base_ref }} ${{ github.sha }}`
-        echo "MODULES_TO_TEST=${MM}" >> $GITHUB_ENV
     - name: Pull docker images
-      if: ${{ matrix.module == 'pytket-pyquil' }} && contains(env.MODULES_TO_TEST, 'pytket-pyquil')
+      if: ${{ matrix.module == 'pytket-pyquil' }}
       run: |
         docker pull rigetti/quilc
         docker pull rigetti/qvm
     - name: Install dotnet SDK
-      if: ${{ matrix.module == 'pytket-qsharp' }} && contains(env.MODULES_TO_TEST, 'pytket-qsharp')
+      if: ${{ matrix.module == 'pytket-qsharp' }}
       uses: actions/setup-dotnet@v2
       with:
         dotnet-version: '6.0.x'
     - name: Install iqsharp
-      if: ${{ matrix.module == 'pytket-qsharp' }} && contains(env.MODULES_TO_TEST, 'pytket-qsharp')
+      if: ${{ matrix.module == 'pytket-qsharp' }}
       run: dotnet tool install -g Microsoft.Quantum.IQSharp
 
     - name: Set up Python 3.8
@@ -106,32 +109,24 @@ jobs:
       env:
         MODULE: ${{ matrix.module }}
     - name: Set up Python 3.9
-      if: |
-        (github.event_name == 'pull_request' || github.event_name == 'release' || contains(github.ref, 'refs/heads/wheel'))
-        && contains(env.MODULES_TO_TEST, ${{ matrix.module }})
+      if: github.event_name == 'pull_request' || github.event_name == 'release' || contains(github.ref, 'refs/heads/wheel')
       uses: actions/setup-python@v2
       with:
         python-version: '3.9'
     - name: Build and test including remote checks (3.9)
-      if: |
-        (github.event_name == 'pull_request' || github.event_name == 'release' || contains(github.ref, 'refs/heads/wheel'))
-        && contains(env.MODULES_TO_TEST, ${{ matrix.module }})
+      if: github.event_name == 'pull_request' || github.event_name == 'release' || contains(github.ref, 'refs/heads/wheel')
       run: |
         ./.github/workflows/build-test nomypy
       env:
         PYTKET_RUN_REMOTE_TESTS: 1
         MODULE: ${{ matrix.module }}
     - name: Set up Python 3.10
-      if: |
-        github.event_name == 'push'
-        || (github.event_name == 'pull_request' && contains(env.MODULES_TO_TEST, ${{ matrix.module }}))
+      if: github.event_name == 'push' || github.event_name == 'pull_request'
       uses: actions/setup-python@v2
       with:
         python-version: '3.10'
     - name: Build and test (3.10)
-      if: |
-        github.event_name == 'push' 
-        || (github.event_name == 'pull_request' && contains(env.MODULES_TO_TEST, ${{ matrix.module }}))
+      if: github.event_name == 'push' || github.event_name == 'pull_request'
       run: |
         ./.github/workflows/build-test nomypy
       env:
@@ -159,19 +154,13 @@ jobs:
       with:
         fetch-depth: '0'
     - run: git fetch --depth=1 origin +refs/tags/*:refs/tags/* +refs/heads/*:refs/remotes/origin/*
-    - name: Only test modified modules for PRs
-      if: github.event_name == 'pull_request'
-      run : |
-        MM=`python3 .github/workflows/changed_modules.py origin/${{ github.base_ref }} ${{ github.sha }}`
-        echo "MODULES_TO_TEST=${MM}" >> $GITHUB_ENV
-
     - name: Install dotnet SDK
-      if: ${{ matrix.module == 'pytket-qsharp' }} && contains(env.MODULES_TO_TEST, 'pytket-qsharp')
+      if: ${{ matrix.module == 'pytket-qsharp' }}
       uses: actions/setup-dotnet@v2
       with:
         dotnet-version: '6.0.x'
     - name: Install iqsharp
-      if: ${{ matrix.module == 'pytket-qsharp' }} && contains(env.MODULES_TO_TEST, 'pytket-qsharp')
+      if: ${{ matrix.module == 'pytket-qsharp' }}
       run: |
         brew install mono-libgdiplus jupyter
         dotnet tool install -g Microsoft.Quantum.IQSharp
@@ -190,12 +179,12 @@ jobs:
         MODULE: ${{ matrix.module }}
 
     - name: Set up Python 3.9
-      if: github.event_name == 'pull_request' && contains(env.MODULES_TO_TEST, ${{ matrix.module }})
+      if: github.event_name == 'pull_request'
       uses: actions/setup-python@v2
       with:
         python-version: '3.9'
     - name: Build and test including remote checks and mypy (3.9)
-      if: github.event_name == 'pull_request' && contains(env.MODULES_TO_TEST, ${{ matrix.module }})
+      if: github.event_name == 'pull_request'
       run: |
         ./.github/workflows/build-test mypy
       env:
@@ -203,16 +192,12 @@ jobs:
         MODULE: ${{ matrix.module }}
 
     - name: Set up Python 3.10
-      if: |
-        github.event_name == 'push'
-        || (github.event_name == 'pull_request' && contains(env.MODULES_TO_TEST, ${{ matrix.module }}))
+      if: github.event_name == 'push' || github.event_name == 'pull_request'
       uses: actions/setup-python@v2
       with:
         python-version: '3.10'
     - name: Build and test (3.10)
-      if: |
-        github.event_name == 'push'
-        || (github.event_name == 'pull_request' && contains(env.MODULES_TO_TEST, ${{ matrix.module }}))
+      if: github.event_name == 'push' || github.event_name == 'pull_request'
       run: |
         ./.github/workflows/build-test nomypy
       env:
@@ -235,20 +220,14 @@ jobs:
       with:
         fetch-depth: '0'
     - run: git fetch --depth=1 origin +refs/tags/*:refs/tags/* +refs/heads/*:refs/remotes/origin/*
-    - name: Only test modified modules for PRs
-      if: github.event_name == 'pull_request'
-      shell: bash
-      run: |
-        MM=`python .github/workflows/changed_modules.py origin/${{ github.base_ref }} ${{ github.sha }}`
-        echo "MODULES_TO_TEST=${MM}" >> $GITHUB_ENV
 
     - name: Install dotnet SDK
-      if: ${{ matrix.module == 'pytket-qsharp' }} && contains(env.MODULES_TO_TEST, 'pytket-qsharp')
+      if: ${{ matrix.module == 'pytket-qsharp' }}
       uses: actions/setup-dotnet@v2
       with:
         dotnet-version: '6.0.x'
     - name: Install iqsharp
-      if: ${{ matrix.module == 'pytket-qsharp' }} && contains(env.MODULES_TO_TEST, 'pytket-qsharp')
+      if: ${{ matrix.module == 'pytket-qsharp' }}
       run: dotnet tool install -g Microsoft.Quantum.IQSharp
 
     - name: Set up Python 3.8
@@ -264,12 +243,12 @@ jobs:
       env:
         MODULE: ${{ matrix.module }}
     - name: Set up Python 3.9
-      if: github.event_name == 'pull_request' && contains(env.MODULES_TO_TEST, ${{ matrix.module }})
+      if: github.event_name == 'pull_request'
       uses: actions/setup-python@v2
       with:
         python-version: '3.9'
     - name: Build and test including remote checks (3.9)
-      if: github.event_name == 'pull_request' && contains(env.MODULES_TO_TEST, ${{ matrix.module }})
+      if: github.event_name == 'pull_request'
       shell: bash
       run: |
         ./.github/workflows/build-test nomypy
@@ -277,16 +256,12 @@ jobs:
         PYTKET_RUN_REMOTE_TESTS: 1
         MODULE: ${{ matrix.module }}
     - name: Set up Python 3.10
-      if: |
-        github.event_name == 'push'
-        || (github.event_name == 'pull_request' && contains(env.MODULES_TO_TEST, ${{ matrix.module }}))
+      if: github.event_name == 'push' || github.event_name == 'pull_request'
       uses: actions/setup-python@v2
       with:
         python-version: '3.10'
     - name: Build and test (3.10)
-      if: |
-        github.event_name == 'push'
-        || (github.event_name == 'pull_request' && contains(env.MODULES_TO_TEST, ${{ matrix.module }}))
+      if: github.event_name == 'push' || github.event_name == 'pull_request'
       shell: bash
       run: |
         ./.github/workflows/build-test nomypy
