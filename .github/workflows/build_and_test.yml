@@ -72,6 +72,8 @@ jobs:
     name: Linux - Build and test module
     needs: set-modules-to-test
     runs-on: ubuntu-20.04
+    # Skip if PR with no changes to pytket extensions
+    if: ${{ ! ( needs.set-modules-to-test.outputs.matrix == '[""]' && github.event_name == 'pull_request') }}
 
     strategy:
       matrix:
@@ -138,10 +140,12 @@ jobs:
         path: wheelhouse/
 
   macos-checks:
-    if: github.event_name != 'release'
     name: MacOS - Build and test module
     needs: set-modules-to-test
     runs-on: macos-11
+    if: |
+      (github.event_name == 'pull_request' && needs.set-modules-to-test.outputs.matrix != '[""]') ||
+      (github.event_name != 'release' && github.event_name != 'pull_request')
 
     strategy:
       matrix:
@@ -204,10 +208,12 @@ jobs:
         MODULE: ${{ matrix.module }}
 
   windows-checks:
-    if: github.event_name != 'release'
     name: Windows - Build and test module
     needs: set-modules-to-test
     runs-on: windows-2019
+    if: |
+      (github.event_name == 'pull_request' && needs.set-modules-to-test.outputs.matrix != '[""]') ||
+      (github.event_name != 'release' && github.event_name != 'pull_request')
 
     strategy:
       matrix:
