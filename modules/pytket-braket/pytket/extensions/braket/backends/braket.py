@@ -621,7 +621,9 @@ class BraketBackend(Backend):
         else:
             return self._device.run(bkcirc, self._s3_dest, shots=n_shots, **kwargs)
 
-    def _to_bkcirc(self, circuit: Circuit) -> braket.circuits.Circuit:
+    def _to_bkcirc(
+        self, circuit: Circuit
+    ) -> Tuple[braket.circuits.Circuit, Dict[int, int]]:
         if self._device_type == _DeviceType.QPU:
             return tk_to_braket(circuit, self._all_qubits)
         else:
@@ -677,7 +679,7 @@ class BraketBackend(Backend):
                 ppcirc_rep = ppcirc.to_dict()
             else:
                 c0, ppcirc, ppcirc_rep = circ, None, None
-            bkcirc = self._to_bkcirc(c0)
+            bkcirc, _ = self._to_bkcirc(c0)
             if want_state:
                 bkcirc.add_result_type(ResultType.StateVector())
             if want_dm:
@@ -933,7 +935,7 @@ class BraketBackend(Backend):
         """
         if valid_check:
             self._check_all_circuits([state_circuit], nomeasure_warn=False)
-        bkcirc = self._to_bkcirc(state_circuit)
+        bkcirc, _ = self._to_bkcirc(state_circuit)
         observable, qbs = _obs_from_qps(pauli)
         return self._get_expectation_value(bkcirc, observable, qbs, n_shots, **kwargs)
 
@@ -957,7 +959,7 @@ class BraketBackend(Backend):
         """
         if valid_check:
             self._check_all_circuits([state_circuit], nomeasure_warn=False)
-        bkcirc = self._to_bkcirc(state_circuit)
+        bkcirc, _ = self._to_bkcirc(state_circuit)
         observable = _obs_from_qpo(operator, state_circuit.n_qubits)
         return self._get_expectation_value(
             bkcirc, observable, bkcirc.qubits, n_shots, **kwargs
@@ -983,7 +985,7 @@ class BraketBackend(Backend):
         """
         if valid_check:
             self._check_all_circuits([state_circuit], nomeasure_warn=False)
-        bkcirc = self._to_bkcirc(state_circuit)
+        bkcirc, _ = self._to_bkcirc(state_circuit)
         observable, qbs = _obs_from_qps(pauli)
         return self._get_variance(bkcirc, observable, qbs, n_shots, **kwargs)
 
@@ -1007,7 +1009,7 @@ class BraketBackend(Backend):
         """
         if valid_check:
             self._check_all_circuits([state_circuit], nomeasure_warn=False)
-        bkcirc = self._to_bkcirc(state_circuit)
+        bkcirc, _ = self._to_bkcirc(state_circuit)
         observable = _obs_from_qpo(operator, state_circuit.n_qubits)
         return self._get_variance(bkcirc, observable, bkcirc.qubits, n_shots, **kwargs)
 
@@ -1049,7 +1051,7 @@ class BraketBackend(Backend):
             )
         if valid_check:
             self._check_all_circuits([circuit], nomeasure_warn=False)
-        bkcirc = self._to_bkcirc(circuit)
+        bkcirc, _ = self._to_bkcirc(circuit)
         restype = ResultType.Probability(target=qubits)
         bkcirc.add_result_type(restype)
         task = self._run(bkcirc, n_shots=n_shots, **kwargs)
@@ -1076,7 +1078,7 @@ class BraketBackend(Backend):
             raise RuntimeError("Backend does not support amplitude")
         if valid_check:
             self._check_all_circuits([circuit], nomeasure_warn=False)
-        bkcirc = self._to_bkcirc(circuit)
+        bkcirc, _ = self._to_bkcirc(circuit)
         restype = ResultType.Amplitude(states)
         bkcirc.add_result_type(restype)
         task = self._run(bkcirc, n_shots=0, **kwargs)
