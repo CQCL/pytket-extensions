@@ -43,7 +43,7 @@ jobs:
   set-modules-to-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: '0'
       - run: git fetch --depth=1 origin +refs/tags/*:refs/tags/* +refs/heads/*:refs/remotes/origin/*
@@ -81,7 +81,7 @@ jobs:
       fail-fast: false
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         fetch-depth: '0'
     - run: git fetch --depth=1 origin +refs/tags/*:refs/tags/* +refs/heads/*:refs/remotes/origin/*
@@ -101,7 +101,7 @@ jobs:
 
     - name: Set up Python 3.8
       if: github.event_name == 'push'
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v3
       with:
         python-version: '3.8'
     - name: Build and test (3.8)
@@ -112,7 +112,7 @@ jobs:
         MODULE: ${{ matrix.module }}
     - name: Set up Python 3.9
       if: github.event_name == 'pull_request' || github.event_name == 'release' || contains(github.ref, 'refs/heads/wheel')
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v3
       with:
         python-version: '3.9'
     - name: Build and test including remote checks (3.9)
@@ -124,7 +124,7 @@ jobs:
         MODULE: ${{ matrix.module }}
     - name: Set up Python 3.10
       if: github.event_name == 'push' || github.event_name == 'pull_request'
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v3
       with:
         python-version: '3.10'
     - name: Build and test (3.10)
@@ -133,7 +133,7 @@ jobs:
         ./.github/workflows/build-test nomypy
       env:
         MODULE: ${{ matrix.module }}
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       if: github.event_name == 'release' || contains(github.ref, 'refs/heads/wheel')
       with:
         name: artefacts
@@ -154,7 +154,7 @@ jobs:
 
     steps:
 
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         fetch-depth: '0'
     - run: git fetch --depth=1 origin +refs/tags/*:refs/tags/* +refs/heads/*:refs/remotes/origin/*
@@ -172,7 +172,7 @@ jobs:
 
     - name: Set up Python 3.8
       if: github.event_name == 'push'
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v3
       with:
         python-version: '3.8'
     - name: Build and test (3.8)
@@ -184,7 +184,7 @@ jobs:
 
     - name: Set up Python 3.9
       if: github.event_name == 'pull_request'
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v3
       with:
         python-version: '3.9'
     - name: Build and test including remote checks and mypy (3.9)
@@ -197,7 +197,7 @@ jobs:
 
     - name: Set up Python 3.10
       if: github.event_name == 'push' || github.event_name == 'pull_request'
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v3
       with:
         python-version: '3.10'
     - name: Build and test (3.10)
@@ -222,7 +222,7 @@ jobs:
 
     steps:
 
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         fetch-depth: '0'
     - run: git fetch --depth=1 origin +refs/tags/*:refs/tags/* +refs/heads/*:refs/remotes/origin/*
@@ -238,7 +238,7 @@ jobs:
 
     - name: Set up Python 3.8
       if: github.event_name == 'push'
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v3
       with:
         python-version: '3.8'
     - name: Build and test (3.8)
@@ -250,7 +250,7 @@ jobs:
         MODULE: ${{ matrix.module }}
     - name: Set up Python 3.9
       if: github.event_name == 'pull_request'
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v3
       with:
         python-version: '3.9'
     - name: Build and test including remote checks (3.9)
@@ -263,7 +263,7 @@ jobs:
         MODULE: ${{ matrix.module }}
     - name: Set up Python 3.10
       if: github.event_name == 'push' || github.event_name == 'pull_request'
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v3
       with:
         python-version: '3.10'
     - name: Build and test (3.10)
@@ -307,7 +307,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
     - name: Download all wheels
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v3
       with:
         path: wheelhouse
     - name: Put them all in the dist folder
@@ -327,15 +327,15 @@ jobs:
     needs: publish_to_pypi
     runs-on: ubuntu-20.04
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         fetch-depth: '0'
     - name: Set up Python 3.9
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v3
       with:
         python-version: '3.9'
     - name: Download all wheels
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v3
       with:
         path: wheelhouse
     - name: Install pip, wheel

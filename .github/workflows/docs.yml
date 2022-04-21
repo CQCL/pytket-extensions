@@ -13,9 +13,9 @@ jobs:
     name: build docs
     runs-on: ubuntu-20.04
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Set up Python 3.9
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v3
       with:
         python-version: 3.9
     - name: Upgrade pip and install wheel
@@ -46,7 +46,7 @@ jobs:
         cd .github/workflows/docs
         mkdir extensions
         ./build-docs -a -i -d ${GITHUB_WORKSPACE}/.github/workflows/docs/extensions
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       with:
         name: pytket-extension-docs
         path: .github/workflows/docs/extensions/
