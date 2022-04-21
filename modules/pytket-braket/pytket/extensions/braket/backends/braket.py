@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import json
-from ast import literal_eval
 from enum import Enum
 import time
 from typing import (
@@ -708,7 +707,7 @@ class BraketBackend(Backend):
                 handle = ResultHandle(
                     task.id,
                     json.dumps(target_qubits),
-                    str(measures),
+                    json.dumps(list(measures.items())),
                     want_state,
                     want_dm,
                     json.dumps(ppcirc_rep),
@@ -717,7 +716,7 @@ class BraketBackend(Backend):
                 handle = ResultHandle(
                     str(uuid4()),
                     json.dumps(target_qubits),
-                    str(measures),
+                    json.dumps(list(measures.items())),
                     False,
                     False,
                     json.dumps(None),
@@ -752,7 +751,7 @@ class BraketBackend(Backend):
                 _get_result(
                     task,
                     json.loads(target_qubits),
-                    literal_eval(measures),
+                    dict(json.loads((measures))),
                     want_state,
                     want_dm,
                     ppcirc,
