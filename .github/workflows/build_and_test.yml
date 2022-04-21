@@ -144,7 +144,7 @@ jobs:
     needs: set-modules-to-test
     runs-on: macos-11
     if: |
-      github.event_name != 'release' ||
+      github.event_name != 'release' &&
       ${{ ! ( needs.set-modules-to-test.outputs.matrix == '[""]' && github.event_name == 'pull_request') }}
 
     strategy:
@@ -212,7 +212,7 @@ jobs:
     needs: set-modules-to-test
     runs-on: windows-2019
     if: |
-      github.event_name != 'release' ||
+      github.event_name != 'release' &&
       ${{ ! ( needs.set-modules-to-test.outputs.matrix == '[""]' && github.event_name == 'pull_request') }}
 
     strategy:
