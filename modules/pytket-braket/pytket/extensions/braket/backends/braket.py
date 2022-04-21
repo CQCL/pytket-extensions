@@ -204,7 +204,7 @@ def _obs_from_qpo(operator: QubitPauliOperator, n_qubits: int) -> Observable:
 
 def _get_result(
     completed_task: Union[AwsQuantumTask, LocalQuantumTask],
-    target_qubits: str,
+    target_qubits: List[int],
     measures: Dict[int, int],
     want_state: bool,
     want_dm: bool,
@@ -212,14 +212,13 @@ def _get_result(
 ) -> Dict[str, BackendResult]:
     result = completed_task.result()
     kwargs = {}
-    qubits_index = json.loads(target_qubits)
     if want_state or want_dm:
         assert ppcirc is None
         if want_state:
             kwargs["state"] = result.get_value_by_result_type(ResultType.StateVector())
         if want_dm:
             m = result.get_value_by_result_type(
-                ResultType.DensityMatrix(target=qubits_index)
+                ResultType.DensityMatrix(target=target_qubits)
             )
             if type(completed_task) == AwsQuantumTask:
                 kwargs["density_matrix"] = np.array(
@@ -228,8 +227,8 @@ def _get_result(
             else:
                 kwargs["density_matrix"] = m
     else:
-        bits_index = [measures[i] for i in qubits_index]
-        measurements = result.measurements[:, bits_index]
+        target_bits = [measures[i] for i in target_qubits]
+        measurements = result.measurements[:, target_bits]
         kwargs["shots"] = OutcomeArray.from_readouts(measurements)
         kwargs["ppcirc"] = ppcirc
     return {"result": BackendResult(**kwargs)}
@@ -678,7 +677,7 @@ class BraketBackend(Backend):
             want_dm = (n_shots == 0) and self.supports_density_matrix
             problem_qubits = [x.index[0] for x in circ.qubits]
             device_qubits = [x.index[0] for x in self._backend_info.nodes]
-            target_qubits = json.dumps([device_qubits.index(x) for x in problem_qubits])
+            target_qubits = [device_qubits.index(x) for x in problem_qubits]
             if postprocess:
                 c0, ppcirc = prepare_circuit(circ, allow_classical=False)
                 ppcirc_rep = ppcirc.to_dict()
@@ -708,7 +707,7 @@ class BraketBackend(Backend):
             if task is not None:
                 handle = ResultHandle(
                     task.id,
-                    target_qubits,
+                    json.dumps(target_qubits),
                     str(measures),
                     want_state,
                     want_dm,
@@ -717,7 +716,7 @@ class BraketBackend(Backend):
             else:
                 handle = ResultHandle(
                     str(uuid4()),
-                    target_qubits,
+                    json.dumps(target_qubits),
                     str(measures),
                     False,
                     False,
@@ -752,7 +751,7 @@ class BraketBackend(Backend):
                 handle,
                 _get_result(
                     task,
-                    target_qubits,
+                    json.loads(target_qubits),
                     literal_eval(measures),
                     want_state,
                     want_dm,
