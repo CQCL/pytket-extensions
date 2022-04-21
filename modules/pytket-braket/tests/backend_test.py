@@ -505,3 +505,20 @@ def test_retrieve_available_devices(
         region="us-west-2", aws_session=authenticated_braket_backend._aws_session
     )
     assert len(backend_infos) > 0
+
+
+def test_partial_measurement() -> None:
+    b = BraketBackend(local=True)
+    c = Circuit(4, 4)
+    c.H(0).CX(0, 1)
+    c.Measure(0, 1)
+    c.Measure(2, 0)
+    c = b.get_compiled_circuit(c)
+    n_shots = 100
+    h = b.process_circuit(c, n_shots)
+    res = b.get_result(h)
+    readouts = res.get_shots()
+    assert all(len(readouts[i]) == 2 for i in range(n_shots))
+    assert all(readouts[i][0] == 0 for i in range(n_shots))
+    counts = res.get_counts()
+    assert sum(counts.values()) == n_shots
