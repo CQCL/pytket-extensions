@@ -46,6 +46,7 @@ def test_simulator(authenticated_braket_backend: BraketBackend) -> None:
     b = authenticated_braket_backend
     assert b.supports_shots
     c = Circuit(2).H(0).CX(0, 1)
+    c.measure_all()
     c = b.get_compiled_circuit(c)
     n_shots = 100
     h0, h1 = b.process_circuits([c, c], n_shots)
@@ -63,6 +64,7 @@ def test_simulator(authenticated_braket_backend: BraketBackend) -> None:
 
     # Circuit with unused qubits
     c = Circuit(3).H(1).CX(1, 2)
+    c.measure_all()
     c = b.get_compiled_circuit(c)
     h = b.process_circuit(c, 1)
     res = b.get_result(h)
@@ -99,6 +101,7 @@ def test_tn1_simulator(authenticated_braket_backend: BraketBackend) -> None:
     b = authenticated_braket_backend
     assert b.supports_shots
     c = Circuit(2).H(0).CX(0, 1)
+    c.measure_all()
     c = b.get_compiled_circuit(c)
     n_shots = 100
     h0, h1 = b.process_circuits([c, c], n_shots)
@@ -111,6 +114,7 @@ def test_tn1_simulator(authenticated_braket_backend: BraketBackend) -> None:
     assert sum(counts.values()) == n_shots
     # Circuit with unused qubits
     c = Circuit(3).H(1).CX(1, 2)
+    c.measure_all()
     c = b.get_compiled_circuit(c)
     h = b.process_circuit(c, 1)
     res = b.get_result(h)
@@ -284,6 +288,7 @@ def test_local_simulator() -> None:
     assert b.supports_shots
     assert b.supports_counts
     c = Circuit(2).H(0).CX(0, 1)
+    c.measure_all()
     c = b.get_compiled_circuit(c)
     n_shots = 100
     h = b.process_circuit(c, n_shots)
@@ -390,6 +395,7 @@ def test_probabilities() -> None:
 def test_probabilities_with_shots() -> None:
     b = BraketBackend(local=True)
     c = Circuit(2).V(1).CX(1, 0).S(1)
+    c.measure_all()
     probs_all = b.get_probabilities(c, n_shots=10)
     assert len(probs_all) == 4
     assert sum(probs_all) == pytest.approx(1)
@@ -444,6 +450,7 @@ def test_default_pass() -> None:
 def test_shots_bits_edgecases(n_shots, n_bits) -> None:
     braket_backend = BraketBackend(local=True)
     c = Circuit(n_bits, n_bits)
+    c.measure_all()
 
     # TODO TKET-813 add more shot based backends and move to integration tests
     h = braket_backend.process_circuit(c, n_shots)
@@ -474,9 +481,10 @@ def test_postprocess_ionq(authenticated_braket_backend: BraketBackend) -> None:
     b = authenticated_braket_backend
     assert b.supports_contextual_optimisation
     c = Circuit(2).H(0).CX(0, 1).Y(0)
+    c.measure_all()
     c = b.get_compiled_circuit(c)
     h = b.process_circuit(c, n_shots=10, postprocess=True)
-    ppcirc = Circuit.from_dict(json.loads(cast(str, h[4])))
+    ppcirc = Circuit.from_dict(json.loads(cast(str, h[5])))
     ppcmds = ppcirc.get_commands()
     assert len(ppcmds) > 0
     assert all(ppcmd.op.type == OpType.ClassicalTransform for ppcmd in ppcmds)
