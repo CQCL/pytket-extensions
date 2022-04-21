@@ -226,7 +226,7 @@ def _get_result(
             else:
                 kwargs["density_matrix"] = m
     else:
-        target_bits = [measures[i] for i in target_qubits]
+        target_bits = [measures[i] for i in target_qubits if i in measures]
         measurements = result.measurements[:, target_bits]
         kwargs["shots"] = OutcomeArray.from_readouts(measurements)
         kwargs["ppcirc"] = ppcirc
