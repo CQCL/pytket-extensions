@@ -61,6 +61,7 @@ def tk_to_braket(
     mapped_qubits = allqbs is not None
     if not mapped_qubits:
         allqbs = range(tkcirc.n_qubits)
+    assert allqbs is not None
     for qb in allqbs:
         bkcirc.i(qb)
     measures = {}
