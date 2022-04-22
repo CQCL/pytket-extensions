@@ -5,6 +5,8 @@ Changelog
 -------------------
 
 * Add optional "aws_session" parameter to the available_devices class method of BracketBackend.
+* Respect measurement operations in submitted circuits. (Previously these were
+  not allowed and measurements were automatically added to all qubits.)
 
 0.18.0 (April 2022)
 -------------------

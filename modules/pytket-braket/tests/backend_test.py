@@ -20,7 +20,7 @@ from hypothesis import given, strategies
 import numpy as np
 import pytest
 from pytket.extensions.braket import BraketBackend
-from pytket.circuit import Circuit, OpType, Qubit  # type: ignore
+from pytket.circuit import Circuit, OpType, Qubit, Bit  # type: ignore
 from pytket.pauli import Pauli, QubitPauliString  # type: ignore
 from pytket.utils.expectations import (
     get_pauli_expectation_value,
@@ -46,6 +46,7 @@ def test_simulator(authenticated_braket_backend: BraketBackend) -> None:
     b = authenticated_braket_backend
     assert b.supports_shots
     c = Circuit(2).H(0).CX(0, 1)
+    c.measure_all()
     c = b.get_compiled_circuit(c)
     n_shots = 100
     h0, h1 = b.process_circuits([c, c], n_shots)
@@ -63,6 +64,7 @@ def test_simulator(authenticated_braket_backend: BraketBackend) -> None:
 
     # Circuit with unused qubits
     c = Circuit(3).H(1).CX(1, 2)
+    c.measure_all()
     c = b.get_compiled_circuit(c)
     h = b.process_circuit(c, 1)
     res = b.get_result(h)
@@ -99,6 +101,7 @@ def test_tn1_simulator(authenticated_braket_backend: BraketBackend) -> None:
     b = authenticated_braket_backend
     assert b.supports_shots
     c = Circuit(2).H(0).CX(0, 1)
+    c.measure_all()
     c = b.get_compiled_circuit(c)
     n_shots = 100
     h0, h1 = b.process_circuits([c, c], n_shots)
@@ -111,6 +114,7 @@ def test_tn1_simulator(authenticated_braket_backend: BraketBackend) -> None:
     assert sum(counts.values()) == n_shots
     # Circuit with unused qubits
     c = Circuit(3).H(1).CX(1, 2)
+    c.measure_all()
     c = b.get_compiled_circuit(c)
     h = b.process_circuit(c, 1)
     res = b.get_result(h)
@@ -284,6 +288,7 @@ def test_local_simulator() -> None:
     assert b.supports_shots
     assert b.supports_counts
     c = Circuit(2).H(0).CX(0, 1)
+    c.measure_all()
     c = b.get_compiled_circuit(c)
     n_shots = 100
     h = b.process_circuit(c, n_shots)
@@ -390,6 +395,7 @@ def test_probabilities() -> None:
 def test_probabilities_with_shots() -> None:
     b = BraketBackend(local=True)
     c = Circuit(2).V(1).CX(1, 0).S(1)
+    c.measure_all()
     probs_all = b.get_probabilities(c, n_shots=10)
     assert len(probs_all) == 4
     assert sum(probs_all) == pytest.approx(1)
@@ -444,6 +450,7 @@ def test_default_pass() -> None:
 def test_shots_bits_edgecases(n_shots, n_bits) -> None:
     braket_backend = BraketBackend(local=True)
     c = Circuit(n_bits, n_bits)
+    c.measure_all()
 
     # TODO TKET-813 add more shot based backends and move to integration tests
     h = braket_backend.process_circuit(c, n_shots)
@@ -474,9 +481,10 @@ def test_postprocess_ionq(authenticated_braket_backend: BraketBackend) -> None:
     b = authenticated_braket_backend
     assert b.supports_contextual_optimisation
     c = Circuit(2).H(0).CX(0, 1).Y(0)
+    c.measure_all()
     c = b.get_compiled_circuit(c)
     h = b.process_circuit(c, n_shots=10, postprocess=True)
-    ppcirc = Circuit.from_dict(json.loads(cast(str, h[4])))
+    ppcirc = Circuit.from_dict(json.loads(cast(str, h[5])))
     ppcmds = ppcirc.get_commands()
     assert len(ppcmds) > 0
     assert all(ppcmd.op.type == OpType.ClassicalTransform for ppcmd in ppcmds)
@@ -497,3 +505,67 @@ def test_retrieve_available_devices(
         region="us-west-2", aws_session=authenticated_braket_backend._aws_session
     )
     assert len(backend_infos) > 0
+
+
+def test_partial_measurement() -> None:
+    b = BraketBackend(local=True)
+    c = Circuit(4, 4)
+    c.H(0).CX(0, 1)
+    c.Measure(0, 1)
+    c.Measure(2, 0)
+    c = b.get_compiled_circuit(c)
+    n_shots = 100
+    h = b.process_circuit(c, n_shots)
+    res = b.get_result(h)
+    readouts = res.get_shots()
+    assert all(len(readouts[i]) == 2 for i in range(n_shots))
+    assert all(readouts[i][0] == 0 for i in range(n_shots))
+    counts = res.get_counts()
+    assert sum(counts.values()) == n_shots
+
+
+def test_multiple_indices() -> None:
+    b = BraketBackend(local=True)
+    c = Circuit(0, 2)
+    q0 = Qubit("Z", [0, 0])
+    q1 = Qubit("Z", [0, 1])
+    c.add_qubit(q0)
+    c.add_qubit(q1)
+    c.H(q0)
+    c.CX(q0, q1)
+    c.Measure(q0, Bit(0))
+    c.Measure(q1, Bit(1))
+    c1 = b.get_compiled_circuit(c)
+    h = b.process_circuit(c1, 100)
+    res = b.get_result(h)
+    readouts = res.get_shots()
+    assert all(readout[0] == readout[1] for readout in readouts)
+
+
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
+@pytest.mark.parametrize(
+    "authenticated_braket_backend",
+    [
+        {
+            "device_type": "qpu",
+            "provider": "rigetti",
+            "device": "Aspen-M-1",
+            "region": "us-west-1",
+        }
+    ],
+    indirect=True,
+)
+def test_multiple_indices_rigetti(authenticated_braket_backend: BraketBackend) -> None:
+    b = authenticated_braket_backend
+    c = Circuit(0, 2)
+    q0 = Qubit("Z", [0, 0])
+    q1 = Qubit("Z", [0, 1])
+    c.add_qubit(q0)
+    c.add_qubit(q1)
+    c.H(q0)
+    c.CX(q0, q1)
+    c.Measure(q0, Bit(0))
+    c.Measure(q1, Bit(1))
+    c1 = b.get_compiled_circuit(c)
+    h = b.process_circuit(c1, 100)
+    b.cancel(h)

@@ -45,14 +45,14 @@ def test_convert() -> None:
     c.add_gate(OpType.YYPhase, 0.8, [0, 1])
     c.add_gate(OpType.Z, [0])
     c.add_gate(OpType.ZZPhase, 0.9, [0, 1])
-    bkc = tk_to_braket(c)
+    bkc, _ = tk_to_braket(c)
     c1 = braket_to_tk(bkc)
     assert c.get_commands() == c1.get_commands()
 
 
 def test_convert_qubit_order() -> None:
     c = Circuit(3).H(2).CX(2, 1)
-    bkc = tk_to_braket(c)
+    bkc, _ = tk_to_braket(c)
     c1 = braket_to_tk(bkc)
     assert c.get_commands() == c1.get_commands()
 
