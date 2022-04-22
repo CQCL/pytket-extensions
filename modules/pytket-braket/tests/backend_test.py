@@ -20,7 +20,7 @@ from hypothesis import given, strategies
 import numpy as np
 import pytest
 from pytket.extensions.braket import BraketBackend
-from pytket.circuit import Circuit, OpType, Qubit  # type: ignore
+from pytket.circuit import Circuit, OpType, Qubit, Bit  # type: ignore
 from pytket.pauli import Pauli, QubitPauliString  # type: ignore
 from pytket.utils.expectations import (
     get_pauli_expectation_value,
@@ -522,3 +522,50 @@ def test_partial_measurement() -> None:
     assert all(readouts[i][0] == 0 for i in range(n_shots))
     counts = res.get_counts()
     assert sum(counts.values()) == n_shots
+
+
+def test_multiple_indices() -> None:
+    b = BraketBackend(local=True)
+    c = Circuit(0, 2)
+    q0 = Qubit("Z", [0, 0])
+    q1 = Qubit("Z", [0, 1])
+    c.add_qubit(q0)
+    c.add_qubit(q1)
+    c.H(q0)
+    c.CX(q0, q1)
+    c.Measure(q0, Bit(0))
+    c.Measure(q1, Bit(1))
+    c1 = b.get_compiled_circuit(c)
+    h = b.process_circuit(c1, 100)
+    res = b.get_result(h)
+    readouts = res.get_shots()
+    assert all(readout[0] == readout[1] for readout in readouts)
+
+
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
+@pytest.mark.parametrize(
+    "authenticated_braket_backend",
+    [
+        {
+            "device_type": "qpu",
+            "provider": "rigetti",
+            "device": "Aspen-M-1",
+            "region": "us-west-1",
+        }
+    ],
+    indirect=True,
+)
+def test_multiple_indices_rigetti(authenticated_braket_backend: BraketBackend) -> None:
+    b = authenticated_braket_backend
+    c = Circuit(0, 2)
+    q0 = Qubit("Z", [0, 0])
+    q1 = Qubit("Z", [0, 1])
+    c.add_qubit(q0)
+    c.add_qubit(q1)
+    c.H(q0)
+    c.CX(q0, q1)
+    c.Measure(q0, Bit(0))
+    c.Measure(q1, Bit(1))
+    c1 = b.get_compiled_circuit(c)
+    h = b.process_circuit(c1, 100)
+    b.cancel(h)

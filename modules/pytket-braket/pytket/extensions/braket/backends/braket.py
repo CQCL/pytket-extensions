@@ -188,11 +188,13 @@ _observables = {
 }
 
 
-def _obs_from_qps(pauli: QubitPauliString) -> Tuple[Observable, QubitSet]:
+def _obs_from_qps(
+    circuit: Circuit, pauli: QubitPauliString
+) -> Tuple[Observable, QubitSet]:
     obs, qbs = [], []
     for q, p in pauli.map.items():
         obs.append(_observables[p])
-        qbs.append(q.index[0])
+        qbs.append(circuit.qubits.index(q))
     return Observable.TensorProduct(obs), qbs
 
 
@@ -674,8 +676,8 @@ class BraketBackend(Backend):
         for circ, n_shots in zip(circuits, n_shots_list):
             want_state = (n_shots == 0) and self.supports_state
             want_dm = (n_shots == 0) and self.supports_density_matrix
-            problem_qubits = [x.index[0] for x in circ.qubits]
-            device_qubits = [x.index[0] for x in self._backend_info.nodes]
+            problem_qubits = list(range(circ.n_qubits))
+            device_qubits = list(range(len(self._backend_info.nodes)))
             target_qubits = [device_qubits.index(x) for x in problem_qubits]
             if postprocess:
                 c0, ppcirc = prepare_circuit(circ, allow_classical=False)
@@ -957,7 +959,7 @@ class BraketBackend(Backend):
         if valid_check:
             self._check_all_circuits([state_circuit], nomeasure_warn=False)
         bkcirc, _ = self._to_bkcirc(state_circuit)
-        observable, qbs = _obs_from_qps(pauli)
+        observable, qbs = _obs_from_qps(state_circuit, pauli)
         return self._get_expectation_value(bkcirc, observable, qbs, n_shots, **kwargs)
 
     def get_operator_expectation_value(
@@ -1007,7 +1009,7 @@ class BraketBackend(Backend):
         if valid_check:
             self._check_all_circuits([state_circuit], nomeasure_warn=False)
         bkcirc, _ = self._to_bkcirc(state_circuit)
-        observable, qbs = _obs_from_qps(pauli)
+        observable, qbs = _obs_from_qps(state_circuit, pauli)
         return self._get_variance(bkcirc, observable, qbs, n_shots, **kwargs)
 
     def get_operator_variance(
