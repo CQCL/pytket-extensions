@@ -474,3 +474,9 @@ def test_zzphase(
     res = backend.get_result(handle, timeout=49)
     counts = res.get_counts()
     assert counts == correct_counts
+
+
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
+@pytest.mark.parametrize("device_name", ALL_DEVICE_NAMES)
+def test_device_state(device_name: str) -> None:
+    assert isinstance(QuantinuumBackend.device_state(device_name), str)
