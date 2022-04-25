@@ -229,7 +229,12 @@ class QuantinuumBackend(Backend):
         )
         _api_handler._response_check(res, "get machine status")
         jr = res.json()
-        return str(jr["state"])
+        try:
+            return str(jr["state"])
+        except KeyError:
+            # for family backends the response dictionary is different
+            # {"<device_name>": <state>}
+            return str(jr)
 
     @property
     def backend_info(self) -> Optional[BackendInfo]:
