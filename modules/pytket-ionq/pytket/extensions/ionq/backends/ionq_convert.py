@@ -13,10 +13,10 @@
 # limitations under the License.
 
 from typing import Dict, Tuple, Any, List
+from numpy import pi
 from pytket.passes import RebaseCustom  # type: ignore
 from pytket._tket.circuit._library import _TK1_to_RzRx  # type: ignore
 from pytket.circuit import Circuit, OpType, Command  # type: ignore
-from numpy import pi
 
 
 ionq_multiqs = {
