@@ -1,6 +1,13 @@
 Changelog
 ~~~~~~~~~
 
+
+0.18.0 (Unreleased)
+-------------------
+
+* Retrieve device info from API, requires valid API token to initialize ``IonQBackend``.
+
+
 0.17.0 (April 2022)
 -------------------
 
@@ -66,4 +73,3 @@ Changelog
 ----------------
 
 * Contextual optimisation added to default compilation passes (except at optimisation level 0).
-
