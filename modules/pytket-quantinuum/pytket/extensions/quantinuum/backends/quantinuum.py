@@ -327,6 +327,7 @@ class QuantinuumBackend(Backend):
           to which this batch of circuits should be submitted. Job IDs can be
           retrieved from ResultHandle using ```backend.get_jobid(handle)```.
         * `close_batch`: boolean flag to close the batch after the last circuit
+        * `wasm_file_handler`: boolean flag to close the batch after the last circuit
         in the job, default=True.
         """
         circuits = list(circuits)
@@ -353,6 +354,10 @@ class QuantinuumBackend(Backend):
         group = kwargs.get("group")
         if group is not None:
             basebody["group"] = group
+
+        wasm_fh = kwargs.get("wasm_file_handler")
+        if wasm_fh is not None:
+            basebody["cfl"] = wasm_fh._wasm_file_encoded
 
         handle_list = []
         batch_exec: Union[int, str]
