@@ -685,6 +685,9 @@ class BraketBackend(Backend):
             else:
                 c0, ppcirc, ppcirc_rep = circ, None, None
             bkcirc, measures = self._to_bkcirc(c0)
+            # maps to index of measured qubits in the circuit
+            # this is necessary because qubit number doesn't map to index for Rigetti
+            measures = {k: self._all_qubits.index(v) for k, v in measures.items()}
             if want_state:
                 bkcirc.add_result_type(ResultType.StateVector())
             if want_dm:
@@ -739,6 +742,7 @@ class BraketBackend(Backend):
         if self._device_type == _DeviceType.LOCAL:
             return CircuitStatus(StatusEnum.COMPLETED)
         task_id, target_qubits, measures, want_state, want_dm, ppcirc_str = handle
+
         ppcirc_rep = json.loads(ppcirc_str)
         ppcirc = Circuit.from_dict(ppcirc_rep) if ppcirc_rep is not None else None
         task = AwsQuantumTask(task_id, aws_session=self._aws_session)
