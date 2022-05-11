@@ -31,8 +31,14 @@ REASON = "PYTKET_RUN_REMOTE_TESTS not set (requires configuration of IoNQ API ke
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_small_circuit_ionq() -> None:
-    backend = IonQBackend(device_name="simulator", label="test 1")
+@pytest.mark.parametrize(
+    "authenticated_ionq_backend", [{"label": "test 1"}], indirect=True
+)
+def test_small_circuit_ionq(
+    authenticated_ionq_backend: IonQBackend,
+) -> None:
+    backend = authenticated_ionq_backend
+    # backend = IonQBackend(device_name="simulator", label="test 1")
 
     qc = Circuit(3, 3)
     qc.H(0)
@@ -50,8 +56,13 @@ def test_small_circuit_ionq() -> None:
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_big_circuit_ionq() -> None:
-    backend = IonQBackend(device_name="simulator", label="test 2")
+@pytest.mark.parametrize(
+    "authenticated_ionq_backend", [{"label": "test 2"}], indirect=True
+)
+def test_big_circuit_ionq(
+    authenticated_ionq_backend: IonQBackend,
+) -> None:
+    backend = authenticated_ionq_backend
     circ = Circuit(4)
     circ.X(0).Y(0).Z(0).H(1).S(1).Sdg(1).H(1).T(2).Tdg(2).V(3).Vdg(3)
     circ.SWAP(0, 1)
@@ -70,8 +81,13 @@ def test_invalid_token() -> None:
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_invalid_request() -> None:
-    b = IonQBackend(device_name="simulator", label="test 4")
+@pytest.mark.parametrize(
+    "authenticated_ionq_backend", [{"label": "test 4"}], indirect=True
+)
+def test_invalid_request(
+    authenticated_ionq_backend: IonQBackend,
+) -> None:
+    b = authenticated_ionq_backend
     c = Circuit(2, 2).H(0).CZ(0, 1)
     c.measure_all()
     with pytest.raises(CircuitNotValidError) as excinfo:
@@ -93,8 +109,13 @@ def test_machine_debug() -> None:
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_cancellation() -> None:
-    b = IonQBackend(device_name="simulator", label="test 6")
+@pytest.mark.parametrize(
+    "authenticated_ionq_backend", [{"label": "test 6"}], indirect=True
+)
+def test_cancellation(
+    authenticated_ionq_backend: IonQBackend,
+) -> None:
+    b = authenticated_ionq_backend
 
     qc = Circuit(3, 3)
     qc.H(0)
@@ -123,8 +144,13 @@ def test_default_pass() -> None:
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_postprocess() -> None:
-    b = IonQBackend(device_name="simulator", label="test 7")
+@pytest.mark.parametrize(
+    "authenticated_ionq_backend", [{"label": "test 7"}], indirect=True
+)
+def test_postprocess(
+    authenticated_ionq_backend: IonQBackend,
+) -> None:
+    b = authenticated_ionq_backend
     assert b.supports_contextual_optimisation
     c = Circuit(2, 2)
     c.Rx(0.1, 0)
@@ -186,5 +212,7 @@ def test_nshots_ionq() -> None:
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_retrieve_available_devices() -> None:
-    backend_infos = IonQBackend.available_devices()
+    backend_infos = IonQBackend.available_devices(
+        api_key=os.getenv("PYTKET_REMOTE_IONQ_API_KEY")
+    )
     assert len(backend_infos) > 0
