@@ -355,11 +355,6 @@ class IonQBackend(Backend):
                 ppcirc = (
                     Circuit.from_dict(ppcirc_rep) if ppcirc_rep is not None else None
                 )
-                print(ppcirc)
-                ppcirc_rep = json.loads(cast(str, handle[3]))
-                ppcirc = (
-                    Circuit.from_dict(ppcirc_rep) if ppcirc_rep is not None else None
-                )
                 if handle in self._cache:
                     self._cache[handle].update(
                         {"result": BackendResult(counts=tket_counts, ppcirc=ppcirc)}
