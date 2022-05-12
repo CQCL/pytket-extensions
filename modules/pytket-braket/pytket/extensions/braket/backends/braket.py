@@ -745,7 +745,7 @@ class BraketBackend(Backend):
         state = task.state()
         if state == "FAILED":
             return CircuitStatus(StatusEnum.ERROR, task.metadata()["failureReason"])
-        elif state == "CANCELLED":
+        elif state in ["CANCELLED", "CANCELLING"]:
             return CircuitStatus(StatusEnum.CANCELLED)
         elif state == "COMPLETED":
             self._update_cache_result(
