@@ -316,7 +316,9 @@ class BraketBackend(Backend):
                 "arn:aws:braket:"
                 + region
                 + "::"
-                + "/".join(["device", device_type, provider, device],),
+                + "/".join(
+                    ["device", device_type, provider, device],
+                ),
                 aws_session=self._aws_session,
             )
             self._s3_dest = (s3_bucket, s3_folder)
@@ -380,7 +382,11 @@ class BraketBackend(Backend):
         if self._device_type == _DeviceType.QPU:
             self._characteristics = props["provider"]
         self._backend_info = self._get_backend_info(
-            arch, device, self._singleqs, self._multiqs, self._characteristics,
+            arch,
+            device,
+            self._singleqs,
+            self._multiqs,
+            self._characteristics,
         )
 
         paradigm = props["paradigm"]
@@ -402,9 +408,14 @@ class BraketBackend(Backend):
             self._req_preds.append(ConnectivityPredicate(arch))
 
         self._rebase_pass = RebaseCustom(
-            self._multiqs | self._singleqs, Circuit(), _TK1_to_RzRx,
+            self._multiqs | self._singleqs,
+            Circuit(),
+            _TK1_to_RzRx,
         )
-        self._squash_pass = SquashCustom(self._singleqs, _TK1_to_RzRx,)
+        self._squash_pass = SquashCustom(
+            self._singleqs,
+            _TK1_to_RzRx,
+        )
 
     @staticmethod
     def _get_gate_set(
@@ -835,7 +846,11 @@ class BraketBackend(Backend):
             if device_type == _DeviceType.QPU:
                 characteristics = props["provider"]
             backend_info = cls._get_backend_info(
-                arch, device["deviceName"], singleqs, multiqs, characteristics,
+                arch,
+                device["deviceName"],
+                singleqs,
+                multiqs,
+                characteristics,
             )
             backend_infos.append(backend_info)
         return backend_infos
