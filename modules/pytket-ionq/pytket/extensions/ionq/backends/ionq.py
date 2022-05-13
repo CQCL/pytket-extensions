@@ -338,7 +338,6 @@ class IonQBackend(Backend):
             if statenum is StatusEnum.COMPLETED:
                 tket_counts: Counter = Counter()
                 ionq_counts = resp["data"]["histogram"]
-                # seed(13)
                 ionq_samples = choices(
                     list(ionq_counts.keys()), list(ionq_counts.values()), k=n_shots
                 )
