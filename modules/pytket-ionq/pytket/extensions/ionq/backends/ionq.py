@@ -15,6 +15,7 @@
 from typing import Dict, cast, Optional, List, Sequence, Union, Counter, Any
 import json
 import time
+from random import choices
 from ast import literal_eval
 from requests import post, get, put
 from pytket.backends import Backend, ResultHandle, CircuitStatus, StatusEnum
@@ -335,27 +336,20 @@ class IonQBackend(Backend):
             status = resp["status"]
             statenum = _STATUS_MAP.get(status)  # type: ignore
             if statenum is StatusEnum.COMPLETED:
-                ionq_counts = resp["data"]["histogram"]
                 tket_counts: Counter = Counter()
-                # reverse engineer counts. Imprecise, due to rounding.
-                max_counts = 0
-                max_array = None
-                for outcome_key, prob in ionq_counts.items():
+                ionq_counts = resp["data"]["histogram"]
+                ionq_samples = choices(
+                    list(ionq_counts.keys()), list(ionq_counts.values()), k=n_shots
+                )
+                ionq_counter = Counter(ionq_samples)
+                for outcome_key, sample_count in ionq_counter.items():
                     array = OutcomeArray.from_ints(
                         ints=[int(outcome_key)],
                         width=int(resp["qubits"]),
                         big_endian=False,
                     )
                     array = array.choose_indices(measure_permutations)
-                    array_counts = round(n_shots * float(prob))
-                    tket_counts[array] = array_counts
-                    if array_counts > max_counts:
-                        max_counts = array_counts
-                        max_array = array
-                # account for rounding error
-                sum_counts = sum(tket_counts.values())
-                diff = n_shots - sum_counts
-                tket_counts[max_array] += diff
+                    tket_counts[array] = sample_count
                 ppcirc_rep = json.loads(cast(str, handle[3]))
                 ppcirc = (
                     Circuit.from_dict(ppcirc_rep) if ppcirc_rep is not None else None
