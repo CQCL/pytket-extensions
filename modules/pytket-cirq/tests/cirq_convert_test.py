@@ -65,6 +65,7 @@ def get_match_circuit(cirq_qubit_type="LineQubit") -> cirq.Circuit:
     )
     return circ
 
+
 @pytest.mark.parametrize("cirq_qubit_type", ["LineQubit", "GridQubit", "NamedQubit"])
 def test_conversions(cirq_qubit_type) -> None:
     circ = get_match_circuit(cirq_qubit_type=cirq_qubit_type)
@@ -115,4 +116,3 @@ def test_unsupported_qubit_type() -> None:
     with pytest.raises(NotImplementedError) as error:
         cirq_to_tk(circ)
         assert "Cannot convert qubits of type" in str(error.value)
-

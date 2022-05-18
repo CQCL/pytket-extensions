@@ -20,13 +20,13 @@ Devices
 from typing import List, Dict, FrozenSet, cast, Any, Union
 import cmath
 from logging import warning
+import re
 from cirq.devices import LineQubit, GridQubit
 import cirq.ops
 import cirq_google
 from pytket.circuit import Circuit, OpType, Qubit, Bit, Node  # type: ignore
 from pytket.architecture import Architecture  # type: ignore
 from sympy import pi, Basic, Symbol  # type: ignore
-import re
 
 # For translating cirq circuits to tket circuits
 cirq_common = cirq.ops.common_gates
@@ -169,8 +169,8 @@ def cirq_to_tk(circuit: cirq.circuits.Circuit) -> Circuit:
                     ) from error
                 params: List[Union[float, Basic, Symbol]] = []
             elif isinstance(gate, cirq_common.MeasurementGate):
-                # Adding "_b" to the bit uid since for cirq.NamedQubit, the gate.key is equal
-                # to the qubit id (the qubit name)
+                # Adding "_b" to the bit uid since for cirq.NamedQubit,
+                # the gate.key is equal to the qubit id (the qubit name)
                 uid = Bit(gate.key + "_b")
                 tkcirc.add_bit(uid)
                 tkcirc.Measure(*qb_lst, uid)
