@@ -48,10 +48,6 @@ def test_small_circuit_ionq(
     qc.Measure(2, 2)
     qc = backend.get_compiled_circuit(qc)
     counts = backend.run_circuit(qc, n_shots=1000).get_counts()
-    # note that we are rebuilding counts from probabilities, which are
-    # floats, and therefore count number is not always preserved!
-    assert counts[(0, 0, 0)] > 498 and counts[(0, 0, 0)] < 502
-    assert counts[(0, 1, 1)] > 498 and counts[(0, 1, 1)] < 502
     assert sum(counts.values()) == 1000
 
 
