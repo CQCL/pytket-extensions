@@ -33,6 +33,7 @@ from pytket.backends import (
     CircuitStatus,
     StatusEnum,
 )
+from pytket.backends.backend import ResultHandleTypeError
 from pytket.extensions.qiskit import (
     IBMQBackend,
     AerBackend,
@@ -698,7 +699,7 @@ def test_aer_result_handle() -> None:
 
     assert len(b.get_result(handles[0]).get_shots()) == 2
 
-    with pytest.raises(TypeError) as errorinfo:
+    with pytest.raises(ResultHandleTypeError) as errorinfo:
         _ = b.get_result(ResultHandle("43"))
     assert "ResultHandle('43',) does not match expected identifier types" in str(
         errorinfo.value
