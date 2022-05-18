@@ -101,8 +101,8 @@ if ! (unsupported ${MODULE}) ; then
             dotnet iqsharp install --user
         fi
 
-        # Disable the remote tests for pytket-aqt, -ionq, and -qsharp for now
-        if [[ "${MODULE}" = "pytket-aqt" || "${MODULE}" = "pytket-ionq" || "${MODULE}" = "pytket-qsharp" ]]; then
+        # Disable the remote tests for pytket-aqt and -qsharp for now
+        if [[ "${MODULE}" = "pytket-aqt" || "${MODULE}" = "pytket-qsharp" ]]; then
             unset PYTKET_RUN_REMOTE_TESTS; pytest --doctest-modules
         else
             pytest --doctest-modules
