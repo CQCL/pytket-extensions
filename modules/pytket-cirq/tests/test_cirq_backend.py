@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
 from collections import Counter
 from typing import List
 import math
@@ -27,7 +28,9 @@ from pytket.extensions.cirq.backends.cirq import (
     _CirqSimBackend,
     _CirqBaseBackend,
 )
-from pytket.circuit import Circuit, Qubit, Bit  # type: ignore
+from pytket.circuit import Circuit, Qubit, Bit, OpType  # type: ignore
+from pytket.backends import StatusEnum
+from pytket.predicates import GateSetPredicate
 from cirq.contrib.noise_models import DepolarizingNoiseModel  # type: ignore
 
 
@@ -35,6 +38,7 @@ def test_blank_wires() -> None:
     backends: List[_CirqBaseBackend] = [
         CirqDensityMatrixSimBackend(),
         CirqStateSimBackend(),
+        CirqCliffordSimBackend(),
     ]
     for b in backends:
         assert b.get_result(b.process_circuit(Circuit(2).X(0))).q_bits == {
@@ -65,7 +69,7 @@ def test_blank_wires() -> None:
         ).c_bits == {Bit(1): 0}
 
 
-def test_moment_backends() -> None:
+def test_moment_dm_backend() -> None:
     b: _CirqSimBackend = CirqDensityMatrixSimBackend()
     all_res = b.get_result(
         b.process_circuit_moments(Circuit(1, 1).X(0).X(0).X(0).X(0).X(0))
@@ -82,7 +86,17 @@ def test_moment_backends() -> None:
         == all_res[3].get_density_matrix()[0][0]  # type: ignore
         == 1
     )
-    b = CirqStateSimBackend()
+
+
+@pytest.mark.parametrize(
+    "cirq_backend",
+    [
+        CirqStateSimBackend(),
+        CirqCliffordSimBackend(),
+    ]
+)
+def test_moment_state_backends(cirq_backend: _CirqBaseBackend) -> None:
+    b: _CirqSimBackend = cirq_backend
     all_res = b.get_result(
         b.process_circuit_moments(Circuit(1, 1).X(0).X(0).X(0).X(0).X(0))
     )
@@ -97,21 +111,34 @@ def test_moment_backends() -> None:
         == all_res[3].get_state()[0]  # type: ignore
         == 1
     )
-    b = CirqCliffordSimBackend()
-    all_res = b.get_result(
-        b.process_circuit_moments(Circuit(1, 1).X(0).X(0).X(0).X(0).X(0))
-    )
-    assert (
-        all_res[0].get_state()[1]  # type: ignore
-        == all_res[2].get_state()[1]  # type: ignore
-        == all_res[4].get_state()[1]  # type: ignore
-        == 1
-    )
-    assert (
-        all_res[1].get_state()[0]  # type: ignore
-        == all_res[3].get_state()[0]  # type: ignore
-        == 1
-    )
+
+
+@pytest.mark.parametrize(
+    "cirq_backend, optimisation_level",
+    [
+        *[(CirqDensityMatrixSimBackend(), i) for i in range(3)],
+        *[(CirqDensityMatrixSampleBackend(), i) for i in range(3)],
+        *[(CirqStateSimBackend(), i) for i in range(3)],
+        *[(CirqStateSampleBackend(), i) for i in range(3)],
+        *[(CirqCliffordSimBackend(), i) for i in range(3)],
+        *[(CirqCliffordSampleBackend(), i) for i in range(3)],
+    ],
+)
+def test_default_pass(cirq_backend: _CirqBaseBackend, optimisation_level: int) -> None:
+    b = cirq_backend
+    comp_pass = b.default_compilation_pass(optimisation_level)
+    c = Circuit(3, 3)
+    c.H(0)
+    c.CX(0, 1)
+    c.CSWAP(1, 0, 2)
+    c.ZZPhase(0.84, 2, 0)
+    c.measure_all()
+    comp_pass.apply(c)
+    for pred in b.required_predicates:
+        if (isinstance(cirq_backend, CirqCliffordSimBackend) or isinstance(cirq_backend, CirqCliffordSampleBackend)) and isinstance(pred, GateSetPredicate):
+            assert not pred.verify(c)
+        else:
+            assert pred.verify(c)
 
 
 def test_state() -> None:
@@ -141,62 +168,53 @@ def test_density_matrix() -> None:
     )
 
 
-def test_shots_counts_cirq_state_sample_simulator() -> None:
-    b = CirqStateSampleBackend()
-    assert b.supports_shots
-    c = Circuit(2).H(0).CX(0, 1).measure_all()
+@pytest.mark.parametrize(
+    "cirq_backend",
+    [
+        CirqDensityMatrixSampleBackend(),
+        CirqStateSampleBackend(),
+        CirqCliffordSampleBackend(),
+    ]
+)
+def test_sample_backends_handles(cirq_backend: _CirqBaseBackend) -> None:
+    b = cirq_backend
+    c = Circuit(2, 2)
+    c.H(0)
+    c.CX(0, 1)
+    c.measure_all()
     c = b.get_compiled_circuit(c)
-    n_shots = 100
-    h0, h1 = b.process_circuits([c, c], n_shots)
-    res0 = b.get_result(h0)
-    readouts = res0.get_shots()
-    assert all(readout[0] == readout[1] for readout in readouts)
-    res1 = b.get_result(h1)
-    counts = res1.get_counts()
-    assert len(counts) <= 2
+    n_shots = 5
+    res = b.run_circuit(c, n_shots=n_shots, timeout=30)
+    shots = res.get_shots()
+    assert len(shots) == n_shots
+    counts = res.get_counts()
     assert sum(counts.values()) == n_shots
+    handles = b.process_circuits([c, c], n_shots=n_shots)
+    assert len(handles) == 2
+    for handle in handles:
+        assert b.circuit_status(handle).status in [
+            StatusEnum.COMPLETED,
+        ]
+    results = b.get_results(handles)
+    for handle in handles:
+        assert b.circuit_status(handle).status == StatusEnum.COMPLETED
+    for result in results:
+        assert result.get_shots().shape == (n_shots, 2)
 
-    # Circuit with unused qubits
-    c = Circuit(3, 2).H(1).CX(1, 2).measure_all()
-    c = b.get_compiled_circuit(c)
-    h = b.process_circuit(c, 1)
-    res = b.get_result(h)
-    readout = res.get_shots()[0]
-    assert readout[1] == readout[2]
 
-
-def test_shots_counts_cirq_dm_sample_simulator() -> None:
-    b = CirqDensityMatrixSampleBackend()
-
+@pytest.mark.parametrize(
+    "cirq_sample_backend",
+    [CirqStateSampleBackend(),
+     CirqDensityMatrixSampleBackend(),
+     CirqCliffordSampleBackend()],
+)
+def test_shots_counts_cirq_sample_simulators(
+    cirq_sample_backend: _CirqSimBackend
+) -> None:
+    b = cirq_sample_backend
     assert b.supports_shots
     c = Circuit(2).H(0).CX(0, 1).measure_all()
     c = b.get_compiled_circuit(c)
-    n_shots = 100
-    h0, h1 = b.process_circuits([c, c], n_shots)
-    res0 = b.get_result(h0)
-    readouts = res0.get_shots()
-    assert all(readout[0] == readout[1] for readout in readouts)
-    res1 = b.get_result(h1)
-    counts = res1.get_counts()
-    assert len(counts) <= 2
-    assert sum(counts.values()) == n_shots
-
-    # Circuit with unused qubits
-    c = Circuit(3, 2).H(1).CX(1, 2).measure_all()
-    c = b.get_compiled_circuit(c)
-    h = b.process_circuit(c, 1)
-    res = b.get_result(h)
-    readout = res.get_shots()[0]
-    assert readout[1] == readout[2]
-
-
-def test_shots_counts_cirq_clifford_sample_simulator() -> None:
-    b = CirqCliffordSampleBackend()
-
-    assert b.supports_shots
-    c = Circuit(2).H(0).CX(0, 1).measure_all()
-    c = b.get_compiled_circuit(c)
-    assert b.valid_circuit(c)
     n_shots = 100
     h0, h1 = b.process_circuits([c, c], n_shots)
     res0 = b.get_result(h0)
@@ -260,3 +278,65 @@ def test_shots_bits_edgecases(n_shots, n_bits) -> None:
     assert np.array_equal(res.get_shots(), correct_shots)
     assert res.get_shots().shape == correct_shape
     assert res.get_counts() == correct_counts
+
+
+@pytest.mark.parametrize(
+    "cirq_backend",
+    [
+        CirqStateSimBackend(),
+        CirqDensityMatrixSimBackend(),
+        # CirqCliffordSimBackend()
+    ],
+)
+
+
+def test_qubit_readout(cirq_backend: _CirqSimBackend) -> None:
+    b = cirq_backend
+    c = Circuit(3, 2).X(1).X(2)
+    c.add_gate(OpType.Measure, [Qubit(0), Bit(1)])
+    c.add_gate(OpType.Measure, [Qubit(2), Bit(0)])
+    res = b.get_result(b.process_circuit(c))
+    c0 = c.qubit_readout[Qubit(0)]
+    c2 = c.qubit_readout[Qubit(2)]
+
+
+def test_measurement_multiple_classical_bits() -> None:
+    b = CirqStateSimBackend()
+    c = Circuit(3, 2).X(1).X(2)
+    c.add_gate(OpType.Measure, [Qubit(2), Bit(1)])
+    c.add_gate(OpType.Measure, [Qubit(2), Bit(0)])
+    with pytest.raises(ValueError) as multiple_cbits_error:
+        b.process_circuit(c)
+        assert "measurement assigned to multiple classical bits" in str(multiple_cbits_error.value)
+
+
+@pytest.mark.parametrize(
+    "cirq_backend",
+    [
+        CirqStateSimBackend(),
+        CirqDensityMatrixSimBackend(),
+        CirqCliffordSimBackend()
+    ],
+)
+def test_invalid_n_shots_in_sim_backends(cirq_backend: _CirqSimBackend) -> None:
+    b = cirq_backend
+    with pytest.raises(ValueError) as n_shots_error:
+        b.process_circuit(Circuit(1).X(0), n_shots=10)
+        assert "argument is invalid" in str(n_shots_error.value)
+
+
+@pytest.mark.parametrize(
+    "cirq_backend",
+    [
+        CirqDensityMatrixSampleBackend(),
+        CirqDensityMatrixSimBackend(),
+        CirqStateSampleBackend(),
+        CirqStateSimBackend(),
+        CirqCliffordSampleBackend(),
+        CirqCliffordSimBackend(),
+    ],
+)
+def test_backend_info_and_characterisation_are_none(cirq_backend: _CirqBaseBackend) -> None:
+    b = cirq_backend
+    assert b.backend_info == None
+    assert b.characterisation == None

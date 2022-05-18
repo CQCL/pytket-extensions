@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
 from pytket import OpType  # type: ignore
 from pytket.extensions.cirq import cirq_to_tk, tk_to_cirq, process_characterisation
 from pytket.architecture import Architecture  # type: ignore
@@ -21,8 +22,13 @@ import cirq_google
 from cirq.circuits import InsertStrategy
 
 
-def get_match_circuit() -> cirq.Circuit:
-    qubits = [cirq.LineQubit(i) for i in range(9)]
+def get_match_circuit(cirq_qubit_type="LineQubit") -> cirq.Circuit:
+    if cirq_qubit_type == "LineQubit":
+        qubits = [cirq.LineQubit(i) for i in range(9)]
+    if cirq_qubit_type == "GridQubit":
+        qubits = cirq.GridQubit.square(3)
+    if cirq_qubit_type == "NamedQubit":
+        qubits = cirq.NamedQubit.range(9, prefix="cirq")
 
     g = cirq.CZPowGate(exponent=0.1)
     zz = cirq.ZZPowGate(exponent=0.3)
@@ -59,9 +65,9 @@ def get_match_circuit() -> cirq.Circuit:
     )
     return circ
 
-
-def test_conversions() -> None:
-    circ = get_match_circuit()
+@pytest.mark.parametrize("cirq_qubit_type", ["LineQubit", "GridQubit", "NamedQubit"])
+def test_conversions(cirq_qubit_type) -> None:
+    circ = get_match_circuit(cirq_qubit_type=cirq_qubit_type)
     coms = cirq_to_tk(circ)
 
     cirq_false = tk_to_cirq(coms, copy_all_qubits=False)
@@ -85,9 +91,28 @@ def test_device() -> None:
     assert str(arc) == "<tket::Architecture, nodes=54>"
 
 
-def test_parallel_ops() -> None:
-    q0, q1, q2 = [cirq.LineQubit(i) for i in range(3)]
+@pytest.mark.parametrize("cirq_qubit_type", ["LineQubit", "GridQubit", "NamedQubit"])
+def test_parallel_ops(cirq_qubit_type) -> None:
+    if cirq_qubit_type == "LineQubit":
+        q0, q1, q2 = [cirq.LineQubit(i) for i in range(3)]
+    if cirq_qubit_type == "GridQubit":
+        q0, q1, q2 = cirq.GridQubit.rect(rows=1, cols=3)
+    if cirq_qubit_type == "NamedQubit":
+        q0, q1, q2 = cirq.NamedQubit.range(3, prefix="cirq")
     circ = cirq.Circuit([cirq.ops.ParallelGate(cirq.Y**0.3, 3).on(q0, q1, q2)])
     c_tk = cirq_to_tk(circ)
     assert c_tk.n_gates_of_type(OpType.Ry) == 3
     assert c_tk.n_gates == 3
+
+
+def test_unsupported_qubit_type() -> None:
+    qdit = cirq.LineQid(1, dimension=2)
+    circ = cirq.Circuit(
+        [
+            cirq.H(qdit),
+        ]
+    )
+    with pytest.raises(NotImplementedError) as error:
+        cirq_to_tk(circ)
+        assert "Cannot convert qubits of type" in str(error.value)
+
