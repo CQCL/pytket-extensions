@@ -93,8 +93,9 @@ class IQMBackend(Backend):
         url: str,
         settings: PathLike,
         arch: Optional[List[Tuple[str, str]]] = None,
+        auth_server_url: Optional[str] = None,
         username: Optional[str] = None,
-        api_key: Optional[str] = None,
+        password: Optional[str] = None,
     ):
         """
         Construct a new IQM backend.
@@ -108,26 +109,33 @@ class IQMBackend(Backend):
         :param arch: list of couplings between the qubits defined in the device settings
             (default: [("QB1", "QB3"), ("QB2", "QB3"), ("QB4", "QB3"), ("QB5", "QB3")],
             i.e. a 5-qubit star topology centred on "QB3")
+        :param auth_server_url: base URL of authentication server
         :param username: IQM username
-        :param api_key: IQM API key
+        :param password: IQM password
         """
         super().__init__()
         self._url = url
         config = IQMConfig.from_default_config_file()
 
+        if auth_server_url is None:
+            auth_server_url = config.auth_server_url
         if username is None:
             username = config.username
         if username is None:
             raise IqmAuthenticationError()
-        if api_key is None:
-            api_key = config.api_key
-        if api_key is None:
+        if password is None:
+            password = config.password
+        if password is None:
             raise IqmAuthenticationError()
 
         with open(settings) as f:
             settings_json = json.load(f)
         self._client = IQMClient(
-            self._url, settings=settings_json, username=username, api_key=api_key
+            self._url,
+            settings_json,
+            auth_server_url=auth_server_url,
+            username=username,
+            password=password,
         )
         self._qubits = [
             _as_node(qb)

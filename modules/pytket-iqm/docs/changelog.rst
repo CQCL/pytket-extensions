@@ -4,6 +4,8 @@ Changelog
 0.4.0 (May 2022)
 ----------------
 
+* IQMBackend initializer now requires an authentication server URL, which may be
+  stored in config.
 * Updated pytket version requirement to 1.2.
 
 0.3.0 (April 2022)

@@ -22,7 +22,9 @@ from pytket.extensions.iqm import IQMBackend
 def fixture_authenticated_iqm_backend() -> IQMBackend:
     # Authenticated IQMBackend used for the remote tests
     # The credentials are taken from the env variables:
-    # PYTKET_REMOTE_IQM_USERNAME and PYTKET_REMOTE_IQM_APIKEY
+    # - PYTKET_REMOTE_IQM_AUTH_SERVER_URL
+    # - PYTKET_REMOTE_IQM_USERNAME
+    # - PYTKET_REMOTE_IQM_APIKEY
 
     # By default, the backend is created with the device settings in
     # pytket-iqm/tests/demo_settings.json
@@ -30,6 +32,7 @@ def fixture_authenticated_iqm_backend() -> IQMBackend:
     return IQMBackend(
         settings=curr_file_path / "demo_settings.json",
         url="https://cortex-demo.qc.iqm.fi/",
+        auth_server_url=os.getenv("PYTKET_REMOTE_IQM_AUTH_SERVER_URL"),
         username=os.getenv("PYTKET_REMOTE_IQM_USERNAME"),
-        api_key=os.getenv("PYTKET_REMOTE_IQM_APIKEY"),
+        password=os.getenv("PYTKET_REMOTE_IQM_APIKEY"),
     )
