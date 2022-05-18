@@ -1,11 +1,12 @@
 Changelog
 ~~~~~~~~~
 
-0.3.0 (UNRELEASED)
-----------
+0.3.0 (May 2022)
+----------------
 
 * ``QuantinuumBackend.cost_estimate`` deprecated, new ``QuantinuumBackend.cost``
   method now uses the syntax checker devices to directly return the cost.
+* Updated pytket version requirement to 1.2.
 
 0.2.0 (April 2022)
 ------------------
