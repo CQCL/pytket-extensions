@@ -40,7 +40,8 @@ setup(
     include_package_data=True,
     install_requires=[
         "pytket ~= 1.1",
-        "pyquil ~= 3.0",
+        "pyquil ~= 3.1",
+        "qcs-api-client < 0.20.14",
         "typing-extensions ~= 3.7",
     ],
     classifiers=[
