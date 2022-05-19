@@ -22,6 +22,7 @@ from collections import Counter
 from hypothesis import given, strategies
 import numpy as np
 import pytest
+from pytket.backends.backend import ResultHandleTypeError
 from pytket.backends.backend_exceptions import CircuitNotRunError
 from pytket.backends.status import StatusEnum
 from pytket.extensions.projectq import ProjectQBackend  # type: ignore
@@ -154,7 +155,7 @@ def test_resulthandle() -> None:
     assert ids[0] != ids[1]
     assert len(b.get_result(handles[0]).get_state()) == (1 << 4)
     assert b.circuit_status(handles[1]).status == StatusEnum.COMPLETED
-    with pytest.raises(TypeError) as errorinfo:
+    with pytest.raises(ResultHandleTypeError) as errorinfo:
         _ = b.get_result(ResultHandle("43", 5))
     assert "ResultHandle('43', 5) does not match expected identifier types" in str(
         errorinfo.value
