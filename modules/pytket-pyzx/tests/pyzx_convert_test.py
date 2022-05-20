@@ -104,7 +104,7 @@ def test_placed_circ_tests() -> None:
 
     assert pytket_circ_2.qubits == c.qubits
 
-    state = c.get_statevector()    
+    state = c.get_statevector()
     state2 = pytket_circ_2.get_statevector()
     assert np.allclose(state, state2, atol=1e-10)
 
@@ -127,9 +127,9 @@ def test_placed_circ_tests_2() -> None:
 
     g_place = GraphPlacement(arc)
 
-    aas_pass = CXMappingPass(arc, g_place)
+    cx_pass = CXMappingPass(arc, g_place)
 
-    aas_pass.apply(c)
+    cx_pass.apply(c)
 
     _, pyzx_circ, inv_map = tk_to_pyzx_placed_circ(c, arc)
 
@@ -137,7 +137,6 @@ def test_placed_circ_tests_2() -> None:
 
     assert pytket_circ_2.qubits == c.qubits
 
-    state = c.get_statevector()    
+    state = c.get_statevector()
     state2 = pytket_circ_2.get_statevector()
     assert np.allclose(state, state2, atol=1e-10)
-
