@@ -20,7 +20,7 @@ from fractions import Fraction
 import pyzx as zx  # type: ignore
 from pyzx.circuit import Circuit as pyzxCircuit  # type: ignore
 from pyzx.routing.architecture import Architecture as PyzxArc  # type: ignore
-from pyzx.graph.graph import Graph as pyzxgraph  # type: ignore
+from pyzx.graph.graph import Graph as PyzxGraph  # type: ignore
 from pytket.circuit import OpType, Circuit, Op, Qubit, UnitID  # type: ignore
 from pytket.architecture import Architecture  # type: ignore
 
@@ -150,7 +150,7 @@ def tk_to_pyzx_arc(pytket_arc: Architecture) -> PyzxArc:
     :return: The converted pyzx Architecture
     """
 
-    arcgraph = pyzxgraph()
+    arcgraph = PyzxGraph()
     vertices = arcgraph.add_vertices(len(pytket_arc.nodes))
     arc_dict = dict()
 
@@ -214,7 +214,7 @@ def tk_to_pyzx_placed_circ(
 
     inv_q_map = {v: k for k, v in q_map.items()}
 
-    arcgraph = pyzxgraph()
+    arcgraph = PyzxGraph()
     vertices = arcgraph.add_vertices(len(pytket_arc.nodes))
     arc_dict = dict()
     qubit_dict = dict()
