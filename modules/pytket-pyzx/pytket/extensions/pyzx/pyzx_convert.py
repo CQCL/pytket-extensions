@@ -143,7 +143,7 @@ def tk_to_pyzx_arc(pytket_arc: Architecture) -> PyzxArc:
     :py:class:`pyzx.routing.architecture.Architecture` .
     The conversion will remove all the node names and will
     keep them only integer named in the order they are given
-    in the node set of the pytket.
+    in the node set of `pytket_arc`.
 
     :param pytket_arc: A Architecture to be converted
 
