@@ -137,7 +137,7 @@ def pyzx_to_tk(pyzx_circ: pyzxCircuit) -> Circuit:
     return c
 
 
-def pytket_to_pyzx_arc(pytket_arc: Architecture) -> pyzxarc:
+def tk_to_pyzx_arc(pytket_arc: Architecture) -> pyzxarc:
     """
     Convert a pytket :py:class:`Architecture` to a pyzx
     :py:class:`pyzx.routing.architecture.Architecture` .
@@ -169,7 +169,7 @@ def pytket_to_pyzx_arc(pytket_arc: Architecture) -> pyzxarc:
     return pyzx_arc
 
 
-def pyzx_to_pytket_arc(pyzx_arc: pyzxarc) -> Architecture:
+def pyzx_to_tk_arc(pyzx_arc: pyzxarc) -> Architecture:
     """
     Convert a pyzx :py:class:`pyzx.routing.architecture.Architecture`
     to a pytket :py:class:`Architecture` .
@@ -184,7 +184,7 @@ def pyzx_to_pytket_arc(pyzx_arc: pyzxarc) -> Architecture:
     return pytket_arc
 
 
-def pytket_to_pyzx_placed_circ(
+def tk_to_pyzx_placed_circ(
     pytket_circ: Circuit, pytket_arc: Architecture, denominator_limit: int = 1000000
 ) -> Tuple[pyzxarc, pyzxCircuit, Dict[UnitID, UnitID]]:
     """
@@ -193,7 +193,7 @@ def pytket_to_pyzx_placed_circ(
     :py:class:`pyzx.Circuit` and the
     :py:class:`pyzx.routing.architecture.Architecture`
     and a map to give the information for converting
-    this back to pytket using `pyzx_to_pytket_placed_circ`.
+    this back to pytket using `pyzx_to_tk_placed_circ`.
 
     :param pytket_circ: A circuit to be converted
     :param pytket_arc: Corresponding Architecture
@@ -240,7 +240,7 @@ def pytket_to_pyzx_placed_circ(
     return (pyzx_arc, pyzx_circ, inv_q_map)
 
 
-def pyzx_to_pytket_placed_circ(
+def pyzx_to_tk_placed_circ(
     pyzx_circ: pyzxCircuit, q_map: Dict[UnitID, UnitID]
 ) -> Circuit:
     """

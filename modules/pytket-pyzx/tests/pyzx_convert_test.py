@@ -15,10 +15,10 @@
 from pytket.extensions.pyzx import (
     tk_to_pyzx,
     pyzx_to_tk,
-    pytket_to_pyzx_arc,
-    pyzx_to_pytket_arc,
-    pytket_to_pyzx_placed_circ,
-    pyzx_to_pytket_placed_circ,
+    tk_to_pyzx_arc,
+    pyzx_to_tk_arc,
+    tk_to_pyzx_placed_circ,
+    pyzx_to_tk_placed_circ,
 )
 from pytket.circuit import Circuit, fresh_symbol  # type: ignore
 from pytket.architecture import Architecture  # type: ignore
@@ -74,10 +74,10 @@ def test_invalid_gate() -> None:
 @pytest.mark.filterwarnings("ignore:strict=False")
 def test_arc_conversion() -> None:
     arc = Architecture([[0, 1], [1, 2], [2, 3], [3, 4]])
-    arc_pyzx = pytket_to_pyzx_arc(arc)
-    arc_2 = pyzx_to_pytket_arc(arc_pyzx)
+    arc_pyzx = tk_to_pyzx_arc(arc)
+    arc_2 = pyzx_to_tk_arc(arc_pyzx)
     assert arc == arc_2
-    arc_pyzx_2 = pytket_to_pyzx_arc(arc_2)
+    arc_pyzx_2 = tk_to_pyzx_arc(arc_2)
     assert list(arc_pyzx.graph.edges()) == list(arc_pyzx_2.graph.edges())
     assert list(arc_pyzx.graph.vertices()) == list(arc_pyzx_2.graph.vertices())
 
@@ -98,9 +98,9 @@ def test_placed_circ_tests() -> None:
 
     aas_pass.apply(c)
 
-    _, pyzx_circ, inv_map = pytket_to_pyzx_placed_circ(c, arc)
+    _, pyzx_circ, inv_map = tk_to_pyzx_placed_circ(c, arc)
 
-    pytket_circ_2 = pyzx_to_pytket_placed_circ(pyzx_circ, inv_map)
+    pytket_circ_2 = pyzx_to_tk_placed_circ(pyzx_circ, inv_map)
 
     assert pytket_circ_2.qubits == c.qubits
 
@@ -127,8 +127,8 @@ def test_placed_circ_tests_2() -> None:
 
     aas_pass.apply(c)
 
-    _, pyzx_circ, inv_map = pytket_to_pyzx_placed_circ(c, arc)
+    _, pyzx_circ, inv_map = tk_to_pyzx_placed_circ(c, arc)
 
-    pytket_circ_2 = pyzx_to_pytket_placed_circ(pyzx_circ, inv_map)
+    pytket_circ_2 = pyzx_to_tk_placed_circ(pyzx_circ, inv_map)
 
     assert pytket_circ_2.qubits == c.qubits
