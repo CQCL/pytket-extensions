@@ -190,8 +190,9 @@ def tk_to_pyzx_placed_circ(
     a given :py:class:`Architecture` to a
     :py:class:`pyzx.Circuit` and the
     :py:class:`pyzx.routing.architecture.Architecture`
-    and a map to give the information for converting
-    this back to pytket using `pyzx_to_tk_placed_circ`.
+    and a map to give the information for converting the 
+    pyzx circuit back to pytket circuit using `pyzx_to_tk_placed_circ`
+    assigning each of the circuit qubits a one of the architecture nodes
 
     :param pytket_circ: A circuit to be converted
     :param pytket_arc: Corresponding Architecture
@@ -203,7 +204,9 @@ def tk_to_pyzx_placed_circ(
 
     :return: Tuple containing generated :py:class:`pyzx.Circuit` ,
         :py:class:`pyzx.routing.architecture.Architecture` and
-        map for conversion
+        a map to give the information for converting
+        the pyzx circuit back to pytket circuit using `pyzx_to_tk_placed_circ`
+        assigning each of the circuit qubits a one of the architecture nodes
 
     """
 
