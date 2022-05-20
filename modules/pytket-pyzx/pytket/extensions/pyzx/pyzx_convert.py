@@ -137,7 +137,7 @@ def pyzx_to_tk(pyzx_circ: pyzxCircuit) -> Circuit:
     return c
 
 
-def tk_to_pyzx_arc(pytket_arc: Architecture) -> PyzxArc:
+def tk_to_pyzx_arc(pytket_arc: Architecture, pyzx_arc_name: str = "") -> PyzxArc:
     """
     Convert a pytket :py:class:`Architecture` to a pyzx
     :py:class:`pyzx.routing.architecture.Architecture` .
@@ -146,6 +146,7 @@ def tk_to_pyzx_arc(pytket_arc: Architecture) -> PyzxArc:
     in the node set of `pytket_arc`.
 
     :param pytket_arc: A Architecture to be converted
+    :param pyzx_arc_name: Name of the architecture in pyzx
 
     :return: The converted pyzx Architecture
     """
@@ -164,7 +165,7 @@ def tk_to_pyzx_arc(pytket_arc: Architecture) -> PyzxArc:
 
     arcgraph.add_edges(edges)
 
-    pyzx_arc = PyzxArc("pyzx_arc", coupling_graph=arcgraph)
+    pyzx_arc = PyzxArc(pyzx_arc_name, coupling_graph=arcgraph)
 
     return pyzx_arc
 
@@ -185,7 +186,7 @@ def pyzx_to_tk_arc(pyzx_arc: PyzxArc) -> Architecture:
 
 
 def tk_to_pyzx_placed_circ(
-    pytket_circ: Circuit, pytket_arc: Architecture, denominator_limit: int = 1000000
+    pytket_circ: Circuit, pytket_arc: Architecture, denominator_limit: int = 1000000, pyzx_arc_name: str = ""
 ) -> Tuple[PyzxArc, pyzxCircuit, Dict[UnitID, UnitID]]:
     """
     Convert a (placed) tket :py:class:`Circuit` with
@@ -201,6 +202,7 @@ def tk_to_pyzx_placed_circ(
         floats to fractions. Smaller limits allow for correct representation of simple
         fractions with non-exact floating-point representations, while larger limits
         allow for more precise angles.
+    :param pyzx_arc_name: Name of the architecture in pyzx
 
     :return: Tuple containing generated :py:class:`pyzx.Circuit` ,
         :py:class:`pyzx.routing.architecture.Architecture` and
@@ -233,7 +235,7 @@ def tk_to_pyzx_placed_circ(
 
     arcgraph.add_edges(edges)
 
-    pyzx_arc = PyzxArc("pyzx_arc", coupling_graph=arcgraph)
+    pyzx_arc = PyzxArc(pyzx_arc_name, coupling_graph=arcgraph)
 
     pyzx_circ = tk_to_pyzx(simple_circ)
 
