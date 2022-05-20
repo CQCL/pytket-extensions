@@ -104,6 +104,10 @@ def test_placed_circ_tests() -> None:
 
     assert pytket_circ_2.qubits == c.qubits
 
+    state = c.get_statevector()    
+    state2 = pytket_circ_2.get_statevector()
+    assert np.allclose(state, state2, atol=1e-10)
+
 
 @pytest.mark.filterwarnings("ignore:strict=False")
 def test_placed_circ_tests_2() -> None:
@@ -132,3 +136,8 @@ def test_placed_circ_tests_2() -> None:
     pytket_circ_2 = pyzx_to_tk_placed_circ(pyzx_circ, inv_map)
 
     assert pytket_circ_2.qubits == c.qubits
+
+    state = c.get_statevector()    
+    state2 = pytket_circ_2.get_statevector()
+    assert np.allclose(state, state2, atol=1e-10)
+
