@@ -104,8 +104,7 @@ def tk_to_pyzx(tkcircuit: Circuit, denominator_limit: int = 1000000) -> pyzxCirc
 def pyzx_to_tk(pyzx_circ: pyzxCircuit) -> Circuit:
     """
     Convert a :py:class:`pyzx.Circuit` to a tket :py:class:`Circuit` .
-    All PyZX basic gate operations are currently supported by pytket. Run
-    `pyzx_circuit_name.to_basic_gates()` before conversion.
+    Run `pyzx_circuit_name.to_basic_gates()` before conversion.
 
     :param pyzx_circ: A circuit to be converted
 
@@ -246,8 +245,7 @@ def pyzx_to_tk_placed_circ(
     """
     Convert a :py:class:`pyzx.Circuit` and a placment map
     to a placed tket :py:class:`Circuit` .
-    All PyZX basic gate operations are currently supported by pytket. Run
-    `pyzx_circuit_name.to_basic_gates()` before conversion.
+    Run `pyzx_circuit_name.to_basic_gates()` before conversion.
 
     :param pyzx_circ: A circuit to be converted
     :param q_map: placment map
