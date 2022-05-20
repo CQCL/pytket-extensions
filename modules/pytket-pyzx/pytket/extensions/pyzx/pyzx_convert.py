@@ -235,7 +235,7 @@ def tk_to_pyzx_placed_circ(
 
     pyzx_arc = PyzxArc(pyzx_arc_name, coupling_graph=arcgraph)
 
-    pyzx_circ = tk_to_pyzx(simple_circ)
+    pyzx_circ = tk_to_pyzx(simple_circ, denominator_limit)
 
     return (pyzx_arc, pyzx_circ, inv_q_map)
 
