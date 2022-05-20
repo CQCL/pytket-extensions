@@ -180,9 +180,7 @@ def pyzx_to_tk_arc(pyzx_arc: PyzxArc) -> Architecture:
     :return: The converted pyzx Architecture
     """
 
-    pytket_arc = Architecture([tuple(s) for s in pyzx_arc.graph.edges()])
-
-    return pytket_arc
+    return Architecture([tuple(s) for s in pyzx_arc.graph.edges()])
 
 
 def tk_to_pyzx_placed_circ(
