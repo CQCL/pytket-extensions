@@ -19,7 +19,7 @@ from typing import Dict, Tuple
 from fractions import Fraction
 import pyzx as zx  # type: ignore
 from pyzx.circuit import Circuit as pyzxCircuit  # type: ignore
-from pyzx.routing.architecture import Architecture as pyzxarc  # type: ignore
+from pyzx.routing.architecture import Architecture as PyzxArc  # type: ignore
 from pyzx.graph.graph import Graph as pyzxgraph  # type: ignore
 from pytket.circuit import OpType, Circuit, Op, Qubit, UnitID  # type: ignore
 from pytket.architecture import Architecture  # type: ignore
@@ -137,7 +137,7 @@ def pyzx_to_tk(pyzx_circ: pyzxCircuit) -> Circuit:
     return c
 
 
-def tk_to_pyzx_arc(pytket_arc: Architecture) -> pyzxarc:
+def tk_to_pyzx_arc(pytket_arc: Architecture) -> PyzxArc:
     """
     Convert a pytket :py:class:`Architecture` to a pyzx
     :py:class:`pyzx.routing.architecture.Architecture` .
@@ -164,12 +164,12 @@ def tk_to_pyzx_arc(pytket_arc: Architecture) -> pyzxarc:
 
     arcgraph.add_edges(edges)
 
-    pyzx_arc = pyzxarc("pyzx_arc", coupling_graph=arcgraph)
+    pyzx_arc = PyzxArc("pyzx_arc", coupling_graph=arcgraph)
 
     return pyzx_arc
 
 
-def pyzx_to_tk_arc(pyzx_arc: pyzxarc) -> Architecture:
+def pyzx_to_tk_arc(pyzx_arc: PyzxArc) -> Architecture:
     """
     Convert a pyzx :py:class:`pyzx.routing.architecture.Architecture`
     to a pytket :py:class:`Architecture` .
@@ -186,7 +186,7 @@ def pyzx_to_tk_arc(pyzx_arc: pyzxarc) -> Architecture:
 
 def tk_to_pyzx_placed_circ(
     pytket_circ: Circuit, pytket_arc: Architecture, denominator_limit: int = 1000000
-) -> Tuple[pyzxarc, pyzxCircuit, Dict[UnitID, UnitID]]:
+) -> Tuple[PyzxArc, pyzxCircuit, Dict[UnitID, UnitID]]:
     """
     Convert a (placed) tket :py:class:`Circuit` with
     a given :py:class:`Architecture` to a
@@ -233,7 +233,7 @@ def tk_to_pyzx_placed_circ(
 
     arcgraph.add_edges(edges)
 
-    pyzx_arc = pyzxarc("pyzx_arc", coupling_graph=arcgraph)
+    pyzx_arc = PyzxArc("pyzx_arc", coupling_graph=arcgraph)
 
     pyzx_circ = tk_to_pyzx(simple_circ)
 
