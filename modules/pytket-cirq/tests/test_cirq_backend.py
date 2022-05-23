@@ -18,6 +18,7 @@ import math
 from hypothesis import given, strategies
 import numpy as np
 import pytest
+from _pytest.fixtures import FixtureRequest
 from pytket.extensions.cirq.backends.cirq import (
     CirqDensityMatrixSampleBackend,
     CirqDensityMatrixSimBackend,
@@ -32,6 +33,30 @@ from pytket.circuit import Circuit, Qubit, Bit, OpType  # type: ignore
 from pytket.backends import StatusEnum
 from pytket.predicates import GateSetPredicate
 from cirq.contrib.noise_models import DepolarizingNoiseModel  # type: ignore
+import cirq
+from pytket.extensions.cirq.backends.cirq_utils import _get_default_uids
+
+
+@pytest.fixture(
+    name="qubit_readout_circ", params=["LineQubit", "GridQubit", "NamedQubit"]
+)
+def fixture_qubit_readout_circ(request: FixtureRequest) -> Circuit:
+    qubits = []
+    if request.param is "LineQubit":
+        qubits = [Qubit("q", x) for x in range(4)]
+    if request.param is "GridQubit":
+        qubits = [Qubit("g", row=r, col=c) for r in range(2) for c in range(2)]
+    if request.param is "NamedQubit":
+        qubits = [Qubit("qubit" + str(x)) for x in range(4)]
+    circ = Circuit()
+    for q in qubits:
+        circ.add_qubit(q)
+    for i in range(4):
+        circ.X(qubits[i])
+    bit = Bit(0)
+    circ.add_bit(bit)
+    circ.Measure(qubits[-1], bit)
+    return circ
 
 
 def test_blank_wires() -> None:
@@ -145,9 +170,13 @@ def test_default_pass(cirq_backend: _CirqBaseBackend, optimisation_level: int) -
             assert pred.verify(c)
 
 
-def test_state() -> None:
+@pytest.mark.parametrize(
+    "cirq_backend",
+    [CirqStateSimBackend(), CirqCliffordSimBackend()],
+)
+def test_state_sim_backends(cirq_backend: _CirqSimBackend) -> None:
+    b = cirq_backend
     c0 = Circuit(2).H(0).CX(0, 1)
-    b = CirqStateSimBackend()
     state0 = b.run_circuit(c0).get_state()
     assert np.allclose(state0, [math.sqrt(0.5), 0, 0, math.sqrt(0.5)], atol=1e-10)
     c0.add_phase(0.5)
@@ -156,6 +185,29 @@ def test_state() -> None:
     assert np.allclose(
         b.run_circuit(Circuit(2).X(1)).get_state(), [0, 1.0, 0, 0], atol=1e-10
     )
+
+
+@pytest.mark.parametrize(
+    "cirq_backend",
+    [CirqStateSimBackend(), CirqCliffordSimBackend(), CirqDensityMatrixSimBackend()],
+)
+def test_sim_qubit_readout(
+    qubit_readout_circ: Circuit, cirq_backend: _CirqSimBackend
+) -> None:
+    b = cirq_backend
+    result = b.run_circuit(qubit_readout_circ)
+
+    expected_state = np.matrix([*[0] * 15, 1.0])
+    if isinstance(cirq_backend, CirqDensityMatrixSimBackend):
+        expected_state = expected_state.H * expected_state
+        result_state = result.get_density_matrix()
+    else:
+        result_state = result.get_state()
+
+    assert np.allclose(expected_state, result_state, atol=1e-10)
+    assert not result.contains_measured_results
+    assert result.contains_state_results
+    assert len(result.q_bits) == 4
 
 
 def test_density_matrix() -> None:
@@ -170,6 +222,14 @@ def test_density_matrix() -> None:
         np.array([[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0.5, 0.5], [0, 0, 0.5, 0.5]]),
         atol=1e-10,
     )
+    result = b.run_circuit(Circuit(2, 1).X(0).Measure(0, 0))
+    assert np.allclose(
+        result.get_density_matrix(),
+        np.array([[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 1, 0], [0, 0, 0, 0]]),
+        atol=1e-10,
+    )
+    assert not result.contains_measured_results
+    assert result.contains_state_results
 
 
 @pytest.mark.parametrize(
@@ -284,37 +344,6 @@ def test_shots_bits_edgecases(n_shots, n_bits) -> None:
     assert np.array_equal(res.get_shots(), correct_shots)
     assert res.get_shots().shape == correct_shape
     assert res.get_counts() == correct_counts
-
-
-@pytest.mark.parametrize(
-    "cirq_backend",
-    [
-        CirqStateSimBackend(),
-        CirqDensityMatrixSimBackend(),
-        # CirqCliffordSimBackend()
-    ],
-)
-def test_qubit_readout(cirq_backend: _CirqSimBackend) -> None:
-    b = cirq_backend
-    c = Circuit(3, 2).X(1).X(2)
-    c.add_gate(OpType.Measure, [Qubit(0), Bit(1)])
-    c.add_gate(OpType.Measure, [Qubit(2), Bit(0)])
-    # b.process_circuit() with qubit readouts not working
-    b.get_result(b.process_circuit(c))
-    # c0 = c.qubit_readout[Qubit(0)]
-    # c2 = c.qubit_readout[Qubit(2)]
-
-
-def test_measurement_multiple_classical_bits() -> None:
-    b = CirqStateSimBackend()
-    c = Circuit(3, 2).X(1).X(2)
-    c.add_gate(OpType.Measure, [Qubit(2), Bit(1)])
-    c.add_gate(OpType.Measure, [Qubit(2), Bit(0)])
-    with pytest.raises(ValueError) as multiple_cbits_error:
-        b.process_circuit(c)
-        assert "measurement assigned to multiple classical bits" in str(
-            multiple_cbits_error.value
-        )
 
 
 @pytest.mark.parametrize(

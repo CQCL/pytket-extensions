@@ -27,6 +27,7 @@ from cirq import ops
 from cirq.value import RANDOM_STATE_OR_SEED_LIKE
 from cirq.devices import NOISE_MODEL_LIKE
 from cirq.circuits import Circuit as CirqCircuit
+from cirq.qis import to_valid_state_vector
 
 from pytket.circuit import Circuit, OpType, Qubit  # type: ignore
 from pytket.transform import Transform  # type: ignore
@@ -377,7 +378,6 @@ class CirqStateSimBackend(_CirqSimBackend):
                 circuit.all_qubits()
             ),
         )
-
         return BackendResult(state=run.final_state_vector, q_bits=q_bits)
 
     def package_results(
@@ -478,7 +478,7 @@ class CirqCliffordSimBackend(_CirqSimBackend):
                 ).order_for(circuit.all_qubits()),
             ),
         )
-        return BackendResult(state=run.final_state_vector, q_bits=q_bits)
+        return BackendResult(state=run.final_state.state_vector(), q_bits=q_bits)
 
     def package_results(
         self, circuit: CirqCircuit, q_bits: Sequence[Qubit]

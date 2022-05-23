@@ -15,9 +15,10 @@
 """Shared utility methods for cirq backends.
 """
 
-from typing import Tuple, List, cast
+from typing import Tuple, List, Dict, cast
 from cirq.circuits import Circuit as CirqCircuit
-from cirq.ops import QubitOrder, MeasurementGate
+from cirq.ops import QubitOrder, MeasurementGate, Qid, NamedQubit
+from cirq.devices import LineQubit, GridQubit
 from cirq.protocols import is_measurement
 from pytket.circuit import Circuit, Qubit, Bit  # type: ignore
 
@@ -33,12 +34,31 @@ def _get_default_uids(
             cirq_circuit.all_qubits()
         )
 
-        cirq_measures = [c[1] for c in cirq_circuit.findall_operations(is_measurement)]
-
-        tket_bit_to_qubit_map = {b: q for q, b in tket_circuit.qubit_to_bit_map.items()}
-
-        ordered_tket_bits = []
         ordered_tket_qubits = []
+        for cirq_qubit in ordered_cirq_qubits:
+            if isinstance(cirq_qubit, NamedQubit):
+                ordered_tket_qubits.extend(
+                    [qb for qb in tket_circuit.qubits if qb.reg_name == cirq_qubit.name]
+                )
+            if isinstance(cirq_qubit, LineQubit):
+                ordered_tket_qubits.extend(
+                    [qb for qb in tket_circuit.qubits if qb.index == cirq_qubit.x]
+                )
+            if isinstance(cirq_qubit, GridQubit):
+                ordered_tket_qubits.extend(
+                    [
+                        qb
+                        for qb in tket_circuit.qubits
+                        if (
+                            qb.index[0] == cirq_qubit.row
+                            and qb.index[1] == cirq_qubit.col
+                        )
+                    ]
+                )
+
+        cirq_measures = [c[1] for c in cirq_circuit.findall_operations(is_measurement)]
+        tket_bit_to_qubit_map = {b: q for q, b in tket_circuit.qubit_to_bit_map.items()}
+        ordered_tket_bits = []
         for cirq_qubit in ordered_cirq_qubits:
             for cirq_measure in cirq_measures:
                 if len(cirq_measure.qubits) > 1:
@@ -51,6 +71,4 @@ def _get_default_uids(
                             tket_bit
                         ):
                             ordered_tket_bits.append(tket_bit)
-                            ordered_tket_qubits.append(tket_qubit)
-
         return (ordered_tket_bits, ordered_tket_qubits)
