@@ -40,11 +40,11 @@ from cirq.contrib.noise_models import DepolarizingNoiseModel  # type: ignore
 )
 def fixture_qubit_readout_circ(request: FixtureRequest) -> Circuit:
     qubits = []
-    if request.param is "LineQubit":
+    if request.param is "LineQubit":  # type: ignore
         qubits = [Qubit("q", x) for x in range(4)]
-    if request.param is "GridQubit":
+    if request.param is "GridQubit":  # type: ignore
         qubits = [Qubit("g", row=r, col=c) for r in range(2) for c in range(2)]
-    if request.param is "NamedQubit":
+    if request.param is "NamedQubit":  # type: ignore
         qubits = [Qubit("qubit" + str(x)) for x in range(4)]
     circ = Circuit()
     for q in qubits:
@@ -118,7 +118,7 @@ def test_moment_dm_backend() -> None:
         CirqCliffordSimBackend(),
     ],
 )
-def test_moment_state_backends(cirq_backend: _CirqBaseBackend) -> None:
+def test_moment_state_backends(cirq_backend: _CirqSimBackend) -> None:
     b: _CirqSimBackend = cirq_backend
     all_res = b.get_result(
         b.process_circuit_moments(Circuit(1, 1).X(0).X(0).X(0).X(0).X(0))
@@ -139,14 +139,15 @@ def test_moment_state_backends(cirq_backend: _CirqBaseBackend) -> None:
 @pytest.mark.parametrize(
     "cirq_backend, optimisation_level",
     [
-        *[(CirqDensityMatrixSimBackend(), i) for i in range(3)],
-        *[(CirqDensityMatrixSampleBackend(), i) for i in range(3)],
-        *[(CirqStateSimBackend(), i) for i in range(3)],
-        *[(CirqStateSampleBackend(), i) for i in range(3)],
-        *[(CirqCliffordSimBackend(), i) for i in range(3)],
-        *[(CirqCliffordSampleBackend(), i) for i in range(3)],
+        CirqDensityMatrixSimBackend(),
+        CirqDensityMatrixSampleBackend(),
+        CirqStateSimBackend(),
+        CirqStateSampleBackend(),
+        CirqCliffordSimBackend(),
+        CirqCliffordSampleBackend(),
     ],
 )
+@pytest.mark.parametrize("optimisation_level", range(3))
 def test_default_pass(cirq_backend: _CirqBaseBackend, optimisation_level: int) -> None:
     b = cirq_backend
     comp_pass = b.default_compilation_pass(optimisation_level)

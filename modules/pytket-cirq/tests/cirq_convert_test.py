@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Union, List
 import pytest
 from pytket import OpType  # type: ignore
 from pytket.extensions.cirq import cirq_to_tk, tk_to_cirq, process_characterisation
@@ -20,15 +21,21 @@ from pytket.architecture import Architecture  # type: ignore
 import cirq
 import cirq_google
 from cirq.circuits import InsertStrategy
+from cirq.devices import LineQubit, GridQubit
+from cirq.ops import NamedQubit
 
 
-def get_match_circuit(cirq_qubit_type="LineQubit") -> cirq.Circuit:
+CirqQubitType = Union[LineQubit, GridQubit, NamedQubit]
+
+
+def get_match_circuit(cirq_qubit_type: str = "LineQubit") -> cirq.Circuit:
+    qubits = List[CirqQubitType]
     if cirq_qubit_type == "LineQubit":
-        qubits = [cirq.LineQubit(i) for i in range(9)]
+        qubits = [LineQubit(i) for i in range(9)]
     if cirq_qubit_type == "GridQubit":
-        qubits = cirq.GridQubit.square(3)
+        qubits = GridQubit.square(3)
     if cirq_qubit_type == "NamedQubit":
-        qubits = cirq.NamedQubit.range(9, prefix="cirq")
+        qubits = NamedQubit.range(9, prefix="cirq")
 
     g = cirq.CZPowGate(exponent=0.1)
     zz = cirq.ZZPowGate(exponent=0.3)
@@ -67,7 +74,7 @@ def get_match_circuit(cirq_qubit_type="LineQubit") -> cirq.Circuit:
 
 
 @pytest.mark.parametrize("cirq_qubit_type", ["LineQubit", "GridQubit", "NamedQubit"])
-def test_conversions(cirq_qubit_type) -> None:
+def test_conversions(cirq_qubit_type: str) -> None:
     circ = get_match_circuit(cirq_qubit_type=cirq_qubit_type)
     coms = cirq_to_tk(circ)
 
@@ -93,13 +100,13 @@ def test_device() -> None:
 
 
 @pytest.mark.parametrize("cirq_qubit_type", ["LineQubit", "GridQubit", "NamedQubit"])
-def test_parallel_ops(cirq_qubit_type) -> None:
+def test_parallel_ops(cirq_qubit_type: str) -> None:
     if cirq_qubit_type == "LineQubit":
-        q0, q1, q2 = [cirq.LineQubit(i) for i in range(3)]
+        q0, q1, q2 = [LineQubit(i) for i in range(3)]
     if cirq_qubit_type == "GridQubit":
-        q0, q1, q2 = cirq.GridQubit.rect(rows=1, cols=3)
+        q0, q1, q2 = GridQubit.rect(rows=1, cols=3)
     if cirq_qubit_type == "NamedQubit":
-        q0, q1, q2 = cirq.NamedQubit.range(3, prefix="cirq")
+        q0, q1, q2 = NamedQubit.range(3, prefix="cirq")
     circ = cirq.Circuit([cirq.ops.ParallelGate(cirq.Y**0.3, 3).on(q0, q1, q2)])
     c_tk = cirq_to_tk(circ)
     assert c_tk.n_gates_of_type(OpType.Ry) == 3

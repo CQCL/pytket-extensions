@@ -20,7 +20,7 @@ from cirq.sim import (
     CliffordSimulatorStepResult,
     DensityMatrixSimulator,
     Simulator,
-    StateVectorTrialResult,
+    CliffordTrialResult,
 )
 
 from cirq import ops
@@ -469,7 +469,7 @@ class CirqCliffordSimBackend(_CirqSimBackend):
         self, circuit: CirqCircuit, q_bits: Sequence[Qubit]
     ) -> BackendResult:
         run = cast(
-            StateVectorTrialResult,
+            CliffordTrialResult,
             self._simulator.simulate(
                 circuit,
                 qubit_order=ops.QubitOrder.as_qubit_order(
