@@ -15,9 +15,9 @@
 """Shared utility methods for cirq backends.
 """
 
-from typing import Tuple, List, Dict, cast
+from typing import Tuple, List, cast
 from cirq.circuits import Circuit as CirqCircuit
-from cirq.ops import QubitOrder, MeasurementGate, Qid, NamedQubit
+from cirq.ops import QubitOrder, MeasurementGate, NamedQubit
 from cirq.devices import LineQubit, GridQubit
 from cirq.protocols import is_measurement
 from pytket.circuit import Circuit, Qubit, Bit  # type: ignore
@@ -66,7 +66,7 @@ def _get_default_uids(
                         "Cirq Qubit measurement assigned to multiple classical bits."
                     )
                 if cirq_measure.qubits[0] == cirq_qubit:
-                    for tket_bit, tket_qubit in tket_bit_to_qubit_map.items():
+                    for tket_bit, _ in tket_bit_to_qubit_map.items():
                         if cast(MeasurementGate, cirq_measure.gate).key == str(
                             tket_bit
                         ):

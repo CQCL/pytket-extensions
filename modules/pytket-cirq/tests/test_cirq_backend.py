@@ -29,12 +29,10 @@ from pytket.extensions.cirq.backends.cirq import (
     _CirqSimBackend,
     _CirqBaseBackend,
 )
-from pytket.circuit import Circuit, Qubit, Bit, OpType  # type: ignore
+from pytket.circuit import Circuit, Qubit, Bit  # type: ignore
 from pytket.backends import StatusEnum
 from pytket.predicates import GateSetPredicate
 from cirq.contrib.noise_models import DepolarizingNoiseModel  # type: ignore
-import cirq
-from pytket.extensions.cirq.backends.cirq_utils import _get_default_uids
 
 
 @pytest.fixture(

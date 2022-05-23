@@ -27,7 +27,6 @@ from cirq import ops
 from cirq.value import RANDOM_STATE_OR_SEED_LIKE
 from cirq.devices import NOISE_MODEL_LIKE
 from cirq.circuits import Circuit as CirqCircuit
-from cirq.qis import to_valid_state_vector
 
 from pytket.circuit import Circuit, OpType, Qubit  # type: ignore
 from pytket.transform import Transform  # type: ignore
