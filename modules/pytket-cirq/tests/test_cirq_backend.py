@@ -35,16 +35,17 @@ from pytket.predicates import GateSetPredicate
 from cirq.contrib.noise_models import DepolarizingNoiseModel  # type: ignore
 
 
+
 @pytest.fixture(
     name="qubit_readout_circ", params=["LineQubit", "GridQubit", "NamedQubit"]
 )
 def fixture_qubit_readout_circ(request: FixtureRequest) -> Circuit:
     qubits = []
-    if request.param is "LineQubit":  # type: ignore
+    if request.param == "LineQubit":  # type: ignore
         qubits = [Qubit("q", x) for x in range(4)]
-    if request.param is "GridQubit":  # type: ignore
+    if request.param == "GridQubit":  # type: ignore
         qubits = [Qubit("g", row=r, col=c) for r in range(2) for c in range(2)]
-    if request.param is "NamedQubit":  # type: ignore
+    if request.param == "NamedQubit":  # type: ignore
         qubits = [Qubit("qubit" + str(x)) for x in range(4)]
     circ = Circuit()
     for q in qubits:
@@ -137,7 +138,7 @@ def test_moment_state_backends(cirq_backend: _CirqSimBackend) -> None:
 
 
 @pytest.mark.parametrize(
-    "cirq_backend, optimisation_level",
+    "cirq_backend",
     [
         CirqDensityMatrixSimBackend(),
         CirqDensityMatrixSampleBackend(),

@@ -29,7 +29,7 @@ CirqQubitType = Union[LineQubit, GridQubit, NamedQubit]
 
 
 def get_match_circuit(cirq_qubit_type: str = "LineQubit") -> cirq.Circuit:
-    qubits = List[CirqQubitType]
+    qubits: List[CirqQubitType]
     if cirq_qubit_type == "LineQubit":
         qubits = [LineQubit(i) for i in range(9)]
     if cirq_qubit_type == "GridQubit":
