@@ -1,6 +1,12 @@
 Changelog
 ~~~~~~~~~
 
+0.23.0 (Unreleased)
+-------------------
+
+* `cirq_to_tk()` and `tk_to_cirq()` now properly handle circuits with `NamedQubit`.
+
+
 0.22.0 (April 2022)
 -------------------
 

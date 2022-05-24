@@ -20,7 +20,6 @@ from cirq.sim import (
     CliffordSimulatorStepResult,
     DensityMatrixSimulator,
     Simulator,
-    StateVectorTrialResult,
 )
 
 from cirq import ops
@@ -377,7 +376,6 @@ class CirqStateSimBackend(_CirqSimBackend):
                 circuit.all_qubits()
             ),
         )
-
         return BackendResult(state=run.final_state_vector, q_bits=q_bits)
 
     def package_results(
@@ -469,16 +467,13 @@ class CirqCliffordSimBackend(_CirqSimBackend):
     def package_result(
         self, circuit: CirqCircuit, q_bits: Sequence[Qubit]
     ) -> BackendResult:
-        run = cast(
-            StateVectorTrialResult,
-            self._simulator.simulate(
-                circuit,
-                qubit_order=ops.QubitOrder.as_qubit_order(
-                    ops.QubitOrder.DEFAULT
-                ).order_for(circuit.all_qubits()),
+        run = self._simulator.simulate(
+            circuit,
+            qubit_order=ops.QubitOrder.as_qubit_order(ops.QubitOrder.DEFAULT).order_for(
+                circuit.all_qubits()
             ),
         )
-        return BackendResult(state=run.final_state_vector, q_bits=q_bits)
+        return BackendResult(state=run.final_state.state_vector(), q_bits=q_bits)
 
     def package_results(
         self, circuit: CirqCircuit, q_bits: Sequence[Qubit]
