@@ -468,10 +468,10 @@ class CirqCliffordSimBackend(_CirqSimBackend):
         self, circuit: CirqCircuit, q_bits: Sequence[Qubit]
     ) -> BackendResult:
         run = self._simulator.simulate(
-                circuit,
-                qubit_order=ops.QubitOrder.as_qubit_order(
-                    ops.QubitOrder.DEFAULT
-                ).order_for(circuit.all_qubits()),
+            circuit,
+            qubit_order=ops.QubitOrder.as_qubit_order(ops.QubitOrder.DEFAULT).order_for(
+                circuit.all_qubits()
+            ),
         )
         return BackendResult(state=run.final_state.state_vector(), q_bits=q_bits)
 

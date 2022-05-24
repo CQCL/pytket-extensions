@@ -25,14 +25,13 @@ from cirq.devices import LineQubit, GridQubit
 from cirq.ops import NamedQubit
 
 
-
 def get_match_circuit(cirq_qubit_type: str = "LineQubit") -> cirq.Circuit:
     if cirq_qubit_type == "LineQubit":
-        qubits = [LineQubit(i) for i in range(9)] # type: ignore
+        qubits = [LineQubit(i) for i in range(9)]  # type: ignore
     if cirq_qubit_type == "GridQubit":
-        qubits = GridQubit.square(3) # type: ignore
+        qubits = GridQubit.square(3)  # type: ignore
     if cirq_qubit_type == "NamedQubit":
-        qubits = NamedQubit.range(9,prefix="cirq") # type: ignore
+        qubits = NamedQubit.range(9, prefix="cirq")  # type: ignore
 
     g = cirq.CZPowGate(exponent=0.1)
     zz = cirq.ZZPowGate(exponent=0.3)
@@ -99,11 +98,11 @@ def test_device() -> None:
 @pytest.mark.parametrize("cirq_qubit_type", ["LineQubit", "GridQubit", "NamedQubit"])
 def test_parallel_ops(cirq_qubit_type: str) -> None:
     if cirq_qubit_type == "LineQubit":
-        q0, q1, q2 = [LineQubit(i) for i in range(3)] # type: ignore
+        q0, q1, q2 = [LineQubit(i) for i in range(3)]  # type: ignore
     if cirq_qubit_type == "GridQubit":
-        q0, q1, q2 = GridQubit.rect(rows=1, cols=3) # type: ignore
+        q0, q1, q2 = GridQubit.rect(rows=1, cols=3)  # type: ignore
     if cirq_qubit_type == "NamedQubit":
-        q0, q1, q2 = NamedQubit.range(3, prefix="cirq") # type: ignore
+        q0, q1, q2 = NamedQubit.range(3, prefix="cirq")  # type: ignore
     circ = cirq.Circuit([cirq.ops.ParallelGate(cirq.Y**0.3, 3).on(q0, q1, q2)])
     c_tk = cirq_to_tk(circ)
     assert c_tk.n_gates_of_type(OpType.Ry) == 3

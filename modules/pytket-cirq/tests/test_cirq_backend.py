@@ -31,9 +31,8 @@ from pytket.extensions.cirq.backends.cirq import (
 )
 from pytket.circuit import Circuit, Qubit, Bit  # type: ignore
 from pytket.backends import StatusEnum
-from pytket.predicates import GateSetPredicate # type: ignore
+from pytket.predicates import GateSetPredicate  # type: ignore
 from cirq.contrib.noise_models import DepolarizingNoiseModel  # type: ignore
-
 
 
 @pytest.fixture(
