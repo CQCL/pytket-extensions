@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import List, Any
 import pytest
 from pytket import OpType  # type: ignore
 from pytket.extensions.cirq import cirq_to_tk, tk_to_cirq, process_characterisation
