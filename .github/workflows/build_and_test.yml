@@ -26,6 +26,7 @@ env:
   # pytket-ionq
   PYTKET_REMOTE_IONQ_API_KEY: ${{ secrets.PYTKET_REMOTE_IONQ_API_KEY }}
   # pytket-iqm
+  PYTKET_REMOTE_IQM_AUTH_SERVER_URL: ${{ secrets.PYTKET_REMOTE_IQM_AUTH_SERVER_URL }}
   PYTKET_REMOTE_IQM_USERNAME: ${{ secrets.PYTKET_REMOTE_IQM_USERNAME }}
   PYTKET_REMOTE_IQM_APIKEY: ${{ secrets.PYTKET_REMOTE_IQM_APIKEY }}
   # pytket-qiskit
@@ -53,7 +54,7 @@ jobs:
         if: github.event_name != 'pull_request'
         run: |
           cd ${GITHUB_WORKSPACE}/modules
-          LS_MODULES=`ls -d */`
+          LS_MODULES=`ls -d pytket-*/`
           ALL_MODULES=`echo ${LS_MODULES} | sed -e 's/\///g'`
           echo "MODULES_TO_TEST=${ALL_MODULES}" >> $GITHUB_ENV
       - name: Set list of the modified pytket extensions
