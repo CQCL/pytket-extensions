@@ -63,7 +63,7 @@ def fixture_authenticated_braket_backend(
         )
     else:
         authenticated_aws_session = get_authenticated_aws_session(
-            region=request.param.get("region")
+            region=request.param.get("region", None)
         )
         if not "s3_bucket" in request.param or not "s3_folder" in request.param:
             backend = BraketBackend(
