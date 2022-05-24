@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from pathlib import Path
 from collections import Counter
 from typing import cast, Callable, Any  # pylint: disable=unused-import
 import json
@@ -47,6 +48,7 @@ from pytket.extensions.quantinuum.backends.api_wrappers import (
     QuantinuumAPI,
 )
 from pytket.backends.status import StatusEnum
+from pytket.wasm import WasmFileHandler
 
 skip_remote_tests: bool = os.getenv("PYTKET_RUN_REMOTE_TESTS") is None
 
@@ -266,14 +268,23 @@ def test_classical(
     authenticated_quum_backend: QuantinuumBackend,
 ) -> None:
     # circuit to cover capabilities covered in example notebook
-    c = Circuit(1)
+    c = Circuit(1, name="test_classical")
     a = c.add_c_register("a", 8)
     b = c.add_c_register("b", 10)
-    c.add_c_register("c", 10)
+    d = c.add_c_register("d", 10)
 
     c.add_c_setbits([True], [a[0]])
     c.add_c_setbits([False, True] + [False] * 6, list(a))
     c.add_c_setbits([True, True] + [False] * 8, list(b))
+
+    c.add_c_setreg(23, a)
+    c.add_c_copyreg(a, b)
+
+    c.add_classicalexpbox_register(a + b, d)
+    c.add_classicalexpbox_register(a - b, d)
+    c.add_classicalexpbox_register(a * b // d, d)
+    c.add_classicalexpbox_register(a << 1, a)
+    c.add_classicalexpbox_register(a >> 1, b)
 
     c.X(0, condition=reg_eq(a ^ b, 1))
     c.X(0, condition=(a[0] ^ b[0]))
@@ -519,3 +530,22 @@ def test_custom_api_handler(device_name: str) -> None:
 
     assert backend_1._api_handler is not backend_2._api_handler
     assert backend_1._api_handler._cred_store is not backend_2._api_handler._cred_store
+
+
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
+@pytest.mark.parametrize(
+    "authenticated_quum_backend", [{"device_name": "H1-1SC"}], indirect=True
+)
+def test_wasm(
+    authenticated_quum_backend: QuantinuumBackend,
+) -> None:
+    wasfile = WasmFileHandler(str(Path(__file__).parent / "sample_wasm.wasm"))
+    c = Circuit(1)
+    c.name = "test_wasm"
+    a = c.add_c_register("a", 8)
+    c.add_wasm_to_reg("add_one", wasfile, [a], [a])
+
+    b = authenticated_quum_backend
+
+    c = b.get_compiled_circuit(c)
+    assert b.run_circuit(c, n_shots=10, wasm_file_handler=wasfile)
