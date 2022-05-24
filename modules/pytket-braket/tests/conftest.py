@@ -33,7 +33,6 @@ def get_authenticated_aws_session(region: Optional[str] = None) -> Optional[AwsS
         # Note: this session fixture should be used when creating backends for tests
         #       where PYTKET_RUN_REMOTE_TESTS is true
         region_name = region or os.getenv("PYTKET_REMOTE_BRAKET_REGION")
-        print(f"region_name: {region_name}")
         boto_session = boto3.Session(
             aws_access_key_id=os.getenv("PYTKET_REMOTE_BRAKET_ACCESS_KEY_ID"),
             aws_secret_access_key=os.getenv("PYTKET_REMOTE_BRAKET_ACCESS_KEY_SECRET"),
@@ -63,7 +62,7 @@ def fixture_authenticated_braket_backend(
         )
     else:
         authenticated_aws_session = get_authenticated_aws_session(
-            region=request.param.get("region", None)
+            region=request.param.get("region")
         )
         if not "s3_bucket" in request.param or not "s3_folder" in request.param:
             backend = BraketBackend(
