@@ -188,11 +188,13 @@ _observables = {
 }
 
 
-def _obs_from_qps(pauli: QubitPauliString) -> Tuple[Observable, QubitSet]:
+def _obs_from_qps(
+    circuit: Circuit, pauli: QubitPauliString
+) -> Tuple[Observable, QubitSet]:
     obs, qbs = [], []
     for q, p in pauli.map.items():
         obs.append(_observables[p])
-        qbs.append(q.index[0])
+        qbs.append(circuit.qubits.index(q))
     return Observable.TensorProduct(obs), qbs
 
 
@@ -203,21 +205,21 @@ def _obs_from_qpo(operator: QubitPauliOperator, n_qubits: int) -> Observable:
 
 def _get_result(
     completed_task: Union[AwsQuantumTask, LocalQuantumTask],
-    target_qubits: str,
+    target_qubits: List[int],
+    measures: Dict[int, int],
     want_state: bool,
     want_dm: bool,
     ppcirc: Optional[Circuit] = None,
 ) -> Dict[str, BackendResult]:
     result = completed_task.result()
     kwargs = {}
-    qubits_index = json.loads(target_qubits)
     if want_state or want_dm:
         assert ppcirc is None
         if want_state:
             kwargs["state"] = result.get_value_by_result_type(ResultType.StateVector())
         if want_dm:
             m = result.get_value_by_result_type(
-                ResultType.DensityMatrix(target=qubits_index)
+                ResultType.DensityMatrix(target=target_qubits)
             )
             if type(completed_task) == AwsQuantumTask:
                 kwargs["density_matrix"] = np.array(
@@ -226,6 +228,7 @@ def _get_result(
             else:
                 kwargs["density_matrix"] = m
     else:
+        qubits_index = [measures[i] for i in target_qubits if i in measures]
         measurements = result.measurements[:, qubits_index]
         kwargs["shots"] = OutcomeArray.from_readouts(measurements)
         kwargs["ppcirc"] = ppcirc
@@ -394,7 +397,7 @@ class BraketBackend(Backend):
             NoFastFeedforwardPredicate(),
             NoMidMeasurePredicate(),
             NoSymbolsPredicate(),
-            GateSetPredicate(self._multiqs | self._singleqs),
+            GateSetPredicate(self._multiqs | self._singleqs | {OpType.Measure}),
             MaxNQubitsPredicate(n_qubits),
         ]
 
@@ -609,9 +612,13 @@ class BraketBackend(Backend):
 
     @property
     def _result_id_type(self) -> _ResultIdTuple:
-        # (task ID, whether state vector / density matrix are wanted, serialized ppcirc
-        # or "null")
-        return (str, str, bool, bool, str)
+        # task ID
+        # json list of target qubits
+        # stringified dict of measurements
+        # whether state vector is wanted
+        # whether density matrix is wanted
+        # serialized ppcirc or "null"
+        return (str, str, str, bool, bool, str)
 
     def _run(
         self, bkcirc: braket.circuits.Circuit, n_shots: int = 0, **kwargs: KwargTypes
@@ -621,7 +628,9 @@ class BraketBackend(Backend):
         else:
             return self._device.run(bkcirc, self._s3_dest, shots=n_shots, **kwargs)
 
-    def _to_bkcirc(self, circuit: Circuit) -> braket.circuits.Circuit:
+    def _to_bkcirc(
+        self, circuit: Circuit
+    ) -> Tuple[braket.circuits.Circuit, Dict[int, int]]:
         if self._device_type == _DeviceType.QPU:
             return tk_to_braket(circuit, self._all_qubits)
         else:
@@ -667,17 +676,15 @@ class BraketBackend(Backend):
         for circ, n_shots in zip(circuits, n_shots_list):
             want_state = (n_shots == 0) and self.supports_state
             want_dm = (n_shots == 0) and self.supports_density_matrix
-            problem_qubits = [x.index[0] for x in circ.qubits]
-            device_qubits = [x.index[0] for x in self._backend_info.nodes]
-            target_qubits = json.dumps([device_qubits.index(x) for x in problem_qubits])
+            problem_qubits = list(range(circ.n_qubits))
+            device_qubits = list(range(len(self._backend_info.nodes)))
+            target_qubits = [device_qubits.index(x) for x in problem_qubits]
             if postprocess:
-                circ_measured = circ.copy()
-                circ_measured.measure_all()
-                c0, ppcirc = prepare_circuit(circ_measured, allow_classical=False)
+                c0, ppcirc = prepare_circuit(circ, allow_classical=False)
                 ppcirc_rep = ppcirc.to_dict()
             else:
                 c0, ppcirc, ppcirc_rep = circ, None, None
-            bkcirc = self._to_bkcirc(c0)
+            bkcirc, measures = self._to_bkcirc(c0)
             if want_state:
                 bkcirc.add_result_type(ResultType.StateVector())
             if want_dm:
@@ -691,7 +698,7 @@ class BraketBackend(Backend):
                 if task is not None:
                     assert task.state() == "COMPLETED"
                     results = _get_result(
-                        task, target_qubits, want_state, want_dm, ppcirc
+                        task, target_qubits, measures, want_state, want_dm, ppcirc
                     )
                 else:
                     results = {"result": self.empty_result(circ, n_shots=n_shots)}
@@ -700,11 +707,21 @@ class BraketBackend(Backend):
                 results = {}
             if task is not None:
                 handle = ResultHandle(
-                    task.id, target_qubits, want_state, want_dm, json.dumps(ppcirc_rep)
+                    task.id,
+                    json.dumps(target_qubits),
+                    json.dumps(list(measures.items())),
+                    want_state,
+                    want_dm,
+                    json.dumps(ppcirc_rep),
                 )
             else:
                 handle = ResultHandle(
-                    str(uuid4()), target_qubits, False, False, json.dumps(None)
+                    str(uuid4()),
+                    json.dumps(target_qubits),
+                    json.dumps(list(measures.items())),
+                    False,
+                    False,
+                    json.dumps(None),
                 )
             self._cache[handle] = results
             handles.append(handle)
@@ -721,7 +738,7 @@ class BraketBackend(Backend):
     def circuit_status(self, handle: ResultHandle) -> CircuitStatus:
         if self._device_type == _DeviceType.LOCAL:
             return CircuitStatus(StatusEnum.COMPLETED)
-        task_id, target_qubits, want_state, want_dm, ppcirc_str = handle
+        task_id, target_qubits, measures, want_state, want_dm, ppcirc_str = handle
         ppcirc_rep = json.loads(ppcirc_str)
         ppcirc = Circuit.from_dict(ppcirc_rep) if ppcirc_rep is not None else None
         task = AwsQuantumTask(task_id, aws_session=self._aws_session)
@@ -732,7 +749,15 @@ class BraketBackend(Backend):
             return CircuitStatus(StatusEnum.CANCELLED)
         elif state == "COMPLETED":
             self._update_cache_result(
-                handle, _get_result(task, target_qubits, want_state, want_dm, ppcirc)
+                handle,
+                _get_result(
+                    task,
+                    json.loads(target_qubits),
+                    dict(json.loads((measures))),
+                    want_state,
+                    want_dm,
+                    ppcirc,
+                ),
             )
             return CircuitStatus(StatusEnum.COMPLETED)
         elif state == "QUEUED" or state == "CREATED":
@@ -763,16 +788,26 @@ class BraketBackend(Backend):
     def available_devices(cls, **kwargs: Any) -> List[BackendInfo]:
         """
         See :py:meth:`pytket.backends.Backend.available_devices`.
-        Supported kwargs: `region` (default none).
-        The particular AWS region to search for devices (e.g. us-east-1).
-        Default to the region configured with AWS.
-        See the Braket docs for more details.
+        Supported kwargs:
+        - `region` (default None). The particular AWS region to search for
+          devices (e.g. us-east-1). Default to the region configured with AWS.
+          See the Braket docs for more details.
+        - `aws_session` (default None). The credentials of the provided session
+          will be used to create a new session with the specified region. Otherwise,
+          a default new session will be created
         """
         region: Optional[str] = kwargs.get("region")
-        if region is not None:
-            session = AwsSession(boto_session=boto3.Session(region_name=region))
+        aws_session: Optional[AwsSession] = kwargs.get("aws_session")
+        if aws_session is None:
+            if region is not None:
+                session = AwsSession(boto_session=boto3.Session(region_name=region))
+            else:
+                session = AwsSession()
         else:
-            session = AwsSession()
+            if region is not None:
+                session = aws_session.copy_session(region=region)
+            else:
+                session = aws_session.copy_session(region=aws_session.region)
 
         devices = session.search_devices(statuses=["ONLINE"])
 
@@ -923,8 +958,8 @@ class BraketBackend(Backend):
         """
         if valid_check:
             self._check_all_circuits([state_circuit], nomeasure_warn=False)
-        bkcirc = self._to_bkcirc(state_circuit)
-        observable, qbs = _obs_from_qps(pauli)
+        bkcirc, _ = self._to_bkcirc(state_circuit)
+        observable, qbs = _obs_from_qps(state_circuit, pauli)
         return self._get_expectation_value(bkcirc, observable, qbs, n_shots, **kwargs)
 
     def get_operator_expectation_value(
@@ -947,7 +982,7 @@ class BraketBackend(Backend):
         """
         if valid_check:
             self._check_all_circuits([state_circuit], nomeasure_warn=False)
-        bkcirc = self._to_bkcirc(state_circuit)
+        bkcirc, _ = self._to_bkcirc(state_circuit)
         observable = _obs_from_qpo(operator, state_circuit.n_qubits)
         return self._get_expectation_value(
             bkcirc, observable, bkcirc.qubits, n_shots, **kwargs
@@ -973,8 +1008,8 @@ class BraketBackend(Backend):
         """
         if valid_check:
             self._check_all_circuits([state_circuit], nomeasure_warn=False)
-        bkcirc = self._to_bkcirc(state_circuit)
-        observable, qbs = _obs_from_qps(pauli)
+        bkcirc, _ = self._to_bkcirc(state_circuit)
+        observable, qbs = _obs_from_qps(state_circuit, pauli)
         return self._get_variance(bkcirc, observable, qbs, n_shots, **kwargs)
 
     def get_operator_variance(
@@ -997,7 +1032,7 @@ class BraketBackend(Backend):
         """
         if valid_check:
             self._check_all_circuits([state_circuit], nomeasure_warn=False)
-        bkcirc = self._to_bkcirc(state_circuit)
+        bkcirc, _ = self._to_bkcirc(state_circuit)
         observable = _obs_from_qpo(operator, state_circuit.n_qubits)
         return self._get_variance(bkcirc, observable, bkcirc.qubits, n_shots, **kwargs)
 
@@ -1039,7 +1074,7 @@ class BraketBackend(Backend):
             )
         if valid_check:
             self._check_all_circuits([circuit], nomeasure_warn=False)
-        bkcirc = self._to_bkcirc(circuit)
+        bkcirc, _ = self._to_bkcirc(circuit)
         restype = ResultType.Probability(target=qubits)
         bkcirc.add_result_type(restype)
         task = self._run(bkcirc, n_shots=n_shots, **kwargs)
@@ -1066,7 +1101,7 @@ class BraketBackend(Backend):
             raise RuntimeError("Backend does not support amplitude")
         if valid_check:
             self._check_all_circuits([circuit], nomeasure_warn=False)
-        bkcirc = self._to_bkcirc(circuit)
+        bkcirc, _ = self._to_bkcirc(circuit)
         restype = ResultType.Amplitude(states)
         bkcirc.add_result_type(restype)
         task = self._run(bkcirc, n_shots=0, **kwargs)

@@ -13,7 +13,7 @@ jobs:
 
     steps:
 
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         fetch-depth: '0'
     - run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
@@ -52,13 +52,13 @@ jobs:
       run: dotnet tool install -g Microsoft.Quantum.IQSharp
 
     - name: Set up Python 3.10
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v3
       with:
         python-version: '3.10'
     - name: Build and test
       run: |
         ./.github/workflows/build-test nomypy
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       with:
         name: artefacts
         path: wheelhouse/
@@ -72,7 +72,7 @@ jobs:
     steps:
 
     - name: Download all wheels
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v3
       with:
         path: wheelhouse
     - name: Put them all in the dist folder

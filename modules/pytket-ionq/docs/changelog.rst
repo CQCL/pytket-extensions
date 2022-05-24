@@ -1,6 +1,12 @@
 Changelog
 ~~~~~~~~~
 
+0.18.0 (May 2022)
+-----------------
+
+* Retrieve device info from API, requires valid API token to initialize ``IonQBackend``.
+* Updated pytket version requirement to 1.2.
+
 0.17.0 (April 2022)
 -------------------
 
@@ -66,4 +72,3 @@ Changelog
 ----------------
 
 * Contextual optimisation added to default compilation passes (except at optimisation level 0).
-

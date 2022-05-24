@@ -30,9 +30,8 @@ from qiskit.providers import JobStatus  # type: ignore
 from qiskit.providers.aer import Aer  # type: ignore
 from qiskit.utils import QuantumInstance  # type: ignore
 
-skip_remote_tests: bool = (
-    not IBMQ.stored_account() or os.getenv("PYTKET_RUN_REMOTE_TESTS") is None
-)
+skip_remote_tests: bool = os.getenv("PYTKET_RUN_REMOTE_TESTS") is None
+
 REASON = "PYTKET_RUN_REMOTE_TESTS not set (requires IBMQ configuration)"
 
 

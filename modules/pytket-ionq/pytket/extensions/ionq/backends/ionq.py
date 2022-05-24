@@ -12,9 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import cast, Optional, List, Sequence, Union, Counter, Any
+from typing import Dict, cast, Optional, List, Sequence, Union, Counter, Any
 import json
 import time
+from random import choices
 from ast import literal_eval
 from requests import post, get, put
 from pytket.backends import Backend, ResultHandle, CircuitStatus, StatusEnum
@@ -53,7 +54,6 @@ from .config import IonQConfig
 
 IONQ_JOBS_URL = "https://api.ionq.co/v0.1/jobs/"
 
-IONQ_N_QUBITS = 11
 
 _STATUS_MAP = {
     "completed": StatusEnum.COMPLETED,
@@ -91,6 +91,7 @@ class IonQBackend(Backend):
         device_name: str = "qpu",
         api_key: Optional[str] = None,
         label: Optional[str] = "job",
+        _machine_debug: bool = False,
     ):
         """
         Construct a new IonQ backend.
@@ -106,39 +107,64 @@ class IonQBackend(Backend):
         super().__init__()
         self._url = IONQ_JOBS_URL
         self._label = label
-        config = IonQConfig.from_default_config_file()
-
-        if api_key is None:
-            api_key = config.api_key
-        if api_key is None:
-            raise IonQAuthenticationError()
-
-        self._header = {"Authorization": f"apiKey {api_key}"}
-        self._backend_info = fully_connected_backendinfo(
-            type(self).__name__,
-            device_name,
-            __extension_version__,
-            IONQ_N_QUBITS,
-            ionq_gates,
-        )
-        self._qm = {Qubit(i): node for i, node in enumerate(self._backend_info.nodes)}
-        self._MACHINE_DEBUG = False
+        self._MACHINE_DEBUG = _machine_debug
+        self._backend_info = self._available_devices(self._MACHINE_DEBUG, api_key)[
+            device_name
+        ]
+        self._header = self._get_header(api_key)
 
     @property
     def backend_info(self) -> Optional[BackendInfo]:
         return self._backend_info
 
+    @staticmethod
+    def _get_header(api_key: Optional[str] = None) -> Dict[str, str]:
+
+        if api_key is None:
+            config = IonQConfig.from_default_config_file()
+            api_key = config.api_key
+        if api_key is None:
+            raise IonQAuthenticationError()
+
+        return {"Authorization": f"apiKey {api_key}"}
+
+    @classmethod
+    def _available_devices(
+        cls, debug: bool, api_key: Optional[str] = None
+    ) -> Dict[str, BackendInfo]:
+        if debug:
+            return {
+                "simulator": fully_connected_backendinfo(
+                    cls.__name__,
+                    "simulator",
+                    __extension_version__,
+                    11,
+                    ionq_gates,
+                )
+            }
+        resp = get(
+            "https://api.ionq.co/v0.2/backends",
+            headers=IonQBackend._get_header(api_key),
+        ).json()
+
+        if "error" in resp:
+            raise RuntimeError(resp["error"])
+
+        return {
+            dev["backend"]: fully_connected_backendinfo(
+                cls.__name__,
+                dev["backend"],
+                __extension_version__,
+                int(dev["qubits"]),
+                ionq_gates,
+                misc=dev,
+            )
+            for dev in resp
+        }
+
     @classmethod
     def available_devices(cls, **kwargs: Any) -> List[BackendInfo]:
-        return [
-            fully_connected_backendinfo(
-                cls.__name__,
-                "qpu",
-                __extension_version__,
-                IONQ_N_QUBITS,
-                ionq_gates,
-            )
-        ]
+        return list(cls._available_devices(False, **kwargs).values())
 
     @property
     def required_predicates(self) -> List[Predicate]:
@@ -157,12 +183,14 @@ class IonQBackend(Backend):
 
     def default_compilation_pass(self, optimisation_level: int = 1) -> BasePass:
         assert optimisation_level in range(3)
+        _qm = {Qubit(i): node for i, node in enumerate(self._backend_info.nodes)}
+
         if optimisation_level == 0:
             return SequencePass(
                 [
                     DecomposeBoxes(),
                     FlattenRegisters(),
-                    RenameQubitsPass(self._qm),
+                    RenameQubitsPass(_qm),
                     self.rebase_pass(),
                 ]
             )
@@ -172,7 +200,7 @@ class IonQBackend(Backend):
                     DecomposeBoxes(),
                     SynthesiseTket(),
                     FlattenRegisters(),
-                    RenameQubitsPass(self._qm),
+                    RenameQubitsPass(_qm),
                     self.rebase_pass(),
                     SimplifyInitial(allow_classical=False, create_all_qubits=True),
                 ]
@@ -183,7 +211,7 @@ class IonQBackend(Backend):
                     DecomposeBoxes(),
                     FullPeepholeOptimise(),
                     FlattenRegisters(),
-                    RenameQubitsPass(self._qm),
+                    RenameQubitsPass(_qm),
                     self.rebase_pass(),
                     SquashCustom(
                         ionq_singleqs,
@@ -308,27 +336,20 @@ class IonQBackend(Backend):
             status = resp["status"]
             statenum = _STATUS_MAP.get(status)  # type: ignore
             if statenum is StatusEnum.COMPLETED:
-                ionq_counts = resp["data"]["histogram"]
                 tket_counts: Counter = Counter()
-                # reverse engineer counts. Imprecise, due to rounding.
-                max_counts = 0
-                max_array = None
-                for outcome_key, prob in ionq_counts.items():
+                ionq_counts = resp["data"]["histogram"]
+                ionq_samples = choices(
+                    list(ionq_counts.keys()), list(ionq_counts.values()), k=n_shots
+                )
+                ionq_counter = Counter(ionq_samples)
+                for outcome_key, sample_count in ionq_counter.items():
                     array = OutcomeArray.from_ints(
                         ints=[int(outcome_key)],
                         width=int(resp["qubits"]),
                         big_endian=False,
                     )
                     array = array.choose_indices(measure_permutations)
-                    array_counts = round(n_shots * float(prob))
-                    tket_counts[array] = array_counts
-                    if array_counts > max_counts:
-                        max_counts = array_counts
-                        max_array = array
-                # account for rounding error
-                sum_counts = sum(tket_counts.values())
-                diff = n_shots - sum_counts
-                tket_counts[max_array] += diff
+                    tket_counts[array] = sample_count
                 ppcirc_rep = json.loads(cast(str, handle[3]))
                 ppcirc = (
                     Circuit.from_dict(ppcirc_rep) if ppcirc_rep is not None else None

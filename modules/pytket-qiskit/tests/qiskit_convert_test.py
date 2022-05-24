@@ -52,9 +52,7 @@ from sympy import Symbol  # type: ignore
 from pytket.passes import RebaseTket, DecomposeBoxes, FullPeepholeOptimise, SequencePass  # type: ignore
 from pytket.utils.results import compare_statevectors, permute_rows_cols_in_unitary
 
-skip_remote_tests: bool = (
-    not IBMQ.stored_account() or os.getenv("PYTKET_RUN_REMOTE_TESTS") is None
-)
+skip_remote_tests: bool = os.getenv("PYTKET_RUN_REMOTE_TESTS") is None
 
 
 def test_classical_barrier_error() -> None:
