@@ -1,6 +1,14 @@
 Changelog
 ~~~~~~~~~
 
+0.19.0 (May 2022)
+-----------------
+
+* Add optional "aws_session" parameter to the available_devices class method of BracketBackend.
+* Respect measurement operations in submitted circuits. (Previously these were
+  not allowed and measurements were automatically added to all qubits.)
+* Updated pytket version requirement to 1.2.
+
 0.18.0 (April 2022)
 -------------------
 
