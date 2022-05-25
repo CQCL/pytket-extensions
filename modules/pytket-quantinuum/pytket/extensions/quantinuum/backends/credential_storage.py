@@ -61,7 +61,11 @@ class MemoryCredentialStorage:
     def id_token(self) -> Optional[str]:
         if self._id_token is not None:
             timeout = (
-                jwt.decode(self._id_token, algorithms=["HS256"], verify=False)["exp"]
+                jwt.decode(
+                    self._id_token,
+                    algorithms=["HS256"],
+                    options={"verify_signature": False},
+                )["exp"]
                 - 60
             )
             if self._id_token_timeout is not None:
