@@ -53,6 +53,10 @@ from pytket.predicates import (  # type: ignore
 from pytket.utils import prepare_circuit
 from pytket.utils.outcomearray import OutcomeArray
 
+from pytket.extensions.quantinuum.backends.credential_storage import (
+    MemoryCredentialStorage,
+)
+
 from .api_wrappers import QuantinuumAPIError, QuantinuumAPI
 
 _DEBUG_HANDLE_PREFIX = "_MACHINE_DEBUG_"
@@ -100,6 +104,17 @@ class DeviceNotAvailable(Exception):
     device_name: str
 
 
+# DEFAULT_CREDENTIALS_STORAGE for use with the DEFAULT_API_HANDLER.
+DEFAULT_CREDENTIALS_STORAGE = MemoryCredentialStorage()
+
+# DEFAULT_API_HANDLER provides a global re-usable API handler
+# that will persist after this module is imported.
+#
+# This allows users to create multiple QuantinuumBackend instances
+# without requiring them to acquire new tokens.
+DEFAULT_API_HANDLER = QuantinuumAPI(DEFAULT_CREDENTIALS_STORAGE)
+
+
 class QuantinuumBackend(Backend):
     """
     Interface to a Quantinuum device.
@@ -110,16 +125,13 @@ class QuantinuumBackend(Backend):
     _supports_contextual_optimisation = True
     _persistent_handles = True
 
-    # class variable to allow "global" login
-    # all instances share authenticated credentials
-    _api_handler: QuantinuumAPI = QuantinuumAPI()
-
     def __init__(
         self,
         device_name: str,
         label: Optional[str] = "job",
         simulator: str = "state-vector",
         machine_debug: bool = False,
+        _api_handler: QuantinuumAPI = DEFAULT_API_HANDLER,
     ):
         """Construct a new Quantinuum backend.
 
@@ -130,6 +142,8 @@ class QuantinuumBackend(Backend):
         :param simulator: Only applies to simulator devices, options are
             "state-vector" or "stabilizer", defaults to "state-vector"
         :type simulator: str, optional
+        :param _api_handler: Instance of API handler, defaults to DEFAULT_API_HANDLER
+        :type _api_handler: QuantinuumAPI
         """
 
         super().__init__()
@@ -142,21 +156,23 @@ class QuantinuumBackend(Backend):
         self.simulator_type = simulator
         self._gate_set = _get_gateset(self._device_name)
 
+        self._api_handler = _api_handler
+
     @classmethod
     def _available_devices(
-        cls, _api_handler: Optional[QuantinuumAPI] = None
+        cls,
+        _api_handler: QuantinuumAPI,
     ) -> List[Dict[str, Any]]:
         """List devices available from Quantinuum.
 
         >>> QuantinuumBackend._available_devices()
         e.g. [{'name': 'H1', 'n_qubits': 6}]
 
-        :param _api_handler: Instance of API handler, defaults to None
-        :type _api_handler: Optional[QuantinuumAPI], optional
+        :param _api_handler: Instance of API handler
+        :type _api_handler: QuantinuumAPI
         :return: Dictionaries of machine name and number of qubits.
         :rtype: List[Dict[str, Any]]
         """
-        _api_handler = _api_handler or cls._api_handler
         id_token = _api_handler.login()
         res = requests.get(
             f"{_api_handler.url}machine/?config=true",
@@ -167,19 +183,17 @@ class QuantinuumBackend(Backend):
         return jr  # type: ignore
 
     @classmethod
-    def available_devices(cls, **kwargs: Any) -> List[BackendInfo]:
+    def available_devices(
+        cls,
+        **kwargs: Any,
+    ) -> List[BackendInfo]:
         """
         See :py:meth:`pytket.backends.Backend.available_devices`.
-        Supported kwargs: `api_handler` (default none).
+        :param _api_handler: Instance of API handler, defaults to DEFAULT_API_HANDLER
+        :type _api_handler: Optional[QuantinuumAPI]
         """
-        api_handler = kwargs.get("api_handler", cls._api_handler)
-        id_token = api_handler.login()
-        res = requests.get(
-            f"{api_handler.url}machine/?config=true",
-            headers={"Authorization": id_token},
-        )
-        api_handler._response_check(res, "get machine list")
-        jr = res.json()
+        _api_handler = kwargs.get("_api_handler", DEFAULT_API_HANDLER)
+        jr = cls._available_devices(_api_handler)
         return [
             fully_connected_backendinfo(
                 cls.__name__,
@@ -207,7 +221,9 @@ class QuantinuumBackend(Backend):
 
     @classmethod
     def device_state(
-        cls, device_name: str, _api_handler: Optional[QuantinuumAPI] = None
+        cls,
+        device_name: str,
+        _api_handler: QuantinuumAPI = DEFAULT_API_HANDLER,
     ) -> str:
         """Check the status of a device.
 
@@ -216,13 +232,11 @@ class QuantinuumBackend(Backend):
 
         :param device_name: Name of the device.
         :type device_name: str
-        :param _api_handler: Instance of API handler, defaults to None
-        :type _api_handler: Optional[QuantinuumAPI], optional
+        :param _api_handler: Instance of API handler, defaults to DEFAULT_API_HANDLER
+        :type _api_handler: QuantinuumAPI
         :return: String of state, e.g. "online"
         :rtype: str
         """
-        _api_handler = _api_handler or cls._api_handler
-
         res = requests.get(
             f"{_api_handler.url}machine/{device_name}",
             headers={"Authorization": _api_handler.login()},
@@ -554,9 +568,11 @@ class QuantinuumBackend(Backend):
                 + " Try running `backend.get_compiled_circuit` first"
             )
         if syntax_checker:
-            backend = QuantinuumBackend(syntax_checker)
+            backend = QuantinuumBackend(syntax_checker, _api_handler=self._api_handler)
         else:
-            backend = QuantinuumBackend(_infer_syntax_checker(self._device_name))
+            backend = QuantinuumBackend(
+                _infer_syntax_checker(self._device_name), _api_handler=self._api_handler
+            )
         try:
             handle = backend.process_circuit(circuit, n_shots)
         except DeviceNotAvailable as e:
@@ -574,21 +590,19 @@ class QuantinuumBackend(Backend):
         cost = json.loads(backend.circuit_status(handle).message)["cost"]
         return None if cost is None else float(cost)
 
-    @classmethod
-    def login(cls) -> None:
+    def login(self) -> None:
         """Log in to Quantinuum API. Requests username and password from stdin
         (e.g. shell input or dialogue box in Jupytet notebooks.). Passwords are
         not stored.
         After log in you should not need to provide credentials again while that
         session (script/notebook) is alive.
         """
-        cls._api_handler.full_login()
+        self._api_handler.full_login()
 
-    @classmethod
-    def logout(cls) -> None:
+    def logout(self) -> None:
         """Clear stored JWT tokens from login. Will need to `login` again to
         make API calls."""
-        cls._api_handler.delete_authentication()
+        self._api_handler.delete_authentication()
 
 
 _xcirc = Circuit(1).add_gate(OpType.PhasedX, [1, 0], [0])

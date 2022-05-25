@@ -227,7 +227,7 @@ def circuits(
 @pytest.mark.parametrize(
     "authenticated_quum_backend",
     [{"device_name": name for name in ALL_DEVICE_NAMES}],
-    indirect=["authenticated_quum_backend"],
+    indirect=True,
 )
 @given(
     c=circuits(),  # pylint: disable=no-value-for-parameter
@@ -352,12 +352,15 @@ def test_shots_bits_edgecases(n_shots, n_bits) -> None:
     "authenticated_quum_backend", [{"device_name": "H1-1E"}], indirect=True
 )
 def test_simulator(
+    authenticated_quum_handler: QuantinuumAPI,
     authenticated_quum_backend: QuantinuumBackend,
 ) -> None:
     circ = Circuit(2, name="sim_test").H(0).CX(0, 1).measure_all()
     n_shots = 1000
     state_backend = authenticated_quum_backend
-    stabilizer_backend = QuantinuumBackend("H1-1E", simulator="stabilizer")
+    stabilizer_backend = QuantinuumBackend(
+        "H1-1E", simulator="stabilizer", _api_handler=authenticated_quum_handler
+    )
 
     circ = state_backend.get_compiled_circuit(circ)
 
@@ -395,11 +398,18 @@ def test_simulator(
 @pytest.mark.parametrize("authenticated_quum_backend", [None], indirect=True)
 def test_retrieve_available_devices(
     authenticated_quum_backend: QuantinuumBackend,
+    authenticated_quum_handler: QuantinuumAPI,
 ) -> None:
-    backend_infos = authenticated_quum_backend.available_devices()
+    # authenticated_quum_backend still needs a handler or it will
+    # attempt to use the DEFAULT_API_HANDLER.
+    backend_infos = authenticated_quum_backend.available_devices(
+        _api_handler=authenticated_quum_handler
+    )
     assert len(backend_infos) > 0
-    api_handler = QuantinuumAPI()
-    backend_infos = QuantinuumBackend.available_devices(api_handler=api_handler)
+
+    backend_infos = QuantinuumBackend.available_devices(
+        _api_handler=authenticated_quum_handler
+    )
     assert len(backend_infos) > 0
 
 
@@ -478,5 +488,34 @@ def test_zzphase(
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
 @pytest.mark.parametrize("device_name", ALL_DEVICE_NAMES)
-def test_device_state(device_name: str) -> None:
-    assert isinstance(QuantinuumBackend.device_state(device_name), str)
+def test_device_state(
+    device_name: str, authenticated_quum_handler: QuantinuumAPI
+) -> None:
+    assert isinstance(
+        QuantinuumBackend.device_state(
+            device_name, _api_handler=authenticated_quum_handler
+        ),
+        str,
+    )
+
+
+@pytest.mark.parametrize("device_name", ALL_DEVICE_NAMES)
+def test_default_api_handler(device_name: str) -> None:
+    """Test that the default API handler is used on backend construction."""
+    backend_1 = QuantinuumBackend(device_name)
+    backend_2 = QuantinuumBackend(device_name)
+
+    assert backend_1._api_handler is backend_2._api_handler
+
+
+@pytest.mark.parametrize("device_name", ALL_DEVICE_NAMES)
+def test_custom_api_handler(device_name: str) -> None:
+    """Test that custom API handlers are used when used on backend construction."""
+    handler_1 = QuantinuumAPI()
+    handler_2 = QuantinuumAPI()
+
+    backend_1 = QuantinuumBackend(device_name, _api_handler=handler_1)
+    backend_2 = QuantinuumBackend(device_name, _api_handler=handler_2)
+
+    assert backend_1._api_handler is not backend_2._api_handler
+    assert backend_1._api_handler._cred_store is not backend_2._api_handler._cred_store

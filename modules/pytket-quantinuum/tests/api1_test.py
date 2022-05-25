@@ -16,7 +16,8 @@
 # issue on the MacOS CI, whereby pytest would hang indefinitely after the collection
 # phase.
 
-from typing import Optional
+from io import StringIO
+from typing import Any, Optional, Tuple
 import pytest
 
 from requests_mock.mocker import Mocker
@@ -24,6 +25,158 @@ from requests_mock.mocker import Mocker
 from pytket.extensions.quantinuum.backends.api_wrappers import QuantinuumAPI
 from pytket.extensions.quantinuum.backends import QuantinuumBackend
 from pytket.circuit import Circuit  # type: ignore
+
+from pytket.extensions.quantinuum.backends.quantinuum import DEFAULT_API_HANDLER
+
+
+def test_default_login_flow(
+    requests_mock: Mocker,
+    mock_credentials: Tuple[str, str],
+    mock_token: str,
+    monkeypatch: Any,
+) -> None:
+    """Test that when an api_handler is not provided to
+    QuantinuumBackend we use the DEFAULT_API_HANDLER.
+
+    Demonstrate that the login endpoint is only called one time
+    for the session when not providing an api_handler argument to
+    QuantinuumBackend.
+    """
+
+    DEFAULT_API_HANDLER.delete_authentication()
+
+    fake_device = "H9-27"
+    fake_job_id = "abc-123"
+
+    login_route = requests_mock.register_uri(
+        "POST",
+        "https://qapi.quantinuum.com/v1/login",
+        json={
+            "id-token": mock_token,
+            "refresh-token": mock_token,
+        },
+        headers={"Content-Type": "application/json"},
+    )
+
+    job_submit_route = requests_mock.register_uri(
+        "POST",
+        "https://qapi.quantinuum.com/v1/job",
+        json={"job": fake_job_id},
+        headers={"Content-Type": "application/json"},
+    )
+
+    job_status_route = requests_mock.register_uri(
+        "GET",
+        f"https://qapi.quantinuum.com/v1/job/{fake_job_id}?websocket=true",
+        json={"job": fake_job_id},
+        headers={"Content-Type": "application/json"},
+    )
+
+    username, pwd = mock_credentials
+    # fake user input from stdin
+    monkeypatch.setattr("sys.stdin", StringIO(username + "\n"))
+    monkeypatch.setattr("getpass.getpass", lambda prompt: pwd)
+
+    backend_1 = QuantinuumBackend(
+        device_name=fake_device,
+    )
+    backend_2 = QuantinuumBackend(
+        device_name=fake_device,
+    )
+
+    circ = Circuit(2, name="default_login_flow_test").H(0).CX(0, 1).measure_all()
+    circ = backend_1.get_compiled_circuit(circ)
+    circ = backend_2.get_compiled_circuit(circ)
+
+    backend_1.process_circuits(
+        circuits=[circ, circ],
+        n_shots=10,
+        valid_check=False,
+    )
+    backend_2.process_circuits(
+        circuits=[circ, circ],
+        n_shots=10,
+        valid_check=False,
+    )
+
+    # We expect /login to be called once globally.
+    assert login_route.called_once  # type: ignore
+    assert job_submit_route.call_count == 4  # type: ignore
+    assert job_status_route.call_count == 2  # type: ignore
+
+
+def test_custom_login_flow(
+    requests_mock: Mocker,
+    mock_token: str,
+) -> None:
+    """Test that when an api_handler is provided to
+    QuantinuumBackend we use that handler and acquire
+    tokens for each.
+    """
+
+    DEFAULT_API_HANDLER.delete_authentication()
+
+    fake_device = "H9-27"
+    fake_job_id = "abc-123"
+
+    login_route = requests_mock.register_uri(
+        "POST",
+        "https://qapi.quantinuum.com/v1/login",
+        json={
+            "id-token": mock_token,
+            "refresh-token": mock_token,
+        },
+        headers={"Content-Type": "application/json"},
+    )
+
+    job_submit_route = requests_mock.register_uri(
+        "POST",
+        "https://qapi.quantinuum.com/v1/job",
+        json={"job": fake_job_id},
+        headers={"Content-Type": "application/json"},
+    )
+
+    job_status_route = requests_mock.register_uri(
+        "GET",
+        f"https://qapi.quantinuum.com/v1/job/{fake_job_id}?websocket=true",
+        json={"job": fake_job_id},
+        headers={"Content-Type": "application/json"},
+    )
+
+    backend_1 = QuantinuumBackend(
+        device_name=fake_device,
+        _api_handler=QuantinuumAPI(  # type: ignore # pylint: disable=unexpected-keyword-arg
+            _QuantinuumAPI__user_name="user1",
+            _QuantinuumAPI__pwd="securepassword",
+        ),
+    )
+    backend_2 = QuantinuumBackend(
+        device_name=fake_device,
+        _api_handler=QuantinuumAPI(  # type: ignore # pylint: disable=unexpected-keyword-arg
+            _QuantinuumAPI__user_name="user2",
+            _QuantinuumAPI__pwd="insecurepassword",
+        ),
+    )
+
+    circ = Circuit(2, name="default_login_flow_test").H(0).CX(0, 1).measure_all()
+    circ = backend_1.get_compiled_circuit(circ)
+    circ = backend_2.get_compiled_circuit(circ)
+
+    backend_1.process_circuits(
+        circuits=[circ, circ],
+        n_shots=10,
+        valid_check=False,
+    )
+    backend_2.process_circuits(
+        circuits=[circ, circ],
+        n_shots=10,
+        valid_check=False,
+    )
+
+    # We expect /login to be called for each api_handler.
+    assert login_route.call_count == 2  # type: ignore
+    assert job_submit_route.call_count == 4  # type: ignore
+    assert job_status_route.call_count == 2  # type: ignore
 
 
 @pytest.mark.parametrize(
