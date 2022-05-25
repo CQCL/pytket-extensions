@@ -28,7 +28,7 @@ def get_changed_modules(ref_before: str, ref_now: str) -> list:
         [m for m in set(pat.findall(output)) if os.path.isdir("modules/{}".format(m))]
     )
 
-    return found_mods
+    return [mod for mod in found_mods if mod.startswith("pytket-")]
 
 
 if __name__ == "__main__":

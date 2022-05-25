@@ -61,8 +61,6 @@ def test_invalid_cred() -> None:
     b = IQMBackend(
         url=iqm_demo_url,
         settings=curr_file_path / "demo_settings.json",
-        username="invalid",
-        api_key="invalid",
     )
     c = Circuit(2, 2).H(0).CX(0, 1)
     c.measure_all()
@@ -116,8 +114,6 @@ def test_default_pass() -> None:
     b = IQMBackend(
         url=iqm_demo_url,
         settings=curr_file_path / "demo_settings.json",
-        username="invalid",
-        api_key="invalid",
     )
     for ol in range(3):
         comp_pass = b.default_compilation_pass(ol)
@@ -152,8 +148,6 @@ def test_backendinfo() -> None:
     b = IQMBackend(
         url=iqm_demo_url,
         settings=curr_file_path / "demo_settings.json",
-        username="invalid",
-        api_key="invalid",
     )
     info = b.backend_info
     assert info.name == type(b).__name__

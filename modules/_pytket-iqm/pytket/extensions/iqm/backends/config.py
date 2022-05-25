@@ -25,25 +25,32 @@ class IQMConfig(PytketExtConfig):
 
     ext_dict_key: ClassVar[str] = "iqm"
 
+    auth_server_url: Optional[str]
     username: Optional[str]
-
-    api_key: Optional[str]
+    password: Optional[str]
 
     @classmethod
     def from_extension_dict(
         cls: Type["IQMConfig"], ext_dict: Dict[str, Any]
     ) -> "IQMConfig":
-        return cls(ext_dict.get("username", None), ext_dict.get("api_key", None))
+        return cls(
+            ext_dict.get("auth_server_url"),
+            ext_dict.get("username"),
+            ext_dict.get("password"),
+        )
 
 
 def set_iqm_config(
+    auth_server_url: Optional[str] = None,
     username: Optional[str] = None,
-    api_key: Optional[str] = None,
+    password: Optional[str] = None,
 ) -> None:
     """Set default value for IQM API token."""
     config = IQMConfig.from_default_config_file()
+    if auth_server_url is not None:
+        config.auth_server_url = auth_server_url
     if username is not None:
         config.username = username
-    if api_key is not None:
-        config.api_key = api_key
+    if password is not None:
+        config.password = password
     config.update_default_config_file()
