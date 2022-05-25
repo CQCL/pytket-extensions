@@ -459,7 +459,16 @@ class BraketBackend(Backend):
                 connectivity_graph = dict(
                     (int(k), [int(v) for v in l]) for k, l in connectivity_graph.items()
                 )
-                all_qubits = sorted(connectivity_graph.keys())
+                # each connectivity graph key will be an int
+                # connectivity_graph values will be lists
+                qubit_list = [
+                    [*connectivity_graph.keys()],
+                    *connectivity_graph.values(),
+                ]
+                # summing lists will flatten them
+                # example [[0,1], [0,2]] would be [0,1,0,2] when summed
+                # returns unique ordered list since taking set of sum
+                all_qubits = list(set(sum(qubit_list, [])))
                 if n_qubits < len(all_qubits):
                     # This can happen, at least on rigetti devices, and causes errors.
                     # As a kludgy workaround, remove some qubits from the architecture.
