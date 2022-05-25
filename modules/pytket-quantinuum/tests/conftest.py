@@ -88,9 +88,21 @@ def fixture_mock_quum_api_handler(
     return api_handler
 
 
+@pytest.fixture(scope="module", name="authenticated_quum_handler")
+def fixture_authenticated_quum() -> QuantinuumAPI:
+    # Authenticated QuantinuumAPI used for the remote tests
+    # The credentials are taken from the env variables:
+    # PYTKET_REMOTE_QUANTINUUM_USERNAME and PYTKET_REMOTE_QUANTINUUM_PASSWORD
+    return QuantinuumAPI(  # type: ignore # pylint: disable=unexpected-keyword-arg
+        _QuantinuumAPI__user_name=os.getenv("PYTKET_REMOTE_QUANTINUUM_USERNAME"),
+        _QuantinuumAPI__pwd=os.getenv("PYTKET_REMOTE_QUANTINUUM_PASSWORD"),
+    )
+
+
 @pytest.fixture(name="authenticated_quum_backend")
 def fixture_authenticated_quum_backend(
     request: SubRequest,
+    authenticated_quum_handler: QuantinuumAPI,
 ) -> QuantinuumBackend:
     # Authenticated QuantinuumBackend used for the remote tests
     # The credentials are taken from the env variables:
@@ -103,14 +115,11 @@ def fixture_authenticated_quum_backend(
     # but other params can be specified when parametrizing the
     # authenticated_quum_backend
     if request.param is None:
-        backend = QuantinuumBackend("H1-1SC")
+        backend = QuantinuumBackend("H1-1SC", _api_handler=authenticated_quum_handler)
     else:
-        backend = QuantinuumBackend(**request.param)
-
-    backend._api_handler = QuantinuumAPI(  # type: ignore # pylint: disable=unexpected-keyword-arg
-        _QuantinuumAPI__user_name=os.getenv("PYTKET_REMOTE_QUANTINUUM_USERNAME"),
-        _QuantinuumAPI__pwd=os.getenv("PYTKET_REMOTE_QUANTINUUM_PASSWORD"),
-    )
+        backend = QuantinuumBackend(
+            _api_handler=authenticated_quum_handler, **request.param
+        )
     # In case machine_debug was specified by mistake in the params
     backend._MACHINE_DEBUG = False
 
