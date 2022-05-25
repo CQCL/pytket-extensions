@@ -43,7 +43,7 @@ setup(
         "types-requests",
         "websockets >= 7.0",
         "nest_asyncio >= 1.2",
-        "pyjwt >= 1.7, < 2.0",
+        "pyjwt ~= 2.4",
         "types-jwt",
     ],
     classifiers=[
