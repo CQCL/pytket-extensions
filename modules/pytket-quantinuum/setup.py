@@ -44,7 +44,6 @@ setup(
         "websockets >= 7.0",
         "nest_asyncio >= 1.2",
         "pyjwt ~= 2.4",
-        "types-jwt",
     ],
     classifiers=[
         "Environment :: Console",
