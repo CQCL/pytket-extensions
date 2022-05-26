@@ -42,6 +42,7 @@ setup(
         "pytket ~= 1.2",
         "cirq-core ~= 0.14.0",
         "cirq-google ~= 0.14.0",
+        "protobuf ~= 3.20, < 4.0",
     ],
     classifiers=[
         "Environment :: Console",
