@@ -4,7 +4,8 @@ Changelog
 0.3.1 (May 2022)
 ----------------
 
-* Updated to pyjwt 2.4.
+* Updated to pyjwt 2.4. This fixes a potential security vulnerability
+  (CVE-2022-29217).
 
 0.3.0 (May 2022)
 ----------------
