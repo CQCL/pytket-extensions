@@ -14,11 +14,12 @@
 
 import os
 from pathlib import Path
+from iqm_client.iqm_client import ClientAuthenticationError
 import pytest
 from pytket.circuit import Circuit  # type: ignore
 from pytket.backends import StatusEnum
 from pytket.extensions.iqm import IQMBackend
-from requests import HTTPError, get
+from requests import get
 
 curr_file_path = Path(__file__).resolve().parent
 iqm_demo_url = "https://cortex-demo.qc.iqm.fi/"
@@ -58,15 +59,13 @@ def test_iqm(authenticated_iqm_backend: IQMBackend) -> None:
 
 # @pytest.mark.skipif(skip_service_unavailable, reason=UNAVAILABLE_REASON)
 def test_invalid_cred() -> None:
-    b = IQMBackend(
-        url=iqm_demo_url,
-        settings=curr_file_path / "demo_settings.json",
-    )
-    c = Circuit(2, 2).H(0).CX(0, 1)
-    c.measure_all()
-    c = b.get_compiled_circuit(c)
-    with pytest.raises(HTTPError):
-        b.process_circuit(c, 1)
+    with pytest.raises(ClientAuthenticationError):
+        b = IQMBackend(
+            url=iqm_demo_url,
+            settings=curr_file_path / "demo_settings.json",
+            username="invalid",
+            password="invalid",
+        )
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
