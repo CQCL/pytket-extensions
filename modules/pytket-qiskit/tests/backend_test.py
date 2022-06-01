@@ -131,72 +131,6 @@ def test_measures() -> None:
     assert all_zeros
 
 
-@pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_noise() -> None:
-    if not IBMQ.active_account():
-        IBMQ.load_account()
-
-    provider = IBMQ.providers(hub="ibm-q", group="open")[0]
-    back = provider.get_backend("ibmq_santiago")
-
-    noise_model = NoiseModel.from_backend(back)
-    n_qbs = 5
-    c = Circuit(n_qbs, n_qbs)
-    x_qbs = [2, 0, 4]
-    for i in x_qbs:
-        c.X(i)
-    c.measure_all()
-    b = AerBackend(noise_model)
-    n_shots = 50
-    c = b.get_compiled_circuit(c)
-    shots = b.run_circuit(c, n_shots=n_shots, seed=4).get_shots()
-    zer_exp = []
-    one_exp = []
-    for i in range(n_qbs):
-        expectation = np.sum(shots[:, i]) / n_shots
-        if i in x_qbs:
-            one_exp.append(expectation)
-        else:
-            zer_exp.append(expectation)
-
-    assert min(one_exp) > max(zer_exp)
-
-    c2 = (
-        Circuit(4, 4)
-        .H(0)
-        .CX(0, 2)
-        .CX(3, 1)
-        .T(2)
-        .CX(0, 1)
-        .CX(0, 3)
-        .CX(2, 1)
-        .measure_all()
-    )
-
-    c2 = b.get_compiled_circuit(c2)
-    shots = b.run_circuit(c2, n_shots=10, seed=5).get_shots()
-    assert shots.shape == (10, 4)
-
-
-@pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_process_characterisation() -> None:
-    if not IBMQ.active_account():
-        IBMQ.load_account()
-
-    provider = IBMQ.providers(hub="ibm-q", group="open")[0]
-    back = provider.get_backend("ibmq_santiago")
-
-    char = process_characterisation(back)
-    arch: Architecture = char.get("Architecture", Architecture([]))
-    node_errors: dict = char.get("NodeErrors", {})
-    link_errors: dict = char.get("EdgeErrors", {})
-
-    assert len(arch.nodes) == 5
-    assert len(arch.coupling) == 8
-    assert len(node_errors) == 5
-    assert len(link_errors) == 8
-
-
 def test_process_characterisation_no_noise_model() -> None:
     my_noise_model = NoiseModel()
     back = AerBackend(my_noise_model)
@@ -377,81 +311,15 @@ def test_cancellation_ibmq(lima_backend: IBMQBackend) -> None:
     print(b.circuit_status(h))
 
 
-@pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_machine_debug(santiago_backend: IBMQBackend) -> None:
-    backend = santiago_backend
-    backend._MACHINE_DEBUG = True
-    try:
-        c = Circuit(2, 2).H(0).CX(0, 1).measure_all()
-        with pytest.raises(CircuitNotValidError) as errorinfo:
-            handles = backend.process_circuits([c, c.copy()], n_shots=2)
-        assert "in submitted does not satisfy GateSetPredicate" in str(errorinfo.value)
-        c = backend.get_compiled_circuit(c)
-        handles = backend.process_circuits([c, c.copy()], n_shots=4)
-        from pytket.extensions.qiskit.backends.ibm import _DEBUG_HANDLE_PREFIX
-
-        assert all(
-            cast(str, hand[0]).startswith(_DEBUG_HANDLE_PREFIX) for hand in handles
-        )
-
-        correct_shots = np.zeros((4, 2))
-        correct_counts = {(0, 0): 4}
-
-        res = backend.run_circuit(c, n_shots=4)
-        assert np.all(res.get_shots() == correct_shots)
-        assert res.get_counts() == correct_counts
-
-        # check that generating new shots still works
-        res = backend.run_circuit(c, n_shots=4)
-        assert np.all(res.get_shots() == correct_shots)
-        assert res.get_counts() == correct_counts
-    finally:
-        # ensure shared backend is reset for other tests
-        backend._MACHINE_DEBUG = False
-
-
-@pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_nshots_batching(santiago_backend: IBMQBackend) -> None:
-    backend = santiago_backend
-    backend._MACHINE_DEBUG = True
-    try:
-        c1 = Circuit(2, 2).H(0).CX(0, 1).measure_all()
-        c2 = Circuit(2, 2).Rx(0.5, 0).CX(0, 1).measure_all()
-        c3 = Circuit(2, 2).H(1).CX(0, 1).measure_all()
-        c4 = Circuit(2, 2).Rx(0.5, 0).CX(0, 1).CX(1, 0).measure_all()
-        cs = [c1, c2, c3, c4]
-        n_shots = [10, 12, 10, 13]
-        cs = backend.get_compiled_circuits(cs)
-        handles = backend.process_circuits(cs, n_shots=n_shots)
-
-        from pytket.extensions.qiskit.backends.ibm import _DEBUG_HANDLE_PREFIX
-
-        assert all(
-            cast(str, hand[0]) == _DEBUG_HANDLE_PREFIX + suffix
-            for hand, suffix in zip(
-                handles,
-                [f"{(2, 10, 0)}", f"{(2, 12, 1)}", f"{(2, 10, 0)}", f"{(2, 13, 2)}"],
-            )
-        )
-    finally:
-        # ensure shared backend is reset for other tests
-        backend._MACHINE_DEBUG = False
-
-
 def test_nshots() -> None:
-    backends = [AerBackend()]
-    if not skip_remote_tests:
-        backends.append(
-            IBMQEmulatorBackend(
-                "ibmq_santiago", hub="ibm-q", group="open", project="main"
-            )
-        )
-    for b in backends:
-        circuit = Circuit(1).X(0)
-        circuit.measure_all()
-        n_shots = [1, 2, 3]
-        results = b.get_results(b.process_circuits([circuit] * 3, n_shots=n_shots))
-        assert [len(r.get_shots()) for r in results] == n_shots
+    backend = AerBackend()
+    circuit = Circuit(1).X(0)
+    circuit.measure_all()
+    n_shots = [1, 2, 3]
+    results = backend.get_results(
+        backend.process_circuits([circuit] * 3, n_shots=n_shots)
+    )
+    assert [len(r.get_shots()) for r in results] == n_shots
 
 
 def test_pauli_statevector() -> None:
@@ -476,47 +344,6 @@ def test_pauli_sim() -> None:
     c.X(0)
     energy = get_pauli_expectation_value(c, zi, b, 8000)
     assert abs(energy + 1) < 0.001
-
-
-@pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_default_pass(santiago_backend: IBMQBackend) -> None:
-    b = santiago_backend
-    for ol in range(3):
-        comp_pass = b.default_compilation_pass(ol)
-        c = Circuit(3, 3)
-        c.H(0)
-        c.CX(0, 1)
-        c.CSWAP(1, 0, 2)
-        c.ZZPhase(0.84, 2, 0)
-        c.measure_all()
-        comp_pass.apply(c)
-        for pred in b.required_predicates:
-            assert pred.verify(c)
-
-
-@pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_aer_default_pass() -> None:
-    if not IBMQ.active_account():
-        IBMQ.load_account()
-
-    provider = IBMQ.providers(hub="ibm-q", group="open")[0]
-    back = provider.get_backend("ibmq_santiago")
-
-    noise_model = NoiseModel.from_backend(back)
-    for nm in [None, noise_model]:
-        b = AerBackend(nm)
-        for ol in range(3):
-            comp_pass = b.default_compilation_pass(ol)
-            c = Circuit(3, 3)
-            c.H(0)
-            c.CX(0, 1)
-            c.CSWAP(1, 0, 2)
-            c.ZZPhase(0.84, 2, 0)
-            c.add_gate(OpType.TK1, [0.2, 0.3, 0.4], [0])
-            comp_pass.apply(c)
-            c.measure_all()
-            for pred in b.required_predicates:
-                assert pred.verify(c)
 
 
 def test_routing_measurements() -> None:
@@ -783,62 +610,6 @@ def test_aer_placed_expectation() -> None:
     )
     assert b.get_operator_expectation_value(c, operator) == (-0.5 + 0j)
 
-    if not IBMQ.active_account():
-        IBMQ.load_account()
-
-    provider = IBMQ.providers(hub="ibm-q", group="open")[0]
-    back = provider.get_backend("ibmq_santiago")
-
-    noise_model = NoiseModel.from_backend(back)
-
-    noise_b = AerBackend(noise_model)
-
-    with pytest.raises(RuntimeError) as errorinfo:
-        noise_b.get_operator_expectation_value(c, operator)
-        assert "not supported with noise model" in str(errorinfo.value)
-
-    c.rename_units({Qubit(1): Qubit("node", 1)})
-    with pytest.raises(ValueError) as errorinfoCirc:
-        b.get_operator_expectation_value(c, operator)
-        assert "default register Qubits" in str(errorinfoCirc.value)
-
-
-@pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_ibmq_emulator() -> None:
-    b_emu = IBMQEmulatorBackend(
-        "ibmq_santiago", hub="ibm-q", group="open", project="main"
-    )
-    assert b_emu._noise_model is not None
-    b_ibm = b_emu._ibmq
-    b_aer = AerBackend()
-    for ol in range(3):
-        comp_pass = b_emu.default_compilation_pass(ol)
-        c = Circuit(3, 3)
-        c.H(0)
-        c.CX(0, 1)
-        c.CSWAP(1, 0, 2)
-        c.ZZPhase(0.84, 2, 0)
-        c_cop = c.copy()
-        comp_pass.apply(c_cop)
-        c.measure_all()
-        for bac in (b_emu, b_ibm):
-            assert all(pred.verify(c_cop) for pred in bac.required_predicates)
-
-        c_cop_2 = c.copy()
-        c_cop_2 = b_aer.get_compiled_circuit(c_cop_2, ol)
-        if ol == 0:
-            assert not all(pred.verify(c_cop_2) for pred in b_emu.required_predicates)
-
-    circ = Circuit(2, 2).H(0).CX(0, 1).measure_all()
-    copy_circ = circ.copy()
-    b_emu.rebase_pass().apply(copy_circ)
-    assert b_emu.required_predicates[1].verify(copy_circ)
-    circ = b_emu.get_compiled_circuit(circ)
-    b_noi = AerBackend(noise_model=b_emu._noise_model)
-    emu_shots = b_emu.run_circuit(circ, n_shots=10, seed=10).get_shots()
-    aer_shots = b_noi.run_circuit(circ, n_shots=10, seed=10).get_shots()
-    assert np.array_equal(emu_shots, aer_shots)
-
 
 @given(
     n_shots=strategies.integers(min_value=1, max_value=10),
@@ -915,32 +686,6 @@ def test_remote_simulator() -> None:
     assert sum(remote_qasm.run_circuit(c, n_shots=10).get_counts().values()) == 10
 
 
-@pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_ibmq_mid_measure(santiago_backend: IBMQBackend) -> None:
-    c = Circuit(3, 3).H(1).CX(1, 2).Measure(0, 0).Measure(1, 1)
-    c.add_barrier([0, 1, 2])
-
-    c.CX(1, 0).H(0).Measure(2, 2)
-
-    b = santiago_backend
-    ps = b.default_compilation_pass(0)
-    ps.apply(c)
-    # c = b.get_compiled_circuit(c)
-    assert not NoMidMeasurePredicate().verify(c)
-    assert b.valid_circuit(c)
-
-
-@pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_compile_x(santiago_backend: IBMQBackend) -> None:
-    # TKET-1028
-    b = santiago_backend
-    c = Circuit(1).X(0)
-    for ol in range(3):
-        c1 = c.copy()
-        c1 = b.get_compiled_circuit(c1, optimisation_level=ol)
-        assert c1.n_gates == 1
-
-
 def lift_perm(p: Dict[int, int]) -> np.ndarray:
     """
     Given a permutation of {0,1,...,n-1} return the 2^n by 2^n permuation matrix
@@ -957,43 +702,6 @@ def lift_perm(p: Dict[int, int]) -> np.ndarray:
                 j |= 1 << (n - 1 - p[q])
         pm[j][i] = 1
     return pm
-
-
-@pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_compilation_correctness(santiago_backend: IBMQBackend) -> None:
-    c = Circuit(5)
-    c.H(0).H(1).H(2)
-    c.CX(0, 1).CX(1, 2)
-    c.Rx(0.25, 1).Ry(0.75, 1).Rz(0.5, 2)
-    c.CCX(2, 1, 0)
-    c.CY(1, 0).CY(2, 1)
-    c.H(0).H(1).H(2)
-    c.Rz(0.125, 0)
-    c.X(1)
-    c.Rz(0.125, 2).X(2).Rz(0.25, 2)
-    c.SX(3).Rz(0.125, 3).SX(3)
-    c.CX(0, 3).CX(0, 4)
-    u_backend = AerUnitaryBackend()
-    u = u_backend.run_circuit(c).get_unitary()
-    ibm_backend = santiago_backend
-    for ol in range(3):
-        p = ibm_backend.default_compilation_pass(optimisation_level=ol)
-        cu = CompilationUnit(c)
-        p.apply(cu)
-        c1 = cu.circuit
-        compiled_u = u_backend.run_circuit(c1).get_unitary()
-
-        # Adjust for placement
-        imap = cu.initial_map
-        fmap = cu.final_map
-        c_idx = {c.qubits[i]: i for i in range(5)}
-        c1_idx = {c1.qubits[i]: i for i in range(5)}
-        ini = {c_idx[qb]: c1_idx[node] for qb, node in imap.items()}
-        inv_fin = {c1_idx[node]: c_idx[qb] for qb, node in fmap.items()}
-        m_ini = lift_perm(ini)
-        m_inv_fin = lift_perm(inv_fin)
-
-        assert compare_unitaries(u, m_inv_fin @ compiled_u @ m_ini)
 
 
 # pytket-extensions issue #69
@@ -1056,23 +764,6 @@ def test_postprocess(lima_backend: IBMQBackend) -> None:
     b.cancel(h)
 
 
-@pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_postprocess_emu() -> None:
-    b = IBMQEmulatorBackend("ibmq_santiago", hub="ibm-q", group="open", project="main")
-    assert b.supports_contextual_optimisation
-    c = Circuit(2, 2)
-    c.SX(0).SX(1).CX(0, 1).measure_all()
-    c = b.get_compiled_circuit(c)
-    h = b.process_circuit(c, n_shots=10, postprocess=True)
-    ppcirc = Circuit.from_dict(json.loads(cast(str, h[2])))
-    ppcmds = ppcirc.get_commands()
-    assert len(ppcmds) > 0
-    assert all(ppcmd.op.type == OpType.ClassicalTransform for ppcmd in ppcmds)
-    r = b.get_result(h)
-    shots = r.get_shots()
-    assert len(shots) == 10
-
-
 @pytest.mark.timeout(None)
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_cloud_stabiliser() -> None:
@@ -1102,18 +793,6 @@ def test_available_devices() -> None:
 
     backend_info_list = IBMQBackend.available_devices()
     assert len(backend_info_list) > 0
-
-
-@pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_backendinfo_serialization1() -> None:
-    # https://github.com/CQCL/tket/issues/192
-    backend = IBMQEmulatorBackend(
-        "ibmq_santiago", hub="ibm-q", group="open", project="main"
-    )
-    backend_info_json = backend.backend_info.to_dict()
-    s = json.dumps(backend_info_json)
-    backend_info_json1 = json.loads(s)
-    assert backend_info_json == backend_info_json1
 
 
 def test_backendinfo_serialization2() -> None:

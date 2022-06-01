@@ -270,11 +270,6 @@ def test_tketautopass() -> None:
         Aer.get_backend("aer_simulator"),
         Aer.get_backend("aer_simulator_unitary"),
     ]
-    if not skip_remote_tests:
-        if not IBMQ.active_account():
-            IBMQ.load_account()
-        provider = IBMQ.providers(hub="ibm-q")[0]
-        backends.append(provider.get_backend("ibmq_santiago"))
     for back in backends:
         for o_level in range(3):
             tkpass = TketAutoPass(back, o_level)
