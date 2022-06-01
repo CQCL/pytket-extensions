@@ -23,7 +23,6 @@ from qiskit import (  # type: ignore
     ClassicalRegister,
     execute,
     Aer,
-    IBMQ,
 )
 from qiskit.opflow import PauliTrotterEvolution  # type: ignore
 from qiskit.opflow.primitive_ops import PauliSumOp  # type: ignore

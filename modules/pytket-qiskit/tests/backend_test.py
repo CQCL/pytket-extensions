@@ -22,14 +22,13 @@ import numpy as np
 from pytket.circuit import Circuit, OpType, BasisOrder, Qubit, reg_eq, Unitary2qBox  # type: ignore
 from pytket.passes import CliffordSimp  # type: ignore
 from pytket.pauli import Pauli, QubitPauliString  # type: ignore
-from pytket.predicates import CompilationUnit, NoMidMeasurePredicate  # type: ignore
+from pytket.predicates import CompilationUnit  # type: ignore
 from pytket.architecture import Architecture  # type: ignore
 from pytket.mapping import MappingManager, LexiLabellingMethod, LexiRouteRoutingMethod  # type: ignore
 from pytket.transform import Transform  # type: ignore
 from pytket.backends import (
     ResultHandle,
     CircuitNotRunError,
-    CircuitNotValidError,
     CircuitStatus,
     StatusEnum,
 )
@@ -39,15 +38,13 @@ from pytket.extensions.qiskit import (
     AerBackend,
     AerStateBackend,
     AerUnitaryBackend,
-    IBMQEmulatorBackend,
 )
-from pytket.extensions.qiskit import qiskit_to_tk, process_characterisation
+from pytket.extensions.qiskit import qiskit_to_tk
 from pytket.utils.expectations import (
     get_pauli_expectation_value,
     get_operator_expectation_value,
 )
 from pytket.utils.operators import QubitPauliOperator
-from pytket.utils.results import compare_unitaries
 from qiskit import IBMQ  # type: ignore
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.circuit import Parameter  # type: ignore
