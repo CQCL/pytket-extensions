@@ -39,7 +39,6 @@ from pytket.passes import (  # type: ignore
     RemoveRedundancies,
     FullPeepholeOptimise,
     DecomposeBoxes,
-    DecomposeClassicalExp,
     SimplifyInitial,
     auto_rebase_pass,
     auto_squash_pass,
@@ -52,6 +51,7 @@ from pytket.predicates import (  # type: ignore
 )
 from pytket.utils import prepare_circuit
 from pytket.utils.outcomearray import OutcomeArray
+from pytket.wasm import WasmFileHandler
 
 from pytket.extensions.quantinuum.backends.credential_storage import (
     MemoryCredentialStorage,
@@ -85,6 +85,9 @@ _GATE_SET = {
     OpType.ExplicitPredicate,
     OpType.ExplicitModifier,
     OpType.SetBits,
+    OpType.CopyBits,
+    OpType.ClassicalExpBox,
+    OpType.WASM,
 }
 
 
@@ -273,7 +276,7 @@ class QuantinuumBackend(Backend):
 
     def default_compilation_pass(self, optimisation_level: int = 1) -> BasePass:
         assert optimisation_level in range(3)
-        passlist = [DecomposeClassicalExp(), DecomposeBoxes()]
+        passlist = [DecomposeBoxes()]
         squash = auto_squash_pass({OpType.PhasedX, OpType.Rz})
         if optimisation_level == 0:
             return SequencePass(passlist + [self.rebase_pass()])
@@ -323,7 +326,7 @@ class QuantinuumBackend(Backend):
         circuits: Sequence[Circuit],
         n_shots: Union[None, int, Sequence[Optional[int]]] = None,
         valid_check: bool = True,
-        **kwargs: KwargTypes,
+        **kwargs: Union[KwargTypes, WasmFileHandler],
     ) -> List[ResultHandle]:
         """
         See :py:meth:`pytket.backends.Backend.process_circuits`.
@@ -340,8 +343,9 @@ class QuantinuumBackend(Backend):
         * `batch_id`: first jobid of the batch
           to which this batch of circuits should be submitted. Job IDs can be
           retrieved from ResultHandle using ```backend.get_jobid(handle)```.
-        * `close_batch`: boolean flag to close the batch after the last circuit
-        in the job, default=True.
+        * `close_batch`: boolean flag to close the batch after the last circuit,
+           default=True.
+        * `wasm_file_handler`: a ``WasmFileHandler`` object for linked WASM module.
         """
         circuits = list(circuits)
         n_shots_list = Backend._get_n_shots_as_list(
@@ -367,6 +371,10 @@ class QuantinuumBackend(Backend):
         group = kwargs.get("group")
         if group is not None:
             basebody["group"] = group
+
+        wasm_fh = cast(WasmFileHandler, kwargs.get("wasm_file_handler"))
+        if wasm_fh is not None:
+            basebody["cfl"] = wasm_fh._wasm_file_encoded.decode("utf-8")
 
         handle_list = []
         batch_exec: Union[int, str]
