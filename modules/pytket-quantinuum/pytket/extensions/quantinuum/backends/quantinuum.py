@@ -343,7 +343,8 @@ class QuantinuumBackend(Backend):
         * `batch_id`: first jobid of the batch
           to which this batch of circuits should be submitted. Job IDs can be
           retrieved from ResultHandle using ```backend.get_jobid(handle)```.
-        * `close_batch`: bool flag to close the batch after the last circuit, default=True.
+        * `close_batch`: boolean flag to close the batch after the last circuit,
+           default=True.
         * `wasm_file_handler`: a ``WasmFileHandler`` object for linked WASM module.
         """
         circuits = list(circuits)

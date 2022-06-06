@@ -548,4 +548,5 @@ def test_wasm(
     b = authenticated_quum_backend
 
     c = b.get_compiled_circuit(c)
-    assert b.run_circuit(c, n_shots=10, wasm_file_handler=wasfile)
+    h = b.process_circuits([c], n_shots=10, wasm_file_handler=wasfile)[0]
+    assert b.get_result(h)
