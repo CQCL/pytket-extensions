@@ -33,8 +33,8 @@ def setup_qiskit_account() -> None:
 
 
 @pytest.fixture(scope="module")
-def santiago_backend() -> IBMQBackend:
-    return IBMQBackend("ibmq_santiago", hub="ibm-q", group="open", project="main")
+def bogota_backend() -> IBMQBackend:
+    return IBMQBackend("ibmq_bogota", hub="ibm-q", group="open", project="main")
 
 
 @pytest.fixture(scope="module")
