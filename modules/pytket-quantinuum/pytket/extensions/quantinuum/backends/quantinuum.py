@@ -77,7 +77,6 @@ _GATE_SET = {
     OpType.Rz,
     OpType.PhasedX,
     OpType.ZZMax,
-    OpType.ZZPhase,
     OpType.Reset,
     OpType.Measure,
     OpType.Barrier,
@@ -92,14 +91,26 @@ _GATE_SET = {
 }
 
 
-def _get_gateset(machine_name: str) -> Set[OpType]:
+def _get_gateset(gates: List[str]) -> Set[OpType]:
     gs = _GATE_SET.copy()
-    if machine_name.endswith("E"):
-        gs.remove(OpType.ZZPhase)
+    if "RZZ" in gates:
+        gs.add(OpType.ZZPhase)
     return gs
 
 
 class GetResultFailed(Exception):
+    pass
+
+
+class NoSyntaxChecker(Exception):
+    pass
+
+
+class MaxShotsExceeded(Exception):
+    pass
+
+
+class WasmUnsupported(Exception):
     pass
 
 
@@ -158,7 +169,6 @@ class QuantinuumBackend(Backend):
         self._MACHINE_DEBUG = machine_debug
 
         self.simulator_type = simulator
-        self._gate_set = _get_gateset(self._device_name)
 
         self._api_handler = _api_handler
 
@@ -188,15 +198,19 @@ class QuantinuumBackend(Backend):
 
     @classmethod
     def _dict_to_backendinfo(cls, dct: Dict[str, Any]) -> BackendInfo:
+        name: str = dct.pop("name")
+        n_qubits: int = dct.pop("n_qubits")
+        gate_set: List[str] = dct.pop("gateset", [])
         return BackendInfo(
             name=cls.__name__,
-            device_name=dct["name"],
+            device_name=name,
             version=__extension_version__,
-            architecture=FullyConnected(dct["n_qubits"]),
-            gate_set=_get_gateset(dct["name"]),
+            architecture=FullyConnected(n_qubits),
+            gate_set=_get_gateset(gate_set),
             supports_fast_feedforward=True,
             supports_midcircuit_measurement=True,
             supports_reset=True,
+            misc=dct,
         )
 
     @classmethod
@@ -216,10 +230,10 @@ class QuantinuumBackend(Backend):
     def _retrieve_backendinfo(self, machine: str) -> BackendInfo:
         jr = self._available_devices(self._api_handler)
         try:
-            self._machine_info = next(entry for entry in jr if entry["name"] == machine)
+            _machine_info = next(entry for entry in jr if entry["name"] == machine)
         except StopIteration:
             raise DeviceNotAvailable(machine)
-        return self._dict_to_backendinfo(self._machine_info)
+        return self._dict_to_backendinfo(_machine_info)
 
     @classmethod
     def device_state(
@@ -257,6 +271,14 @@ class QuantinuumBackend(Backend):
         if self._backend_info is None and not self._MACHINE_DEBUG:
             self._backend_info = self._retrieve_backendinfo(self._device_name)
         return self._backend_info
+
+    @property
+    def _gate_set(self) -> Set[OpType]:
+        return (
+            _GATE_SET
+            if self._MACHINE_DEBUG
+            else cast(BackendInfo, self.backend_info).gate_set
+        )
 
     @property
     def required_predicates(self) -> List[Predicate]:
@@ -371,9 +393,13 @@ class QuantinuumBackend(Backend):
         if group is not None:
             basebody["group"] = group
 
-        wasm_fh = cast(WasmFileHandler, kwargs.get("wasm_file_handler"))
+        wasm_fh = kwargs.get("wasm_file_handler")
         if wasm_fh is not None:
-            basebody["cfl"] = wasm_fh._wasm_file_encoded.decode("utf-8")
+            if self.backend_info and not self.backend_info.misc.get("wasm", False):
+                raise WasmUnsupported("Backend does not support wasm calls.")
+            basebody["cfl"] = cast(WasmFileHandler, wasm_fh)._wasm_file_encoded.decode(
+                "utf-8"
+            )
 
         handle_list = []
         batch_exec: Union[int, str]
@@ -382,7 +408,13 @@ class QuantinuumBackend(Backend):
         else:
             batch_exec = cast(int, kwargs.get("max_batch_cost", 500))
         final_index = len(circuits) - 1
+
+        max_shots = self.backend_info.misc.get("n_shots") if self.backend_info else None
         for i, (circ, n_shots) in enumerate(zip(circuits, n_shots_list)):
+            if max_shots is not None and n_shots > max_shots:
+                raise MaxShotsExceeded(
+                    f"Number of shots {n_shots} exceeds maximum {max_shots}"
+                )
             if postprocess:
                 c0, ppcirc = prepare_circuit(circ, allow_classical=False, xcirc=_xcirc)
                 ppcirc_rep = ppcirc.to_dict()
@@ -394,13 +426,11 @@ class QuantinuumBackend(Backend):
             body["program"] = quantinuum_circ
             body["count"] = n_shots
 
-            if (final_index > 0 or "batch_id" in kwargs) and (
-                (self._device_name != DEVICE_FAMILY or "max_batch_cost" in kwargs)
-                and (not self._device_name.endswith("SC"))
-            ):
-                # Don't set default batch fields if:
-                #  - Submitting to the device family or syntax checker
-                #  - Less than one job submitted and no batch handle provided
+            if (final_index > 0 or "batch_id" in kwargs) and cast(
+                BackendInfo, self.backend_info
+            ).misc.get("batching", False):
+                # Don't set default batch fields if
+                # less than one job submitted and no batch handle provided
 
                 body["batch-exec"] = batch_exec
                 if i == final_index and kwargs.get("close_batch", True):
@@ -574,12 +604,21 @@ class QuantinuumBackend(Backend):
                 "Circuit does not satisfy predicates of backend."
                 + " Try running `backend.get_compiled_circuit` first"
             )
-        if syntax_checker:
-            backend = QuantinuumBackend(syntax_checker, _api_handler=self._api_handler)
-        else:
-            backend = QuantinuumBackend(
-                _infer_syntax_checker(self._device_name), _api_handler=self._api_handler
+
+        try:
+            syntax_checker = (
+                syntax_checker
+                or cast(BackendInfo, self.backend_info).misc["syntax_checker"]
             )
+        except KeyError:
+            raise NoSyntaxChecker(
+                "Could not find syntax checker for this backend,"
+                " try setting one explicitly with the ``syntax_checker`` parameter"
+            )
+
+        backend = QuantinuumBackend(
+            cast(str, syntax_checker), _api_handler=self._api_handler
+        )
         try:
             handle = backend.process_circuit(circuit, n_shots)
         except DeviceNotAvailable as e:

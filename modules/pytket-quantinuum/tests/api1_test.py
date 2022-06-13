@@ -17,7 +17,7 @@
 # phase.
 
 from io import StringIO
-from typing import Any, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 import pytest
 
 from requests_mock.mocker import Mocker
@@ -25,14 +25,16 @@ from requests_mock.mocker import Mocker
 from pytket.extensions.quantinuum.backends.api_wrappers import QuantinuumAPI
 from pytket.extensions.quantinuum.backends import QuantinuumBackend
 from pytket.circuit import Circuit  # type: ignore
-
+from pytket.architecture import FullyConnected  # type: ignore
 from pytket.extensions.quantinuum.backends.quantinuum import DEFAULT_API_HANDLER
+from pytket.extensions.quantinuum._metadata import __extension_version__
 
 
 def test_default_login_flow(
     requests_mock: Mocker,
     mock_credentials: Tuple[str, str],
     mock_token: str,
+    mock_machine_info: Dict[str, Any],
     monkeypatch: Any,
 ) -> None:
     """Test that when an api_handler is not provided to
@@ -45,7 +47,7 @@ def test_default_login_flow(
 
     DEFAULT_API_HANDLER.delete_authentication()
 
-    fake_device = "H9-27"
+    fake_device = mock_machine_info["name"]
     fake_job_id = "abc-123"
 
     login_route = requests_mock.register_uri(
@@ -69,6 +71,12 @@ def test_default_login_flow(
         "GET",
         f"https://qapi.quantinuum.com/v1/job/{fake_job_id}?websocket=true",
         json={"job": fake_job_id},
+        headers={"Content-Type": "application/json"},
+    )
+    requests_mock.register_uri(
+        "GET",
+        f"https://qapi.quantinuum.com/v1/machine/?config=true",
+        json=[mock_machine_info],
         headers={"Content-Type": "application/json"},
     )
 
@@ -108,6 +116,7 @@ def test_default_login_flow(
 def test_custom_login_flow(
     requests_mock: Mocker,
     mock_token: str,
+    mock_machine_info: Dict[str, Any],
 ) -> None:
     """Test that when an api_handler is provided to
     QuantinuumBackend we use that handler and acquire
@@ -116,7 +125,7 @@ def test_custom_login_flow(
 
     DEFAULT_API_HANDLER.delete_authentication()
 
-    fake_device = "H9-27"
+    fake_device = mock_machine_info["name"]
     fake_job_id = "abc-123"
 
     login_route = requests_mock.register_uri(
@@ -140,6 +149,12 @@ def test_custom_login_flow(
         "GET",
         f"https://qapi.quantinuum.com/v1/job/{fake_job_id}?websocket=true",
         json={"job": fake_job_id},
+        headers={"Content-Type": "application/json"},
+    )
+    requests_mock.register_uri(
+        "GET",
+        f"https://qapi.quantinuum.com/v1/machine/?config=true",
+        json=[mock_machine_info],
         headers={"Content-Type": "application/json"},
     )
 
@@ -181,11 +196,12 @@ def test_custom_login_flow(
 
 @pytest.mark.parametrize(
     "chosen_device,max_batch_cost",
-    [("H1", 300), ("H1", None), ("H1-1", 300), ("H1-1", None)],
+    [("H1", 300), ("H1-1", 300), ("H1-1", None)],
 )
 def test_device_family(
     requests_mock: Mocker,
     mock_quum_api_handler: QuantinuumAPI,
+    sample_machine_infos: List[Dict[str, Any]],
     chosen_device: str,
     max_batch_cost: Optional[int],
 ) -> None:
@@ -209,6 +225,13 @@ def test_device_family(
         headers={"Content-Type": "application/json"},
     )
 
+    requests_mock.register_uri(
+        "GET",
+        f"https://qapi.quantinuum.com/v1/machine/?config=true",
+        json=sample_machine_infos,
+        headers={"Content-Type": "application/json"},
+    )
+
     family_backend = QuantinuumBackend(
         device_name=chosen_device,
     )
@@ -228,7 +251,7 @@ def test_device_family(
     if requests_mock.last_request:
         submitted_json = requests_mock.last_request.json()
 
-    if chosen_device == "H1" and max_batch_cost is None:
+    if chosen_device == "H1":
         assert "batch-exec" not in submitted_json.keys()
         assert "batch-end" not in submitted_json.keys()
     else:
@@ -239,6 +262,7 @@ def test_device_family(
 def test_resumed_batching(
     requests_mock: Mocker,
     mock_quum_api_handler: QuantinuumAPI,
+    sample_machine_infos: Dict[str, Any],
 ) -> None:
     """Test that you can resume using a batch."""
 
@@ -255,6 +279,12 @@ def test_resumed_batching(
         "GET",
         f"https://qapi.quantinuum.com/v1/job/{fake_job_id}?websocket=true",
         json={"job": fake_job_id},
+        headers={"Content-Type": "application/json"},
+    )
+    requests_mock.register_uri(
+        "GET",
+        f"https://qapi.quantinuum.com/v1/machine/?config=true",
+        json=sample_machine_infos,
         headers={"Content-Type": "application/json"},
     )
 
@@ -287,3 +317,39 @@ def test_resumed_batching(
         submitted_json = requests_mock.last_request.json()
     assert submitted_json["batch-exec"] == backend.get_jobid(h1)
     assert "batch-end" in submitted_json
+
+
+def test_available_devices(
+    requests_mock: Mocker,
+    mock_quum_api_handler: QuantinuumAPI,
+    mock_machine_info: Dict[str, Any],
+) -> None:
+
+    requests_mock.register_uri(
+        "GET",
+        f"https://qapi.quantinuum.com/v1/machine/?config=true",
+        json=[mock_machine_info],
+        headers={"Content-Type": "application/json"},
+    )
+
+    devices = QuantinuumBackend.available_devices(_api_handler=mock_quum_api_handler)
+    assert len(devices) == 1
+    backinfo = devices[0]
+
+    assert backinfo.device_name == mock_machine_info["name"]
+    assert backinfo.architecture == FullyConnected(mock_machine_info["n_qubits"])
+    assert backinfo.version == __extension_version__
+    assert backinfo.supports_fast_feedforward == True
+    assert backinfo.supports_midcircuit_measurement == True
+    assert backinfo.supports_reset == True
+    assert backinfo.misc == {
+        "n_classical_registers": 50,
+        "n_shots": 10000,
+        "system_family": "mock_family",
+        "system_type": "hardware",
+        "emulator": "H9-27E",
+        "syntax_checker": "H9-27SC",
+        "batching": True,
+        "wasm": True,
+    }
+    assert backinfo.name == "QuantinuumBackend"
