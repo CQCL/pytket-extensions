@@ -2,7 +2,7 @@ Changelog
 ~~~~~~~~~
 
 0.4.0 (unreleased)
------------------
+------------------
 
 * Add wasm support
 * Add support for `OpType.CopyBits` and `OpType.ClassicalExpBox` in `QuantinuumBackend`
