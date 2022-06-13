@@ -1,6 +1,13 @@
 Changelog
 ~~~~~~~~~
 
+0.4.0 (unreleased)
+------------------
+
+* Add wasm support
+* Add support for `OpType.CopyBits` and `OpType.ClassicalExpBox` in `QuantinuumBackend`
+* Updated pytket version requirement to 1.3.0rc1
+
 0.3.1 (May 2022)
 ----------------
 
