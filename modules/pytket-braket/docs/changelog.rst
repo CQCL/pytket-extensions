@@ -1,6 +1,11 @@
 Changelog
 ~~~~~~~~~
 
+0.19.1 (June 2022)
+------------------
+
+* Fixes to qubit index handling.
+
 0.19.0 (May 2022)
 -----------------
 
