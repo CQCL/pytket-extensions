@@ -228,7 +228,7 @@ def circuits(
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
 @pytest.mark.parametrize(
     "authenticated_quum_backend",
-    [{"device_name": name for name in ALL_DEVICE_NAMES}],
+    [{"device_name": name for name in ["H1-1SC", "H1-2SC", "H1", "H1-1", "H1-2"]}],
     indirect=True,
 )
 @given(
@@ -484,10 +484,6 @@ def test_zzphase(
     c0 = backend.get_compiled_circuit(c, 0)
 
     assert c0.n_gates_of_type(OpType.ZZPhase) > 0
-
-    # simulator does not yet support ZZPhase
-    backsim = QuantinuumBackend(device_name="H1-1E", machine_debug=skip_remote_tests)
-    assert backsim.get_compiled_circuit(c, 0).n_gates_of_type(OpType.ZZPhase) == 0
 
     n_shots = 4
     handle = backend.process_circuits([c0], n_shots)[0]

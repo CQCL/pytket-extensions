@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import os
-from typing import Tuple
+from typing import Any, Dict, List, Tuple
 
 import pytest
 from _pytest.fixtures import SubRequest
@@ -42,6 +42,94 @@ def mock_token() -> str:
     token_payload = {"exp": 3278815149.143694}
     mock_token = jwt.encode(token_payload, key="", algorithm="HS256")
     return mock_token
+
+
+@pytest.fixture()
+def mock_machine_info() -> Dict[str, Any]:
+    return {
+        "name": "H9-27",
+        "n_qubits": 12,
+        "gateset": [],
+        "n_classical_registers": 50,
+        "n_shots": 10000,
+        "system_family": "mock_family",
+        "system_type": "hardware",
+        "emulator": "H9-27E",
+        "syntax_checker": "H9-27SC",
+        "batching": True,
+        "wasm": True,
+    }
+
+
+@pytest.fixture()
+def sample_machine_infos() -> List[Dict[str, Any]]:
+    return [
+        {
+            "name": "H1-2SC",
+            "n_qubits": 12,
+            "gateset": ["RZZ", "Riswap", "Rxxyyzz"],
+            "n_classical_registers": 50,
+            "n_shots": 10000,
+            "system_type": "syntax checker",
+            "wasm": True,
+        },
+        {
+            "name": "H1-1SC",
+            "n_qubits": 12,
+            "gateset": ["RZZ", "Riswap", "Rxxyyzz"],
+            "n_classical_registers": 50,
+            "n_shots": 10000,
+            "system_type": "syntax checker",
+            "wasm": True,
+        },
+        {
+            "name": "H1-1E",
+            "n_qubits": 20,
+            "gateset": ["RZZ", "Riswap", "Rxxyyzz"],
+            "n_classical_registers": 50,
+            "n_shots": 10000,
+            "system_type": "emulator",
+            "batching": True,
+            "wasm": True,
+        },
+        {
+            "name": "H1-1",
+            "n_qubits": 20,
+            "gateset": ["RZZ", "Riswap", "Rxxyyzz"],
+            "n_classical_registers": 50,
+            "n_shots": 10000,
+            "system_family": "H1",
+            "system_type": "hardware",
+            "emulator": "H1-1E",
+            "syntax_checker": "H1-1SC",
+            "batching": True,
+            "wasm": True,
+        },
+        {
+            "name": "H1-2",
+            "n_qubits": 12,
+            "gateset": ["RZZ", "Riswap", "Rxxyyzz"],
+            "n_classical_registers": 50,
+            "n_shots": 10000,
+            "system_family": "H1",
+            "system_type": "hardware",
+            "emulator": "H1-2E",
+            "syntax_checker": "H1-2SC",
+            "batching": True,
+            "wasm": True,
+        },
+        {
+            "name": "H1-2E",
+            "n_qubits": 12,
+            "gateset": ["RZZ", "Riswap", "Rxxyyzz"],
+            "n_classical_registers": 50,
+            "n_shots": 10000,
+            "system_type": "emulator",
+            "batching": True,
+            "wasm": True,
+        },
+        {"name": "H1", "n_qubits": 20},
+    ]
 
 
 @pytest.fixture(name="mock_quum_api_handler", params=[True, False])
