@@ -459,7 +459,16 @@ class BraketBackend(Backend):
                 connectivity_graph = dict(
                     (int(k), [int(v) for v in l]) for k, l in connectivity_graph.items()
                 )
-                all_qubits = sorted(connectivity_graph.keys())
+                # each connectivity graph key will be an int
+                # connectivity_graph values will be lists
+                qubit_list = [
+                    [*connectivity_graph.keys()],
+                    *connectivity_graph.values(),
+                ]
+                # summing lists will flatten them
+                # example [[0,1], [0,2]] would be [0,1,0,2] when summed
+                # returns unique ordered list since taking set of sum
+                all_qubits = list(set(sum(qubit_list, [])))
                 if n_qubits < len(all_qubits):
                     # This can happen, at least on rigetti devices, and causes errors.
                     # As a kludgy workaround, remove some qubits from the architecture.
@@ -685,6 +694,9 @@ class BraketBackend(Backend):
             else:
                 c0, ppcirc, ppcirc_rep = circ, None, None
             bkcirc, measures = self._to_bkcirc(c0)
+            # maps to index of measured qubits in the circuit
+            # this is necessary because qubit number doesn't map to index for Rigetti
+            measures = {k: self._all_qubits.index(v) for k, v in measures.items()}
             if want_state:
                 bkcirc.add_result_type(ResultType.StateVector())
             if want_dm:
@@ -739,13 +751,14 @@ class BraketBackend(Backend):
         if self._device_type == _DeviceType.LOCAL:
             return CircuitStatus(StatusEnum.COMPLETED)
         task_id, target_qubits, measures, want_state, want_dm, ppcirc_str = handle
+
         ppcirc_rep = json.loads(ppcirc_str)
         ppcirc = Circuit.from_dict(ppcirc_rep) if ppcirc_rep is not None else None
         task = AwsQuantumTask(task_id, aws_session=self._aws_session)
         state = task.state()
         if state == "FAILED":
             return CircuitStatus(StatusEnum.ERROR, task.metadata()["failureReason"])
-        elif state == "CANCELLED":
+        elif state in ["CANCELLED", "CANCELLING"]:
             return CircuitStatus(StatusEnum.CANCELLED)
         elif state == "COMPLETED":
             self._update_cache_result(
