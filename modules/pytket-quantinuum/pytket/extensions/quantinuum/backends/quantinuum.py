@@ -373,11 +373,9 @@ class QuantinuumBackend(Backend):
                 "error-model": noisy_simulation,
             },
         }
-        group = kwargs.get("group")
+        group = kwargs.get("group", self._group)
         if group is not None:
             basebody["group"] = group
-        elif self._group is not None:
-            basebody["group"] = self._group
 
         wasm_fh = cast(WasmFileHandler, kwargs.get("wasm_file_handler"))
         if wasm_fh is not None:
