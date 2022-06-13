@@ -26,7 +26,8 @@ import requests
 from pytket.backends import Backend, ResultHandle, CircuitStatus, StatusEnum
 from pytket.backends.backend import KwargTypes
 from pytket.backends.resulthandle import _ResultIdTuple
-from pytket.backends.backendinfo import BackendInfo, fully_connected_backendinfo
+from pytket.architecture import FullyConnected  # type: ignore
+from pytket.backends.backendinfo import BackendInfo
 from pytket.backends.backendresult import BackendResult
 from pytket.backends.backend_exceptions import CircuitNotRunError
 from pytket.circuit import Circuit, OpType, Bit  # type: ignore
@@ -191,6 +192,19 @@ class QuantinuumBackend(Backend):
         return jr  # type: ignore
 
     @classmethod
+    def _dict_to_backendinfo(cls, dct: Dict[str, Any]) -> BackendInfo:
+        return BackendInfo(
+            name=cls.__name__,
+            device_name=dct["name"],
+            version=__extension_version__,
+            architecture=FullyConnected(dct["n_qubits"]),
+            gate_set=_get_gateset(dct["name"]),
+            supports_fast_feedforward=True,
+            supports_midcircuit_measurement=True,
+            supports_reset=True,
+        )
+
+    @classmethod
     def available_devices(
         cls,
         **kwargs: Any,
@@ -202,16 +216,7 @@ class QuantinuumBackend(Backend):
         """
         _api_handler = kwargs.get("_api_handler", DEFAULT_API_HANDLER)
         jr = cls._available_devices(_api_handler)
-        return [
-            fully_connected_backendinfo(
-                cls.__name__,
-                machine["name"],
-                __extension_version__,
-                machine["n_qubits"],
-                _get_gateset(machine["name"]),
-            )
-            for machine in jr
-        ]
+        return list(map(cls._dict_to_backendinfo, jr))
 
     def _retrieve_backendinfo(self, machine: str) -> BackendInfo:
         jr = self._available_devices(self._api_handler)
@@ -219,13 +224,7 @@ class QuantinuumBackend(Backend):
             self._machine_info = next(entry for entry in jr if entry["name"] == machine)
         except StopIteration:
             raise DeviceNotAvailable(machine)
-        return fully_connected_backendinfo(
-            type(self).__name__,
-            machine,
-            __extension_version__,
-            self._machine_info["n_qubits"],
-            self._gate_set,
-        )
+        return self._dict_to_backendinfo(self._machine_info)
 
     @classmethod
     def device_state(
