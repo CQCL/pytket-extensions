@@ -133,6 +133,7 @@ class QuantinuumBackend(Backend):
         device_name: str,
         label: Optional[str] = "job",
         simulator: str = "state-vector",
+        group: Optional[str] = None,
         machine_debug: bool = False,
         _api_handler: QuantinuumAPI = DEFAULT_API_HANDLER,
     ):
@@ -144,6 +145,9 @@ class QuantinuumBackend(Backend):
         :type label: Optional[str], optional
         :param simulator: Only applies to simulator devices, options are
             "state-vector" or "stabilizer", defaults to "state-vector"
+        :param group: string identifier of a collection of jobs, can be used for usage
+          tracking.
+        :type group: Optional[str], optional
         :type simulator: str, optional
         :param _api_handler: Instance of API handler, defaults to DEFAULT_API_HANDLER
         :type _api_handler: QuantinuumAPI
@@ -152,6 +156,7 @@ class QuantinuumBackend(Backend):
         super().__init__()
         self._device_name = device_name
         self._label = label
+        self._group = group
 
         self._backend_info: Optional[BackendInfo] = None
         self._MACHINE_DEBUG = machine_debug
@@ -337,7 +342,7 @@ class QuantinuumBackend(Backend):
         * `noisy_simulation`: boolean flag to specify whether the simulator should
           perform noisy simulation with an error model (default value is `True`).
         * `group`: string identifier of a collection of jobs, can be used for usage
-          tracking.
+          tracking. Overrides the instance variable `group`.
         * `max_batch_cost`: maximum HQC usable by submitted batch, default is
           500.
         * `batch_id`: first jobid of the batch
@@ -368,7 +373,7 @@ class QuantinuumBackend(Backend):
                 "error-model": noisy_simulation,
             },
         }
-        group = kwargs.get("group")
+        group = kwargs.get("group", self._group)
         if group is not None:
             basebody["group"] = group
 
