@@ -1,7 +1,7 @@
 Changelog
 ~~~~~~~~~
 
-0.4.0 (unrelease)
+0.4.0 (unreleased)
 -----------------
 
 * Add wasm support
