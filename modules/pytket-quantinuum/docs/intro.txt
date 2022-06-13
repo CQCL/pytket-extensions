@@ -53,27 +53,24 @@ The passes applied by different levels of optimisation are specified in the tabl
    * - optimisation_level = 0
      - optimisation_level = 1 [1]
      - optimisation_level = 2
-   * - DecomposeClassicalExp
-     - DecomposeClassicalExp
-     - DecomposeClassicalExp
-   * - DecomposeBoxes
-     - DecomposeBoxes
-     - DecomposeBoxes
+   * - `DecomposeBoxes <https://cqcl.github.io/tket/pytket/api/passes.html#pytket.passes.DecomposeBoxes>`_
+     - `DecomposeBoxes <https://cqcl.github.io/tket/pytket/api/passes.html#pytket.passes.DecomposeBoxes>`_
+     - `DecomposeBoxes <https://cqcl.github.io/tket/pytket/api/passes.html#pytket.passes.DecomposeBoxes>`_
    * - self.rebase_pass [2]
-     - SynthesiseTket
-     - FullPeepholeOptimise
+     - `SynthesiseTket <https://cqcl.github.io/tket/pytket/api/passes.html#pytket.passes.SynthesiseTket>`_
+     - `FullPeepholeOptimise <https://cqcl.github.io/tket/pytket/api/passes.html#pytket.passes.FullPeepholeOptimise>`_
    * -
      - self.rebase_pass [2]
-     - SynthesiseTket
+     - `SynthesiseTket <https://cqcl.github.io/tket/pytket/api/passes.html#pytket.passes.SynthesiseTket>`_
    * -
-     - auto_squash_pass [3]
+     - `auto_squash_pass [3] <https://cqcl.github.io/tket/pytket/api/passes.html#pytket.passes.auto_rebase.auto_squash_pass>`_
      - self.rebase_pass [2]
    * -
-     - SimplifyInitial [4]
-     - auto_squash_pass [3]
+     - `SimplifyInitial [4] <https://cqcl.github.io/tket/pytket/api/passes.html#pytket.passes.SimplifyInitial>`_
+     - `auto_squash_pass [3] <https://cqcl.github.io/tket/pytket/api/passes.html#pytket.passes.auto_rebase.auto_squash_pass>`_
    * -
      -
-     - SimplifyInitial [4]
+     - `SimplifyInitial [4] <https://cqcl.github.io/tket/pytket/api/passes.html#pytket.passes.SimplifyInitial>`_
 
 * [1] If no value is specified then ``optimisation_level`` defaults to a value of 1.
 
@@ -89,9 +86,9 @@ The passes applied by different levels of optimisation are specified in the tabl
 
 Circuits must satisfy the following predicates in order to run on the ``QuantinuumBackend``.
 
-* ``NoSymbolsPredicate``
-* ``GateSetPredicate`` : To view supported Ops run ``QuantinuumBackend.backend_info.gate_set``
-* ``MaxNQubitsPredicate(12)`` for ``H1-1``, ``H1-2`` and ``H1-2E``. ``MaxNQubitsPredicate(20)`` for ``H1-1E``.
+* `NoSymbolsPredicate  <https://cqcl.github.io/tket/pytket/api/predicates.html#pytket.predicates.NoSymbolsPredicate>`_
+* `GateSetPredicate  <https://cqcl.github.io/tket/pytket/api/predicates.html#pytket.predicates.GateSetPredicate>`_ : To view supported Ops run ``QuantinuumBackend.backend_info.gate_set``
+* `MaxNQubitsPredicate(12) <https://cqcl.github.io/tket/pytket/api/predicates.html#pytket.predicates.MaxNQubitsPredicate>`_ for ``H1-1``, ``H1-2`` and ``H1-2E``. ``MaxNQubitsPredicate(20)`` for ``H1-1E``.
 
 
 **Additional Backend Capabilities**
