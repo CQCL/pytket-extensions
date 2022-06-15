@@ -372,7 +372,7 @@ class QuantinuumBackend(Backend):
         * `close_batch`: boolean flag to close the batch after the last circuit,
            default=True.
         * `wasm_file_handler`: a ``WasmFileHandler`` object for linked WASM module.
-        
+
         """
         circuits = list(circuits)
         n_shots_list = Backend._get_n_shots_as_list(
