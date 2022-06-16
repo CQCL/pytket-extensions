@@ -47,7 +47,7 @@ from pytket.utils.expectations import (
     get_operator_expectation_value,
 )
 from pytket.utils.operators import QubitPauliOperator
-from pytket.utils.results import compare_unitaries
+from pytket.utils.results import compare_statevectors
 from qiskit import IBMQ  # type: ignore
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.circuit import Parameter  # type: ignore
@@ -993,7 +993,11 @@ def test_compilation_correctness(bogota_backend: IBMQBackend) -> None:
         m_ini = lift_perm(ini)
         m_inv_fin = lift_perm(inv_fin)
 
-        assert compare_unitaries(u, m_inv_fin @ compiled_u @ m_ini)
+        # Note that we do not expect unitary equivalence, because the pass includes
+        # SimplifyInitial which may remove initial gates that do not affect the final
+        # result. However the first columns of the unitaries (i.e. the final
+        # statevectors arising from an initial all-zero state) should match.
+        assert compare_statevectors(u[:, 0], (m_inv_fin @ compiled_u @ m_ini)[:, 0])
 
 
 # pytket-extensions issue #69
