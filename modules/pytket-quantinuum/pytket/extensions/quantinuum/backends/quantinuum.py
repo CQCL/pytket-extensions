@@ -372,6 +372,7 @@ class QuantinuumBackend(Backend):
         * `close_batch`: boolean flag to close the batch after the last circuit,
            default=True.
         * `wasm_file_handler`: a ``WasmFileHandler`` object for linked WASM module.
+
         """
         circuits = list(circuits)
         n_shots_list = Backend._get_n_shots_as_list(
@@ -588,8 +589,8 @@ class QuantinuumBackend(Backend):
         "SC"), it is automatically appended
         to check against the relevant syntax checker.
         Sometimes it may not be possible to find the relevant syntax checker,
-         for example for device families. In which case you may need to set
-         the ``syntax_checker`` kwarg to the appropriate syntax checker name.
+        for example for device families. In which case you may need to set
+        the ``syntax_checker`` kwarg to the appropriate syntax checker name.
 
         :param circuit: Circuit to calculate runtime estimate for. Must be valid for
             backend.
@@ -598,7 +599,7 @@ class QuantinuumBackend(Backend):
         :type n_shots: int
         :param syntax_checker: Optional.Name of the syntax checker to use to get cost.
             For example for the "H1-1" device that would be "H1-1SC".
-             For most devices this is automatically inferred, default=None.
+            For most devices this is automatically inferred, default=None.
         :type syntax_checker: str
         :raises ValueError: Circuit is not valid, needs to be compiled.
         :return: Cost in HQC to execute the shots.
