@@ -378,8 +378,8 @@ def test_cancellation_ibmq(lima_backend: IBMQBackend) -> None:
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_machine_debug(bogota_backend: IBMQBackend) -> None:
-    backend = bogota_backend
+def test_machine_debug(manila_backend: IBMQBackend) -> None:
+    backend = manila_backend
     backend._MACHINE_DEBUG = True
     try:
         c = Circuit(2, 2).H(0).CX(0, 1).measure_all()
@@ -411,8 +411,8 @@ def test_machine_debug(bogota_backend: IBMQBackend) -> None:
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_nshots_batching(bogota_backend: IBMQBackend) -> None:
-    backend = bogota_backend
+def test_nshots_batching(manila_backend: IBMQBackend) -> None:
+    backend = manila_backend
     backend._MACHINE_DEBUG = True
     try:
         c1 = Circuit(2, 2).H(0).CX(0, 1).measure_all()
@@ -479,8 +479,8 @@ def test_pauli_sim() -> None:
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_default_pass(bogota_backend: IBMQBackend) -> None:
-    b = bogota_backend
+def test_default_pass(manila_backend: IBMQBackend) -> None:
+    b = manila_backend
     for ol in range(3):
         comp_pass = b.default_compilation_pass(ol)
         c = Circuit(3, 3)
@@ -916,13 +916,13 @@ def test_remote_simulator() -> None:
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_ibmq_mid_measure(bogota_backend: IBMQBackend) -> None:
+def test_ibmq_mid_measure(manila_backend: IBMQBackend) -> None:
     c = Circuit(3, 3).H(1).CX(1, 2).Measure(0, 0).Measure(1, 1)
     c.add_barrier([0, 1, 2])
 
     c.CX(1, 0).H(0).Measure(2, 2)
 
-    b = bogota_backend
+    b = manila_backend
     ps = b.default_compilation_pass(0)
     ps.apply(c)
     # c = b.get_compiled_circuit(c)
@@ -931,9 +931,9 @@ def test_ibmq_mid_measure(bogota_backend: IBMQBackend) -> None:
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_compile_x(bogota_backend: IBMQBackend) -> None:
+def test_compile_x(manila_backend: IBMQBackend) -> None:
     # TKET-1028
-    b = bogota_backend
+    b = manila_backend
     c = Circuit(1).X(0)
     for ol in range(3):
         c1 = c.copy()
@@ -960,7 +960,7 @@ def lift_perm(p: Dict[int, int]) -> np.ndarray:
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_compilation_correctness(bogota_backend: IBMQBackend) -> None:
+def test_compilation_correctness(manila_backend: IBMQBackend) -> None:
     c = Circuit(5)
     c.H(0).H(1).H(2)
     c.CX(0, 1).CX(1, 2)
@@ -975,7 +975,7 @@ def test_compilation_correctness(bogota_backend: IBMQBackend) -> None:
     c.CX(0, 3).CX(0, 4)
     u_backend = AerUnitaryBackend()
     u = u_backend.run_circuit(c).get_unitary()
-    ibm_backend = bogota_backend
+    ibm_backend = manila_backend
     for ol in range(3):
         p = ibm_backend.default_compilation_pass(optimisation_level=ol)
         cu = CompilationUnit(c)
