@@ -380,6 +380,7 @@ def test_cancellation_ibmq(lima_backend: IBMQBackend) -> None:
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_machine_debug(bogota_backend: IBMQBackend) -> None:
     backend = bogota_backend
+    # check
     backend._MACHINE_DEBUG = True
     try:
         c = Circuit(2, 2).H(0).CX(0, 1).measure_all()
