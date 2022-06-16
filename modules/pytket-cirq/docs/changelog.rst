@@ -1,10 +1,11 @@
 Changelog
 ~~~~~~~~~
 
-0.24.0 (Unreleased)
--------------------
+0.24.0 (June 2022)
+------------------
 
 * `cirq_to_tk()` and `tk_to_cirq()` now properly handle circuits with `NamedQubit`.
+* Updated pytket version requirement to 1.3.
 
 0.23.0 (May 2022)
 -----------------
