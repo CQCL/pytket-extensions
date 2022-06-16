@@ -976,7 +976,7 @@ def test_compilation_correctness(bogota_backend: IBMQBackend) -> None:
     u_backend = AerUnitaryBackend()
     u = u_backend.run_circuit(c).get_unitary()
     ibm_backend = bogota_backend
-    for ol in range(1):
+    for ol in range(3):
         p = ibm_backend.default_compilation_pass(optimisation_level=ol)
         cu = CompilationUnit(c)
         p.apply(cu)
