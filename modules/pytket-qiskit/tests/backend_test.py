@@ -977,6 +977,7 @@ def test_compilation_correctness(bogota_backend: IBMQBackend) -> None:
     u = u_backend.run_circuit(c).get_unitary()
     ibm_backend = bogota_backend
     for ol in range(3):
+        print(ol)
         p = ibm_backend.default_compilation_pass(optimisation_level=ol)
         cu = CompilationUnit(c)
         p.apply(cu)
@@ -993,7 +994,7 @@ def test_compilation_correctness(bogota_backend: IBMQBackend) -> None:
         m_ini = lift_perm(ini)
         m_inv_fin = lift_perm(inv_fin)
 
-        # assert compare_unitaries(u, m_inv_fin @ compiled_u @ m_ini)
+        assert compare_unitaries(u, m_inv_fin @ compiled_u @ m_ini)
 
 
 # pytket-extensions issue #69
