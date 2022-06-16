@@ -39,9 +39,10 @@ setup(
     packages=find_namespace_packages(include=["pytket.*"]),
     include_package_data=True,
     install_requires=[
-        "pytket ~= 1.2",
+        "pytket ~= 1.3",
         "cirq-core ~= 0.14.0",
         "cirq-google ~= 0.14.0",
+        "protobuf ~= 3.20, < 4.0",
     ],
     classifiers=[
         "Environment :: Console",

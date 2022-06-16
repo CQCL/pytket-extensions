@@ -33,7 +33,7 @@ from .credential_storage import MemoryCredentialStorage
 # This is necessary for use in Jupyter notebooks to allow for nested asyncio loops
 try:
     nest_asyncio.apply()
-except RuntimeError:
+except (RuntimeError, ValueError):
     # May fail in some cloud environments: ignore.
     pass
 
@@ -74,16 +74,18 @@ class QuantinuumAPI:
 
     def __init__(
         self,
-        token_store: MemoryCredentialStorage = MemoryCredentialStorage(),
+        token_store: Optional[MemoryCredentialStorage] = None,
         api_url: Optional[str] = None,
         api_version: int = 1,
         use_websocket: bool = True,
         __user_name: Optional[str] = None,
         __pwd: Optional[str] = None,
     ):
-        """Initialize Qunatinuum API client.
+        """Initialize Quantinuum API client.
 
-        :param token_store: JWT Token store, defaults to MemoryCredentialStorage()
+        :param token_store: JWT Token store, defaults to None
+            A new MemoryCredentialStorage will be initialised
+            if None is provided.
         :type token_store: MemoryCredentialStorage, optional
         :param api_url: _description_, defaults to DEFAULT_API_URL
         :type api_url: Optional[str], optional
@@ -96,7 +98,11 @@ class QuantinuumAPI:
 
         self.url = f"{api_url if api_url else self.DEFAULT_API_URL}v{api_version}/"
 
-        self._cred_store = token_store
+        if token_store is None:
+            self._cred_store = MemoryCredentialStorage()
+        else:
+            self._cred_store = token_store
+
         if __user_name is not None:
             self.config.username = __user_name
         if self.config.username is not None and __pwd is not None:

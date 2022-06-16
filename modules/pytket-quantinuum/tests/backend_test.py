@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from pathlib import Path
 from collections import Counter
 from typing import cast, Callable, Any  # pylint: disable=unused-import
 import json
@@ -47,6 +48,7 @@ from pytket.extensions.quantinuum.backends.api_wrappers import (
     QuantinuumAPI,
 )
 from pytket.backends.status import StatusEnum
+from pytket.wasm import WasmFileHandler
 
 skip_remote_tests: bool = os.getenv("PYTKET_RUN_REMOTE_TESTS") is None
 
@@ -226,8 +228,8 @@ def circuits(
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
 @pytest.mark.parametrize(
     "authenticated_quum_backend",
-    [{"device_name": name for name in ALL_DEVICE_NAMES}],
-    indirect=["authenticated_quum_backend"],
+    [{"device_name": name for name in ["H1-1SC", "H1-2SC", "H1", "H1-1", "H1-2"]}],
+    indirect=True,
 )
 @given(
     c=circuits(),  # pylint: disable=no-value-for-parameter
@@ -266,14 +268,23 @@ def test_classical(
     authenticated_quum_backend: QuantinuumBackend,
 ) -> None:
     # circuit to cover capabilities covered in example notebook
-    c = Circuit(1)
+    c = Circuit(1, name="test_classical")
     a = c.add_c_register("a", 8)
     b = c.add_c_register("b", 10)
-    c.add_c_register("c", 10)
+    d = c.add_c_register("d", 10)
 
     c.add_c_setbits([True], [a[0]])
     c.add_c_setbits([False, True] + [False] * 6, list(a))
     c.add_c_setbits([True, True] + [False] * 8, list(b))
+
+    c.add_c_setreg(23, a)
+    c.add_c_copyreg(a, b)
+
+    c.add_classicalexpbox_register(a + b, d)
+    c.add_classicalexpbox_register(a - b, d)
+    c.add_classicalexpbox_register(a * b // d, d)
+    c.add_classicalexpbox_register(a << 1, a)
+    c.add_classicalexpbox_register(a >> 1, b)
 
     c.X(0, condition=reg_eq(a ^ b, 1))
     c.X(0, condition=(a[0] ^ b[0]))
@@ -352,12 +363,15 @@ def test_shots_bits_edgecases(n_shots, n_bits) -> None:
     "authenticated_quum_backend", [{"device_name": "H1-1E"}], indirect=True
 )
 def test_simulator(
+    authenticated_quum_handler: QuantinuumAPI,
     authenticated_quum_backend: QuantinuumBackend,
 ) -> None:
     circ = Circuit(2, name="sim_test").H(0).CX(0, 1).measure_all()
     n_shots = 1000
     state_backend = authenticated_quum_backend
-    stabilizer_backend = QuantinuumBackend("H1-1E", simulator="stabilizer")
+    stabilizer_backend = QuantinuumBackend(
+        "H1-1E", simulator="stabilizer", _api_handler=authenticated_quum_handler
+    )
 
     circ = state_backend.get_compiled_circuit(circ)
 
@@ -395,11 +409,18 @@ def test_simulator(
 @pytest.mark.parametrize("authenticated_quum_backend", [None], indirect=True)
 def test_retrieve_available_devices(
     authenticated_quum_backend: QuantinuumBackend,
+    authenticated_quum_handler: QuantinuumAPI,
 ) -> None:
-    backend_infos = authenticated_quum_backend.available_devices()
+    # authenticated_quum_backend still needs a handler or it will
+    # attempt to use the DEFAULT_API_HANDLER.
+    backend_infos = authenticated_quum_backend.available_devices(
+        _api_handler=authenticated_quum_handler
+    )
     assert len(backend_infos) > 0
-    api_handler = QuantinuumAPI()
-    backend_infos = QuantinuumBackend.available_devices(api_handler=api_handler)
+
+    backend_infos = QuantinuumBackend.available_devices(
+        _api_handler=authenticated_quum_handler
+    )
     assert len(backend_infos) > 0
 
 
@@ -464,10 +485,6 @@ def test_zzphase(
 
     assert c0.n_gates_of_type(OpType.ZZPhase) > 0
 
-    # simulator does not yet support ZZPhase
-    backsim = QuantinuumBackend(device_name="H1-1E", machine_debug=skip_remote_tests)
-    assert backsim.get_compiled_circuit(c, 0).n_gates_of_type(OpType.ZZPhase) == 0
-
     n_shots = 4
     handle = backend.process_circuits([c0], n_shots)[0]
     correct_counts = {(0, 0): 4}
@@ -478,5 +495,54 @@ def test_zzphase(
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
 @pytest.mark.parametrize("device_name", ALL_DEVICE_NAMES)
-def test_device_state(device_name: str) -> None:
-    assert isinstance(QuantinuumBackend.device_state(device_name), str)
+def test_device_state(
+    device_name: str, authenticated_quum_handler: QuantinuumAPI
+) -> None:
+    assert isinstance(
+        QuantinuumBackend.device_state(
+            device_name, _api_handler=authenticated_quum_handler
+        ),
+        str,
+    )
+
+
+@pytest.mark.parametrize("device_name", ALL_DEVICE_NAMES)
+def test_default_api_handler(device_name: str) -> None:
+    """Test that the default API handler is used on backend construction."""
+    backend_1 = QuantinuumBackend(device_name)
+    backend_2 = QuantinuumBackend(device_name)
+
+    assert backend_1._api_handler is backend_2._api_handler
+
+
+@pytest.mark.parametrize("device_name", ALL_DEVICE_NAMES)
+def test_custom_api_handler(device_name: str) -> None:
+    """Test that custom API handlers are used when used on backend construction."""
+    handler_1 = QuantinuumAPI()
+    handler_2 = QuantinuumAPI()
+
+    backend_1 = QuantinuumBackend(device_name, _api_handler=handler_1)
+    backend_2 = QuantinuumBackend(device_name, _api_handler=handler_2)
+
+    assert backend_1._api_handler is not backend_2._api_handler
+    assert backend_1._api_handler._cred_store is not backend_2._api_handler._cred_store
+
+
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
+@pytest.mark.parametrize(
+    "authenticated_quum_backend", [{"device_name": "H1-1SC"}], indirect=True
+)
+def test_wasm(
+    authenticated_quum_backend: QuantinuumBackend,
+) -> None:
+    wasfile = WasmFileHandler(str(Path(__file__).parent / "sample_wasm.wasm"))
+    c = Circuit(1)
+    c.name = "test_wasm"
+    a = c.add_c_register("a", 8)
+    c.add_wasm_to_reg("add_one", wasfile, [a], [a])
+
+    b = authenticated_quum_backend
+
+    c = b.get_compiled_circuit(c)
+    h = b.process_circuits([c], n_shots=10, wasm_file_handler=wasfile)[0]
+    assert b.get_result(h)

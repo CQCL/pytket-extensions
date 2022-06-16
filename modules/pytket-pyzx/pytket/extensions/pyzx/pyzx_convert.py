@@ -15,11 +15,14 @@
 """Methods to allow conversion between pyzx and tket data types
 """
 
-from typing import Dict
+from typing import Dict, Tuple
 from fractions import Fraction
 import pyzx as zx  # type: ignore
 from pyzx.circuit import Circuit as pyzxCircuit  # type: ignore
-from pytket.circuit import OpType, Circuit, Op  # type: ignore
+from pyzx.routing.architecture import Architecture as PyzxArc  # type: ignore
+from pyzx.graph.graph import Graph as PyzxGraph  # type: ignore
+from pytket.circuit import OpType, Circuit, Op, Qubit, UnitID  # type: ignore
+from pytket.architecture import Architecture  # type: ignore
 
 _tk_to_pyzx_gates = {
     OpType.Rz: zx.gates.ZPhase,
@@ -101,8 +104,7 @@ def tk_to_pyzx(tkcircuit: Circuit, denominator_limit: int = 1000000) -> pyzxCirc
 def pyzx_to_tk(pyzx_circ: pyzxCircuit) -> Circuit:
     """
     Convert a :py:class:`pyzx.Circuit` to a tket :py:class:`Circuit` .
-    All PyZX basic gate operations are currently supported by pytket. Run
-    `pyzx_circuit_name.to_basic_gates()` before conversion.
+    Run `pyzx_circuit_name.to_basic_gates()` before conversion.
 
     :param pyzx_circ: A circuit to be converted
 
@@ -132,3 +134,136 @@ def pyzx_to_tk(pyzx_circ: pyzxCircuit) -> Circuit:
 
         c.add_gate(Op=op, args=qbs)
     return c
+
+
+def tk_to_pyzx_arc(pytket_arc: Architecture, pyzx_arc_name: str = "") -> PyzxArc:
+    """
+    Convert a pytket :py:class:`Architecture` to a pyzx
+    :py:class:`pyzx.routing.architecture.Architecture` .
+    The conversion will remove all the node names and will
+    keep them only integer named in the order they are given
+    in the node set of `pytket_arc`.
+
+    :param pytket_arc: A Architecture to be converted
+    :param pyzx_arc_name: Name of the architecture in pyzx
+
+    :return: The converted pyzx Architecture
+    """
+
+    arcgraph = PyzxGraph()
+    vertices = arcgraph.add_vertices(len(pytket_arc.nodes))
+    arc_dict = dict()
+
+    for i, x in enumerate(pytket_arc.nodes):
+        arc_dict[x] = i
+
+    edges = [
+        (vertices[arc_dict[v1]], vertices[arc_dict[v2]])
+        for v1, v2 in pytket_arc.coupling
+    ]
+
+    arcgraph.add_edges(edges)
+
+    pyzx_arc = PyzxArc(pyzx_arc_name, coupling_graph=arcgraph)
+
+    return pyzx_arc
+
+
+def pyzx_to_tk_arc(pyzx_arc: PyzxArc) -> Architecture:
+    """
+    Convert a pyzx :py:class:`pyzx.routing.architecture.Architecture`
+    to a pytket :py:class:`Architecture` .
+
+    :param pytket_arc: A Architecture to be converted
+
+    :return: The converted pyzx Architecture
+    """
+
+    return Architecture([tuple(s) for s in pyzx_arc.graph.edges()])
+
+
+def tk_to_pyzx_placed_circ(
+    pytket_circ: Circuit,
+    pytket_arc: Architecture,
+    denominator_limit: int = 1000000,
+    pyzx_arc_name: str = "",
+) -> Tuple[PyzxArc, pyzxCircuit, Dict[UnitID, UnitID]]:
+    """
+    Convert a (placed) tket :py:class:`Circuit` with
+    a given :py:class:`Architecture` to a
+    :py:class:`pyzx.Circuit` and the
+    :py:class:`pyzx.routing.architecture.Architecture`
+    and a map to give the information for converting the
+    pyzx circuit back to pytket circuit using `pyzx_to_tk_placed_circ`
+    assigning each of the circuit qubits a one of the architecture nodes
+
+    :param pytket_circ: A circuit to be converted
+    :param pytket_arc: Corresponding Architecture
+    :param denominator_limit: The limit for denominator size when converting
+        floats to fractions. Smaller limits allow for correct representation of simple
+        fractions with non-exact floating-point representations, while larger limits
+        allow for more precise angles.
+    :param pyzx_arc_name: Name of the architecture in pyzx
+
+    :return: Tuple containing generated :py:class:`pyzx.Circuit` ,
+        :py:class:`pyzx.routing.architecture.Architecture` and
+        a map to give the information for converting
+        the pyzx circuit back to pytket circuit using `pyzx_to_tk_placed_circ`
+        assigning each of the circuit qubits a one of the architecture nodes
+
+    """
+
+    simple_circ = pytket_circ.copy()
+
+    q_map = simple_circ.flatten_registers()
+
+    inv_q_map = {v: k for k, v in q_map.items()}
+
+    arcgraph = PyzxGraph()
+    vertices = arcgraph.add_vertices(len(pytket_arc.nodes))
+    arc_dict = dict()
+    qubit_dict = dict()
+
+    for i in range(len(pytket_arc.nodes)):
+        q = Qubit(i)
+        qubit_dict[q] = i
+
+    for i, x in enumerate(pytket_arc.nodes):
+        arc_dict[x] = qubit_dict[q_map[x]]
+
+    edges = [
+        (vertices[arc_dict[v1]], vertices[arc_dict[v2]])
+        for v1, v2 in pytket_arc.coupling
+    ]
+
+    arcgraph.add_edges(edges)
+
+    pyzx_arc = PyzxArc(pyzx_arc_name, coupling_graph=arcgraph)
+
+    pyzx_circ = tk_to_pyzx(simple_circ, denominator_limit)
+
+    return (pyzx_arc, pyzx_circ, inv_q_map)
+
+
+def pyzx_to_tk_placed_circ(
+    pyzx_circ: pyzxCircuit, q_map: Dict[UnitID, UnitID]
+) -> Circuit:
+    """
+    Convert a :py:class:`pyzx.Circuit` and a placment map
+    to a placed tket :py:class:`Circuit` .
+    Run `pyzx_circuit_name.to_basic_gates()` before conversion.
+
+    :param pyzx_circ: A circuit to be converted
+    :param q_map: placment map to assign each of the qubits in the
+        pyzx circuit to one of the architecture nodes. It is recommended
+        to use here the map generated by `tk_to_pyzx_placed_circ`
+
+
+    :return: The converted pytket circuit
+    """
+
+    pytket_circ = pyzx_to_tk(pyzx_circ)
+
+    pytket_circ.rename_units(q_map)
+
+    return pytket_circ

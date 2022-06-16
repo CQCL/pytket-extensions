@@ -119,7 +119,10 @@ jobs:
       with:
         python-version: '3.9'
     - name: Build and test including remote checks (3.9)
-      if: github.event_name == 'pull_request' || github.event_name == 'release' || contains(github.ref, 'refs/heads/wheel')
+      if: |
+        (github.event_name == 'pull_request' &&  github.event.pull_request.head.repo.full_name == github.repository)
+        || github.event_name == 'release'
+        || contains(github.ref, 'refs/heads/wheel')
       run: |
         ./.github/workflows/build-test nomypy
       env:
@@ -191,7 +194,7 @@ jobs:
       with:
         python-version: '3.9'
     - name: Build and test including remote checks and mypy (3.9)
-      if: github.event_name == 'pull_request'
+      if: github.event_name == 'pull_request' &&  github.event.pull_request.head.repo.full_name == github.repository
       run: |
         ./.github/workflows/build-test mypy
       env:
@@ -257,7 +260,7 @@ jobs:
       with:
         python-version: '3.9'
     - name: Build and test including remote checks (3.9)
-      if: github.event_name == 'pull_request'
+      if: github.event_name == 'pull_request' &&  github.event.pull_request.head.repo.full_name == github.repository
       shell: bash
       run: |
         ./.github/workflows/build-test nomypy

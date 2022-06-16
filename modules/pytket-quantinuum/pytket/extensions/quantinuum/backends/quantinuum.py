@@ -26,7 +26,8 @@ import requests
 from pytket.backends import Backend, ResultHandle, CircuitStatus, StatusEnum
 from pytket.backends.backend import KwargTypes
 from pytket.backends.resulthandle import _ResultIdTuple
-from pytket.backends.backendinfo import BackendInfo, fully_connected_backendinfo
+from pytket.architecture import FullyConnected  # type: ignore
+from pytket.backends.backendinfo import BackendInfo
 from pytket.backends.backendresult import BackendResult
 from pytket.backends.backend_exceptions import CircuitNotRunError
 from pytket.circuit import Circuit, OpType, Bit  # type: ignore
@@ -39,7 +40,6 @@ from pytket.passes import (  # type: ignore
     RemoveRedundancies,
     FullPeepholeOptimise,
     DecomposeBoxes,
-    DecomposeClassicalExp,
     SimplifyInitial,
     auto_rebase_pass,
     auto_squash_pass,
@@ -52,6 +52,11 @@ from pytket.predicates import (  # type: ignore
 )
 from pytket.utils import prepare_circuit
 from pytket.utils.outcomearray import OutcomeArray
+from pytket.wasm import WasmFileHandler
+
+from pytket.extensions.quantinuum.backends.credential_storage import (
+    MemoryCredentialStorage,
+)
 
 from .api_wrappers import QuantinuumAPIError, QuantinuumAPI
 
@@ -72,7 +77,6 @@ _GATE_SET = {
     OpType.Rz,
     OpType.PhasedX,
     OpType.ZZMax,
-    OpType.ZZPhase,
     OpType.Reset,
     OpType.Measure,
     OpType.Barrier,
@@ -81,13 +85,16 @@ _GATE_SET = {
     OpType.ExplicitPredicate,
     OpType.ExplicitModifier,
     OpType.SetBits,
+    OpType.CopyBits,
+    OpType.ClassicalExpBox,
+    OpType.WASM,
 }
 
 
-def _get_gateset(machine_name: str) -> Set[OpType]:
+def _get_gateset(gates: List[str]) -> Set[OpType]:
     gs = _GATE_SET.copy()
-    if machine_name.endswith("E"):
-        gs.remove(OpType.ZZPhase)
+    if "RZZ" in gates:
+        gs.add(OpType.ZZPhase)
     return gs
 
 
@@ -95,9 +102,32 @@ class GetResultFailed(Exception):
     pass
 
 
+class NoSyntaxChecker(Exception):
+    pass
+
+
+class MaxShotsExceeded(Exception):
+    pass
+
+
+class WasmUnsupported(Exception):
+    pass
+
+
 @dataclass
 class DeviceNotAvailable(Exception):
     device_name: str
+
+
+# DEFAULT_CREDENTIALS_STORAGE for use with the DEFAULT_API_HANDLER.
+DEFAULT_CREDENTIALS_STORAGE = MemoryCredentialStorage()
+
+# DEFAULT_API_HANDLER provides a global re-usable API handler
+# that will persist after this module is imported.
+#
+# This allows users to create multiple QuantinuumBackend instances
+# without requiring them to acquire new tokens.
+DEFAULT_API_HANDLER = QuantinuumAPI(DEFAULT_CREDENTIALS_STORAGE)
 
 
 class QuantinuumBackend(Backend):
@@ -110,16 +140,14 @@ class QuantinuumBackend(Backend):
     _supports_contextual_optimisation = True
     _persistent_handles = True
 
-    # class variable to allow "global" login
-    # all instances share authenticated credentials
-    _api_handler: QuantinuumAPI = QuantinuumAPI()
-
     def __init__(
         self,
         device_name: str,
         label: Optional[str] = "job",
         simulator: str = "state-vector",
+        group: Optional[str] = None,
         machine_debug: bool = False,
+        _api_handler: QuantinuumAPI = DEFAULT_API_HANDLER,
     ):
         """Construct a new Quantinuum backend.
 
@@ -129,34 +157,41 @@ class QuantinuumBackend(Backend):
         :type label: Optional[str], optional
         :param simulator: Only applies to simulator devices, options are
             "state-vector" or "stabilizer", defaults to "state-vector"
+        :param group: string identifier of a collection of jobs, can be used for usage
+          tracking.
+        :type group: Optional[str], optional
         :type simulator: str, optional
+        :param _api_handler: Instance of API handler, defaults to DEFAULT_API_HANDLER
+        :type _api_handler: QuantinuumAPI
         """
 
         super().__init__()
         self._device_name = device_name
         self._label = label
+        self._group = group
 
         self._backend_info: Optional[BackendInfo] = None
         self._MACHINE_DEBUG = machine_debug
 
         self.simulator_type = simulator
-        self._gate_set = _get_gateset(self._device_name)
+
+        self._api_handler = _api_handler
 
     @classmethod
     def _available_devices(
-        cls, _api_handler: Optional[QuantinuumAPI] = None
+        cls,
+        _api_handler: QuantinuumAPI,
     ) -> List[Dict[str, Any]]:
         """List devices available from Quantinuum.
 
         >>> QuantinuumBackend._available_devices()
         e.g. [{'name': 'H1', 'n_qubits': 6}]
 
-        :param _api_handler: Instance of API handler, defaults to None
-        :type _api_handler: Optional[QuantinuumAPI], optional
+        :param _api_handler: Instance of API handler
+        :type _api_handler: QuantinuumAPI
         :return: Dictionaries of machine name and number of qubits.
         :rtype: List[Dict[str, Any]]
         """
-        _api_handler = _api_handler or cls._api_handler
         id_token = _api_handler.login()
         res = requests.get(
             f"{_api_handler.url}machine/?config=true",
@@ -167,47 +202,49 @@ class QuantinuumBackend(Backend):
         return jr  # type: ignore
 
     @classmethod
-    def available_devices(cls, **kwargs: Any) -> List[BackendInfo]:
+    def _dict_to_backendinfo(cls, dct: Dict[str, Any]) -> BackendInfo:
+        name: str = dct.pop("name")
+        n_qubits: int = dct.pop("n_qubits")
+        gate_set: List[str] = dct.pop("gateset", [])
+        return BackendInfo(
+            name=cls.__name__,
+            device_name=name,
+            version=__extension_version__,
+            architecture=FullyConnected(n_qubits),
+            gate_set=_get_gateset(gate_set),
+            supports_fast_feedforward=True,
+            supports_midcircuit_measurement=True,
+            supports_reset=True,
+            misc=dct,
+        )
+
+    @classmethod
+    def available_devices(
+        cls,
+        **kwargs: Any,
+    ) -> List[BackendInfo]:
         """
         See :py:meth:`pytket.backends.Backend.available_devices`.
-        Supported kwargs: `api_handler` (default none).
+        :param _api_handler: Instance of API handler, defaults to DEFAULT_API_HANDLER
+        :type _api_handler: Optional[QuantinuumAPI]
         """
-        api_handler = kwargs.get("api_handler", cls._api_handler)
-        id_token = api_handler.login()
-        res = requests.get(
-            f"{api_handler.url}machine/?config=true",
-            headers={"Authorization": id_token},
-        )
-        api_handler._response_check(res, "get machine list")
-        jr = res.json()
-        return [
-            fully_connected_backendinfo(
-                cls.__name__,
-                machine["name"],
-                __extension_version__,
-                machine["n_qubits"],
-                _get_gateset(machine["name"]),
-            )
-            for machine in jr
-        ]
+        _api_handler = kwargs.get("_api_handler", DEFAULT_API_HANDLER)
+        jr = cls._available_devices(_api_handler)
+        return list(map(cls._dict_to_backendinfo, jr))
 
     def _retrieve_backendinfo(self, machine: str) -> BackendInfo:
         jr = self._available_devices(self._api_handler)
         try:
-            self._machine_info = next(entry for entry in jr if entry["name"] == machine)
+            _machine_info = next(entry for entry in jr if entry["name"] == machine)
         except StopIteration:
             raise DeviceNotAvailable(machine)
-        return fully_connected_backendinfo(
-            type(self).__name__,
-            machine,
-            __extension_version__,
-            self._machine_info["n_qubits"],
-            self._gate_set,
-        )
+        return self._dict_to_backendinfo(_machine_info)
 
     @classmethod
     def device_state(
-        cls, device_name: str, _api_handler: Optional[QuantinuumAPI] = None
+        cls,
+        device_name: str,
+        _api_handler: QuantinuumAPI = DEFAULT_API_HANDLER,
     ) -> str:
         """Check the status of a device.
 
@@ -216,13 +253,11 @@ class QuantinuumBackend(Backend):
 
         :param device_name: Name of the device.
         :type device_name: str
-        :param _api_handler: Instance of API handler, defaults to None
-        :type _api_handler: Optional[QuantinuumAPI], optional
+        :param _api_handler: Instance of API handler, defaults to DEFAULT_API_HANDLER
+        :type _api_handler: QuantinuumAPI
         :return: String of state, e.g. "online"
         :rtype: str
         """
-        _api_handler = _api_handler or cls._api_handler
-
         res = requests.get(
             f"{_api_handler.url}machine/{device_name}",
             headers={"Authorization": _api_handler.login()},
@@ -243,6 +278,14 @@ class QuantinuumBackend(Backend):
         return self._backend_info
 
     @property
+    def _gate_set(self) -> Set[OpType]:
+        return (
+            _GATE_SET
+            if self._MACHINE_DEBUG
+            else cast(BackendInfo, self.backend_info).gate_set
+        )
+
+    @property
     def required_predicates(self) -> List[Predicate]:
         preds = [
             NoSymbolsPredicate(),
@@ -259,7 +302,7 @@ class QuantinuumBackend(Backend):
 
     def default_compilation_pass(self, optimisation_level: int = 1) -> BasePass:
         assert optimisation_level in range(3)
-        passlist = [DecomposeClassicalExp(), DecomposeBoxes()]
+        passlist = [DecomposeBoxes()]
         squash = auto_squash_pass({OpType.PhasedX, OpType.Rz})
         if optimisation_level == 0:
             return SequencePass(passlist + [self.rebase_pass()])
@@ -309,7 +352,7 @@ class QuantinuumBackend(Backend):
         circuits: Sequence[Circuit],
         n_shots: Union[None, int, Sequence[Optional[int]]] = None,
         valid_check: bool = True,
-        **kwargs: KwargTypes,
+        **kwargs: Union[KwargTypes, WasmFileHandler],
     ) -> List[ResultHandle]:
         """
         See :py:meth:`pytket.backends.Backend.process_circuits`.
@@ -320,14 +363,16 @@ class QuantinuumBackend(Backend):
         * `noisy_simulation`: boolean flag to specify whether the simulator should
           perform noisy simulation with an error model (default value is `True`).
         * `group`: string identifier of a collection of jobs, can be used for usage
-          tracking.
+          tracking. Overrides the instance variable `group`.
         * `max_batch_cost`: maximum HQC usable by submitted batch, default is
           500.
         * `batch_id`: first jobid of the batch
           to which this batch of circuits should be submitted. Job IDs can be
           retrieved from ResultHandle using ```backend.get_jobid(handle)```.
-        * `close_batch`: boolean flag to close the batch after the last circuit
-        in the job, default=True.
+        * `close_batch`: boolean flag to close the batch after the last circuit,
+           default=True.
+        * `wasm_file_handler`: a ``WasmFileHandler`` object for linked WASM module.
+
         """
         circuits = list(circuits)
         n_shots_list = Backend._get_n_shots_as_list(
@@ -350,9 +395,17 @@ class QuantinuumBackend(Backend):
                 "error-model": noisy_simulation,
             },
         }
-        group = kwargs.get("group")
+        group = kwargs.get("group", self._group)
         if group is not None:
             basebody["group"] = group
+
+        wasm_fh = kwargs.get("wasm_file_handler")
+        if wasm_fh is not None:
+            if self.backend_info and not self.backend_info.misc.get("wasm", False):
+                raise WasmUnsupported("Backend does not support wasm calls.")
+            basebody["cfl"] = cast(WasmFileHandler, wasm_fh)._wasm_file_encoded.decode(
+                "utf-8"
+            )
 
         handle_list = []
         batch_exec: Union[int, str]
@@ -361,7 +414,13 @@ class QuantinuumBackend(Backend):
         else:
             batch_exec = cast(int, kwargs.get("max_batch_cost", 500))
         final_index = len(circuits) - 1
+
+        max_shots = self.backend_info.misc.get("n_shots") if self.backend_info else None
         for i, (circ, n_shots) in enumerate(zip(circuits, n_shots_list)):
+            if max_shots is not None and n_shots > max_shots:
+                raise MaxShotsExceeded(
+                    f"Number of shots {n_shots} exceeds maximum {max_shots}"
+                )
             if postprocess:
                 c0, ppcirc = prepare_circuit(circ, allow_classical=False, xcirc=_xcirc)
                 ppcirc_rep = ppcirc.to_dict()
@@ -373,13 +432,11 @@ class QuantinuumBackend(Backend):
             body["program"] = quantinuum_circ
             body["count"] = n_shots
 
-            if (final_index > 0 or "batch_id" in kwargs) and (
-                (self._device_name != DEVICE_FAMILY or "max_batch_cost" in kwargs)
-                and (not self._device_name.endswith("SC"))
-            ):
-                # Don't set default batch fields if:
-                #  - Submitting to the device family or syntax checker
-                #  - Less than one job submitted and no batch handle provided
+            if (final_index > 0 or "batch_id" in kwargs) and cast(
+                BackendInfo, self.backend_info
+            ).misc.get("batching", False):
+                # Don't set default batch fields if
+                # less than one job submitted and no batch handle provided
 
                 body["batch-exec"] = batch_exec
                 if i == final_index and kwargs.get("close_batch", True):
@@ -532,8 +589,8 @@ class QuantinuumBackend(Backend):
         "SC"), it is automatically appended
         to check against the relevant syntax checker.
         Sometimes it may not be possible to find the relevant syntax checker,
-         for example for device families. In which case you may need to set
-         the ``syntax_checker`` kwarg to the appropriate syntax checker name.
+        for example for device families. In which case you may need to set
+        the ``syntax_checker`` kwarg to the appropriate syntax checker name.
 
         :param circuit: Circuit to calculate runtime estimate for. Must be valid for
             backend.
@@ -542,7 +599,7 @@ class QuantinuumBackend(Backend):
         :type n_shots: int
         :param syntax_checker: Optional.Name of the syntax checker to use to get cost.
             For example for the "H1-1" device that would be "H1-1SC".
-             For most devices this is automatically inferred, default=None.
+            For most devices this is automatically inferred, default=None.
         :type syntax_checker: str
         :raises ValueError: Circuit is not valid, needs to be compiled.
         :return: Cost in HQC to execute the shots.
@@ -553,10 +610,21 @@ class QuantinuumBackend(Backend):
                 "Circuit does not satisfy predicates of backend."
                 + " Try running `backend.get_compiled_circuit` first"
             )
-        if syntax_checker:
-            backend = QuantinuumBackend(syntax_checker)
-        else:
-            backend = QuantinuumBackend(_infer_syntax_checker(self._device_name))
+
+        try:
+            syntax_checker = (
+                syntax_checker
+                or cast(BackendInfo, self.backend_info).misc["syntax_checker"]
+            )
+        except KeyError:
+            raise NoSyntaxChecker(
+                "Could not find syntax checker for this backend,"
+                " try setting one explicitly with the ``syntax_checker`` parameter"
+            )
+
+        backend = QuantinuumBackend(
+            cast(str, syntax_checker), _api_handler=self._api_handler
+        )
         try:
             handle = backend.process_circuit(circuit, n_shots)
         except DeviceNotAvailable as e:
@@ -574,21 +642,19 @@ class QuantinuumBackend(Backend):
         cost = json.loads(backend.circuit_status(handle).message)["cost"]
         return None if cost is None else float(cost)
 
-    @classmethod
-    def login(cls) -> None:
+    def login(self) -> None:
         """Log in to Quantinuum API. Requests username and password from stdin
         (e.g. shell input or dialogue box in Jupytet notebooks.). Passwords are
         not stored.
         After log in you should not need to provide credentials again while that
         session (script/notebook) is alive.
         """
-        cls._api_handler.full_login()
+        self._api_handler.full_login()
 
-    @classmethod
-    def logout(cls) -> None:
+    def logout(self) -> None:
         """Clear stored JWT tokens from login. Will need to `login` again to
         make API calls."""
-        cls._api_handler.delete_authentication()
+        self._api_handler.delete_authentication()
 
 
 _xcirc = Circuit(1).add_gate(OpType.PhasedX, [1, 0], [0])

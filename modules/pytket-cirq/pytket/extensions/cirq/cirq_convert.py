@@ -20,6 +20,7 @@ Devices
 from typing import List, Dict, FrozenSet, cast, Any, Union
 import cmath
 from logging import warning
+import re
 from cirq.devices import LineQubit, GridQubit
 import cirq.ops
 import cirq_google
@@ -168,7 +169,9 @@ def cirq_to_tk(circuit: cirq.circuits.Circuit) -> Circuit:
                     ) from error
                 params: List[Union[float, Basic, Symbol]] = []
             elif isinstance(gate, cirq_common.MeasurementGate):
-                uid = Bit(gate.key)
+                # Adding "_b" to the bit uid since for cirq.NamedQubit,
+                # the gate.key is equal to the qubit id (the qubit name)
+                uid = Bit(gate.key + "_b")
                 tkcirc.add_bit(uid)
                 tkcirc.Measure(*qb_lst, uid)
                 continue
@@ -252,7 +255,12 @@ def tk_to_cirq(tkcirc: Circuit, copy_all_qubits: bool = False) -> cirq.circuits.
         if optype == OpType.Measure:
             qid = qmap[command.args[0]]
             bit = command.args[1]
-            cirqop = cirq.ops.measure(qid, key=bit.__repr__())
+            # Removing the "_b" added to measurement bit registers uids,
+            # for dealing with NamedQubits
+            bit_repr = bit.__repr__()
+            if re.search("_b$", bit_repr):
+                bit_repr = bit_repr[0:-2]
+            cirqop = cirq.ops.measure(qid, key=bit_repr)
         else:
             qids = [qmap[qbit] for qbit in command.args]
             params = op.params

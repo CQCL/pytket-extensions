@@ -15,4 +15,11 @@
 
 # _metadata.py is copied to the folder after installation.
 from ._metadata import __extension_version__, __extension_name__  # type: ignore
-from .pyzx_convert import tk_to_pyzx, pyzx_to_tk
+from .pyzx_convert import (
+    tk_to_pyzx,
+    pyzx_to_tk,
+    tk_to_pyzx_arc,
+    pyzx_to_tk_arc,
+    tk_to_pyzx_placed_circ,
+    pyzx_to_tk_placed_circ,
+)
