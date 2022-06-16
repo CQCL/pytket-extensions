@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Index &mdash; pytket-braket 0.19.0 documentation</title>
+  <title>Index &mdash; pytket-braket 0.20.0 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -27,7 +27,7 @@
             <a href="index.html" class="icon icon-home"> pytket-braket
           </a>
               <div class="version">
-                0.19
+                0.20
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -44,19 +44,19 @@
 <p class="caption" role="heading"><span class="caption-text">Extensions:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference external" href="../index.html#http://">Introduction</a></li>
-<li class="toctree-l1"><a class="reference external" href="../aqt/index.html#http://">pytket-aqt</a></li>
-<li class="toctree-l1"><a class="reference external" href="../pyzx/index.html#http://">pytket-pyzx</a></li>
-<li class="toctree-l1"><a class="reference external" href="../qsharp/index.html#http://">pytket-qsharp</a></li>
 <li class="toctree-l1"><a class="reference external" href="../cirq/index.html#http://">pytket-cirq</a></li>
+<li class="toctree-l1"><a class="reference external" href="../qiskit/index.html#http://">pytket-qiskit</a></li>
+<li class="toctree-l1"><a class="reference external" href="../projectq/index.html#http://">pytket-projectq</a></li>
 <li class="toctree-l1"><a class="reference external" href="../pysimplex/index.html#http://">pytket-pysimplex</a></li>
 <li class="toctree-l1"><a class="reference external" href="../qulacs/index.html#http://">pytket-qulacs</a></li>
-<li class="toctree-l1"><a class="reference external" href="../stim/index.html#http://">pytket-stim</a></li>
-<li class="toctree-l1"><a class="reference external" href="../qiskit/index.html#http://">pytket-qiskit</a></li>
-<li class="toctree-l1"><a class="reference external" href="../quantinuum/index.html#http://">pytket-quantinuum</a></li>
-<li class="toctree-l1"><a class="reference external" href="../braket/index.html#http://">pytket-braket</a></li>
-<li class="toctree-l1"><a class="reference external" href="../projectq/index.html#http://">pytket-projectq</a></li>
-<li class="toctree-l1"><a class="reference external" href="../pyquil/index.html#http://">pytket-pyquil</a></li>
 <li class="toctree-l1"><a class="reference external" href="../ionq/index.html#http://">pytket-ionq</a></li>
+<li class="toctree-l1"><a class="reference external" href="../pyquil/index.html#http://">pytket-pyquil</a></li>
+<li class="toctree-l1"><a class="reference external" href="../aqt/index.html#http://">pytket-aqt</a></li>
+<li class="toctree-l1"><a class="reference external" href="../quantinuum/index.html#http://">pytket-quantinuum</a></li>
+<li class="toctree-l1"><a class="reference external" href="../stim/index.html#http://">pytket-stim</a></li>
+<li class="toctree-l1"><a class="reference external" href="../qsharp/index.html#http://">pytket-qsharp</a></li>
+<li class="toctree-l1"><a class="reference external" href="../braket/index.html#http://">pytket-braket</a></li>
+<li class="toctree-l1"><a class="reference external" href="../pyzx/index.html#http://">pytket-pyzx</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">More documentation:</span></p>
 <ul>
@@ -101,6 +101,7 @@
  | <a href="#P"><strong>P</strong></a>
  | <a href="#R"><strong>R</strong></a>
  | <a href="#S"><strong>S</strong></a>
+ | <a href="#T"><strong>T</strong></a>
  
 </div>
 <h2 id="_">_</h2>
@@ -123,6 +124,8 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#pytket.extensions.braket.BraketBackend.backend_info">backend_info (pytket.extensions.braket.BraketBackend property)</a>
+</li>
+      <li><a href="api.html#pytket.extensions.braket.braket_convert.braket_to_tk">braket_to_tk() (in module pytket.extensions.braket.braket_convert)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
@@ -194,6 +197,8 @@
 </li>
         <li><a href="api.html#module-pytket.extensions.braket.backends.config">pytket.extensions.braket.backends.config</a>
 </li>
+        <li><a href="api.html#module-pytket.extensions.braket.braket_convert">pytket.extensions.braket.braket_convert</a>
+</li>
       </ul></li>
   </ul></td>
 </tr></table>
@@ -217,6 +222,13 @@
 
       <ul>
         <li><a href="api.html#module-pytket.extensions.braket.backends.config">module</a>
+</li>
+      </ul></li>
+      <li>
+    pytket.extensions.braket.braket_convert
+
+      <ul>
+        <li><a href="api.html#module-pytket.extensions.braket.braket_convert">module</a>
 </li>
       </ul></li>
   </ul></td>
@@ -246,6 +258,14 @@
       <li><a href="api.html#pytket.extensions.braket.BraketBackend.supports_probability">supports_probability (pytket.extensions.braket.BraketBackend property)</a>
 </li>
       <li><a href="api.html#pytket.extensions.braket.BraketBackend.supports_variance">supports_variance (pytket.extensions.braket.BraketBackend property)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="T">T</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#pytket.extensions.braket.braket_convert.tk_to_braket">tk_to_braket() (in module pytket.extensions.braket.braket_convert)</a>
 </li>
   </ul></td>
 </tr></table>
