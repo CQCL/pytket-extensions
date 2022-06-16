@@ -137,7 +137,7 @@ def test_noise() -> None:
         IBMQ.load_account()
 
     provider = IBMQ.providers(hub="ibm-q", group="open")[0]
-    back = provider.get_backend("ibmq_bogota")
+    back = provider.get_backend("ibmq_manila")
 
     noise_model = NoiseModel.from_backend(back)
     n_qbs = 5
@@ -184,7 +184,7 @@ def test_process_characterisation() -> None:
         IBMQ.load_account()
 
     provider = IBMQ.providers(hub="ibm-q", group="open")[0]
-    back = provider.get_backend("ibmq_bogota")
+    back = provider.get_backend("ibmq_manila")
 
     char = process_characterisation(back)
     arch: Architecture = char.get("Architecture", Architecture([]))
@@ -443,7 +443,7 @@ def test_nshots() -> None:
     if not skip_remote_tests:
         backends.append(
             IBMQEmulatorBackend(
-                "ibmq_bogota", hub="ibm-q", group="open", project="main"
+                "ibmq_manila", hub="ibm-q", group="open", project="main"
             )
         )
     for b in backends:
@@ -500,7 +500,7 @@ def test_aer_default_pass() -> None:
         IBMQ.load_account()
 
     provider = IBMQ.providers(hub="ibm-q", group="open")[0]
-    back = provider.get_backend("ibmq_bogota")
+    back = provider.get_backend("ibmq_manila")
 
     noise_model = NoiseModel.from_backend(back)
     for nm in [None, noise_model]:
@@ -787,7 +787,7 @@ def test_aer_placed_expectation() -> None:
         IBMQ.load_account()
 
     provider = IBMQ.providers(hub="ibm-q", group="open")[0]
-    back = provider.get_backend("ibmq_bogota")
+    back = provider.get_backend("ibmq_manila")
 
     noise_model = NoiseModel.from_backend(back)
 
@@ -806,7 +806,7 @@ def test_aer_placed_expectation() -> None:
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_ibmq_emulator() -> None:
     b_emu = IBMQEmulatorBackend(
-        "ibmq_bogota", hub="ibm-q", group="open", project="main"
+        "ibmq_manila", hub="ibm-q", group="open", project="main"
     )
     assert b_emu._noise_model is not None
     b_ibm = b_emu._ibmq
@@ -1058,7 +1058,7 @@ def test_postprocess(lima_backend: IBMQBackend) -> None:
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_postprocess_emu() -> None:
-    b = IBMQEmulatorBackend("ibmq_bogota", hub="ibm-q", group="open", project="main")
+    b = IBMQEmulatorBackend("ibmq_manila", hub="ibm-q", group="open", project="main")
     assert b.supports_contextual_optimisation
     c = Circuit(2, 2)
     c.SX(0).SX(1).CX(0, 1).measure_all()
@@ -1108,7 +1108,7 @@ def test_available_devices() -> None:
 def test_backendinfo_serialization1() -> None:
     # https://github.com/CQCL/tket/issues/192
     backend = IBMQEmulatorBackend(
-        "ibmq_bogota", hub="ibm-q", group="open", project="main"
+        "ibmq_manila", hub="ibm-q", group="open", project="main"
     )
     backend_info_json = backend.backend_info.to_dict()
     s = json.dumps(backend_info_json)
