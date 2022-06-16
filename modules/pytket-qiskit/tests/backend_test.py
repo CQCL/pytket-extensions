@@ -137,7 +137,7 @@ def test_noise() -> None:
         IBMQ.load_account()
 
     provider = IBMQ.providers(hub="ibm-q", group="open")[0]
-    back = provider.get_backend("ibmq_bogota")
+    back = provider.get_backend("ibmq_manila")
 
     noise_model = NoiseModel.from_backend(back)
     n_qbs = 5
@@ -184,7 +184,7 @@ def test_process_characterisation() -> None:
         IBMQ.load_account()
 
     provider = IBMQ.providers(hub="ibm-q", group="open")[0]
-    back = provider.get_backend("ibmq_bogota")
+    back = provider.get_backend("ibmq_manila")
 
     char = process_characterisation(back)
     arch: Architecture = char.get("Architecture", Architecture([]))
@@ -378,8 +378,8 @@ def test_cancellation_ibmq(lima_backend: IBMQBackend) -> None:
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_machine_debug(bogota_backend: IBMQBackend) -> None:
-    backend = bogota_backend
+def test_machine_debug(manila_backend: IBMQBackend) -> None:
+    backend = manila_backend
     backend._MACHINE_DEBUG = True
     try:
         c = Circuit(2, 2).H(0).CX(0, 1).measure_all()
@@ -411,8 +411,8 @@ def test_machine_debug(bogota_backend: IBMQBackend) -> None:
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_nshots_batching(bogota_backend: IBMQBackend) -> None:
-    backend = bogota_backend
+def test_nshots_batching(manila_backend: IBMQBackend) -> None:
+    backend = manila_backend
     backend._MACHINE_DEBUG = True
     try:
         c1 = Circuit(2, 2).H(0).CX(0, 1).measure_all()
@@ -443,7 +443,7 @@ def test_nshots() -> None:
     if not skip_remote_tests:
         backends.append(
             IBMQEmulatorBackend(
-                "ibmq_bogota", hub="ibm-q", group="open", project="main"
+                "ibmq_manila", hub="ibm-q", group="open", project="main"
             )
         )
     for b in backends:
@@ -479,8 +479,8 @@ def test_pauli_sim() -> None:
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_default_pass(bogota_backend: IBMQBackend) -> None:
-    b = bogota_backend
+def test_default_pass(manila_backend: IBMQBackend) -> None:
+    b = manila_backend
     for ol in range(3):
         comp_pass = b.default_compilation_pass(ol)
         c = Circuit(3, 3)
@@ -500,7 +500,7 @@ def test_aer_default_pass() -> None:
         IBMQ.load_account()
 
     provider = IBMQ.providers(hub="ibm-q", group="open")[0]
-    back = provider.get_backend("ibmq_bogota")
+    back = provider.get_backend("ibmq_manila")
 
     noise_model = NoiseModel.from_backend(back)
     for nm in [None, noise_model]:
@@ -787,7 +787,7 @@ def test_aer_placed_expectation() -> None:
         IBMQ.load_account()
 
     provider = IBMQ.providers(hub="ibm-q", group="open")[0]
-    back = provider.get_backend("ibmq_bogota")
+    back = provider.get_backend("ibmq_manila")
 
     noise_model = NoiseModel.from_backend(back)
 
@@ -806,7 +806,7 @@ def test_aer_placed_expectation() -> None:
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_ibmq_emulator() -> None:
     b_emu = IBMQEmulatorBackend(
-        "ibmq_bogota", hub="ibm-q", group="open", project="main"
+        "ibmq_manila", hub="ibm-q", group="open", project="main"
     )
     assert b_emu._noise_model is not None
     b_ibm = b_emu._ibmq
@@ -916,13 +916,13 @@ def test_remote_simulator() -> None:
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_ibmq_mid_measure(bogota_backend: IBMQBackend) -> None:
+def test_ibmq_mid_measure(manila_backend: IBMQBackend) -> None:
     c = Circuit(3, 3).H(1).CX(1, 2).Measure(0, 0).Measure(1, 1)
     c.add_barrier([0, 1, 2])
 
     c.CX(1, 0).H(0).Measure(2, 2)
 
-    b = bogota_backend
+    b = manila_backend
     ps = b.default_compilation_pass(0)
     ps.apply(c)
     # c = b.get_compiled_circuit(c)
@@ -931,9 +931,9 @@ def test_ibmq_mid_measure(bogota_backend: IBMQBackend) -> None:
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_compile_x(bogota_backend: IBMQBackend) -> None:
+def test_compile_x(manila_backend: IBMQBackend) -> None:
     # TKET-1028
-    b = bogota_backend
+    b = manila_backend
     c = Circuit(1).X(0)
     for ol in range(3):
         c1 = c.copy()
@@ -960,7 +960,7 @@ def lift_perm(p: Dict[int, int]) -> np.ndarray:
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
-def test_compilation_correctness(bogota_backend: IBMQBackend) -> None:
+def test_compilation_correctness(manila_backend: IBMQBackend) -> None:
     c = Circuit(5)
     c.H(0).H(1).H(2)
     c.CX(0, 1).CX(1, 2)
@@ -975,7 +975,7 @@ def test_compilation_correctness(bogota_backend: IBMQBackend) -> None:
     c.CX(0, 3).CX(0, 4)
     u_backend = AerUnitaryBackend()
     u = u_backend.run_circuit(c).get_unitary()
-    ibm_backend = bogota_backend
+    ibm_backend = manila_backend
     for ol in range(3):
         p = ibm_backend.default_compilation_pass(optimisation_level=ol)
         cu = CompilationUnit(c)
@@ -1058,7 +1058,7 @@ def test_postprocess(lima_backend: IBMQBackend) -> None:
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
 def test_postprocess_emu() -> None:
-    b = IBMQEmulatorBackend("ibmq_bogota", hub="ibm-q", group="open", project="main")
+    b = IBMQEmulatorBackend("ibmq_manila", hub="ibm-q", group="open", project="main")
     assert b.supports_contextual_optimisation
     c = Circuit(2, 2)
     c.SX(0).SX(1).CX(0, 1).measure_all()
@@ -1108,7 +1108,7 @@ def test_available_devices() -> None:
 def test_backendinfo_serialization1() -> None:
     # https://github.com/CQCL/tket/issues/192
     backend = IBMQEmulatorBackend(
-        "ibmq_bogota", hub="ibm-q", group="open", project="main"
+        "ibmq_manila", hub="ibm-q", group="open", project="main"
     )
     backend_info_json = backend.backend_info.to_dict()
     s = json.dumps(backend_info_json)
