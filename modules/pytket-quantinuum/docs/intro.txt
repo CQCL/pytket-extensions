@@ -26,6 +26,8 @@ and Windows. To install, run:
 
 The H-series devices and emulators produce shots based results and therefore require measurements. The emulators use noise models based on the real devices. 
 
+**Job Statuses**
+
 When using the Quantinuum ``Backend`` to run circuits there are several possible circuit statuses.
 
 * queued - The job has been queued but has not yet been run.
@@ -38,7 +40,7 @@ When using the Quantinuum ``Backend`` to run circuits there are several possible
 **Web portal:**
 https://um.qapi.honeywell.com/user
 
-**Default compilation**
+**Default Compilation**
 
 Every ``Backend`` in pytket has its own ``default_compilation_pass`` method. 
 This method applies a sequence of optimisations to a circuit depending on the value of an ``optimisation_level`` parameter. 
@@ -86,7 +88,7 @@ The passes applied by different levels of optimisation are specified in the tabl
 
 Circuits must satisfy the following predicates in order to run on the ``QuantinuumBackend``.
 
-* `NoSymbolsPredicate  <https://cqcl.github.io/tket/pytket/api/predicates.html#pytket.predicates.NoSymbolsPredicate>`_
+* `NoSymbolsPredicate  <https://cqcl.github.io/tket/pytket/api/predicates.html#pytket.predicates.NoSymbolsPredicate>`_  - Parameterised gates must have numerical parameters when the circuit is executed.
 * `GateSetPredicate  <https://cqcl.github.io/tket/pytket/api/predicates.html#pytket.predicates.GateSetPredicate>`_ : To view supported Ops run ``QuantinuumBackend.backend_info.gate_set``
 * `MaxNQubitsPredicate(12) <https://cqcl.github.io/tket/pytket/api/predicates.html#pytket.predicates.MaxNQubitsPredicate>`_ for ``H1-1``, ``H1-2`` and ``H1-2E``. ``MaxNQubitsPredicate(20)`` for ``H1-1E``.
 
@@ -95,7 +97,10 @@ Circuits must satisfy the following predicates in order to run on the ``Quantinu
 
 The Quantinuum ``Backend`` has a ``cost`` method. This calculates the cost (in H-series Quantum Credits) required to execute the circuit for the specified number of shots.  
 
-The ``process_circuits`` for the QuantinuumBackend accepts the following additional keyword arguments.
+There are also ``login()`` and ``logout()`` methods. 
+After the login method is called the user will be prompted for their Quantinuum username and password.
+
+The ``process_circuits`` method for the QuantinuumBackend accepts the following additional keyword arguments.
 
 *  ``postprocess`` : boolean flag to allow classical postprocessing.
 *  ``noisy_simulation`` : boolean flag to specify whether the simulator should
@@ -105,7 +110,7 @@ The ``process_circuits`` for the QuantinuumBackend accepts the following additio
 *  ``batch_id`` : first ``jobid`` of the batch to which this batch of circuits should be submitted. Job IDs can be retrieved from ResultHandle using ``backend.get_jobid(handle)``.
 *  ``close_batch`` : boolean flag to close the batch after the last circuit in the job, ``default=True``.
 
-For the Quantinuum ``Backend``, ``process_circuits`` returns a ResultHandle object containing a ``job_id`` and a postprocessing ( ``ppcirc``) circuit if there is one.
+For the Quantinuum ``Backend``, ``process_circuits`` returns a ResultHandle object containing a ``job_id`` and a postprocessing ( ``ppcirc``) circuit if there is one. The ``logout()`` method clears stored JSON web tokens and will have to sign in to access the Quantinuum API.
 
 Every Quantinuum ``Backend`` supports mid circuit measurements.
 
