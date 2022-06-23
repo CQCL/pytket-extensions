@@ -103,6 +103,7 @@ class ForestBackend(Backend):
     """
     Interface to a Rigetti device.
     """
+
     _supports_shots = True
     _supports_counts = True
     _supports_contextual_optimisation = True
@@ -309,6 +310,7 @@ class ForestStateBackend(Backend):
     """
     State based interface to a Rigetti device.
     """
+
     _supports_state = True
     _supports_expectation = True
     _expectation_allows_nonhermitian = False
