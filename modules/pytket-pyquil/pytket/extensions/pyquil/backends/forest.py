@@ -100,6 +100,10 @@ def _default_q_index(q: Qubit) -> int:
 
 
 class ForestBackend(Backend):
+    """
+    Interface to a Rigetti device.
+    """
+
     _supports_shots = True
     _supports_counts = True
     _supports_contextual_optimisation = True
@@ -303,6 +307,10 @@ class ForestBackend(Backend):
 
 
 class ForestStateBackend(Backend):
+    """
+    State based interface to a Rigetti device.
+    """
+
     _supports_state = True
     _supports_expectation = True
     _expectation_allows_nonhermitian = False
