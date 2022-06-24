@@ -69,7 +69,7 @@ Interface to an IonQ device.
 Interface to a Rigetti device.
 
 [ForestStateBackend](https://cqcl.github.io/pytket-extensions/api/pyquil/api.html#pytket.extensions.pyquil.ForestStateBackend)
-State based interface to an Rigetti device.
+State-based interface to a Rigetti device.
 
 [AQTBackend](https://cqcl.github.io/pytket-extensions/api/aqt/api.html#pytket.extensions.aqt.AQTBackend)
 Interface to an AQT device or simulator.
