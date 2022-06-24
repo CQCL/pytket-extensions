@@ -136,9 +136,6 @@ Backend for simulating Clifford circuits using Stim.
 [AerBackend](https://cqcl.github.io/pytket-extensions/api/qiskit/api.html#pytket.extensions.qiskit.AerBackend)
 Backend for running simulations on the Qiskit Aer QASM simulator.
 
-[tketBackendEngine](https://cqcl.github.io/pytket-extensions/api/projectq/api.html#pytket.extensions.projectq.tketBackendEngine)
-A projectq backend designed to translate from projectq commands to tket Circuits.
-
 [QulacsBackend](https://cqcl.github.io/pytket-extensions/api/qulacs/api.html#pytket.extensions.qulacs.QulacsBackend)
 Backend for running simulations on the Qulacs simulator.
 
