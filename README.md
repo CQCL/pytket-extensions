@@ -66,7 +66,7 @@ A backend for running circuits on remote IBMQ devices.
 Interface to an IonQ device.
 
 [ForestBackend](https://cqcl.github.io/pytket-extensions/api/pyquil/api.html#pytket.extensions.pyquil.ForestBackend)
-Interface to an Rigetti device.
+Interface to a Rigetti device.
 
 [ForestStateBackend](https://cqcl.github.io/pytket-extensions/api/pyquil/api.html#pytket.extensions.pyquil.ForestStateBackend)
 State based interface to an Rigetti device.
