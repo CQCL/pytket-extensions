@@ -15,8 +15,8 @@ and Windows. To install, run:
 
     pip install pytket-quantinuum
 
-.. note::   Requires a `Quantinuum <https://www.quantinuum.com/>`_ account.
-            Use ``QuantinuumBackend.login()`` to log in using your email and password.
+.. note::   Using the ``QuantinuumBackend`` requires a `Quantinuum <https://www.quantinuum.com/>`_ account.
+            The user will be prompted for their login credentials when making API calls such as calling the ``process_circuits`` method or querying ``backend_info`` .
 
 Devices
 =======
@@ -77,7 +77,7 @@ The passes applied by different levels of optimisation are specified in the tabl
 
 * [3] ``auto_squash_pass`` has arguments ``auto_squash_pass({OpType.PhasedX,OpType.Rz})``
 
-* [4] ``SimplifyInitial`` has arguments  ``SimplifyInitial(allow_classical=False, create_all_qubits=True, xcirc=xcirc)``
+* [4] ``SimplifyInitial`` has arguments  ``SimplifyInitial(allow_classical=False, create_all_qubits=True, xcirc=_xcirc)``. Here ``_xcirc`` is a single qubit circuit that implements the ``X`` gate using the native ``PhasedX`` gate.
 
 .. note::   If ``optimisation_level = 0`` the device constraints are solved but no additional optimisation is applied. Setting ``optimisation_level = 1`` applies some light optimisations to the circuit. More intensive optimisation is applied by level 2 at the expense of increased runtime.
 
@@ -102,15 +102,12 @@ When using the Quantinuum ``Backend`` to run circuits there are several possible
 * cancelling - The job is in the process of being cancelled.
 * cancelled - The job has been cancelled.
 
-The status of the device can be checked with by using the ``device_state`` method. To cancel a job simply use the ``cancel`` method.
+The status of the device can be checked with by using the ``device_state`` method. To cancel a job simply use the ``cancel`` method and supply the job handle as a parameter.
 
 Additional Backend Capabilities
 ===============================
 
 The Quantinuum ``Backend`` has a ``cost`` method. This calculates the cost (in HQCs) required to execute the circuit for the specified number of shots.  
-
-There are also ``login()`` and ``logout()`` methods. 
-After the login method is called the user will be prompted for their Quantinuum username and password.
 
 The ``process_circuits`` method for the QuantinuumBackend accepts the following additional keyword arguments.
 
@@ -122,7 +119,9 @@ The ``process_circuits`` method for the QuantinuumBackend accepts the following 
 *  ``batch_id`` : first ``jobid`` of the batch to which this batch of circuits should be submitted. Job IDs can be retrieved from ResultHandle using ``backend.get_jobid(handle)``.
 *  ``close_batch`` : boolean flag to close the batch after the last circuit in the job (default value is ``True``).
 
-For the Quantinuum ``Backend``, ``process_circuits`` returns a ``ResultHandle`` object containing a ``job_id`` and a postprocessing ( ``ppcirc``) circuit if there is one. The ``logout()`` method clears stored JSON web tokens and the user will have to sign in again to access the Quantinuum API.
+For the Quantinuum ``Backend``, ``process_circuits`` returns a ``ResultHandle`` object containing a ``job_id`` and a postprocessing ( ``ppcirc``) circuit if there is one.
+
+The ``logout()`` method clears stored JSON web tokens and the user will have to sign in again to access the Quantinuum API.
 
 Every Quantinuum ``Backend`` supports mid-circuit measurements.
 
