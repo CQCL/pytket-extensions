@@ -107,7 +107,9 @@ The status of the device can be checked with by using the ``device_state`` metho
 Additional Backend Capabilities
 ===============================
 
-The Quantinuum ``Backend`` has a ``cost`` method. This calculates the cost (in HQCs) required to execute the circuit for the specified number of shots.  
+The Quantinuum ``Backend`` has a ``cost`` method. This calculates the cost (in HQCs) required to execute the circuit for the specified number of shots.
+
+Every Quantinuum ``Backend`` supports mid-circuit measurements and fast classical feedforward.
 
 The ``process_circuits`` method for the QuantinuumBackend accepts the following additional keyword arguments.
 
@@ -122,9 +124,6 @@ The ``process_circuits`` method for the QuantinuumBackend accepts the following 
 For the Quantinuum ``Backend``, ``process_circuits`` returns a ``ResultHandle`` object containing a ``job_id`` and a postprocessing ( ``ppcirc``) circuit if there is one.
 
 The ``logout()`` method clears stored JSON web tokens and the user will have to sign in again to access the Quantinuum API.
-
-Every Quantinuum ``Backend`` supports mid-circuit measurements.
-
 
 .. toctree::
     api.rst
