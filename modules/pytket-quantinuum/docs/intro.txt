@@ -16,14 +16,14 @@ and Windows. To install, run:
     pip install pytket-quantinuum
 
 .. note::   Using the ``QuantinuumBackend`` requires a `Quantinuum <https://www.quantinuum.com/>`_ account.
-            The user will be prompted for their login credentials when making API calls such as calling the ``process_circuits`` method or querying ``backend_info`` .
+            The user will be prompted for their login credentials when making API calls such as calling the ``process_circuits`` method or querying ``backend_info``.
 
 Devices
 =======
 The pytket-quantinuum extension allows the user to access the following quantum devices, emulators and syntax checkers. These backends can be initialised  by passing the device name as a string to the ``QuantinuumBackend`` class. The available devices are:
 
 * ``H1-1``, ``H1-2``: Quantum computers, submit specifically to ``H1-1`` or ``H1-2`` by using the device name
-* ``H1-1E``, ``H1-2E``: Device-specific Emulators of ``H1-1`` and ``H1-2``. These emulators run remotely on servers and require credentials.
+* ``H1-1E``, ``H1-2E``: Device-specific emulators of ``H1-1`` and ``H1-2``. These emulators run remotely on servers and require credentials.
 * ``H1-1SC``, ``H1-2SC``: Device-specific syntax checkers. These check compilation of a quantum circuit against device-specific instructions, and return status "completed" if the syntax is correct (along with the H-Series Quantum Credits (HQCs)), or status "failed" if the syntax is incorrect (along with the error).
 * ``H1``: Submit to Quantinuum ``H1`` machines: job is run on ``H1-1`` or ``H1-2`` based on the soonest available device.
 
@@ -88,9 +88,9 @@ Device Predicates
 
 Circuits must satisfy the following predicates in order to run on the ``QuantinuumBackend``.
 
-* `NoSymbolsPredicate  <https://cqcl.github.io/tket/pytket/api/predicates.html#pytket.predicates.NoSymbolsPredicate>`_ : Parameterised gates must have numerical parameters when the circuit is executed.
-* `GateSetPredicate  <https://cqcl.github.io/tket/pytket/api/predicates.html#pytket.predicates.GateSetPredicate>`_ : To view supported Ops run ``QuantinuumBackend.backend_info.gate_set``.
-* `MaxNQubitsPredicate <https://cqcl.github.io/tket/pytket/api/predicates.html#pytket.predicates.MaxNQubitsPredicate>`_ : ``H1-1``, ``H1-1E`` and ``H1-1SC`` all support a maximum of 20 qubits. The ``H1-2``, ``H1-2E`` and ``H1-2SC`` support a maximum of 12 qubits.
+* `NoSymbolsPredicate  <https://cqcl.github.io/tket/pytket/api/predicates.html#pytket.predicates.NoSymbolsPredicate>`_: Parameterised gates must have numerical parameters when the circuit is executed.
+* `GateSetPredicate  <https://cqcl.github.io/tket/pytket/api/predicates.html#pytket.predicates.GateSetPredicate>`_: To view supported Ops run ``QuantinuumBackend.backend_info.gate_set``.
+* `MaxNQubitsPredicate <https://cqcl.github.io/tket/pytket/api/predicates.html#pytket.predicates.MaxNQubitsPredicate>`_: ``H1-1``, ``H1-1E`` and ``H1-1SC`` all support a maximum of 20 qubits. The ``H1-2``, ``H1-2E`` and ``H1-2SC`` support a maximum of 12 qubits.
 
 Job Statuses
 ============
