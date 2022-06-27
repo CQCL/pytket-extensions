@@ -11,42 +11,27 @@ be executed on Quantinuum's quantum devices.
 ``pytket-quantinuum`` is available for Python 3.8, 3.9 and 3.10, on Linux, MacOS
 and Windows. To install, run:
 
-``pip install pytket-quantinuum``
+::
 
+    pip install pytket-quantinuum
 
 .. note::   Requires a `Quantinuum <https://www.quantinuum.com/>`_ account.
             Use ``QuantinuumBackend.login()`` to log in using your email and password.
 
 Devices
 =======
-The pytket-quantinuum extension allows the user to access the following quantum devices, emulators and syntax checkers.
+The pytket-quantinuum extension allows the user to access the following quantum devices, emulators and syntax checkers. These backends can be initialised  by passing the device name as a string to the ``QuantinuumBackend`` class.
 
 * ``H1-1``, ``H1-2``: Quantum computers, submit specifically to ``H1-1`` or ``H1-2`` by using the device name
 * ``H1-1E``, ``H1-2E``: Device-specific Emulators of ``H1-1`` and ``H1-2``. These emulators run remotely on servers and require credentials.
 * ``H1-1SC``, ``H1-2SC``: Device-specific syntax checkers. These check compilation of a quantum circuit against device-specific instructions, and return status "completed" if the syntax is correct (along with the H-Series Quantum Credits (HQCs)), or status "failed" if the syntax is incorrect (along with the error).
 * ``H1``: Submit to Quantinuum ``H1`` machines: job is run on ``H1-1`` or ``H1-2`` based on the soonest available device.
 
-These backends can be initialised  by passing the device name as a string to the ``QuantinuumBackend`` class.
-
 The H-series devices and emulators produce shots-based results and therefore require measurements. It is also possible to use a stabilizer simulator by specifying ``simulator='stabilizer'``. This option may be preferable for simulating Clifford circuits.
 
 By default the emulators use noise models based on the real devices. It is possible to perform a noiseless simulation by specifying ``noisy_simulation=False``.  
 
 For examples demonstrating the ``QuantinuumBackend`` see the `example notebooks <https://github.com/CQCL/pytket-extensions/tree/develop/modules/pytket-quantinuum/examples>`_ .
-
-Job Statuses
-============
-
-When using the Quantinuum ``Backend`` to run circuits there are several possible device statuses.
-
-* queued - The job has been queued but has not yet been run.
-* running - The circuit is currently being run on the device/emulator.
-* completed - The job has finished.
-* failed -  The job has failed.
-* cancelling - The job is in the process of being cancelled.
-* cancelled - The job has been cancelled.
-
-The status of the device can be checked with by using the ``device_state`` method. To cancel a job simply use the ``cancel`` method.
 
 **Web portal:**
 https://um.qapi.honeywell.com/user
@@ -105,6 +90,19 @@ Circuits must satisfy the following predicates in order to run on the ``Quantinu
 * `GateSetPredicate  <https://cqcl.github.io/tket/pytket/api/predicates.html#pytket.predicates.GateSetPredicate>`_ : To view supported Ops run ``QuantinuumBackend.backend_info.gate_set``.
 * `MaxNQubitsPredicate <https://cqcl.github.io/tket/pytket/api/predicates.html#pytket.predicates.MaxNQubitsPredicate>`_ : ``H1-1``, ``H1-1E`` and ``H1-1SC`` all support a maximum of 20 qubits. The ``H1-2``, ``H1-2E`` and ``H1-2SC`` support a maximum of 12 qubits.
 
+Job Statuses
+============
+
+When using the Quantinuum ``Backend`` to run circuits there are several possible device statuses.
+
+* queued - The job has been queued but has not yet been run.
+* running - The circuit is currently being run on the device/emulator.
+* completed - The job has finished.
+* failed -  The job has failed.
+* cancelling - The job is in the process of being cancelled.
+* cancelled - The job has been cancelled.
+
+The status of the device can be checked with by using the ``device_state`` method. To cancel a job simply use the ``cancel`` method.
 
 Additional Backend Capabilities
 ===============================
