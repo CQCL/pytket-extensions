@@ -17,30 +17,42 @@ and Windows. To install, run:
 .. note::   Requires a `Quantinuum <https://www.quantinuum.com/>`_ account.
             Use ``QuantinuumBackend.login()`` to log in using your email and password.
 
-**Devices**
+Devices
+=======
+The pytket-quantinuum extension allows the user to access the following quantum devices, emulators and syntax checkers.
 
-* ``H1-1``, ``H1-2``: Quantum Computers, submit specifically to ``H1-1`` or ``H1-2`` by using the device name
+* ``H1-1``, ``H1-2``: Quantum computers, submit specifically to ``H1-1`` or ``H1-2`` by using the device name
 * ``H1-1E``, ``H1-2E``: Device-specific Emulators of ``H1-1`` and ``H1-2``. These emulators run remotely on servers and require credentials.
-* ``H1-1SC``, ``H1-2SC``: Device-specific Syntax Checkers, check compilation of a quantum circuit against device-specific instructions, returns completed if syntax is correct along with the H-Series Quantum Credits (HQCs), returns failed if the syntax is incorrect along with the error.
-* ``H1``: Submit to Quantinuum System Model ``H1`` machines, job is run on ``H1-1`` or ``H1-2`` based on soonest available device.
+* ``H1-1SC``, ``H1-2SC``: Device-specific syntax checkers. These check compilation of a quantum circuit against device-specific instructions, and return status "completed" if the syntax is correct (along with the H-Series Quantum Credits (HQCs)), or status "failed" if the syntax is incorrect (along with the error).
+* ``H1``: Submit to Quantinuum ``H1`` machines: job is run on ``H1-1`` or ``H1-2`` based on the soonest available device.
 
-The H-series devices and emulators produce shots based results and therefore require measurements. The emulators use noise models based on the real devices. 
+These backends can be initialised  by passing the device name as a string to the ``QuantinuumBackend`` class.
 
-**Job Statuses**
+The H-series devices and emulators produce shots-based results and therefore require measurements. It is also possible to use a stabilizer simulator by specifying ``simulator='stabilizer'``. This option may be preferable for simulating Clifford circuits.
 
-When using the Quantinuum ``Backend`` to run circuits there are several possible circuit statuses.
+By default the emulators use noise models based on the real devices. It is possible to perform a noiseless simulation by specifying ``noisy_simulation=False``.  
+
+For examples demonstrating the ``QuantinuumBackend`` see the `example notebooks <https://github.com/CQCL/pytket-extensions/tree/develop/modules/pytket-quantinuum/examples>`_ .
+
+Job Statuses
+============
+
+When using the Quantinuum ``Backend`` to run circuits there are several possible device statuses.
 
 * queued - The job has been queued but has not yet been run.
-* running - circuit is currently being run on the device/emulator.
-* completed - the job has finished.
-* failed - job has failed.
-* cancelling - the job is in the process of being cancelled.
-* cancelled - the job has been cancelled.
+* running - The circuit is currently being run on the device/emulator.
+* completed - The job has finished.
+* failed -  The job has failed.
+* cancelling - The job is in the process of being cancelled.
+* cancelled - The job has been cancelled.
+
+The status of the device can be checked with by using the ``device_state`` method. To cancel a job simply use the ``cancel`` method.
 
 **Web portal:**
 https://um.qapi.honeywell.com/user
 
-**Default Compilation**
+Default Compilation
+===================
 
 Every ``Backend`` in pytket has its own ``default_compilation_pass`` method. 
 This method applies a sequence of optimisations to a circuit depending on the value of an ``optimisation_level`` parameter. 
@@ -48,7 +60,7 @@ This default compilation will ensure that the circuit meets all the constraints 
 The passes applied by different levels of optimisation are specified in the table below.
 
 
-.. list-table:: **Default compilation pass for the Quantinuum Backend**
+.. list-table:: **Default compilation pass for the Quantinuum backends**
    :widths: 25 25 25
    :header-rows: 1
 
@@ -76,7 +88,7 @@ The passes applied by different levels of optimisation are specified in the tabl
 
 * [1] If no value is specified then ``optimisation_level`` defaults to a value of 1.
 
-* [2] ``self.rebase_pass`` is a rebase that converts the circuit to the Quantinuum native gate set {Rz, PhasedX, ZZMax, ZZPhase}.
+* [2] ``self.rebase_pass`` is a rebase that converts the circuit to the Quantinuum native gate set (e.g. {Rz, PhasedX, ZZMax, ZZPhase}).
 
 * [3] ``auto_squash_pass`` has arguments ``auto_squash_pass({OpType.PhasedX,OpType.Rz})``
 
@@ -84,18 +96,20 @@ The passes applied by different levels of optimisation are specified in the tabl
 
 .. note::   If ``optimisation_level = 0`` the device constraints are solved but no additional optimisation is applied. Setting ``optimisation_level = 1`` applies some light optimisations to the circuit. More intensive optimisation is applied by level 2 at the expense of increased runtime.
 
-**Device Predicates**
+Device Predicates
+=================
 
 Circuits must satisfy the following predicates in order to run on the ``QuantinuumBackend``.
 
-* `NoSymbolsPredicate  <https://cqcl.github.io/tket/pytket/api/predicates.html#pytket.predicates.NoSymbolsPredicate>`_  - Parameterised gates must have numerical parameters when the circuit is executed.
-* `GateSetPredicate  <https://cqcl.github.io/tket/pytket/api/predicates.html#pytket.predicates.GateSetPredicate>`_ : To view supported Ops run ``QuantinuumBackend.backend_info.gate_set``
-* `MaxNQubitsPredicate(12) <https://cqcl.github.io/tket/pytket/api/predicates.html#pytket.predicates.MaxNQubitsPredicate>`_ for ``H1-1``, ``H1-2`` and ``H1-2E``. ``MaxNQubitsPredicate(20)`` for ``H1-1E``.
+* `NoSymbolsPredicate  <https://cqcl.github.io/tket/pytket/api/predicates.html#pytket.predicates.NoSymbolsPredicate>`_ : Parameterised gates must have numerical parameters when the circuit is executed.
+* `GateSetPredicate  <https://cqcl.github.io/tket/pytket/api/predicates.html#pytket.predicates.GateSetPredicate>`_ : To view supported Ops run ``QuantinuumBackend.backend_info.gate_set``.
+* `MaxNQubitsPredicate <https://cqcl.github.io/tket/pytket/api/predicates.html#pytket.predicates.MaxNQubitsPredicate>`_ : ``H1-1``, ``H1-1E`` and ``H1-1SC`` all support a maximum of 20 qubits. The ``H1-2``, ``H1-2E`` and ``H1-2SC`` support a maximum of 12 qubits.
 
 
-**Additional Backend Capabilities**
+Additional Backend Capabilities
+===============================
 
-The Quantinuum ``Backend`` has a ``cost`` method. This calculates the cost (in H-series Quantum Credits) required to execute the circuit for the specified number of shots.  
+The Quantinuum ``Backend`` has a ``cost`` method. This calculates the cost (in HQCs) required to execute the circuit for the specified number of shots.  
 
 There are also ``login()`` and ``logout()`` methods. 
 After the login method is called the user will be prompted for their Quantinuum username and password.
@@ -108,11 +122,11 @@ The ``process_circuits`` method for the QuantinuumBackend accepts the following 
 *  ``group`` : string identifier of a collection of jobs, can be used for usage tracking.
 *  ``max_batch_cost``: maximum HQC usable by submitted batch, default is 500.
 *  ``batch_id`` : first ``jobid`` of the batch to which this batch of circuits should be submitted. Job IDs can be retrieved from ResultHandle using ``backend.get_jobid(handle)``.
-*  ``close_batch`` : boolean flag to close the batch after the last circuit in the job, ``default=True``.
+*  ``close_batch`` : boolean flag to close the batch after the last circuit in the job (default value is ``True``).
 
-For the Quantinuum ``Backend``, ``process_circuits`` returns a ResultHandle object containing a ``job_id`` and a postprocessing ( ``ppcirc``) circuit if there is one. The ``logout()`` method clears stored JSON web tokens and will have to sign in to access the Quantinuum API.
+For the Quantinuum ``Backend``, ``process_circuits`` returns a ``ResultHandle`` object containing a ``job_id`` and a postprocessing ( ``ppcirc``) circuit if there is one. The ``logout()`` method clears stored JSON web tokens and the user will have to sign in again to access the Quantinuum API.
 
-Every Quantinuum ``Backend`` supports mid circuit measurements.
+Every Quantinuum ``Backend`` supports mid-circuit measurements.
 
 
 .. toctree::
