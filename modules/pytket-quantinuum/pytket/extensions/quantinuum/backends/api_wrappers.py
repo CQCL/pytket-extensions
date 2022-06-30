@@ -235,7 +235,7 @@ class QuantinuumAPI:
             raise QuantinuumAPIError(
                 (
                     f"Authorization failure attempting: {description}."
-                    "\n\nServer Response: {jr}"
+                    f"\n\nServer Response: {jr}"
                 )
             )
         elif res.status_code != HTTPStatus.OK:
