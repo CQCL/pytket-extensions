@@ -29,6 +29,7 @@ import nest_asyncio  # type: ignore
 
 from .config import QuantinuumConfig
 from .credential_storage import MemoryCredentialStorage
+from .federated_login import microsoft_login
 
 # This is necessary for use in Jupyter notebooks to allow for nested asyncio loops
 try:
@@ -72,6 +73,8 @@ class QuantinuumAPI:
 
     DEFAULT_API_URL = "https://qapi.quantinuum.com/"
 
+    AZURE_PROVIDER = "microsoft"
+
     # Quantinuum API error codes
     # mfa verification code is required during login
     ERROR_CODE_MFA_REQUIRED = 73
@@ -82,6 +85,7 @@ class QuantinuumAPI:
         api_url: Optional[str] = None,
         api_version: int = 1,
         use_websocket: bool = True,
+        provider: Optional[str] = None,
         __user_name: Optional[str] = None,
         __pwd: Optional[str] = None,
     ):
@@ -114,6 +118,7 @@ class QuantinuumAPI:
 
         self.api_version = api_version
         self.use_websocket = use_websocket
+        self.provider = provider
 
         self.ws_timeout = 180
         self.retry_timeout = 5
@@ -157,6 +162,31 @@ class QuantinuumAPI:
         finally:
             del user
             del pwd
+            del body
+
+    def _request_tokens_federated(self) -> None:
+        """Method to perform federated login and save tokens."""
+
+        if self.provider is not None and self.provider.lower() == self.AZURE_PROVIDER:
+            _, token = microsoft_login()
+        else:
+            raise RuntimeError(
+                f"Unsupported provider for login", HTTPStatus.UNAUTHORIZED
+            )
+
+        body = {"provider-token": token}
+
+        try:
+            response = requests.post(
+                f"{self.url}login",
+                json.dumps(body),
+            )
+            self._response_check(response, "Login")
+            resp_dict = response.json()
+            self._cred_store.save_tokens(
+                resp_dict["id-token"], resp_dict["refresh-token"]
+            )
+        finally:
             del body
 
     def _refresh_id_token(self, refresh_token: str) -> None:
@@ -203,7 +233,10 @@ class QuantinuumAPI:
 
     def full_login(self) -> None:
         """Ask for user credentials from std input and update JWT tokens"""
-        self._request_tokens(*self._get_credentials())
+        if self.provider is None:
+            self._request_tokens(*self._get_credentials())
+        else:
+            self._request_tokens_federated()
 
     def login(self) -> str:
         """This methods checks if we have a valid (non-expired) id-token
