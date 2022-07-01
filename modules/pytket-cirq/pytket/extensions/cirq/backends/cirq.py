@@ -473,7 +473,8 @@ class CirqCliffordSimBackend(_CirqSimBackend):
                 circuit.all_qubits()
             ),
         )
-        return BackendResult(state=run.final_state.state_vector(), q_bits=q_bits)
+        sv = run.final_state.state_vector()  # type: ignore
+        return BackendResult(state=sv, q_bits=q_bits)
 
     def package_results(
         self, circuit: CirqCircuit, q_bits: Sequence[Qubit]

@@ -1,6 +1,13 @@
 Changelog
 ~~~~~~~~~
 
+0.25.0 (unreleased)
+-------------------
+
+* Updated cirq version requirement to 0.15.
+* Changed `process_characterisation()` so that it expects a `GridDevice` instead
+  of a `SerializableDevice`.
+
 0.24.0 (June 2022)
 ------------------
 
