@@ -72,6 +72,10 @@ class QuantinuumAPI:
 
     DEFAULT_API_URL = "https://qapi.quantinuum.com/"
 
+    # Quantinuum API error codes
+    # mfa verification code is required during login
+    ERROR_CODE_MFA_REQUIRED = 73
+
     def __init__(
         self,
         token_store: Optional[MemoryCredentialStorage] = None,
@@ -129,6 +133,21 @@ class QuantinuumAPI:
                 f"{self.url}login",
                 json.dumps(body),
             )
+
+            # handle mfa verification
+            if response.status_code == HTTPStatus.UNAUTHORIZED:
+                error_code = response.json()["error"]["code"]
+                if error_code == self.ERROR_CODE_MFA_REQUIRED:
+                    # get a mfa code from user input
+                    mfa_code = input("Enter your MFA verification code: ")
+                    body["code"] = mfa_code
+
+                    # resend request to login
+                    response = requests.post(
+                        f"{self.url}login",
+                        json.dumps(body),
+                    )
+
             self._response_check(response, "Login")
             resp_dict = response.json()
             self._cred_store.save_tokens(
