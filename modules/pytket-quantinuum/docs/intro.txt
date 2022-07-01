@@ -95,7 +95,7 @@ Circuits must satisfy the following predicates in order to run on the ``Quantinu
 Job Statuses
 ============
 
-When using the Quantinuum ``Backend`` to run circuits there are several possible device statuses.
+When using the Quantinuum ``Backend`` to run circuits there are several possible circuit statuses.
 
 * queued - The job has been queued but has not yet been run.
 * running - The circuit is currently being run on the device/emulator.
@@ -104,7 +104,7 @@ When using the Quantinuum ``Backend`` to run circuits there are several possible
 * cancelling - The job is in the process of being cancelled.
 * cancelled - The job has been cancelled.
 
-The status of the device can be checked with by using the ``device_state`` method. To cancel a job simply use the ``cancel`` method and supply the job handle as a parameter.
+The status of the job can be checked with by using the ``circuit_status`` method. To cancel a job simply use the ``cancel`` method and supply the job handle as a parameter.
 
 Additional Backend Capabilities
 ===============================
