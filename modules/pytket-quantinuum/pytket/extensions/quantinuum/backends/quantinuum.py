@@ -479,7 +479,9 @@ class QuantinuumBackend(Backend):
                 if i == 0 and "batch_id" not in kwargs:
                     # `batch-exec` field set to max batch cost for first job of batch
                     # and to the id of first job of batch otherwise
-                    _ = self._api_handler.retrieve_job_status(jobid, use_websocket=True)
+                    _ = self._api_handler.retrieve_job_status(
+                        jobid, use_websocket=kwargs.get("use_websocket", True)
+                    )
                     batch_exec = jobid
                 handle = ResultHandle(jobid, json.dumps(ppcirc_rep))
                 handle_list.append(handle)
@@ -488,13 +490,17 @@ class QuantinuumBackend(Backend):
         return handle_list
 
     def _retrieve_job(
-        self, jobid: str, timeout: Optional[int] = None, wait: Optional[int] = None
+        self,
+        jobid: str,
+        timeout: Optional[int] = None,
+        wait: Optional[int] = None,
+        use_websocket: Optional[bool] = True,
     ) -> Dict:
         if not self._api_handler:
             raise RuntimeError("API handler not set")
         with self._api_handler.override_timeouts(timeout=timeout, retry_timeout=wait):
             # set and unset optional timeout parameters
-            job_dict = self._api_handler.retrieve_job(jobid, use_websocket=True)
+            job_dict = self._api_handler.retrieve_job(jobid, use_websocket)
 
         if job_dict is None:
             raise RuntimeError(f"Unable to retrieve job {jobid}")
@@ -513,17 +519,24 @@ class QuantinuumBackend(Backend):
         else:
             self._cache[handle] = rescache
 
-    def circuit_status(self, handle: ResultHandle) -> CircuitStatus:
+    def circuit_status(
+        self, handle: ResultHandle, **kwargs: KwargTypes
+    ) -> CircuitStatus:
         self._check_handle_type(handle)
         jobid = str(handle[0])
         if self._MACHINE_DEBUG or jobid.startswith(_DEBUG_HANDLE_PREFIX):
             return CircuitStatus(StatusEnum.COMPLETED)
+        use_websocket = kwargs.get("use_websocket", True)
         # TODO check queue position and add to message
         try:
-            response = self._api_handler.retrieve_job_status(jobid, use_websocket=True)
+            response = self._api_handler.retrieve_job_status(
+                jobid, use_websocket=use_websocket
+            )
         except QuantinuumAPIError:
             self._api_handler.login()
-            response = self._api_handler.retrieve_job_status(jobid, use_websocket=True)
+            response = self._api_handler.retrieve_job_status(
+                jobid, use_websocket=use_websocket
+            )
 
         if response is None:
             raise RuntimeError(f"Unable to retrieve circuit status for handle {handle}")
@@ -542,7 +555,7 @@ class QuantinuumBackend(Backend):
     def get_result(self, handle: ResultHandle, **kwargs: KwargTypes) -> BackendResult:
         """
         See :py:meth:`pytket.backends.Backend.get_result`.
-        Supported kwargs: `timeout`, `wait`.
+        Supported kwargs: `timeout`, `wait`, `use_websocket`.
         """
         try:
             return super().get_result(handle)
@@ -562,8 +575,9 @@ class QuantinuumBackend(Backend):
             wait = kwargs.get("wait")
             if wait is not None:
                 wait = int(wait)
+            use_websocket = kwargs.get("use_websocket", None)
 
-            job_retrieve = self._retrieve_job(jobid, timeout, wait)
+            job_retrieve = self._retrieve_job(jobid, timeout, wait, use_websocket)
             circ_status = _parse_status(job_retrieve)
             if circ_status.status not in (StatusEnum.COMPLETED, StatusEnum.CANCELLED):
                 raise GetResultFailed(
@@ -588,7 +602,11 @@ class QuantinuumBackend(Backend):
         return self.cost(circuit, n_shots)
 
     def cost(
-        self, circuit: Circuit, n_shots: int, syntax_checker: Optional[str] = None
+        self,
+        circuit: Circuit,
+        n_shots: int,
+        syntax_checker: Optional[str] = None,
+        use_websocket: Optional[bool] = None,
     ) -> Optional[float]:
         """
         Return the cost in HQC to complete this `circuit` with `n_shots`
@@ -605,10 +623,12 @@ class QuantinuumBackend(Backend):
         :type circuit: Circuit
         :param n_shots: Number of shots.
         :type n_shots: int
-        :param syntax_checker: Optional.Name of the syntax checker to use to get cost.
+        :param syntax_checker: Optional. Name of the syntax checker to use to get cost.
             For example for the "H1-1" device that would be "H1-1SC".
             For most devices this is automatically inferred, default=None.
         :type syntax_checker: str
+        :param use_websocket: Optional. Boolean flag to use a websocket connection.
+        :type use_websocket: bool
         :raises ValueError: Circuit is not valid, needs to be compiled.
         :return: Cost in HQC to execute the shots.
         :rtype: float
@@ -634,7 +654,9 @@ class QuantinuumBackend(Backend):
             cast(str, syntax_checker), _api_handler=self._api_handler
         )
         try:
-            handle = backend.process_circuit(circuit, n_shots)
+            handle = backend.process_circuit(
+                circuit, n_shots, use_websocket=use_websocket
+            )
         except DeviceNotAvailable as e:
             raise ValueError(
                 f"Cannot find syntax checker for device {self._device_name}. "
@@ -645,9 +667,11 @@ class QuantinuumBackend(Backend):
                 " syntax checker for the specific device,"
                 " e.g. 'H1-1SC' as opposed to 'H1SC'"
             ) from e
-        _ = backend.get_result(handle)
+        _ = backend.get_result(handle, use_websocket=use_websocket)
 
-        cost = json.loads(backend.circuit_status(handle).message)["cost"]
+        cost = json.loads(
+            backend.circuit_status(handle, use_websocket=use_websocket).message
+        )["cost"]
         return None if cost is None else float(cost)
 
     def login(self) -> None:
