@@ -374,6 +374,7 @@ class QuantinuumBackend(Backend):
         * `wasm_file_handler`: a ``WasmFileHandler`` object for linked WASM module.
         * `pytketpass`: a ``pytket.passes.BasePass`` intended to be applied
            by the backend (beta feature, may be ignored).
+        * `use_websocket`: boolean flag to allow using a websocket connection.
 
         """
         circuits = list(circuits)
