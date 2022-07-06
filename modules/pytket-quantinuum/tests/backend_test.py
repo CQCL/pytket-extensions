@@ -23,6 +23,15 @@ import pytest
 import hypothesis.strategies as st
 from hypothesis.strategies._internal import SearchStrategy
 from hypothesis import HealthCheck
+from pytket.passes import (  # type: ignore
+    BasePass,
+    SequencePass,
+    SynthesiseTket,
+    RemoveRedundancies,
+    FullPeepholeOptimise,
+    OptimisePhaseGadgets,
+)
+
 
 from pytket.circuit import (  # type: ignore
     Circuit,
@@ -95,6 +104,28 @@ def test_quantinuum(
     assert newcounts == correct_counts
     if skip_remote_tests:
         assert backend.backend_info is None
+
+
+def test_tket_pass_submission() -> None:
+    backend = QuantinuumBackend(device_name="H1-1SC", machine_debug=True)
+
+    sequence_pass = SequencePass(
+        [
+            OptimisePhaseGadgets(),
+            FullPeepholeOptimise(),
+            FullPeepholeOptimise(allow_swaps=False),
+            RemoveRedundancies(),
+        ]
+    )
+
+    c = Circuit(4, 4, "test 1")
+    c.H(0)
+    c.measure_all()
+    c = backend.get_compiled_circuit(c)
+    n_shots = 4
+    handle = backend.process_circuits([c], n_shots, pytketpass=sequence_pass)
+    print(handle)
+    assert 1 == 2
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
