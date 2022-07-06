@@ -24,9 +24,7 @@ import hypothesis.strategies as st
 from hypothesis.strategies._internal import SearchStrategy
 from hypothesis import HealthCheck
 from pytket.passes import (  # type: ignore
-    BasePass,
     SequencePass,
-    SynthesiseTket,
     RemoveRedundancies,
     FullPeepholeOptimise,
     OptimisePhaseGadgets,
