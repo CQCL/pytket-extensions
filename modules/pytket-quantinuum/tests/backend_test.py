@@ -122,8 +122,6 @@ def test_tket_pass_submission() -> None:
     c = backend.get_compiled_circuit(c)
     n_shots = 4
     handle = backend.process_circuits([c], n_shots, pytketpass=sequence_pass)
-    print(handle)
-    assert 1 == 2
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
