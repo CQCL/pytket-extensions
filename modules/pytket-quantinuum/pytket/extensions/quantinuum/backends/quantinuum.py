@@ -372,6 +372,8 @@ class QuantinuumBackend(Backend):
         * `close_batch`: boolean flag to close the batch after the last circuit,
            default=True.
         * `wasm_file_handler`: a ``WasmFileHandler`` object for linked WASM module.
+        * `pytketpass`: a ``pytket.passes.BasePass`` intended to be applied
+           by the backend (beta feature, may be ignored).
 
         """
         circuits = list(circuits)
@@ -393,6 +395,7 @@ class QuantinuumBackend(Backend):
             "options": {
                 "simulator": self.simulator_type,
                 "error-model": noisy_simulation,
+                "tket": dict(),
             },
         }
         group = kwargs.get("group", self._group)
@@ -406,6 +409,11 @@ class QuantinuumBackend(Backend):
             basebody["cfl"] = cast(WasmFileHandler, wasm_fh)._wasm_file_encoded.decode(
                 "utf-8"
             )
+
+        pytket_pass = cast(Optional[BasePass], kwargs.get("pytketpass"))
+
+        if pytket_pass is not None:
+            basebody["options"]["tket"]["compilation-pass"] = pytket_pass.to_dict()
 
         handle_list = []
         batch_exec: Union[int, str]
