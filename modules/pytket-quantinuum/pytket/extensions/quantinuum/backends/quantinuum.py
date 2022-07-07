@@ -373,7 +373,7 @@ class QuantinuumBackend(Backend):
            default=True.
         * `wasm_file_handler`: a ``WasmFileHandler`` object for linked WASM module.
         * `pytketpass`: a ``pytket.passes.BasePass`` which should be applied
-           by the backend (beta).
+           by the backend (might be ignored by the backend).
 
         """
         circuits = list(circuits)
@@ -395,6 +395,7 @@ class QuantinuumBackend(Backend):
             "options": {
                 "simulator": self.simulator_type,
                 "error-model": noisy_simulation,
+                "tket": dict(),
             },
         }
         group = kwargs.get("group", self._group)
@@ -409,13 +410,10 @@ class QuantinuumBackend(Backend):
                 "utf-8"
             )
 
-        try:
-            pytket_pass = cast(BasePass, kwargs.get("pytketpass"))
-        except ValueError:
-            pytket_pass = None
+        pytket_pass = cast(Optional[BasePass], kwargs.get("pytketpass"))
 
         if pytket_pass is not None:
-            basebody["options"]["tket-pass"] = pytket_pass.to_dict()
+            basebody["options"]["tket"]["compilation-pass"] = pytket_pass.to_dict()
 
         handle_list = []
         batch_exec: Union[int, str]
