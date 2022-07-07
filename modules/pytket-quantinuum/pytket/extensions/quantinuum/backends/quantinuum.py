@@ -372,8 +372,8 @@ class QuantinuumBackend(Backend):
         * `close_batch`: boolean flag to close the batch after the last circuit,
            default=True.
         * `wasm_file_handler`: a ``WasmFileHandler`` object for linked WASM module.
-        * `pytketpass`: a ``pytket.passes.BasePass`` which should be applied
-           by the backend (might be ignored by the backend).
+        * `pytketpass`: a ``pytket.passes.BasePass`` intended to be applied
+           by the backend (beta feature, may be ignored).
 
         """
         circuits = list(circuits)
