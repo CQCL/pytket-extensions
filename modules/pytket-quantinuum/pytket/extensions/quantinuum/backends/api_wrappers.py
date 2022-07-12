@@ -86,6 +86,7 @@ class QuantinuumAPI:
         api_version: int = 1,
         use_websocket: bool = True,
         provider: Optional[str] = None,
+        support_mfa: bool = True,
         __user_name: Optional[str] = None,
         __pwd: Optional[str] = None,
     ):
@@ -101,6 +102,9 @@ class QuantinuumAPI:
         :type api_version: int, optional
         :param use_websocket: Whether to use websocket to retrieve, defaults to True
         :type use_websocket: bool, optional
+        :param support_mfa: Whether to wait for the user to input the auth code,
+            defaults to True
+        :type support_mfa: bool, optional
         """
         self.config = QuantinuumConfig.from_default_config_file()
 
@@ -119,6 +123,7 @@ class QuantinuumAPI:
         self.api_version = api_version
         self.use_websocket = use_websocket
         self.provider = provider
+        self.support_mfa = support_mfa
 
         self.ws_timeout = 180
         self.retry_timeout = 5
@@ -143,6 +148,10 @@ class QuantinuumAPI:
             if response.status_code == HTTPStatus.UNAUTHORIZED:
                 error_code = response.json()["error"]["code"]
                 if error_code == self.ERROR_CODE_MFA_REQUIRED:
+                    if not self.support_mfa:
+                        raise QuantinuumAPIError(
+                            "This API instance does not support MFA login."
+                        )
                     # get a mfa code from user input
                     mfa_code = input("Enter your MFA verification code: ")
                     body["code"] = mfa_code
