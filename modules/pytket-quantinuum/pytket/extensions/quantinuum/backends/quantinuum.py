@@ -146,6 +146,7 @@ class QuantinuumBackend(Backend):
         label: Optional[str] = "job",
         simulator: str = "state-vector",
         group: Optional[str] = None,
+        provider: Optional[str] = None,
         machine_debug: bool = False,
         _api_handler: QuantinuumAPI = DEFAULT_API_HANDLER,
     ):
@@ -160,6 +161,9 @@ class QuantinuumBackend(Backend):
         :param group: string identifier of a collection of jobs, can be used for usage
           tracking.
         :type group: Optional[str], optional
+        :param provider: select a provider for federated authentication. We currently
+            only support 'microsoft', which enables the microsoft Device Flow.
+        :type provider: Optional[str], optional
         :type simulator: str, optional
         :param _api_handler: Instance of API handler, defaults to DEFAULT_API_HANDLER
         :type _api_handler: QuantinuumAPI
@@ -176,6 +180,8 @@ class QuantinuumBackend(Backend):
         self.simulator_type = simulator
 
         self._api_handler = _api_handler
+
+        self._api_handler.provider = provider
 
     @classmethod
     def _available_devices(

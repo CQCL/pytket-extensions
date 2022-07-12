@@ -1,6 +1,10 @@
 Changelog
 ~~~~~~~~~
 
+0.5.0 (unreleased)
+
+* Add support for multi-factor authentication and microsoft federated login.
+
 0.4.0 (June 2022)
 -----------------
 
