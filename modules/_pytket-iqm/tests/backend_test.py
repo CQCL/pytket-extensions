@@ -56,17 +56,15 @@ def test_iqm(authenticated_iqm_backend: IQMBackend) -> None:
     assert sum(counts.values()) == n_shots
 
 
-# @pytest.mark.skipif(skip_service_unavailable, reason=UNAVAILABLE_REASON)
 def test_invalid_cred() -> None:
-    b = IQMBackend(
-        url=iqm_demo_url,
-        settings=curr_file_path / "demo_settings.json",
-    )
-    c = Circuit(2, 2).H(0).CX(0, 1)
-    c.measure_all()
-    c = b.get_compiled_circuit(c)
-    with pytest.raises(HTTPError):
-        b.process_circuit(c, 1)
+    with pytest.raises(Exception):
+        _ = IQMBackend(
+            url=iqm_demo_url,
+            settings=curr_file_path / "demo_settings.json",
+            auth_server_url="https://cortex-demo.qc.iqm.fi/",
+            username="invalid",
+            password="invalid",
+        )
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
