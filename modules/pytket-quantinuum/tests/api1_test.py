@@ -18,8 +18,11 @@
 
 from io import StringIO
 from typing import Any, Dict, List, Optional, Tuple
+from http import HTTPStatus
+from unittest.mock import patch, MagicMock
 import pytest
 
+import requests
 from requests_mock.mocker import Mocker
 
 from pytket.extensions.quantinuum.backends.api_wrappers import QuantinuumAPI
@@ -192,6 +195,119 @@ def test_custom_login_flow(
     assert login_route.call_count == 2  # type: ignore
     assert job_submit_route.call_count == 4  # type: ignore
     assert job_status_route.call_count == 2  # type: ignore
+
+
+def test_mfa_login_flow(
+    requests_mock: Mocker,
+    mock_credentials: Tuple[str, str],
+    mock_token: str,
+    mock_mfa_code: str,
+    mock_machine_info: Dict[str, Any],
+    monkeypatch: Any,
+) -> None:
+    """Test that the MFA authentication works as expected"""
+
+    DEFAULT_API_HANDLER.delete_authentication()
+
+    fake_device = mock_machine_info["name"]
+
+    def match_mfa_request(request: requests.PreparedRequest) -> bool:
+        return "code" in request.body  # type: ignore
+
+    def match_normal_request(request: requests.PreparedRequest) -> bool:
+        return "code" not in request.body  # type: ignore
+
+    mfa_login_route = requests_mock.register_uri(
+        "POST",
+        "https://qapi.quantinuum.com/v1/login",
+        json={
+            "id-token": mock_token,
+            "refresh-token": mock_token,
+        },
+        headers={"Content-Type": "application/json"},
+        additional_matcher=match_mfa_request,  # type: ignore
+    )
+    normal_login_route = requests_mock.register_uri(
+        "POST",
+        "https://qapi.quantinuum.com/v1/login",
+        json={
+            "error": {"code": 73},
+        },
+        headers={"Content-Type": "application/json"},
+        additional_matcher=match_normal_request,  # type: ignore
+        status_code=HTTPStatus.UNAUTHORIZED,
+    )
+
+    username, pwd = mock_credentials
+    # fake user input from stdin
+    inputs = iter([username + "\n", mock_mfa_code + "\n"])
+    monkeypatch.setattr("builtins.input", lambda msg: next(inputs))
+    monkeypatch.setattr("getpass.getpass", lambda prompt: pwd)
+
+    backend = QuantinuumBackend(
+        device_name=fake_device,
+    )
+    backend.login()
+
+    assert normal_login_route.called_once  # type: ignore
+    # Check that the mfa login has been invoked
+    assert mfa_login_route.called_once  # type: ignore
+    assert backend._api_handler._cred_store.id_token is not None
+    assert backend._api_handler._cred_store.refresh_token is not None
+
+
+@patch("pytket.extensions.quantinuum.backends.api_wrappers.microsoft_login")
+def test_federated_login(
+    mock_microsoft_login: MagicMock,
+    requests_mock: Mocker,
+    mock_credentials: Tuple[str, str],
+    mock_token: str,
+    mock_ms_provider_token: str,
+    mock_machine_info: Dict[str, Any],
+) -> None:
+    """Test that the federated authentication works as expected"""
+    DEFAULT_API_HANDLER.delete_authentication()
+
+    fake_device = mock_machine_info["name"]
+
+    backend = QuantinuumBackend(
+        device_name=fake_device,
+        provider="microsoft",
+    )
+    login_route = requests_mock.register_uri(
+        "POST",
+        "https://qapi.quantinuum.com/v1/login",
+        json={
+            "id-token": mock_token,
+            "refresh-token": mock_token,
+        },
+        headers={"Content-Type": "application/json"},
+    )
+    mock_microsoft_login.return_value = (mock_credentials[0], mock_ms_provider_token)
+    backend.login()
+
+    mock_microsoft_login.assert_called_once()
+    assert login_route.called_once  # type: ignore
+    assert backend._api_handler._cred_store.id_token is not None
+    assert backend._api_handler._cred_store.refresh_token is not None
+
+
+def test_federated_login_wrong_provider(
+    mock_machine_info: Dict[str, Any],
+) -> None:
+    """Test that the federated authentication works as expected"""
+    DEFAULT_API_HANDLER.delete_authentication()
+
+    fake_device = mock_machine_info["name"]
+
+    backend = QuantinuumBackend(
+        device_name=fake_device,
+        provider="wrong provider",
+    )
+    with pytest.raises(RuntimeError) as e:
+        backend.login()
+        err_msg = "Unsupported provider for login"
+        assert err_msg in str(e.value)
 
 
 @pytest.mark.parametrize(

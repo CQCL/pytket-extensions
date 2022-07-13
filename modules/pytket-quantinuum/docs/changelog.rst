@@ -1,6 +1,12 @@
 Changelog
 ~~~~~~~~~
 
+0.5.0 (July 2022)
+-----------------
+
+* Updated pytket version requirement to 1.4.
+* Add support for multi-factor authentication and microsoft federated login.
+
 0.4.0 (June 2022)
 -----------------
 
