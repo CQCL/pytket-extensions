@@ -21,14 +21,15 @@ from pytket.backends import StatusEnum
 from pytket.extensions.iqm import IQMBackend
 from requests import get
 
-iqm_demo_url = "https://cortex-demo.qc.iqm.fi/"
-
 # Skip remote tests if not specified
 skip_remote_tests: bool = os.getenv("PYTKET_RUN_REMOTE_TESTS") is None
 REASON = "PYTKET_RUN_REMOTE_TESTS not set (requires configuration of IQM credentials)"
 
 # Skip remote tests if the IQM demo site is unavailable
-if skip_remote_tests is False and get(iqm_demo_url).status_code != 200:
+if (
+    skip_remote_tests is False
+    and get("https://cortex-demo.qc.iqm.fi/").status_code != 200
+):
     skip_remote_tests = True
     REASON = "The IQM demo site/service is unavailable"
 
@@ -57,10 +58,10 @@ def test_iqm(authenticated_iqm_backend: IQMBackend) -> None:
 
 
 # @pytest.mark.skipif(skip_service_unavailable, reason=UNAVAILABLE_REASON)
-def test_invalid_cred(demo_settings_path: os.PathLike) -> None:
+def test_invalid_cred(demo_settings_path: os.PathLike, demo_url: str) -> None:
     with pytest.raises(ClientAuthenticationError):
         b = IQMBackend(
-            url=iqm_demo_url,
+            url=demo_url,
             settings=demo_settings_path,
             username="invalid",
             password="invalid",
@@ -108,9 +109,9 @@ def test_none_nshots(authenticated_iqm_backend: IQMBackend) -> None:
     assert "Parameter n_shots is required" in str(errorinfo.value)
 
 
-def test_default_pass(demo_settings_path: os.PathLike) -> None:
+def test_default_pass(demo_settings_path: os.PathLike, demo_url: str) -> None:
     b = IQMBackend(
-        url=iqm_demo_url,
+        url=demo_url,
         settings=demo_settings_path,
     )
     for ol in range(3):
@@ -142,9 +143,9 @@ def test_postprocess(authenticated_iqm_backend: IQMBackend) -> None:
     assert all(len(shot) == 2 for shot in shots)
 
 
-def test_backendinfo(demo_settings_path: os.PathLike) -> None:
+def test_backendinfo(demo_settings_path: os.PathLike, demo_url: str) -> None:
     b = IQMBackend(
-        url=iqm_demo_url,
+        url=demo_url,
         settings=demo_settings_path,
     )
     info = b.backend_info
