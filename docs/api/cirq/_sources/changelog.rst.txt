@@ -1,6 +1,14 @@
 Changelog
 ~~~~~~~~~
 
+0.25.0 (July 2022)
+------------------
+
+* Updated pytket version requirement to 1.4.
+* Updated cirq version requirement to 0.15.
+* Changed `process_characterisation()` so that it expects a `GridDevice` instead
+  of a `SerializableDevice`.
+
 0.24.0 (June 2022)
 ------------------
 
