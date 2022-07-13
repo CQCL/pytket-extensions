@@ -1,6 +1,19 @@
 Changelog
 ~~~~~~~~~
 
+0.23.0 (July 2022)
+------------------
+
+* Updated pytket version requirement to 1.4.
+
+0.22.0 (June 2022)
+------------------
+
+* Updated pytket version requirement to 1.3.
+* add new functions for architecture conversion between
+  pytket and pyzx: `tk_to_pyzx_arc`, `pyzx_to_tk_arc`,
+  `tk_to_pyzx_placed_circ` and `pyzx_to_tk_placed_circ`
+
 0.21.0 (May 2022)
 -----------------
 

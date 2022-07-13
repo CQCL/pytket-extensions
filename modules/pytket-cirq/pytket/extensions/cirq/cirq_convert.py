@@ -304,10 +304,10 @@ def _sort_row_col(qubits: FrozenSet[GridQubit]) -> List[GridQubit]:
 
 
 def process_characterisation(
-    device: cirq_google.devices.serializable_device.SerializableDevice,
+    device: cirq_google.devices.grid_device.GridDevice,
 ) -> dict:
     """Generates a tket dictionary containing device characteristics for a Cirq
-    :py:class:`SerializableDevice`.
+    :py:class:`GridDevice`.
 
     :param device: The device to convert
 

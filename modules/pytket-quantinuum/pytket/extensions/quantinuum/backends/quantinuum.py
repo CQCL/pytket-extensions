@@ -26,7 +26,8 @@ import requests
 from pytket.backends import Backend, ResultHandle, CircuitStatus, StatusEnum
 from pytket.backends.backend import KwargTypes
 from pytket.backends.resulthandle import _ResultIdTuple
-from pytket.backends.backendinfo import BackendInfo, fully_connected_backendinfo
+from pytket.architecture import FullyConnected  # type: ignore
+from pytket.backends.backendinfo import BackendInfo
 from pytket.backends.backendresult import BackendResult
 from pytket.backends.backend_exceptions import CircuitNotRunError
 from pytket.circuit import Circuit, OpType, Bit  # type: ignore
@@ -39,7 +40,6 @@ from pytket.passes import (  # type: ignore
     RemoveRedundancies,
     FullPeepholeOptimise,
     DecomposeBoxes,
-    DecomposeClassicalExp,
     SimplifyInitial,
     auto_rebase_pass,
     auto_squash_pass,
@@ -52,6 +52,7 @@ from pytket.predicates import (  # type: ignore
 )
 from pytket.utils import prepare_circuit
 from pytket.utils.outcomearray import OutcomeArray
+from pytket.wasm import WasmFileHandler
 
 from pytket.extensions.quantinuum.backends.credential_storage import (
     MemoryCredentialStorage,
@@ -76,7 +77,6 @@ _GATE_SET = {
     OpType.Rz,
     OpType.PhasedX,
     OpType.ZZMax,
-    OpType.ZZPhase,
     OpType.Reset,
     OpType.Measure,
     OpType.Barrier,
@@ -85,17 +85,32 @@ _GATE_SET = {
     OpType.ExplicitPredicate,
     OpType.ExplicitModifier,
     OpType.SetBits,
+    OpType.CopyBits,
+    OpType.ClassicalExpBox,
+    OpType.WASM,
 }
 
 
-def _get_gateset(machine_name: str) -> Set[OpType]:
+def _get_gateset(gates: List[str]) -> Set[OpType]:
     gs = _GATE_SET.copy()
-    if machine_name.endswith("E"):
-        gs.remove(OpType.ZZPhase)
+    if "RZZ" in gates:
+        gs.add(OpType.ZZPhase)
     return gs
 
 
 class GetResultFailed(Exception):
+    pass
+
+
+class NoSyntaxChecker(Exception):
+    pass
+
+
+class MaxShotsExceeded(Exception):
+    pass
+
+
+class WasmUnsupported(Exception):
     pass
 
 
@@ -130,6 +145,8 @@ class QuantinuumBackend(Backend):
         device_name: str,
         label: Optional[str] = "job",
         simulator: str = "state-vector",
+        group: Optional[str] = None,
+        provider: Optional[str] = None,
         machine_debug: bool = False,
         _api_handler: QuantinuumAPI = DEFAULT_API_HANDLER,
     ):
@@ -141,6 +158,12 @@ class QuantinuumBackend(Backend):
         :type label: Optional[str], optional
         :param simulator: Only applies to simulator devices, options are
             "state-vector" or "stabilizer", defaults to "state-vector"
+        :param group: string identifier of a collection of jobs, can be used for usage
+          tracking.
+        :type group: Optional[str], optional
+        :param provider: select a provider for federated authentication. We currently
+            only support 'microsoft', which enables the microsoft Device Flow.
+        :type provider: Optional[str], optional
         :type simulator: str, optional
         :param _api_handler: Instance of API handler, defaults to DEFAULT_API_HANDLER
         :type _api_handler: QuantinuumAPI
@@ -149,14 +172,16 @@ class QuantinuumBackend(Backend):
         super().__init__()
         self._device_name = device_name
         self._label = label
+        self._group = group
 
         self._backend_info: Optional[BackendInfo] = None
         self._MACHINE_DEBUG = machine_debug
 
         self.simulator_type = simulator
-        self._gate_set = _get_gateset(self._device_name)
 
         self._api_handler = _api_handler
+
+        self._api_handler.provider = provider
 
     @classmethod
     def _available_devices(
@@ -183,6 +208,23 @@ class QuantinuumBackend(Backend):
         return jr  # type: ignore
 
     @classmethod
+    def _dict_to_backendinfo(cls, dct: Dict[str, Any]) -> BackendInfo:
+        name: str = dct.pop("name")
+        n_qubits: int = dct.pop("n_qubits")
+        gate_set: List[str] = dct.pop("gateset", [])
+        return BackendInfo(
+            name=cls.__name__,
+            device_name=name,
+            version=__extension_version__,
+            architecture=FullyConnected(n_qubits),
+            gate_set=_get_gateset(gate_set),
+            supports_fast_feedforward=True,
+            supports_midcircuit_measurement=True,
+            supports_reset=True,
+            misc=dct,
+        )
+
+    @classmethod
     def available_devices(
         cls,
         **kwargs: Any,
@@ -194,30 +236,15 @@ class QuantinuumBackend(Backend):
         """
         _api_handler = kwargs.get("_api_handler", DEFAULT_API_HANDLER)
         jr = cls._available_devices(_api_handler)
-        return [
-            fully_connected_backendinfo(
-                cls.__name__,
-                machine["name"],
-                __extension_version__,
-                machine["n_qubits"],
-                _get_gateset(machine["name"]),
-            )
-            for machine in jr
-        ]
+        return list(map(cls._dict_to_backendinfo, jr))
 
     def _retrieve_backendinfo(self, machine: str) -> BackendInfo:
         jr = self._available_devices(self._api_handler)
         try:
-            self._machine_info = next(entry for entry in jr if entry["name"] == machine)
+            _machine_info = next(entry for entry in jr if entry["name"] == machine)
         except StopIteration:
             raise DeviceNotAvailable(machine)
-        return fully_connected_backendinfo(
-            type(self).__name__,
-            machine,
-            __extension_version__,
-            self._machine_info["n_qubits"],
-            self._gate_set,
-        )
+        return self._dict_to_backendinfo(_machine_info)
 
     @classmethod
     def device_state(
@@ -257,6 +284,14 @@ class QuantinuumBackend(Backend):
         return self._backend_info
 
     @property
+    def _gate_set(self) -> Set[OpType]:
+        return (
+            _GATE_SET
+            if self._MACHINE_DEBUG
+            else cast(BackendInfo, self.backend_info).gate_set
+        )
+
+    @property
     def required_predicates(self) -> List[Predicate]:
         preds = [
             NoSymbolsPredicate(),
@@ -273,7 +308,7 @@ class QuantinuumBackend(Backend):
 
     def default_compilation_pass(self, optimisation_level: int = 1) -> BasePass:
         assert optimisation_level in range(3)
-        passlist = [DecomposeClassicalExp(), DecomposeBoxes()]
+        passlist = [DecomposeBoxes()]
         squash = auto_squash_pass({OpType.PhasedX, OpType.Rz})
         if optimisation_level == 0:
             return SequencePass(passlist + [self.rebase_pass()])
@@ -323,7 +358,7 @@ class QuantinuumBackend(Backend):
         circuits: Sequence[Circuit],
         n_shots: Union[None, int, Sequence[Optional[int]]] = None,
         valid_check: bool = True,
-        **kwargs: KwargTypes,
+        **kwargs: Union[KwargTypes, WasmFileHandler],
     ) -> List[ResultHandle]:
         """
         See :py:meth:`pytket.backends.Backend.process_circuits`.
@@ -334,14 +369,18 @@ class QuantinuumBackend(Backend):
         * `noisy_simulation`: boolean flag to specify whether the simulator should
           perform noisy simulation with an error model (default value is `True`).
         * `group`: string identifier of a collection of jobs, can be used for usage
-          tracking.
+          tracking. Overrides the instance variable `group`.
         * `max_batch_cost`: maximum HQC usable by submitted batch, default is
           500.
         * `batch_id`: first jobid of the batch
           to which this batch of circuits should be submitted. Job IDs can be
           retrieved from ResultHandle using ```backend.get_jobid(handle)```.
-        * `close_batch`: boolean flag to close the batch after the last circuit
-        in the job, default=True.
+        * `close_batch`: boolean flag to close the batch after the last circuit,
+           default=True.
+        * `wasm_file_handler`: a ``WasmFileHandler`` object for linked WASM module.
+        * `pytketpass`: a ``pytket.passes.BasePass`` intended to be applied
+           by the backend (beta feature, may be ignored).
+
         """
         circuits = list(circuits)
         n_shots_list = Backend._get_n_shots_as_list(
@@ -362,11 +401,25 @@ class QuantinuumBackend(Backend):
             "options": {
                 "simulator": self.simulator_type,
                 "error-model": noisy_simulation,
+                "tket": dict(),
             },
         }
-        group = kwargs.get("group")
+        group = kwargs.get("group", self._group)
         if group is not None:
             basebody["group"] = group
+
+        wasm_fh = kwargs.get("wasm_file_handler")
+        if wasm_fh is not None:
+            if self.backend_info and not self.backend_info.misc.get("wasm", False):
+                raise WasmUnsupported("Backend does not support wasm calls.")
+            basebody["cfl"] = cast(WasmFileHandler, wasm_fh)._wasm_file_encoded.decode(
+                "utf-8"
+            )
+
+        pytket_pass = cast(Optional[BasePass], kwargs.get("pytketpass"))
+
+        if pytket_pass is not None:
+            basebody["options"]["tket"]["compilation-pass"] = pytket_pass.to_dict()
 
         handle_list = []
         batch_exec: Union[int, str]
@@ -375,7 +428,13 @@ class QuantinuumBackend(Backend):
         else:
             batch_exec = cast(int, kwargs.get("max_batch_cost", 500))
         final_index = len(circuits) - 1
+
+        max_shots = self.backend_info.misc.get("n_shots") if self.backend_info else None
         for i, (circ, n_shots) in enumerate(zip(circuits, n_shots_list)):
+            if max_shots is not None and n_shots > max_shots:
+                raise MaxShotsExceeded(
+                    f"Number of shots {n_shots} exceeds maximum {max_shots}"
+                )
             if postprocess:
                 c0, ppcirc = prepare_circuit(circ, allow_classical=False, xcirc=_xcirc)
                 ppcirc_rep = ppcirc.to_dict()
@@ -387,13 +446,11 @@ class QuantinuumBackend(Backend):
             body["program"] = quantinuum_circ
             body["count"] = n_shots
 
-            if (final_index > 0 or "batch_id" in kwargs) and (
-                (self._device_name != DEVICE_FAMILY or "max_batch_cost" in kwargs)
-                and (not self._device_name.endswith("SC"))
-            ):
-                # Don't set default batch fields if:
-                #  - Submitting to the device family or syntax checker
-                #  - Less than one job submitted and no batch handle provided
+            if (final_index > 0 or "batch_id" in kwargs) and cast(
+                BackendInfo, self.backend_info
+            ).misc.get("batching", False):
+                # Don't set default batch fields if
+                # less than one job submitted and no batch handle provided
 
                 body["batch-exec"] = batch_exec
                 if i == final_index and kwargs.get("close_batch", True):
@@ -546,8 +603,8 @@ class QuantinuumBackend(Backend):
         "SC"), it is automatically appended
         to check against the relevant syntax checker.
         Sometimes it may not be possible to find the relevant syntax checker,
-         for example for device families. In which case you may need to set
-         the ``syntax_checker`` kwarg to the appropriate syntax checker name.
+        for example for device families. In which case you may need to set
+        the ``syntax_checker`` kwarg to the appropriate syntax checker name.
 
         :param circuit: Circuit to calculate runtime estimate for. Must be valid for
             backend.
@@ -556,7 +613,7 @@ class QuantinuumBackend(Backend):
         :type n_shots: int
         :param syntax_checker: Optional.Name of the syntax checker to use to get cost.
             For example for the "H1-1" device that would be "H1-1SC".
-             For most devices this is automatically inferred, default=None.
+            For most devices this is automatically inferred, default=None.
         :type syntax_checker: str
         :raises ValueError: Circuit is not valid, needs to be compiled.
         :return: Cost in HQC to execute the shots.
@@ -567,12 +624,21 @@ class QuantinuumBackend(Backend):
                 "Circuit does not satisfy predicates of backend."
                 + " Try running `backend.get_compiled_circuit` first"
             )
-        if syntax_checker:
-            backend = QuantinuumBackend(syntax_checker, _api_handler=self._api_handler)
-        else:
-            backend = QuantinuumBackend(
-                _infer_syntax_checker(self._device_name), _api_handler=self._api_handler
+
+        try:
+            syntax_checker = (
+                syntax_checker
+                or cast(BackendInfo, self.backend_info).misc["syntax_checker"]
             )
+        except KeyError:
+            raise NoSyntaxChecker(
+                "Could not find syntax checker for this backend,"
+                " try setting one explicitly with the ``syntax_checker`` parameter"
+            )
+
+        backend = QuantinuumBackend(
+            cast(str, syntax_checker), _api_handler=self._api_handler
+        )
         try:
             handle = backend.process_circuit(circuit, n_shots)
         except DeviceNotAvailable as e:
