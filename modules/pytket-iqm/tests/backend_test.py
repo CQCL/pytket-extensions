@@ -18,7 +18,7 @@ import pytest
 from pytket.circuit import Circuit  # type: ignore
 from pytket.backends import StatusEnum
 from pytket.extensions.iqm import IQMBackend
-from requests import HTTPError, get
+from requests import get
 
 curr_file_path = Path(__file__).resolve().parent
 iqm_demo_url = "https://cortex-demo.qc.iqm.fi/"
