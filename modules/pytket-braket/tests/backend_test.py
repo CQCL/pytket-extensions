@@ -33,7 +33,9 @@ from pytket.utils.operators import QubitPauliOperator
 # https://github.com/aws/amazon-braket-sdk-python
 # Otherwise, all tests are run on a local simulator.
 skip_remote_tests: bool = os.getenv("PYTKET_RUN_REMOTE_TESTS") is None
+skip_remote_tests_rigetti: bool = True
 REASON = "PYTKET_RUN_REMOTE_TESTS not set (requires configuration of AWS storage)"
+REASONRIGETTI = "rigetti currently offline"
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
@@ -173,7 +175,7 @@ def test_ionq(authenticated_braket_backend: BraketBackend) -> None:
     b.cancel(h)
 
 
-@pytest.mark.skipif(skip_remote_tests, reason=REASON)
+@pytest.mark.skipif(skip_remote_tests_rigetti, reason=REASON)
 @pytest.mark.parametrize(
     "authenticated_braket_backend",
     [
@@ -217,7 +219,7 @@ def test_rigetti(authenticated_braket_backend: BraketBackend) -> None:
     b.cancel(h)
 
 
-@pytest.mark.skipif(skip_remote_tests, reason=REASON)
+@pytest.mark.skipif(skip_remote_tests_rigetti, reason=REASON)
 @pytest.mark.parametrize(
     "authenticated_braket_backend",
     [
@@ -542,7 +544,7 @@ def test_multiple_indices() -> None:
     assert all(readout[0] == readout[1] for readout in readouts)
 
 
-@pytest.mark.skipif(skip_remote_tests, reason=REASON)
+@pytest.mark.skipif(skip_remote_tests_rigetti, reason=REASON)
 @pytest.mark.parametrize(
     "authenticated_braket_backend",
     [
