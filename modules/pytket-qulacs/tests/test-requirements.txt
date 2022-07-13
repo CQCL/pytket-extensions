@@ -1,2 +1,4 @@
 -r ../../base-test-requirements.txt
-openfermion~=1.1
+openfermion~=1.3
+cirq-core~=0.15.0
+cirq-google~=0.15.0
