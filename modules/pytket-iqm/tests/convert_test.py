@@ -22,18 +22,6 @@ from pytket.extensions.iqm.backends.iqm import _translate_iqm, IQMBackend, _iqm_
 skip_remote_tests: bool = os.getenv("PYTKET_RUN_REMOTE_TESTS") is None
 REASON = "PYTKET_RUN_REMOTE_TESTS not set (requires configuration of IQM credentials)"
 
-curr_file_path = Path(__file__).resolve().parent
-
-
-def tk_to_iqm(circ: Circuit) -> List:
-    """Convert a circuit to IQM list representation"""
-    c = circ.copy()
-    IQMBackend(
-        url="https://cortex-demo.qc.iqm.fi/",
-        settings=curr_file_path / "demo_settings.json",
-    ).default_compilation_pass().apply(c)
-    return _translate_iqm(c)
-
 
 def test_rebase_CX() -> None:
     circ = Circuit(2)

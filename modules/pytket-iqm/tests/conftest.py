@@ -18,6 +18,16 @@ import pytest
 from pytket.extensions.iqm import IQMBackend
 
 
+def get_demo_settings_path():
+    curr_file_path = Path(__file__).resolve().parent
+    return curr_file_path / "demo_settings.json"
+
+
+@pytest.fixture(name="demo_settings_path", scope="session")
+def fixture_demo_settings_path() -> os.PathLike:
+    return get_demo_settings_path()
+
+
 @pytest.fixture(name="authenticated_iqm_backend", scope="session")
 def fixture_authenticated_iqm_backend() -> IQMBackend:
     # Authenticated IQMBackend used for the remote tests
@@ -28,9 +38,8 @@ def fixture_authenticated_iqm_backend() -> IQMBackend:
 
     # By default, the backend is created with the device settings in
     # pytket-iqm/tests/demo_settings.json
-    curr_file_path = Path(__file__).resolve().parent
     return IQMBackend(
-        settings=curr_file_path / "demo_settings.json",
+        settings=get_demo_settings_path(),
         url="https://cortex-demo.qc.iqm.fi/",
         auth_server_url=os.getenv("PYTKET_REMOTE_IQM_AUTH_SERVER_URL"),
         username=os.getenv("PYTKET_REMOTE_IQM_USERNAME"),

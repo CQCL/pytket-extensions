@@ -21,7 +21,6 @@ from pytket.backends import StatusEnum
 from pytket.extensions.iqm import IQMBackend
 from requests import get
 
-curr_file_path = Path(__file__).resolve().parent
 iqm_demo_url = "https://cortex-demo.qc.iqm.fi/"
 
 # Skip remote tests if not specified
@@ -58,11 +57,11 @@ def test_iqm(authenticated_iqm_backend: IQMBackend) -> None:
 
 
 # @pytest.mark.skipif(skip_service_unavailable, reason=UNAVAILABLE_REASON)
-def test_invalid_cred() -> None:
+def test_invalid_cred(demo_settings_path: os.PathLike) -> None:
     with pytest.raises(ClientAuthenticationError):
         b = IQMBackend(
             url=iqm_demo_url,
-            settings=curr_file_path / "demo_settings.json",
+            settings=demo_settings_path,
             username="invalid",
             password="invalid",
         )
@@ -109,10 +108,10 @@ def test_none_nshots(authenticated_iqm_backend: IQMBackend) -> None:
     assert "Parameter n_shots is required" in str(errorinfo.value)
 
 
-def test_default_pass() -> None:
+def test_default_pass(demo_settings_path: os.PathLike) -> None:
     b = IQMBackend(
         url=iqm_demo_url,
-        settings=curr_file_path / "demo_settings.json",
+        settings=demo_settings_path,
     )
     for ol in range(3):
         comp_pass = b.default_compilation_pass(ol)
@@ -143,10 +142,10 @@ def test_postprocess(authenticated_iqm_backend: IQMBackend) -> None:
     assert all(len(shot) == 2 for shot in shots)
 
 
-def test_backendinfo() -> None:
+def test_backendinfo(demo_settings_path: os.PathLike) -> None:
     b = IQMBackend(
         url=iqm_demo_url,
-        settings=curr_file_path / "demo_settings.json",
+        settings=demo_settings_path,
     )
     info = b.backend_info
     assert info.name == type(b).__name__
