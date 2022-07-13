@@ -13,22 +13,21 @@
 # limitations under the License.
 
 import os
-from pathlib import Path
 import pytest
 from pytket.circuit import Circuit  # type: ignore
 from pytket.backends import StatusEnum
 from pytket.extensions.iqm import IQMBackend
 from requests import get
 
-curr_file_path = Path(__file__).resolve().parent
-iqm_demo_url = "https://cortex-demo.qc.iqm.fi/"
-
 # Skip remote tests if not specified
 skip_remote_tests: bool = os.getenv("PYTKET_RUN_REMOTE_TESTS") is None
 REASON = "PYTKET_RUN_REMOTE_TESTS not set (requires configuration of IQM credentials)"
 
 # Skip remote tests if the IQM demo site is unavailable
-if skip_remote_tests is False and get(iqm_demo_url).status_code != 200:
+if (
+    skip_remote_tests is False
+    and get("https://cortex-demo.qc.iqm.fi/").status_code != 200
+):
     skip_remote_tests = True
     REASON = "The IQM demo site/service is unavailable"
 
@@ -56,11 +55,11 @@ def test_iqm(authenticated_iqm_backend: IQMBackend) -> None:
     assert sum(counts.values()) == n_shots
 
 
-def test_invalid_cred() -> None:
+def test_invalid_cred(demo_settings_path: os.PathLike, demo_url: str) -> None:
     with pytest.raises(Exception):
         _ = IQMBackend(
-            url=iqm_demo_url,
-            settings=curr_file_path / "demo_settings.json",
+            url=demo_url,
+            settings=demo_settings_path,
             auth_server_url="https://cortex-demo.qc.iqm.fi/",
             username="invalid",
             password="invalid",
