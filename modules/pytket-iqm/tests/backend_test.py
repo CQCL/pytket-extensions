@@ -108,11 +108,9 @@ def test_none_nshots(authenticated_iqm_backend: IQMBackend) -> None:
     assert "Parameter n_shots is required" in str(errorinfo.value)
 
 
-def test_default_pass() -> None:
-    b = IQMBackend(
-        url=iqm_demo_url,
-        settings=curr_file_path / "demo_settings.json",
-    )
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
+def test_default_pass(authenticated_iqm_backend: IQMBackend) -> None:
+    b = authenticated_iqm_backend
     for ol in range(3):
         comp_pass = b.default_compilation_pass(ol)
         c = Circuit(3, 3)
@@ -142,11 +140,9 @@ def test_postprocess(authenticated_iqm_backend: IQMBackend) -> None:
     assert all(len(shot) == 2 for shot in shots)
 
 
-def test_backendinfo() -> None:
-    b = IQMBackend(
-        url=iqm_demo_url,
-        settings=curr_file_path / "demo_settings.json",
-    )
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
+def test_backendinfo(authenticated_iqm_backend: IQMBackend) -> None:
+    b = authenticated_iqm_backend
     info = b.backend_info
     assert info.name == type(b).__name__
     assert len(info.gate_set) >= 3
