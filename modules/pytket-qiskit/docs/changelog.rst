@@ -1,6 +1,11 @@
 Changelog
 ~~~~~~~~~
 
+0.28.0 (unreleased)
+-------------------
+
+* Update qiskit version to 0.37.
+
 0.27.0 (July 2022)
 ------------------
 
