@@ -29,7 +29,7 @@ State-based interface to a Rigetti device.
 Interface to an AQT device or simulator.
 
 [QuantinuumBackend](https://cqcl.github.io/pytket-extensions/api/quantinuum/api.html#pytket.extensions.quantinuum.QuantinuumBackend)
-Interface to a Quantinuum device.
+Interface to a Quantinuum device. There are currently two Quantinuum devices offered (H1-1 and H1-2).
 
 ### Cloud access
 
@@ -43,6 +43,9 @@ Interface to Amazon Braket service.
 
 [IBMQEmulatorBackend](https://cqcl.github.io/pytket-extensions/api/qiskit/api.html#pytket.extensions.qiskit.IBMQEmulatorBackend)
 A backend which uses the AerBackend to emulate the behaviour of IBMQBackend.
+
+[QuantinuumBackend](https://cqcl.github.io/pytket-extensions/api/quantinuum/api.html#pytket.extensions.quantinuum.QuantinuumBackend)
+The QuantinuumBackend has two available emulators namely H1-1E and H1-2E. These are device specific emulators for the H1-1 and H1-2 devices.
 
 ### State vector simulators
 
