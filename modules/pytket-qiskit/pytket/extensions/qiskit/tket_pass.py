@@ -74,9 +74,7 @@ class TketAutoPass(TketPass):
         "aer_simulator_unitary": AerUnitaryBackend,
     }
 
-    def __init__(
-        self, backend: Union[BackendV1], optimisation_level: int = 1
-    ):
+    def __init__(self, backend: BackendV1, optimisation_level: int = 1):
         """Identifies a Qiskit backend and provides the corresponding default
         compilation pass from pytket as a
         :py:class:`qiskit.transpiler.TransformationPass`.
