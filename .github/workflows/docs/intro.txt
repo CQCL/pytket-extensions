@@ -6,10 +6,15 @@ pytket-extensions
    :align: right
 
 
-These extensions enable `CQC`_ `pytket`_ to be used in conjunction with other
-platforms. Each extension adds either new methods to the ``pytket`` package to
-convert between circuit representations, or new backends to which ``pytket``
-circuits can be submitted.
+These extensions enable ``pytket`` to interface with different hardware platforms and classical simulators. 
+A full list of available backends are shown below. These include Quantum Processing Units (QPUs) and various kind of simulator. 
+Simulators can run locally on the user's computer as with ``AerBackend`` or run remotely on a server as with ``H1-1E``
+for the ``QuantinuumBackend``.Simulators also vary in the type of results they return. There are simulators that return
+shots based results as with real QPUs. Statevector simulators such as ``ForestStateBackend`` calculate the quantum state that is
+prepared by a circuit. Similarly density matrix simulators can be used to calculate density matrices.
+Unitary simulators calculate the effective unitary operation that is applied by a circuit. Finally there are
+simulators such as the ``SimplexBackend`` which are optimised for simulating specific types of 
+circuit e.g. Clifford circuits.
 
 QPUs
 ====
@@ -20,11 +25,8 @@ A backend for running circuits on remote IBMQ devices.
 `IonQBackend https://cqcl.github.io/pytket-extensions/api/ionq/api.html#pytket.extensions.ionq.IonQBackend`
 Interface to an IonQ device.
 
-`ForestBackend(https://cqcl.github.io/pytket-extensions/api/pyquil/api.html#pytket.extensions.pyquil.ForestBackend`
+`ForestBackend https://cqcl.github.io/pytket-extensions/api/pyquil/api.html#pytket.extensions.pyquil.ForestBackend`
 Interface to a Rigetti device.
-
-`ForestStateBackend https://cqcl.github.io/pytket-extensions/api/pyquil/api.html#pytket.extensions.pyquil.ForestStateBackend`
-State-based interface to a Rigetti device.
 
 `AQTBackend https://cqcl.github.io/pytket-extensions/api/aqt/api.html#pytket.extensions.aqt.AQTBackend`
 Interface to an AQT device or simulator.
@@ -45,12 +47,12 @@ Emulators
 =========
 
 `IBMQEmulatorBackend (https://cqcl.github.io/pytket-extensions/api/qiskit/api.html#pytket.extensions.qiskit.IBMQEmulatorBackend`
-A backend which uses the AerBackend to emulate the behaviour of IBMQBackend.
+A backend which uses the AerBackend to emulate the behavior of IBMQBackend.
 
 `QuantinuumBackend https://cqcl.github.io/pytket-extensions/api/quantinuum/api.html#pytket.extensions.quantinuum.QuantinuumBackend`
 The QuantinuumBackend has two available emulators namely H1-1E and H1-2E. These are device specific emulators for the H1-1 and H1-2 devices.
 
-State vector simulators
+Statevector simulators
 =======================
 
 `CirqStateSampleBackend https://cqcl.github.io/pytket-extensions/api/cirq/api.html#pytket.extensions.cirq.CirqStateSampleBackend`
@@ -61,6 +63,9 @@ Backend for Cirq statevector simulator state return.
 
 `AerStateBackend https://cqcl.github.io/pytket-extensions/api/qiskit/api.html#pytket.extensions.qiskit.AerStateBackend`
 Backend for running simulations on the Qiskit Aer Statevector simulator.
+
+`ForestStateBackend https://cqcl.github.io/pytket-extensions/api/pyquil/api.html#pytket.extensions.pyquil.ForestStateBackend`
+State-based interface to a Rigetti device.
 
 `ProjectQBackend https://cqcl.github.io/pytket-extensions/api/projectq/api.html#pytket.extensions.projectq.ProjectQBackend`
 Backend for running statevector simulations on the ProjectQ simulator.
@@ -77,7 +82,7 @@ Density matrix simulator
 `CirqDensityMatrixSampleBackend https://cqcl.github.io/pytket-extensions/api/cirq/api.html#pytket.extensions.cirq.CirqDensityMatrixSampleBackend`
 Backend for Cirq density matrix simulator sampling.
 
-`CirqDensityMatrixSimBackend` https://cqcl.github.io/pytket-extensions/api/cirq/api.html#pytket.extensions.cirq.CirqDensityMatrixSimBackend`
+`CirqDensityMatrixSimBackend https://cqcl.github.io/pytket-extensions/api/cirq/api.html#pytket.extensions.cirq.CirqDensityMatrixSimBackend`
 Backend for Cirq density matrix simulator density_matrix return.
 
 Clifford simulator
@@ -86,7 +91,7 @@ Clifford simulator
 `CirqCliffordSampleBackend https://cqcl.github.io/pytket-extensions/api/cirq/api.html#pytket.extensions.cirq.CirqCliffordSampleBackend`
 Backend for Cirq Clifford simulator sampling.
 
-`CirqCliffordSimBackend` https://cqcl.github.io/pytket-extensions/api/cirq/api.html#pytket.extensions.cirq.CirqCliffordSimBackend`
+`CirqCliffordSimBackend https://cqcl.github.io/pytket-extensions/api/cirq/api.html#pytket.extensions.cirq.CirqCliffordSimBackend`
 Backend for Cirq Clifford simulator state return.
 
 `SimplexBackend https://cqcl.github.io/pytket-extensions/api/pysimplex/api.html#pytket.extensions.pysimplex.SimplexBackend`
