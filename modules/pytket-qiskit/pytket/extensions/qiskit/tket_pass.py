@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Union
 from qiskit.dagcircuit import DAGCircuit  # type: ignore
 from qiskit.providers import BackendV1  # type: ignore
 from qiskit.transpiler.basepasses import TransformationPass, BasePass as qBasePass  # type: ignore
