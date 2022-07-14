@@ -12,9 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Union
 from qiskit.dagcircuit import DAGCircuit  # type: ignore
-from qiskit.providers import BaseBackend, BackendV1  # type: ignore
+from qiskit.providers import BackendV1  # type: ignore
 from qiskit.transpiler.basepasses import TransformationPass, BasePass as qBasePass  # type: ignore
 from qiskit.converters import circuit_to_dag, dag_to_circuit  # type: ignore
 from qiskit.providers.aer.aerprovider import AerProvider  # type: ignore
@@ -74,9 +73,7 @@ class TketAutoPass(TketPass):
         "aer_simulator_unitary": AerUnitaryBackend,
     }
 
-    def __init__(
-        self, backend: Union[BaseBackend, BackendV1], optimisation_level: int = 1
-    ):
+    def __init__(self, backend: BackendV1, optimisation_level: int = 1):
         """Identifies a Qiskit backend and provides the corresponding default
         compilation pass from pytket as a
         :py:class:`qiskit.transpiler.TransformationPass`.
