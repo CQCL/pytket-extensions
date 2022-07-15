@@ -18,16 +18,14 @@ from pytket.circuit import Circuit  # type: ignore
 from pytket.backends import StatusEnum
 from pytket.extensions.iqm import IQMBackend
 from requests import get
+from conftest import get_demo_url
 
 # Skip remote tests if not specified
 skip_remote_tests: bool = os.getenv("PYTKET_RUN_REMOTE_TESTS") is None
 REASON = "PYTKET_RUN_REMOTE_TESTS not set (requires configuration of IQM credentials)"
 
 # Skip remote tests if the IQM demo site is unavailable
-if (
-    skip_remote_tests is False
-    and get("https://cortex-demo.qc.iqm.fi/").status_code != 200
-):
+if skip_remote_tests is False and get(get_demo_url()).status_code != 200:
     skip_remote_tests = True
     REASON = "The IQM demo site/service is unavailable"
 
