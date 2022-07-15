@@ -802,6 +802,7 @@ class BraketBackend(Backend):
         """
         See :py:meth:`pytket.backends.Backend.available_devices`.
         Supported kwargs:
+
         - `region` (default None). The particular AWS region to search for
           devices (e.g. us-east-1). Default to the region configured with AWS.
           See the Braket docs for more details.
