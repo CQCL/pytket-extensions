@@ -18,7 +18,7 @@ from pytket.circuit import Circuit  # type: ignore
 from pytket.backends import StatusEnum
 from pytket.extensions.iqm import IQMBackend
 from requests import get
-from conftest import get_demo_url
+from conftest import get_demo_url  # type: ignore
 
 # Skip remote tests if not specified
 skip_remote_tests: bool = os.getenv("PYTKET_RUN_REMOTE_TESTS") is None
