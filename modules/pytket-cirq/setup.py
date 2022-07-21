@@ -40,8 +40,8 @@ setup(
     include_package_data=True,
     install_requires=[
         "pytket ~= 1.4",
-        "cirq-core ~= 0.15.0",
-        "cirq-google ~= 0.15.0",
+        "cirq-core ~= 1.0",
+        "cirq-google ~= 1.0",
         "protobuf ~= 3.20, < 4.0",
     ],
     classifiers=[
