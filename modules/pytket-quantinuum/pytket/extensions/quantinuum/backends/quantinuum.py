@@ -114,6 +114,10 @@ class WasmUnsupported(Exception):
     pass
 
 
+class BatchingUnsupported(Exception):
+    """Batching not supported for this backend."""
+
+
 @dataclass
 class DeviceNotAvailable(Exception):
     device_name: str
@@ -128,6 +132,8 @@ DEFAULT_CREDENTIALS_STORAGE = MemoryCredentialStorage()
 # This allows users to create multiple QuantinuumBackend instances
 # without requiring them to acquire new tokens.
 DEFAULT_API_HANDLER = QuantinuumAPI(DEFAULT_CREDENTIALS_STORAGE)
+
+QuumKwargTypes = Union[KwargTypes, WasmFileHandler, Dict[str, Any]]
 
 
 class QuantinuumBackend(Backend):
@@ -358,7 +364,7 @@ class QuantinuumBackend(Backend):
         circuits: Sequence[Circuit],
         n_shots: Union[None, int, Sequence[Optional[int]]] = None,
         valid_check: bool = True,
-        **kwargs: Union[KwargTypes, WasmFileHandler],
+        **kwargs: QuumKwargTypes,
     ) -> List[ResultHandle]:
         """
         See :py:meth:`pytket.backends.Backend.process_circuits`.
@@ -370,17 +376,12 @@ class QuantinuumBackend(Backend):
           perform noisy simulation with an error model (default value is `True`).
         * `group`: string identifier of a collection of jobs, can be used for usage
           tracking. Overrides the instance variable `group`.
-        * `max_batch_cost`: maximum HQC usable by submitted batch, default is
-          500.
-        * `batch_id`: first jobid of the batch
-          to which this batch of circuits should be submitted. Job IDs can be
-          retrieved from ResultHandle using ```backend.get_jobid(handle)```.
-        * `close_batch`: boolean flag to close the batch after the last circuit,
-           default=True.
         * `wasm_file_handler`: a ``WasmFileHandler`` object for linked WASM module.
         * `pytketpass`: a ``pytket.passes.BasePass`` intended to be applied
            by the backend (beta feature, may be ignored).
         * `use_websocket`: boolean flag to allow using a websocket connection.
+        * `request_options`: extra options to add to the request body as a
+          json-style dictionary
 
         """
         circuits = list(circuits)
@@ -423,12 +424,6 @@ class QuantinuumBackend(Backend):
             basebody["options"]["tket"]["compilation-pass"] = pytket_pass.to_dict()
 
         handle_list = []
-        batch_exec: Union[int, str]
-        if "batch_id" in kwargs:
-            batch_exec = cast(str, kwargs["batch_id"])
-        else:
-            batch_exec = cast(int, kwargs.get("max_batch_cost", 500))
-        final_index = len(circuits) - 1
 
         max_shots = self.backend_info.misc.get("n_shots") if self.backend_info else None
         for i, (circ, n_shots) in enumerate(zip(circuits, n_shots_list)):
@@ -447,19 +442,10 @@ class QuantinuumBackend(Backend):
             body["program"] = quantinuum_circ
             body["count"] = n_shots
 
-            if (final_index > 0 or "batch_id" in kwargs) and cast(
-                BackendInfo, self.backend_info
-            ).misc.get("batching", False):
-                # Don't set default batch fields if
-                # less than one job submitted and no batch handle provided
-
-                body["batch-exec"] = batch_exec
-                if i == final_index and kwargs.get("close_batch", True):
-                    # flag to signal end of batch
-                    body["batch-end"] = True
-
             if circ.n_gates_of_type(OpType.ZZPhase) > 0:
                 body["options"]["compiler-options"] = {"parametrized_zz": True}
+
+            body.update(cast(Dict[str, Any], kwargs.get("request_options", {})))
             if self._MACHINE_DEBUG:
                 handle_list.append(
                     ResultHandle(
@@ -483,18 +469,87 @@ class QuantinuumBackend(Backend):
 
                 # extract job ID from response
                 jobid = cast(str, jobdict["job"])
-                if i == 0 and "batch_id" not in kwargs:
-                    # `batch-exec` field set to max batch cost for first job of batch
-                    # and to the id of first job of batch otherwise
-                    _ = self._api_handler.retrieve_job_status(
-                        jobid, use_websocket=kwargs.get("use_websocket", True)
-                    )
-                    batch_exec = jobid
+
                 handle = ResultHandle(jobid, json.dumps(ppcirc_rep))
                 handle_list.append(handle)
                 self._cache[handle] = dict()
 
         return handle_list
+
+    def _check_batchable(self) -> None:
+        if self.backend_info:
+            if not self.backend_info.misc.get("batching", False):
+                raise BatchingUnsupported()
+
+    def start_batch(
+        self,
+        max_batch_cost: int,
+        circuit: Circuit,
+        n_shots: Union[None, int] = None,
+        valid_check: bool = True,
+        **kwargs: QuumKwargTypes,
+    ) -> ResultHandle:
+        """Start a batch of jobs on the backend, behaves like `process_circuit`
+           but with additional parameter `max_batch_cost` as the first argument.
+           See :py:meth:`pytket.backends.Backend.process_circuits` for
+           documentation on remaining parameters.
+
+
+        :param max_batch_cost: Maximum cost to be used for the batch, if a job
+            exceeds the batch max it will be rejected.
+        :type max_batch_cost: int
+        :return: Handle for submitted circuit.
+        :rtype: ResultHandle
+        """
+        self._check_batchable()
+
+        kwargs["request_options"] = {"batch-exec": max_batch_cost}
+        [
+            h1,
+        ] = self.process_circuits([circuit], n_shots, valid_check, **kwargs)
+
+        # make sure the starting job is received, such that subsequent addtions
+        # to batch will be recognised as being added to an existing batch
+        self._api_handler.retrieve_job_status(
+            str(h1[0]),
+            use_websocket=cast(bool, kwargs.get("use_websocket", True)),
+        )
+        return h1
+
+    def add_to_batch(
+        self,
+        batch_start_job: ResultHandle,
+        circuit: Circuit,
+        n_shots: Union[None, int] = None,
+        batch_end: bool = False,
+        valid_check: bool = True,
+        **kwargs: QuumKwargTypes,
+    ) -> ResultHandle:
+        """Add to a batch of jobs on the backend, behaves like `process_circuit`
+        except in two ways:
+            1. The first argument must be the result handle of the first job of
+               batch.
+            2. The optional argument `batch_end` should be set to "True" for the
+               final circuit of the batch. By default it is False.
+
+        See :py:meth:`pytket.backends.Backend.process_circuits` for
+           documentation on remaining parameters.
+
+        :param batch_start_job: Handle of first circuit submitted to batch.
+        :type batch_start_job: ResultHandle
+        :param batch_end: Boolean flag to signal the final circuit of batch,
+            defaults to False
+        :type batch_end: bool, optional
+        :return: Handle for submitted circuit.
+        :rtype: ResultHandle
+        """
+        self._check_batchable()
+
+        req_opt: Dict[str, Any] = {"batch-exec": self.get_jobid(batch_start_job)}
+        if batch_end:
+            req_opt["batch-end"] = True
+        kwargs["request_options"] = req_opt
+        return self.process_circuits([circuit], n_shots, valid_check, **kwargs)[0]
 
     def _retrieve_job(
         self,
@@ -533,7 +588,7 @@ class QuantinuumBackend(Backend):
         jobid = str(handle[0])
         if self._MACHINE_DEBUG or jobid.startswith(_DEBUG_HANDLE_PREFIX):
             return CircuitStatus(StatusEnum.COMPLETED)
-        use_websocket = kwargs.get("use_websocket", True)
+        use_websocket = cast(bool, kwargs.get("use_websocket", True))
         # TODO check queue position and add to message
         try:
             response = self._api_handler.retrieve_job_status(
@@ -582,7 +637,7 @@ class QuantinuumBackend(Backend):
             wait = kwargs.get("wait")
             if wait is not None:
                 wait = int(wait)
-            use_websocket = kwargs.get("use_websocket", None)
+            use_websocket = cast(Optional[bool], kwargs.get("use_websocket", None))
 
             job_retrieve = self._retrieve_job(jobid, timeout, wait, use_websocket)
             circ_status = _parse_status(job_retrieve)
@@ -737,11 +792,3 @@ def _parse_status(response: Dict) -> CircuitStatus:
     }
     message = json.dumps(msgdict)
     return CircuitStatus(_STATUS_MAP[h_status], message)
-
-
-def _infer_syntax_checker(device_name: str) -> str:
-    if device_name.endswith("SC"):
-        return device_name
-    if device_name.endswith("E"):
-        return device_name[:-1] + "SC"
-    return device_name + "SC"
