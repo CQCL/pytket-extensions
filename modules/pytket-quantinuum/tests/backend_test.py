@@ -519,6 +519,13 @@ def test_zzphase(
     counts = res.get_counts()
     assert counts == correct_counts
 
+    c = Circuit(2, 2, "test_rzz_1")
+    c.H(0).H(1)
+    c.ZZPhase(1, 1, 0)
+    c.H(0).H(1)
+    c1 = backend.get_compiled_circuit(c, 1)
+    assert c1.n_gates_of_type(OpType.ZZPhase) == 0
+
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
 @pytest.mark.parametrize("device_name", ALL_DEVICE_NAMES)
