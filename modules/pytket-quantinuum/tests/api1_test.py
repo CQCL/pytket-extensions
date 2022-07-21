@@ -17,7 +17,7 @@
 # phase.
 
 from io import StringIO
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 from http import HTTPStatus
 from unittest.mock import patch, MagicMock
 import pytest
@@ -29,7 +29,10 @@ from pytket.extensions.quantinuum.backends.api_wrappers import QuantinuumAPI
 from pytket.extensions.quantinuum.backends import QuantinuumBackend
 from pytket.circuit import Circuit  # type: ignore
 from pytket.architecture import FullyConnected  # type: ignore
-from pytket.extensions.quantinuum.backends.quantinuum import DEFAULT_API_HANDLER
+from pytket.extensions.quantinuum.backends.quantinuum import (
+    DEFAULT_API_HANDLER,
+    BatchingUnsupported,
+)
 from pytket.extensions.quantinuum._metadata import __extension_version__
 
 
@@ -113,7 +116,7 @@ def test_default_login_flow(
     # We expect /login to be called once globally.
     assert login_route.called_once  # type: ignore
     assert job_submit_route.call_count == 4  # type: ignore
-    assert job_status_route.call_count == 2  # type: ignore
+    assert job_status_route.call_count == 0  # type: ignore
 
 
 def test_custom_login_flow(
@@ -194,7 +197,7 @@ def test_custom_login_flow(
     # We expect /login to be called for each api_handler.
     assert login_route.call_count == 2  # type: ignore
     assert job_submit_route.call_count == 4  # type: ignore
-    assert job_status_route.call_count == 2  # type: ignore
+    assert job_status_route.call_count == 0  # type: ignore
 
 
 def test_mfa_login_flow(
@@ -311,15 +314,14 @@ def test_federated_login_wrong_provider(
 
 
 @pytest.mark.parametrize(
-    "chosen_device,max_batch_cost",
-    [("H1", 300), ("H1-1", 300), ("H1-1", None)],
+    "chosen_device",
+    ["H1", "H1-1", "H1-2"],
 )
 def test_device_family(
     requests_mock: Mocker,
     mock_quum_api_handler: QuantinuumAPI,
     sample_machine_infos: List[Dict[str, Any]],
     chosen_device: str,
-    max_batch_cost: Optional[int],
 ) -> None:
     """Test that batch params are NOT supplied by default
     if we are submitting to a device family.
@@ -348,31 +350,26 @@ def test_device_family(
         headers={"Content-Type": "application/json"},
     )
 
-    family_backend = QuantinuumBackend(
+    backend = QuantinuumBackend(
         device_name=chosen_device,
     )
-    family_backend._api_handler = mock_quum_api_handler
+    backend._api_handler = mock_quum_api_handler
 
     circ = Circuit(2, name="batching_test").H(0).CX(0, 1).measure_all()
-    circ = family_backend.get_compiled_circuit(circ)
+    circ = backend.get_compiled_circuit(circ)
 
-    kwargs = {}
-    if max_batch_cost is not None:
-        kwargs["max_batch_cost"] = max_batch_cost
-    family_backend.process_circuits(
-        circuits=[circ, circ], n_shots=10, valid_check=False, **kwargs
-    )
-
-    submitted_json = {}
-    if requests_mock.last_request:
-        submitted_json = requests_mock.last_request.json()
-
+    max_batch_cost = 20
     if chosen_device == "H1":
-        assert "batch-exec" not in submitted_json.keys()
-        assert "batch-end" not in submitted_json.keys()
+        with pytest.raises(BatchingUnsupported):
+            backend.start_batch(max_batch_cost, circ, 10)
     else:
-        assert "batch-exec" in submitted_json.keys()
-        assert "batch-end" in submitted_json.keys()
+        backend.start_batch(max_batch_cost, circ, 10)
+        submitted_json = {}
+        if requests_mock.last_request:
+            # start_batch makes two requests
+            submitted_json = requests_mock.request_history[-2].json()
+        assert "batch-exec" in submitted_json
+        assert submitted_json["batch-exec"] == max_batch_cost
 
 
 def test_resumed_batching(
@@ -412,22 +409,18 @@ def test_resumed_batching(
     circ = Circuit(2, name="batching_test").H(0).CX(0, 1).measure_all()
     circ = backend.get_compiled_circuit(circ)
 
-    [h1, _] = backend.process_circuits(
-        circuits=[circ, circ], n_shots=10, valid_check=False, close_batch=False
-    )
+    h1 = backend.start_batch(500, circ, n_shots=10, valid_check=False)
 
     submitted_json = {}
     if requests_mock.last_request:
-        print(requests_mock.last_request)
-        submitted_json = requests_mock.last_request.json()
+        # start batch makes two requests
+        submitted_json = requests_mock.request_history[-2].json()
 
     assert "batch-exec" in submitted_json
-    assert submitted_json["batch-exec"] == backend.get_jobid(h1)
+    assert submitted_json["batch-exec"] == 500
     assert "batch-end" not in submitted_json
 
-    _ = backend.process_circuit(
-        circ, n_shots=10, valid_check=False, batch_id=backend.get_jobid(h1)
-    )
+    _ = backend.add_to_batch(h1, circ, n_shots=10, valid_check=False, batch_end=True)
 
     if requests_mock.last_request:
         submitted_json = requests_mock.last_request.json()
