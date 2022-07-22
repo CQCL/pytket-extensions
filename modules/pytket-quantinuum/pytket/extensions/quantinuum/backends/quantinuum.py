@@ -401,11 +401,12 @@ class QuantinuumBackend(Backend):
         :rtype: ResultHandle
         """
 
-        group = group or self._group
-        name = name or f"{self._label}"
         body: Dict[str, Any] = {
+            "name": name or f"{self._label}",
+            "count": n_shots,
             "machine": self._device_name,
             "language": "OPENQASM 2.0",
+            "program": qasm,
             "priority": "normal",
             "options": {
                 "simulator": self.simulator_type,
@@ -413,9 +414,11 @@ class QuantinuumBackend(Backend):
                 "tket": dict(),
             },
         }
+
         if pytket_pass is not None:
             body["options"]["tket"]["compilation-pass"] = pytket_pass.to_dict()
 
+        group = group or self._group
         if group is not None:
             body["group"] = group
 
@@ -427,9 +430,7 @@ class QuantinuumBackend(Backend):
         if parametrized_zz:
             body["options"]["compiler-options"] = {"parametrized_zz": True}
 
-        body["program"] = qasm
-        body["count"] = n_shots
-
+        # apply any overrides or extra options
         body.update(request_options or {})
 
         try:
