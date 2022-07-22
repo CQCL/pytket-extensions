@@ -42,6 +42,9 @@ _cirq2ops_mapping = {
     cirq_common.XPowGate: OpType.Rx,
     cirq_common.YPowGate: OpType.Ry,
     cirq_common.ZPowGate: OpType.Rz,
+    cirq_common.rx: OpType.Rx,
+    cirq_common.ry: OpType.Ry,
+    cirq_common.rz: OpType.Rz,
     cirq_common.XPowGate(exponent=0.5): OpType.V,
     cirq_common.XPowGate(exponent=-0.5): OpType.Vdg,
     cirq_common.S: OpType.S,
@@ -83,7 +86,13 @@ _constant_gates = (
     cirq_google.SYC,
     cirq.ops.I,
 )
-_rotation_types = (
+
+_radian_rotation_types = (
+    cirq_common.rx,
+    cirq_common.ry,
+    cirq_common.rz,
+)
+_exponent_rotation_types = (
     cirq_common.XPowGate,
     cirq_common.YPowGate,
     cirq_common.ZPowGate,
@@ -168,6 +177,22 @@ def cirq_to_tk(circuit: cirq.circuits.Circuit) -> Circuit:
                         "Operation not supported by tket: " + str(op.gate)
                     ) from error
                 params: List[Union[float, Basic, Symbol]] = []
+            elif gate in _radian_rotation_types:
+                try:
+                    optype = _cirq2ops_mapping[gate]
+                except KeyError as error:
+                    raise NotImplementedError(
+                        "Operation not supported by tket: " + str(op.gate)
+                    ) from error
+                params: List[Union[float, Basic, Symbol]] = [gate._rads / pi]
+            elif gate in _exponent_rotation_types:
+                try:
+                    optype = _cirq2ops_mapping[gate]
+                except KeyError as error:
+                    raise NotImplementedError(
+                        "Operation not supported by tket: " + str(op.gate)
+                    ) from error
+                params: List[Union[float, Basic, Symbol]] = [cast(Any, gate).exponent]
             elif isinstance(gate, cirq_common.MeasurementGate):
                 # Adding "_b" to the bit uid since for cirq.NamedQubit,
                 # the gate.key is equal to the qubit id (the qubit name)
@@ -278,7 +303,6 @@ def tk_to_cirq(tkcirc: Circuit, copy_all_qubits: bool = False) -> cirq.circuits.
                 cirqop = gatetype(exponent=params[0])(*qids)
         oplst.append(cirqop)
     try:
-
         coeff = cmath.exp(float(tkcirc.phase) * cmath.pi * 1j)
         if coeff.real < 1e-8:  # tolerance permitted by cirq for GlobalPhaseGate
             coeff = coeff.imag * 1j
