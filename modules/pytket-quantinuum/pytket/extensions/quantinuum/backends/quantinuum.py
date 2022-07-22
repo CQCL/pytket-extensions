@@ -394,7 +394,7 @@ class QuantinuumBackend(Backend):
         :param request_options: Extra options to add to the request body as a
           json-style dictionary, defaults to None
         :type request_options: Optional[Dict[str, Any]], optional
-        :raises WasmUnsupported: Wasm submitted to unsupported backend.
+        :raises WasmUnsupported: WASM submitted to backend that does not support it.
         :raises QuantinuumAPIError: API error.
         :raises ConnectionError: Connection to remote API failed
         :return: ResultHandle for submitted job.
