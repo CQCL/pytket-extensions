@@ -20,7 +20,7 @@ Types of Backend
 * **Density Matrix Simulators** - These simulators compute the density matrix prepared by a circuit. The result can be a statistical mixture of states in contrast to statevector simulation. E.g. `CirqDensityMatrixSampleBackend <https://cqcl.github.io/pytket-extensions/api/cirq/api.html#pytket.extensions.cirq.CirqDensityMatrixSampleBackend>`_ .
 * **Other specialised simulators** - There are extensions for simulating specific types of circuit. For instance the `SimplexBackend <https://cqcl.github.io/pytket-extensions/api/pysimplex/api.html#pytket.extensions.pysimplex.SimplexBackend>`_ is designed to simulate Clifford circuits. 
 
-A full list of available pytket backends are listed below.
+A full list of available pytket backends is shown below.
 
 QPUs
 ====
