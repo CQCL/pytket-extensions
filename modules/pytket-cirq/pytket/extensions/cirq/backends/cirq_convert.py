@@ -170,12 +170,14 @@ def cirq_to_tk(circuit: cirq.circuits.Circuit) -> Circuit:
                 params: List[Union[float, Basic, Symbol]] = []
             elif gatetype in _radian_gates:
                 try:
-                    optype = _cirq2ops_radians_mapping[gatetype]
+                    optype = _cirq2ops_radians_mapping[
+                        cast(cirq.ops.EigenGate, gatetype)
+                    ]
                 except KeyError as error:
                     raise NotImplementedError(
                         "Operation not supported by tket: " + str(op.gate)
                     ) from error
-                params = [gate._rads / pi]
+                params = [gate._rads / pi]  # type: ignore
             elif isinstance(gate, cirq_common.MeasurementGate):
                 # Adding "_b" to the bit uid since for cirq.NamedQubit,
                 # the gate.key is equal to the qubit id (the qubit name)
