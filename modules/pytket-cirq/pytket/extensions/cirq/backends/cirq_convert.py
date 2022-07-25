@@ -171,7 +171,7 @@ def cirq_to_tk(circuit: cirq.circuits.Circuit) -> Circuit:
             elif gatetype in _radian_gates:
                 try:
                     optype = _cirq2ops_radians_mapping[
-                        cast(cirq.ops.EigenGate, gatetype)
+                        cast(Type[cirq.ops.EigenGate], gatetype)
                     ]
                 except KeyError as error:
                     raise NotImplementedError(
