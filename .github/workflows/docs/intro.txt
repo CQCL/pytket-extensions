@@ -6,24 +6,28 @@ pytket-extensions
    :align: right
 
 
-These extensions enable ``pytket`` to interface with different hardware platforms and classical simulators. 
-A full list of available backends are shown below. These include Quantum Processing Units (QPUs) and various kind of simulator. 
-Simulators can run locally on the user's computer as with ``AerBackend`` or run remotely on a server as with ``H1-1E``
-for the ``QuantinuumBackend``.
+These extensions enable ``pytket`` to interface with different hardware platforms and classical simulators. One can also access additional quantum devices and simulators via the cloud through the extensions for `Azure <https://cqcl.github.io/pytket-extensions/api/qsharp/api.html#pytket.extensions.qsharp.AzureBackend>`_ and `Braket <https://cqcl.github.io/pytket-extensions/api/braket/api.html#pytket.extensions.braket.BraketBackend>`_ . 
+In pytket a ``Backend`` represents a connection to a QPU (Quantum Processing Unit) or simulator for processing quantum circuits. The types of ``Backend`` available in pytket are the following.
 
-* QPUs - These are real quantum computers that return shots based results.
-* Shots based simulators - These simulate a circuit and produce shots based results. Sometimes these use a noise model and have connectivity constraints to simulate real QPUs.
-* Statevector simulators - Calculates the pure quantum state prepared by a circuit returning a vector/ndarray. Examples of statevector simulators are the ``ForestStateBackend`` and the ``AerStateBackend`` 
-* Unitary simulators - Unitary simulators calculate the unitary operation that is applied by a circuit. A unitary matrix/ndarray is returned ``AerUnitaryBackend`` is an example of such a simulator.
-* Density matrix simulators - These simulators compute the density matrix prepared by a circuit. The result can be a statistical mixture of states in contrast to statevector simulation. E.g. ``CirqDensityMatrixSampleBackend`` 
-* Other specialised simulators - There are extensions for simulating specific types of circuit. For instance the ``SimplexBackend`` is designed to simulate Clifford circuits. 
+Types of Backend
+================
+
+* **QPUs** - These are real quantum computers that return shots based results. E.g the `QuantinuumBackend <https://cqcl.github.io/pytket-extensions/api/quantinuum/api.html#pytket.extensions.quantinuum.QuantinuumBackend>`_ .
+* **Cloud Access** - Cloud backends allow pytket to interface with cloud platforms to access additional QPUs and simulators. E.g `BraketBackend <https://cqcl.github.io/pytket-extensions/api/braket/api.html#pytket.extensions.braket.BraketBackend>`_ .
+* **Emulators** - These classically simulate a circuit and produce shots based results. Sometimes emulators use a noise model and have connectivity constraints to emulate real QPUs. E.g. `IBMQEmulatorBackend <https://cqcl.github.io/pytket-extensions/api/qiskit/api.html#pytket.extensions.qiskit.IBMQEmulatorBackend>`_ .
+* **Statevector Simulators** - Calculates the pure quantum state prepared by a circuit returning a vector/ndarray. Examples of statevector simulators are the `ForestStateBackend <https://cqcl.github.io/pytket-extensions/api/pyquil/api.html#pytket.extensions.pyquil.ForestStateBackend>`_ and the `AerStateBackend <https://cqcl.github.io/pytket-extensions/api/qiskit/api.html#pytket.extensions.qiskit.AerStateBackend>`_ . 
+* **Unitary Simulators** - Unitary simulators calculate the unitary operator that is applied by a circuit. A unitary matrix/ndarray is returned `AerUnitaryBackend <https://cqcl.github.io/pytket-extensions/api/qiskit/api.html#pytket.extensions.qiskit.AerUnitaryBackend>`_ is an example of such a simulator.
+* **Density Matrix Simulators** - These simulators compute the density matrix prepared by a circuit. The result can be a statistical mixture of states in contrast to statevector simulation. E.g. `CirqDensityMatrixSampleBackend <https://cqcl.github.io/pytket-extensions/api/cirq/api.html#pytket.extensions.cirq.CirqDensityMatrixSampleBackend>`_ .
+* **Other specialised simulators** - There are extensions for simulating specific types of circuit. For instance the `SimplexBackend <https://cqcl.github.io/pytket-extensions/api/pysimplex/api.html#pytket.extensions.pysimplex.SimplexBackend>`_ is designed to simulate Clifford circuits. 
+
+A full list of available pytket backends are listed below.
 
 QPUs
 ====
 
 `IBMQBackend <https://cqcl.github.io/pytket-extensions/api/qiskit/api.html#pytket.extensions.qiskit.IBMQBackend>`_
 A backend for running circuits on remote IBMQ devices.
-'
+
 `IonQBackend <https://cqcl.github.io/pytket-extensions/api/ionq/api.html#pytket.extensions.ionq.IonQBackend>`_
 Interface to an IonQ device.
 
@@ -52,7 +56,7 @@ Emulators
 A backend which uses the AerBackend to emulate the behavior of IBMQBackend.
 
 `QuantinuumBackend <https://cqcl.github.io/pytket-extensions/api/quantinuum/api.html#pytket.extensions.quantinuum.QuantinuumBackend>`_
-The QuantinuumBackend has two available emulators namely H1-1E and H1-2E. These are device specific emulators for the H1-1 and H1-2 devices.
+The QuantinuumBackend has two available emulators namely H1-1E and H1-2E. These are device specific emulators for the H1-1 and H1-2 devices. These emualtors run remotely on a server.
 
 Statevector simulators
 =======================
@@ -106,7 +110,7 @@ Other
 =====
 
 `AerBackend <https://cqcl.github.io/pytket-extensions/api/qiskit/api.html#pytket.extensions.qiskit.AerBackend>`_
-Backend for running simulations on the Qiskit Aer QASM simulator.
+Backend for running simulations on the Qiskit Aer QASM simulator. This simulation runs locally on the users computer.
 
 `QulacsBackend <https://cqcl.github.io/pytket-extensions/api/qulacs/api.html#pytket.extensions.qulacs.QulacsBackend>`_
 Backend for running simulations on the Qulacs simulator.
