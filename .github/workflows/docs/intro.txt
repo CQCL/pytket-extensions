@@ -9,12 +9,14 @@ pytket-extensions
 These extensions enable ``pytket`` to interface with different hardware platforms and classical simulators. 
 A full list of available backends are shown below. These include Quantum Processing Units (QPUs) and various kind of simulator. 
 Simulators can run locally on the user's computer as with ``AerBackend`` or run remotely on a server as with ``H1-1E``
-for the ``QuantinuumBackend``.Simulators also vary in the type of results they return. There are simulators that return
-shots based results as with real QPUs. Statevector simulators such as ``ForestStateBackend`` calculate the quantum state that is
-prepared by a circuit. Similarly density matrix simulators can be used to calculate density matrices.
-Unitary simulators calculate the effective unitary operation that is applied by a circuit. Finally there are
-simulators such as the ``SimplexBackend`` which are optimised for simulating specific types of 
-circuit e.g. Clifford circuits.
+for the ``QuantinuumBackend``.
+
+* QPUs - These are real quantum computers that return shots based results.
+* Shots based simulators - These simulate a circuit and produce shots based results. Sometimes these use a noise model and have connectivity constraints to simulate real QPUs.
+* Statevector simulators - Calculates the pure quantum state prepared by a circuit returning a vector/ndarray. Examples of statevector simulators are the ``ForestStateBackend`` and the ``AerStateBackend`` 
+* Unitary simulators - Unitary simulators calculate the unitary operation that is applied by a circuit. A unitary matrix/ndarray is returned ``AerUnitaryBackend`` is an example of such a simulator.
+* Density matrix simulators - These simulators compute the density matrix prepared by a circuit. The result can be a statistical mixture of states in contrast to statevector simulation. E.g. ``CirqDensityMatrixSampleBackend`` 
+* Other specialised simulators - There are extensions for simulating specific types of circuit. For instance the ``SimplexBackend`` is designed to simulate Clifford circuits. 
 
 QPUs
 ====
