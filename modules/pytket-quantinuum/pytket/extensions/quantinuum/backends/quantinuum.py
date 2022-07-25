@@ -41,6 +41,7 @@ from pytket.passes import (  # type: ignore
     FullPeepholeOptimise,
     DecomposeBoxes,
     SimplifyInitial,
+    ZZPhaseToRz,
     auto_rebase_pass,
     auto_squash_pass,
 )
@@ -322,6 +323,7 @@ class QuantinuumBackend(Backend):
             return SequencePass(
                 passlist
                 + [
+                    ZZPhaseToRz(),
                     SynthesiseTket(),
                     self.rebase_pass(),
                     RemoveRedundancies(),
@@ -335,6 +337,7 @@ class QuantinuumBackend(Backend):
             return SequencePass(
                 passlist
                 + [
+                    ZZPhaseToRz(),
                     FullPeepholeOptimise(),
                     self.rebase_pass(),
                     RemoveRedundancies(),
