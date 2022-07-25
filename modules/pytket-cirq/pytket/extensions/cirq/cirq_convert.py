@@ -124,8 +124,6 @@ def cirq_to_tk(circuit: cirq.circuits.Circuit) -> Circuit:
             gate = op.gate
             gatetype = type(gate)
             qb_lst = [qmap[q] for q in op.qubits]
-            print(gate)
-            print(gatetype)
             if isinstance(gate, cirq.ops.global_phase_op.GlobalPhaseGate):
                 tkcirc.add_phase(cmath.phase(gate.coefficient) / pi)
                 continue

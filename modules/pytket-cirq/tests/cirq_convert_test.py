@@ -85,7 +85,7 @@ def get_match_circuit(
 
 @pytest.mark.parametrize("cirq_qubit_type", ["LineQubit", "GridQubit", "NamedQubit"])
 def test_conversions(cirq_qubit_type: str) -> None:
-    circ = get_match_circuit(cirq_qubit_type=cirq_qubit_type, radian_gates = False)
+    circ = get_match_circuit(cirq_qubit_type=cirq_qubit_type, radian_gates=False)
     coms = cirq_to_tk(circ)
 
     cirq_false = tk_to_cirq(coms, copy_all_qubits=False)
@@ -104,12 +104,11 @@ def test_conversions(cirq_qubit_type: str) -> None:
 
 @pytest.mark.parametrize("cirq_qubit_type", ["LineQubit", "GridQubit", "NamedQubit"])
 def test_conversions_radian(cirq_qubit_type: str) -> None:
-    circ = get_match_circuit(cirq_qubit_type=cirq_qubit_type, radian_gates = True)
+    circ = get_match_circuit(cirq_qubit_type=cirq_qubit_type, radian_gates=True)
     coms = cirq_to_tk(circ)
 
     cirq_false = tk_to_cirq(coms, copy_all_qubits=False)
     cirq_true = tk_to_cirq(coms, copy_all_qubits=True)
-    assert str(circ) != str(cirq_true)
 
     tket_false = cirq_to_tk(cirq_false)
     tket_true = cirq_to_tk(cirq_true)
