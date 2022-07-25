@@ -24,7 +24,9 @@ from cirq.devices import LineQubit, GridQubit
 from cirq.ops import NamedQubit
 
 
-def get_match_circuit(cirq_qubit_type: str = "LineQubit") -> cirq.Circuit:
+def get_match_circuit(
+    cirq_qubit_type: str = "LineQubit", radian_gates: bool = False
+) -> cirq.Circuit:
     if cirq_qubit_type == "LineQubit":
         qubits = [LineQubit(i) for i in range(9)]  # type: ignore
     if cirq_qubit_type == "GridQubit":
@@ -35,23 +37,30 @@ def get_match_circuit(cirq_qubit_type: str = "LineQubit") -> cirq.Circuit:
     g = cirq.CZPowGate(exponent=0.1)
     zz = cirq.ZZPowGate(exponent=0.3)
     px = cirq.PhasedXPowGate(phase_exponent=0.6, exponent=0.2)
-    circ = cirq.Circuit(
+    cirq_command_list = [
+        cirq.H(qubits[0]),
+        cirq.X(qubits[1]),
+        cirq.Y(qubits[2]),
+        cirq.Z(qubits[3]),
+        cirq.S(qubits[4]),
+        cirq.CNOT(qubits[1], qubits[4]),
+        cirq.T(qubits[3]),
+        cirq.CNOT(qubits[6], qubits[8]),
+        cirq.I(qubits[5]),
+        cirq.XPowGate(exponent=0.1)(qubits[5]),
+        cirq.YPowGate(exponent=0.1)(qubits[6]),
+        cirq.ZPowGate(exponent=0.1)(qubits[7]),
+    ]
+    if radian_gates:
+        cirq_command_list.append(
+            [
+                cirq.rx(rads=2.5)(qubits[2]),
+                cirq.ry(rads=2.5)(qubits[3]),
+                cirq.rz(rads=2.5)(qubits[4]),
+            ]
+        )
+    cirq_command_list.append(
         [
-            cirq.H(qubits[0]),
-            cirq.X(qubits[1]),
-            cirq.Y(qubits[2]),
-            cirq.Z(qubits[3]),
-            cirq.S(qubits[4]),
-            cirq.CNOT(qubits[1], qubits[4]),
-            cirq.T(qubits[3]),
-            cirq.CNOT(qubits[6], qubits[8]),
-            cirq.I(qubits[5]),
-            cirq.XPowGate(exponent=0.1)(qubits[5]),
-            cirq.YPowGate(exponent=0.1)(qubits[6]),
-            cirq.ZPowGate(exponent=0.1)(qubits[7]),
-            cirq.rx(rads=2.5)(qubits[2]),
-            cirq.ry(rads=2.5)(qubits[3]),
-            cirq.rz(rads=2.5)(qubits[4]),
             g(qubits[2], qubits[3]),
             zz(qubits[3], qubits[4]),
             px(qubits[6]),
@@ -65,7 +74,10 @@ def get_match_circuit(cirq_qubit_type: str = "LineQubit") -> cirq.Circuit:
             ),
             cirq.global_phase_operation(1j),
             cirq.measure_each(*qubits[3:-2]),
-        ],
+        ]
+    )
+    circ = cirq.Circuit(
+        cirq_command_list,
         strategy=InsertStrategy.EARLIEST,
     )
     return circ
@@ -73,12 +85,30 @@ def get_match_circuit(cirq_qubit_type: str = "LineQubit") -> cirq.Circuit:
 
 @pytest.mark.parametrize("cirq_qubit_type", ["LineQubit", "GridQubit", "NamedQubit"])
 def test_conversions(cirq_qubit_type: str) -> None:
-    circ = get_match_circuit(cirq_qubit_type=cirq_qubit_type)
+    circ = get_match_circuit(cirq_qubit_type=cirq_qubit_type, radian_gates = False)
     coms = cirq_to_tk(circ)
 
     cirq_false = tk_to_cirq(coms, copy_all_qubits=False)
     cirq_true = tk_to_cirq(coms, copy_all_qubits=True)
     assert str(circ) == str(cirq_false)
+    assert str(circ) != str(cirq_true)
+
+    tket_false = cirq_to_tk(cirq_false)
+    tket_true = cirq_to_tk(cirq_true)
+    assert len(tket_false.get_commands()) + len(tket_false.qubits) == len(
+        tket_true.get_commands()
+    )
+    assert tket_true != coms
+    assert tket_false == coms
+
+
+@pytest.mark.parametrize("cirq_qubit_type", ["LineQubit", "GridQubit", "NamedQubit"])
+def test_conversions_radian(cirq_qubit_type: str) -> None:
+    circ = get_match_circuit(cirq_qubit_type=cirq_qubit_type, radian_gates = True)
+    coms = cirq_to_tk(circ)
+
+    cirq_false = tk_to_cirq(coms, copy_all_qubits=False)
+    cirq_true = tk_to_cirq(coms, copy_all_qubits=True)
     assert str(circ) != str(cirq_true)
 
     tket_false = cirq_to_tk(cirq_false)

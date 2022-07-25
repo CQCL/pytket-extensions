@@ -42,9 +42,6 @@ _cirq2ops_mapping = {
     cirq_common.XPowGate: OpType.Rx,
     cirq_common.YPowGate: OpType.Ry,
     cirq_common.ZPowGate: OpType.Rz,
-    cirq_common.rx: OpType.Rx,
-    cirq_common.ry: OpType.Ry,
-    cirq_common.rz: OpType.Rz,
     cirq_common.XPowGate(exponent=0.5): OpType.V,
     cirq_common.XPowGate(exponent=-0.5): OpType.Vdg,
     cirq_common.S: OpType.S,
@@ -87,21 +84,16 @@ _constant_gates = (
     cirq.ops.I,
 )
 
-_radian_rotation_types = (
-    cirq_common.rx,
-    cirq_common.ry,
-    cirq_common.rz,
+_radian_gates = (
+    cirq_common.Rx,
+    cirq_common.Ry,
+    cirq_common.Rz,
 )
-_exponent_rotation_types = (
-    cirq_common.XPowGate,
-    cirq_common.YPowGate,
-    cirq_common.ZPowGate,
-    cirq_common.CZPowGate,
-    cirq_common.ISwapPowGate,
-    cirq.ops.parity_gates.ZZPowGate,
-    cirq.ops.parity_gates.XXPowGate,
-    cirq.ops.parity_gates.YYPowGate,
-)
+_cirq2ops_radians_mapping = {
+    cirq_common.Rx: OpType.Rx,
+    cirq_common.Ry: OpType.Ry,
+    cirq_common.Rz: OpType.Rz,
+}
 
 
 def cirq_to_tk(circuit: cirq.circuits.Circuit) -> Circuit:
@@ -132,7 +124,8 @@ def cirq_to_tk(circuit: cirq.circuits.Circuit) -> Circuit:
             gate = op.gate
             gatetype = type(gate)
             qb_lst = [qmap[q] for q in op.qubits]
-
+            print(gate)
+            print(gatetype)
             if isinstance(gate, cirq.ops.global_phase_op.GlobalPhaseGate):
                 tkcirc.add_phase(cmath.phase(gate.coefficient) / pi)
                 continue
@@ -177,22 +170,14 @@ def cirq_to_tk(circuit: cirq.circuits.Circuit) -> Circuit:
                         "Operation not supported by tket: " + str(op.gate)
                     ) from error
                 params: List[Union[float, Basic, Symbol]] = []
-            elif gate in _radian_rotation_types:
+            elif gatetype in _radian_gates:
                 try:
-                    optype = _cirq2ops_mapping[gate]
+                    optype = _cirq2ops_radians_mapping[gatetype]
                 except KeyError as error:
                     raise NotImplementedError(
                         "Operation not supported by tket: " + str(op.gate)
                     ) from error
                 params: List[Union[float, Basic, Symbol]] = [gate._rads / pi]
-            elif gate in _exponent_rotation_types:
-                try:
-                    optype = _cirq2ops_mapping[gate]
-                except KeyError as error:
-                    raise NotImplementedError(
-                        "Operation not supported by tket: " + str(op.gate)
-                    ) from error
-                params: List[Union[float, Basic, Symbol]] = [cast(Any, gate).exponent]
             elif isinstance(gate, cirq_common.MeasurementGate):
                 # Adding "_b" to the bit uid since for cirq.NamedQubit,
                 # the gate.key is equal to the qubit id (the qubit name)
