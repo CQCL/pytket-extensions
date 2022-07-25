@@ -17,7 +17,7 @@ Methods to allow conversion between Cirq and tket data types, including Circuits
 Devices
 """
 
-from typing import List, Dict, FrozenSet, cast, Any, Union
+from typing import List, Dict, FrozenSet, cast, Any, Union, Type
 import cmath
 from logging import warning
 import re
