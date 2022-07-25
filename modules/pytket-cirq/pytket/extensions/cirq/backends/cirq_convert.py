@@ -175,7 +175,7 @@ def cirq_to_tk(circuit: cirq.circuits.Circuit) -> Circuit:
                     raise NotImplementedError(
                         "Operation not supported by tket: " + str(op.gate)
                     ) from error
-                params: List[Union[float, Basic, Symbol]] = [gate._rads / pi]
+                params = [gate._rads / pi]
             elif isinstance(gate, cirq_common.MeasurementGate):
                 # Adding "_b" to the bit uid since for cirq.NamedQubit,
                 # the gate.key is equal to the qubit id (the qubit name)
@@ -292,7 +292,7 @@ def tk_to_cirq(tkcirc: Circuit, copy_all_qubits: bool = False) -> cirq.circuits.
         if coeff.imag < 1e-8:
             coeff = coeff.real
         if coeff != 1.0:
-            oplst.append(cirq.global_phase_operation(coeff))
+            oplst.append(cirq.ops.global_phase_operation(coeff))
     except ValueError:
         warning(
             "Global phase is dependent on a symbolic parameter, so cannot adjust for "

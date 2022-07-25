@@ -53,7 +53,7 @@ from pytket.backends.backendresult import BackendResult
 from pytket.backends.backendinfo import BackendInfo
 from pytket.backends.resulthandle import _ResultIdTuple
 from pytket.utils.results import KwargTypes
-from pytket.extensions.cirq.cirq_convert import tk_to_cirq  # type: ignore
+from .cirq_convert import tk_to_cirq  # type: ignore
 from pytket.utils.outcomearray import OutcomeArray
 from .cirq_utils import _get_default_uids
 
