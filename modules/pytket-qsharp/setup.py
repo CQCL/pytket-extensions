@@ -40,6 +40,7 @@ setup(
     include_package_data=True,
     install_requires=[
         "pytket ~= 1.4",
+        "pytket-qir",
         "qsharp ~= 0.25.218240",
         "qsharp-core ~= 0.25.218240",
     ],
