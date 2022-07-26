@@ -9,6 +9,5 @@
 /modules/pytket-pyzx/ @cqc-alec
 /modules/pytket-qiskit/ @ss2165
 /modules/pytket-qsharp/ @cqc-alec
-/modules/pytket-quantinuum/ @ss2165
 /modules/pytket-qulacs/ @Roland-djee
 /modules/pytket-stim/ @cqc-alec

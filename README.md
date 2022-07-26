@@ -24,7 +24,6 @@ subdirectory of the `modules` directory:
 * `pytket-pyzx`
 * `pytket-qiskit`
 * `pytket-qsharp`
-* `pytket-quantinuum`
 * `pytket-qulacs`
 * `pytket-stim`
 
@@ -32,6 +31,7 @@ See the individual `README` files for descriptions.
 
 Other extensions can be found in other repos:
 
+* [pytket-quantinuum](https://github.com/CQCL/pytket-quantinuum)
 * [pytket-qujax](https://github.com/CQCL/pytket-qujax)
 
 Note that most backend providers require you to set up credentials in order to
@@ -78,7 +78,7 @@ State-based interface to a Rigetti device.
 [AQTBackend](https://cqcl.github.io/pytket-extensions/api/aqt/api.html#pytket.extensions.aqt.AQTBackend)
 Interface to an AQT device or simulator.
 
-[QuantinuumBackend](https://cqcl.github.io/pytket-extensions/api/quantinuum/api.html#pytket.extensions.quantinuum.QuantinuumBackend)
+[QuantinuumBackend](https://cqcl.github.io/pytket-quantinuum/api/api.html#pytket.extensions.quantinuum.QuantinuumBackend)
 Interface to a Quantinuum device.
 
 ### Cloud access
