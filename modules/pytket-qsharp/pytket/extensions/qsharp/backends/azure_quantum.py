@@ -20,7 +20,6 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Union, cast
 
 import qsharp  # type: ignore
 import qsharp.azure  # type: ignore
-from qsharp import compile as qscompile  # type: ignore
 
 from pytket.config import get_config_file_path
 from pytket.backends.backend import Backend, BackendResult, CircuitStatus, KwargTypes
@@ -34,7 +33,6 @@ from pytket.utils.outcomearray import OutcomeArray
 
 from pytket.extensions.qsharp.backends.config import QSharpConfig
 from pytket.extensions.qsharp.backends.common import _QsharpBaseBackend
-from pytket.extensions.qsharp.qsharp_convert import tk_to_qsharp
 
 from pytket_qir.qir import circuit_to_qir_bytes  # type: ignore
 
