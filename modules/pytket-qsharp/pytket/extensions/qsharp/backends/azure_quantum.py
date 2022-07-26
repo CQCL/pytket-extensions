@@ -36,6 +36,8 @@ from pytket.extensions.qsharp.backends.config import QSharpConfig
 from pytket.extensions.qsharp.backends.common import _QsharpBaseBackend
 from pytket.extensions.qsharp.qsharp_convert import tk_to_qsharp
 
+from pytket_qir.qir import circuit_to_qir_bytes  # type: ignore
+
 
 if TYPE_CHECKING:
     from qsharp.loader import QSharpCallable  # type: ignore
@@ -207,10 +209,9 @@ class AzureBackend(_QsharpBaseBackend):
                     )
                 )
             else:
-                qs = tk_to_qsharp(c0, sim=False)
-                qc = cast("QSharpCallable", qscompile(qs))
+                qir = circuit_to_qir_bytes(c0)
                 qsharp.azure.target(self.target.id)
-                job = qsharp.azure.submit(qc, jobName=c.name, shots=n_shots)
+                job = qsharp.azure.submit(qir, jobName=c.name, shots=n_shots)
                 handle = ResultHandle(job.id, n_shots, ppcirc_str)
                 handles.append(handle)
         for handle in handles:
