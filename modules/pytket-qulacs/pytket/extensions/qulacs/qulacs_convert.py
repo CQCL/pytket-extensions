@@ -16,8 +16,7 @@
 """
 import numpy as np
 from qulacs import QuantumCircuit, gate  # type: ignore
-from pytket.circuit import Circuit, OpType  # type: ignore
-
+from pytket.circuit import Circuit, OpType, Qubit  # type: ignore
 
 _ONE_QUBIT_GATES = {
     OpType.X: gate.X,
@@ -39,14 +38,20 @@ _TWO_QUBIT_GATES = {OpType.CX: gate.CNOT, OpType.CZ: gate.CZ, OpType.SWAP: gate.
 _IBM_GATES = {OpType.U1: gate.U1, OpType.U2: gate.U2, OpType.U3: gate.U3}
 
 
-def tk_to_qulacs(circuit: Circuit) -> QuantumCircuit:
+def tk_to_qulacs(
+    circuit: Circuit, reverse_index: bool = False, replace_implicit_swaps: bool = False
+) -> QuantumCircuit:
     """Convert a pytket circuit to a qulacs circuit object."""
+    n_qubits = circuit.n_qubits
     qulacs_circ = QuantumCircuit(circuit.n_qubits)
+    index_map = {
+        i: (i if not reverse_index else n_qubits - 1 - i) for i in range(n_qubits)
+    }
     for com in circuit:
         optype = com.op.type
         if optype in _IBM_GATES:
             qulacs_gate = _IBM_GATES[optype]
-            index = com.qubits[0].index[0]
+            index = index_map[com.qubits[0].index[0]]
 
             if optype == OpType.U1:
                 param = com.op.params[0]
@@ -62,19 +67,19 @@ def tk_to_qulacs(circuit: Circuit) -> QuantumCircuit:
 
         elif optype in _ONE_QUBIT_GATES:
             qulacs_gate = _ONE_QUBIT_GATES[optype]
-            index = com.qubits[0].index[0]
+            index = index_map[com.qubits[0].index[0]]
             add_gate = qulacs_gate(index)
 
         elif optype in _ONE_QUBIT_ROTATIONS:
             qulacs_gate = _ONE_QUBIT_ROTATIONS[optype]
-            index = com.qubits[0].index[0]
+            index = index_map[com.qubits[0].index[0]]
             param = com.op.params[0] * np.pi
             add_gate = qulacs_gate(index, -param)  # parameter negated for qulacs
 
         elif optype in _TWO_QUBIT_GATES:
             qulacs_gate = _TWO_QUBIT_GATES[optype]
-            id1 = com.qubits[0].index[0]
-            id2 = com.qubits[1].index[0]
+            id1 = index_map[com.qubits[0].index[0]]
+            id2 = index_map[com.qubits[1].index[0]]
             add_gate = qulacs_gate(id1, id2)
 
         elif optype in _MEASURE_GATES:
@@ -92,4 +97,23 @@ def tk_to_qulacs(circuit: Circuit) -> QuantumCircuit:
                 "Gate: {} Not Implemented in Qulacs!".format(optype)
             )
         qulacs_circ.add_gate(add_gate)
+
+    if replace_implicit_swaps:
+        # We implement the implicit qubit permutation using SWAPs
+        # qubit -> output wire
+        perm = circuit.implicit_qubit_permutation()
+        # output wire -> qubit
+        wire_labels = {i: i for i in range(n_qubits)}
+        for q_wire in range(n_qubits):
+            q = wire_labels[q_wire]
+            p_wire = perm[Qubit(q)].index[0]
+            if q_wire == p_wire:
+                continue
+            p = wire_labels[p_wire]
+            # swap p and q so q is on the target wire
+            qulacs_circ.add_gate(gate.SWAP(index_map[q_wire], index_map[p_wire]))
+            # update wire_labels
+            wire_labels[p_wire] = q
+            wire_labels[q_wire] = p
+
     return qulacs_circ
