@@ -30,6 +30,10 @@ subdirectory of the `modules` directory:
 
 See the individual `README` files for descriptions.
 
+Other extensions can be found in other repos:
+
+* [pytket-qujax](https://github.com/CQCL/pytket-qujax)
+
 Note that most backend providers require you to set up credentials in order to
 submit jobs over the internet. These should be obtained directly from the
 providers.
