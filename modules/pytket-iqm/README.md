@@ -1,6 +1,6 @@
 # pytket-iqm
 
-[Pytket](https://cqcl.github.io/pytket) is a Python module providing an
+[Pytket](https://cqcl.github.io/tket/pytket/api/index.html) is a Python module providing an
 extensive set of tools for compiling and executing quantum circuits.
 
 `pytket-iqm` is an extension to `pytket` that allows `pytket` circuits to be

@@ -1,6 +1,6 @@
 # pytket-qsharp
 
-[Pytket](https://cqcl.github.io/pytket) is a Python module for interfacing
+[Pytket](https://cqcl.github.io/tket/pytket/api/index.html) is a Python module for interfacing
 with CQC tket, a set of quantum programming tools.
 
 [Azure Quantum](https://azure.microsoft.com/en-gb/services/quantum/) is a portal for accessing
