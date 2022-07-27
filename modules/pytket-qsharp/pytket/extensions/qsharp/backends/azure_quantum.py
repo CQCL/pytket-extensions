@@ -209,7 +209,7 @@ class AzureBackend(_QsharpBaseBackend):
             else:
                 qir = circuit_to_qir_bytes(c0)
                 qsharp.azure.target(self.target.id)
-                job = qsharp.azure.submit(qir, jobName=c.name, shots=n_shots)
+                job = qsharp.azure.submit(input_data=qir, jobName=c.name, shots=n_shots)
                 handle = ResultHandle(job.id, n_shots, ppcirc_str)
                 handles.append(handle)
         for handle in handles:
