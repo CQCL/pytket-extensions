@@ -81,3 +81,22 @@ def test_postprocess(authenticated_azure_backend: AzureBackend) -> None:
     assert sum(counts.values()) == 8
     if not skip_remote_tests:
         assert counts == Counter({(0, 0): 2, (0, 1): 2, (1, 0): 2, (1, 1): 2})
+
+
+def test_qir_submission(authenticated_azure_backend: AzureBackend) -> None:
+    if skip_remote_tests:
+        b = AzureBackend("ionq.simulator", machine_debug=True)
+    else:
+    b = authenticated_azure_backend
+
+    bell_circuit = Circuit(2, name="Bell Test")
+    bell_circuit.H(0)
+    bell_circuit.CX(0, 1)
+    bell_circuit.measure_all()
+
+    handler = b.process_circuits(
+        circuits=[bell_circuit],
+        n_shots=10,
+        valid_check=False,
+    )
+    assert b.get_results(handler)[0]
