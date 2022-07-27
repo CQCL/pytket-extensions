@@ -1,6 +1,11 @@
 Changelog
 ~~~~~~~~~
 
+0.22.0 (unreleased)
+-------------------
+
+* Improve state retrieval speed.
+
 0.21.0 (July 2022)
 ------------------
 
