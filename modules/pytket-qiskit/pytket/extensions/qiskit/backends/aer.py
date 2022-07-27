@@ -66,7 +66,7 @@ from pytket.extensions.qiskit._metadata import __extension_version__
 from pytket.architecture import Architecture  # type: ignore
 from pytket.placement import NoiseAwarePlacement  # type: ignore
 from pytket.utils.operators import QubitPauliOperator
-from pytket.utils.results import KwargTypes, permute_basis_indexing
+from pytket.utils.results import KwargTypes
 from qiskit import Aer  # type: ignore
 from qiskit.providers.aer.library import (  # type: ignore # pylint: disable=unused-import
     save_expectation_value,
@@ -159,13 +159,23 @@ class _AerBaseBackend(Backend):
         circuit_batches, batch_order = _batch_circuits(circuits, n_shots_list)
 
         for (n_shots, batch), indices in zip(circuit_batches, batch_order):
-            qcs = [tk_to_qiskit(tkc) for tkc in batch]
             if self._backend_info.device_name == "aer_simulator_statevector":
+                qcs = [
+                    tk_to_qiskit(tkc, reverse_index=True, replace_implicit_swaps=True)
+                    for tkc in batch
+                ]
                 for qc in qcs:
                     qc.save_state()
             elif self._backend_info.device_name == "aer_simulator_unitary":
+                qcs = [
+                    tk_to_qiskit(tkc, reverse_index=True, replace_implicit_swaps=True)
+                    for tkc in batch
+                ]
                 for qc in qcs:
                     qc.save_unitary()
+            else:
+                qcs = [tk_to_qiskit(tkc) for tkc in batch]
+
             seed = cast(Optional[int], kwargs.get("seed"))
             job = self._backend.run(
                 qcs,
@@ -328,10 +338,6 @@ class _AerStateBaseBackend(_AerBaseBackend):
         handles = super().process_circuits(
             circuits, n_shots=None, valid_check=valid_check, **kwargs
         )
-        for handle, circ in zip(handles, circuits):
-            perm: Dict[Qubit, Qubit] = circ.implicit_qubit_permutation()
-            if not all(key == val for key, val in perm.items()):
-                self._cache[handle]["implicit_perm_qubits"] = perm
         return handles
 
     def get_result(self, handle: ResultHandle, **kwargs: KwargTypes) -> BackendResult:
@@ -346,34 +352,9 @@ class _AerStateBaseBackend(_AerBaseBackend):
             raise CircuitNotRunError(handle)
 
         res = job.result()
-        backresults = qiskit_result_to_backendresult(res)
+        backresults = qiskit_result_to_backendresult(res, reverse_index=False)
         for circ_index, backres in enumerate(backresults):
             newhandle = ResultHandle(handle[0], circ_index)
-            if "implicit_perm_qubits" in self._cache[newhandle]:
-                permed_qbit_map: Dict[Qubit, Qubit] = self._cache[newhandle][
-                    "implicit_perm_qubits"
-                ]
-                original_indexmap = backres.q_bits.copy()
-                assert original_indexmap
-                # Simultaneous permutation of inputs and outputs of process
-                # Handles implicit permutation of outputs for statevector
-                backres.q_bits = {
-                    permed_qbit_map[qb]: index
-                    for qb, index in original_indexmap.items()
-                }
-
-                if backres._unitary is not None:
-                    # For unitaries, the implicit permutation
-                    #  should only be applied to inputs
-                    # The above relabelling will permute both inputs and outputs
-                    # Correct by applying the inverse
-                    # permutation on the inputs (i.e. a column permutation)
-                    permutation = [0] * len(original_indexmap)
-                    for qb, index in original_indexmap.items():
-                        permutation[index] = original_indexmap[permed_qbit_map[qb]]
-                    backres._unitary = permute_basis_indexing(
-                        backres._unitary.T, tuple(permutation)
-                    ).T
             self._cache[newhandle]["result"] = backres
 
         return cast(BackendResult, self._cache[handle]["result"])

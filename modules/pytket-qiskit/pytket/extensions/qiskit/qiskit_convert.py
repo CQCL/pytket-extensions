@@ -539,11 +539,17 @@ def append_tk_command_to_qiskit(
     return qcirc.append(g, qargs=qargs)
 
 
-def tk_to_qiskit(tkcirc: Circuit) -> QuantumCircuit:
+def tk_to_qiskit(
+    tkcirc: Circuit, reverse_index: bool = False, replace_implicit_swaps: bool = False
+) -> QuantumCircuit:
     """Convert back
 
     :param tkcirc: A circuit to be converted
     :type tkcirc: Circuit
+    :param reverse_index: Reverse the order of wires
+    :type reverse_index: bool
+    :param replace_implicit_swaps: Implement implicit permutation using SWAPs
+    :type replace_implicit_swaps: bool
     :return: The converted circuit
     :rtype: QuantumCircuit
     """
@@ -593,6 +599,31 @@ def tk_to_qiskit(tkcirc: Circuit) -> QuantumCircuit:
             new_p.__init__(p_name)
             updates[p] = new_p
     qcirc.assign_parameters(updates, inplace=True)
+
+    if replace_implicit_swaps:
+        # We implement the implicit qubit permutation using SWAPs
+        tk_qubits = tkc.qubits
+        # qubit -> output wire
+        perm = tkc.implicit_qubit_permutation()
+        # output wire -> qubit
+        wire_labels = {q: q for q in tk_qubits}
+        for q_wire in tk_qubits:
+            q = wire_labels[q_wire]
+            p_wire = perm[q]
+            if q_wire == p_wire:
+                continue
+            p = wire_labels[p_wire]
+            # swap p and q so q is on the target wire
+            qcirc.swap(
+                qregmap[p_wire.reg_name][p_wire.index[0]],
+                qregmap[q_wire.reg_name][q_wire.index[0]],
+            )
+            # update wire_labels
+            wire_labels[p_wire] = q
+            wire_labels[q_wire] = p
+
+    if reverse_index:
+        return qcirc.reverse_bits()
     return qcirc
 
 
