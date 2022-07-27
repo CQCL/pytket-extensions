@@ -87,7 +87,7 @@ def test_qir_submission(authenticated_azure_backend: AzureBackend) -> None:
     if skip_remote_tests:
         b = AzureBackend("ionq.simulator", machine_debug=True)
     else:
-    b = authenticated_azure_backend
+        b = authenticated_azure_backend
 
     bell_circuit = Circuit(2, name="Bell Test")
     bell_circuit.H(0)
