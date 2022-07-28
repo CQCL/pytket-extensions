@@ -1,6 +1,6 @@
 # pytket-cirq
 
-[Pytket](https://cqcl.github.io/tket/pytket/api/index.html) is a Python module for interfacing
+[Pytket](https://cqcl.github.io/tket/pytket/api/index.html) is a python module for interfacing
 with CQC tket, a set of quantum programming tools.
 
 [Cirq](https://www.github.com/quantumlib/cirq) is a python library for producing

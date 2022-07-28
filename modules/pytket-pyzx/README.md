@@ -1,6 +1,6 @@
 # pytket-pyzx
 
-[Pytket](https://cqcl.github.io/tket/pytket/api/index.html) is a Python module for interfacing
+[Pytket](https://cqcl.github.io/tket/pytket/api/index.html) is a python module for interfacing
 with CQC tket, a set of quantum programming tools.
 
 [PyZX](https://github.com/Quantomatic/pyzx) is an open-source Python library for
