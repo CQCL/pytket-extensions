@@ -88,7 +88,7 @@ class IonQBackend(Backend):
 
     def __init__(
         self,
-        device_name: str = "qpu",
+        device_name: str = "qpu.harmony",
         api_key: Optional[str] = None,
         label: Optional[str] = "job",
         _machine_debug: bool = False,
@@ -97,7 +97,7 @@ class IonQBackend(Backend):
         Construct a new IonQ backend.
 
         :param      device_name:  device name, either "qpu" or "simulator". Default is
-            "qpu".
+            "qpu.harmony".
         :type       device_name:  Optional[string]
         :param      api_key: IonQ API key. Default is None (read from config).
         :type       api_key: Optional[string]

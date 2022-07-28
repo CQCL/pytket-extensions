@@ -1,6 +1,11 @@
 Changelog
 ~~~~~~~~~
 
+0.21.0 (unreleased)
+-------------------
+
+* Make ``qpu.harmony`` the default device name.
+
 0.20.0 (July 2022)
 ------------------
 

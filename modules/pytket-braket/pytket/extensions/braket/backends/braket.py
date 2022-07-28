@@ -802,6 +802,7 @@ class BraketBackend(Backend):
         """
         See :py:meth:`pytket.backends.Backend.available_devices`.
         Supported kwargs:
+
         - `region` (default None). The particular AWS region to search for
           devices (e.g. us-east-1). Default to the region configured with AWS.
           See the Braket docs for more details.
@@ -813,7 +814,7 @@ class BraketBackend(Backend):
         aws_session: Optional[AwsSession] = kwargs.get("aws_session")
         if aws_session is None:
             if region is not None:
-                session = AwsSession(boto_session=boto3.Session(region_name=region))
+                session = AwsSession(boto_session=boto3.Session(region_name=region))  # type: ignore
             else:
                 session = AwsSession()
         else:

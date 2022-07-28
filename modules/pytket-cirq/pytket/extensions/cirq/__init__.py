@@ -15,7 +15,7 @@
 
 # _metadata.py is copied to the folder after installation.
 from ._metadata import __extension_version__, __extension_name__  # type: ignore
-from .cirq_convert import cirq_to_tk, tk_to_cirq, process_characterisation
+from .backends.cirq_convert import cirq_to_tk, tk_to_cirq, process_characterisation
 from .backends import (
     CirqStateSampleBackend,
     CirqStateSimBackend,

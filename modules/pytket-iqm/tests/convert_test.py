@@ -12,27 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import List
 import os
-from pathlib import Path
 import numpy as np
 from pytket.circuit import Circuit, OpType  # type: ignore
-from pytket.extensions.iqm.backends.iqm import _translate_iqm, IQMBackend, _iqm_rebase
+from pytket.extensions.iqm.backends.iqm import _iqm_rebase
 
 skip_remote_tests: bool = os.getenv("PYTKET_RUN_REMOTE_TESTS") is None
 REASON = "PYTKET_RUN_REMOTE_TESTS not set (requires configuration of IQM credentials)"
-
-curr_file_path = Path(__file__).resolve().parent
-
-
-def tk_to_iqm(circ: Circuit) -> List:
-    """Convert a circuit to IQM list representation"""
-    c = circ.copy()
-    IQMBackend(
-        url="https://cortex-demo.qc.iqm.fi/",
-        settings=curr_file_path / "demo_settings.json",
-    ).default_compilation_pass().apply(c)
-    return _translate_iqm(c)
 
 
 def test_rebase_CX() -> None:

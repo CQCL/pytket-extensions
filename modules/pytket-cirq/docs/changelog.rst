@@ -1,6 +1,12 @@
 Changelog
 ~~~~~~~~~
 
+0.26.0 (unreleased)
+-------------------
+
+* Updated cirq version requirement to 1.x.
+* Update conversion to support rx, ry, and rz operations.
+
 0.25.0 (July 2022)
 ------------------
 

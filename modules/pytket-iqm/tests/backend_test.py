@@ -13,24 +13,23 @@
 # limitations under the License.
 
 import os
-from pathlib import Path
 import pytest
 from pytket.circuit import Circuit  # type: ignore
 from pytket.backends import StatusEnum
 from pytket.extensions.iqm import IQMBackend
-from requests import HTTPError, get
-
-curr_file_path = Path(__file__).resolve().parent
-iqm_demo_url = "https://cortex-demo.qc.iqm.fi/"
+from requests import get
+from conftest import get_demo_url  # type: ignore
 
 # Skip remote tests if not specified
 skip_remote_tests: bool = os.getenv("PYTKET_RUN_REMOTE_TESTS") is None
 REASON = "PYTKET_RUN_REMOTE_TESTS not set (requires configuration of IQM credentials)"
 
 # Skip remote tests if the IQM demo site is unavailable
-if skip_remote_tests is False and get(iqm_demo_url).status_code != 401:
+if skip_remote_tests is False and get(get_demo_url()).status_code != 200:
     skip_remote_tests = True
     REASON = "The IQM demo site/service is unavailable"
+skip_remote_tests = True
+REASON = "The IQM demo site/service is unavailable"
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
@@ -56,17 +55,15 @@ def test_iqm(authenticated_iqm_backend: IQMBackend) -> None:
     assert sum(counts.values()) == n_shots
 
 
-# @pytest.mark.skipif(skip_service_unavailable, reason=UNAVAILABLE_REASON)
-def test_invalid_cred() -> None:
-    b = IQMBackend(
-        url=iqm_demo_url,
-        settings=curr_file_path / "demo_settings.json",
-    )
-    c = Circuit(2, 2).H(0).CX(0, 1)
-    c.measure_all()
-    c = b.get_compiled_circuit(c)
-    with pytest.raises(HTTPError):
-        b.process_circuit(c, 1)
+def test_invalid_cred(demo_settings_path: os.PathLike, demo_url: str) -> None:
+    with pytest.raises(Exception):
+        _ = IQMBackend(
+            url=demo_url,
+            settings=demo_settings_path,
+            auth_server_url="https://cortex-demo.qc.iqm.fi/",
+            username="invalid",
+            password="invalid",
+        )
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
@@ -110,11 +107,9 @@ def test_none_nshots(authenticated_iqm_backend: IQMBackend) -> None:
     assert "Parameter n_shots is required" in str(errorinfo.value)
 
 
-def test_default_pass() -> None:
-    b = IQMBackend(
-        url=iqm_demo_url,
-        settings=curr_file_path / "demo_settings.json",
-    )
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
+def test_default_pass(authenticated_iqm_backend: IQMBackend) -> None:
+    b = authenticated_iqm_backend
     for ol in range(3):
         comp_pass = b.default_compilation_pass(ol)
         c = Circuit(3, 3)
@@ -144,11 +139,9 @@ def test_postprocess(authenticated_iqm_backend: IQMBackend) -> None:
     assert all(len(shot) == 2 for shot in shots)
 
 
-def test_backendinfo() -> None:
-    b = IQMBackend(
-        url=iqm_demo_url,
-        settings=curr_file_path / "demo_settings.json",
-    )
+@pytest.mark.skipif(skip_remote_tests, reason=REASON)
+def test_backendinfo(authenticated_iqm_backend: IQMBackend) -> None:
+    b = authenticated_iqm_backend
     info = b.backend_info
     assert info.name == type(b).__name__
     assert len(info.gate_set) >= 3

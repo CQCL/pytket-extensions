@@ -17,7 +17,7 @@ Methods to allow conversion between Cirq and tket data types, including Circuits
 Devices
 """
 
-from typing import List, Dict, FrozenSet, cast, Any, Union
+from typing import List, Dict, FrozenSet, cast, Any, Union, Type
 import cmath
 from logging import warning
 import re
@@ -83,16 +83,17 @@ _constant_gates = (
     cirq_google.SYC,
     cirq.ops.I,
 )
-_rotation_types = (
-    cirq_common.XPowGate,
-    cirq_common.YPowGate,
-    cirq_common.ZPowGate,
-    cirq_common.CZPowGate,
-    cirq_common.ISwapPowGate,
-    cirq.ops.parity_gates.ZZPowGate,
-    cirq.ops.parity_gates.XXPowGate,
-    cirq.ops.parity_gates.YYPowGate,
+
+_radian_gates = (
+    cirq_common.Rx,
+    cirq_common.Ry,
+    cirq_common.Rz,
 )
+_cirq2ops_radians_mapping = {
+    cirq_common.Rx: OpType.Rx,
+    cirq_common.Ry: OpType.Ry,
+    cirq_common.Rz: OpType.Rz,
+}
 
 
 def cirq_to_tk(circuit: cirq.circuits.Circuit) -> Circuit:
@@ -123,7 +124,6 @@ def cirq_to_tk(circuit: cirq.circuits.Circuit) -> Circuit:
             gate = op.gate
             gatetype = type(gate)
             qb_lst = [qmap[q] for q in op.qubits]
-
             if isinstance(gate, cirq.ops.global_phase_op.GlobalPhaseGate):
                 tkcirc.add_phase(cmath.phase(gate.coefficient) / pi)
                 continue
@@ -168,6 +168,16 @@ def cirq_to_tk(circuit: cirq.circuits.Circuit) -> Circuit:
                         "Operation not supported by tket: " + str(op.gate)
                     ) from error
                 params: List[Union[float, Basic, Symbol]] = []
+            elif gatetype in _radian_gates:
+                try:
+                    optype = _cirq2ops_radians_mapping[
+                        cast(Type[cirq.ops.EigenGate], gatetype)
+                    ]
+                except KeyError as error:
+                    raise NotImplementedError(
+                        "Operation not supported by tket: " + str(op.gate)
+                    ) from error
+                params = [gate._rads / pi]  # type: ignore
             elif isinstance(gate, cirq_common.MeasurementGate):
                 # Adding "_b" to the bit uid since for cirq.NamedQubit,
                 # the gate.key is equal to the qubit id (the qubit name)
@@ -278,14 +288,13 @@ def tk_to_cirq(tkcirc: Circuit, copy_all_qubits: bool = False) -> cirq.circuits.
                 cirqop = gatetype(exponent=params[0])(*qids)
         oplst.append(cirqop)
     try:
-
         coeff = cmath.exp(float(tkcirc.phase) * cmath.pi * 1j)
         if coeff.real < 1e-8:  # tolerance permitted by cirq for GlobalPhaseGate
             coeff = coeff.imag * 1j
         if coeff.imag < 1e-8:
             coeff = coeff.real
         if coeff != 1.0:
-            oplst.append(cirq.global_phase_operation(coeff))
+            oplst.append(cirq.ops.global_phase_operation(coeff))
     except ValueError:
         warning(
             "Global phase is dependent on a symbolic parameter, so cannot adjust for "

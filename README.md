@@ -24,11 +24,15 @@ subdirectory of the `modules` directory:
 * `pytket-pyzx`
 * `pytket-qiskit`
 * `pytket-qsharp`
-* `pytket-quantinuum`
 * `pytket-qulacs`
 * `pytket-stim`
 
 See the individual `README` files for descriptions.
+
+Other extensions can be found in other repos:
+
+* [pytket-quantinuum](https://github.com/CQCL/pytket-quantinuum)
+* [pytket-qujax](https://github.com/CQCL/pytket-qujax)
 
 Note that most backend providers require you to set up credentials in order to
 submit jobs over the internet. These should be obtained directly from the
@@ -56,7 +60,6 @@ Please file bugs and feature requests on the Github
 ## Supported Backends
 
 For a list of accessible backends refer to the [documentation](https://cqcl.github.io/pytket-extensions/api/index.html).
-
 
 ## Development
 
