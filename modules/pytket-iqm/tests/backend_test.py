@@ -28,6 +28,8 @@ REASON = "PYTKET_RUN_REMOTE_TESTS not set (requires configuration of IQM credent
 if skip_remote_tests is False and get(get_demo_url()).status_code != 200:
     skip_remote_tests = True
     REASON = "The IQM demo site/service is unavailable"
+skip_remote_tests = True
+REASON = "The IQM demo site/service is unavailable"
 
 
 @pytest.mark.skipif(skip_remote_tests, reason=REASON)
