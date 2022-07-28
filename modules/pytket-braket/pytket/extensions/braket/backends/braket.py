@@ -814,7 +814,7 @@ class BraketBackend(Backend):
         aws_session: Optional[AwsSession] = kwargs.get("aws_session")
         if aws_session is None:
             if region is not None:
-                session = AwsSession(boto_session=boto3.session(region_name=region))
+                session = AwsSession(boto_session=boto3.Session(region_name=region))  # type: ignore
             else:
                 session = AwsSession()
         else:
