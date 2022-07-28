@@ -158,24 +158,19 @@ class _AerBaseBackend(Backend):
         handle_list: List[Optional[ResultHandle]] = [None] * len(circuits)
         circuit_batches, batch_order = _batch_circuits(circuits, n_shots_list)
 
+        reverse_index = replace_implicit_swaps = (
+            self.supports_state or self.supports_unitary
+        )
+
         for (n_shots, batch), indices in zip(circuit_batches, batch_order):
-        if self.supports_state:
-            reverse_index, replace_implicit_swaps = (True, True)
-            for qc in qcs:
-                qc.save_state()
-
-        elif self.supports_unitary:
-            reverse_index, replace_implicit_swaps = (True, True)
-            for qc in qcs:
-                qc.save_unitary()
-
-        qcs = [
-            tk_to_qiskit(
-                tkc, reverse_index=reverse_index, replace_implicit_swaps=replace_implicit_swaps
-            )
-            for tkc in batch
-        ]
-
+            qcs = []
+            for tkc in batch:
+                qc = tk_to_qiskit(tkc, reverse_index, replace_implicit_swaps)
+                if self.supports_state:
+                    qc.save_state()
+                elif self.supports_unitary:
+                    qc.save_unitary()
+                qcs.append(qc)
 
             seed = cast(Optional[int], kwargs.get("seed"))
             job = self._backend.run(
