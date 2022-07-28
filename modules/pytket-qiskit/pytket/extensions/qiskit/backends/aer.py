@@ -159,22 +159,23 @@ class _AerBaseBackend(Backend):
         circuit_batches, batch_order = _batch_circuits(circuits, n_shots_list)
 
         for (n_shots, batch), indices in zip(circuit_batches, batch_order):
-            if self._backend_info.device_name == "aer_simulator_statevector":
-                qcs = [
-                    tk_to_qiskit(tkc, reverse_index=True, replace_implicit_swaps=True)
-                    for tkc in batch
-                ]
-                for qc in qcs:
-                    qc.save_state()
-            elif self._backend_info.device_name == "aer_simulator_unitary":
-                qcs = [
-                    tk_to_qiskit(tkc, reverse_index=True, replace_implicit_swaps=True)
-                    for tkc in batch
-                ]
-                for qc in qcs:
-                    qc.save_unitary()
-            else:
-                qcs = [tk_to_qiskit(tkc) for tkc in batch]
+        if self.supports_state:
+            reverse_index, replace_implicit_swaps = (True, True)
+            for qc in qcs:
+                qc.save_state()
+
+        elif self.supports_unitary:
+            reverse_index, replace_implicit_swaps = (True, True)
+            for qc in qcs:
+                qc.save_unitary()
+
+        qcs = [
+            tk_to_qiskit(
+                tkc, reverse_index=reverse_index, replace_implicit_swaps=replace_implicit_swaps
+            )
+            for tkc in batch
+        ]
+
 
             seed = cast(Optional[int], kwargs.get("seed"))
             job = self._backend.run(
