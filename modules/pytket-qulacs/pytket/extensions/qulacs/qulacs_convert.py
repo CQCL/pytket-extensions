@@ -14,6 +14,7 @@
 
 """Conversion from to tket circuits to Qulacs circuits
 """
+from typing import List, Tuple
 import numpy as np
 from qulacs import QuantumCircuit, gate  # type: ignore
 from pytket.circuit import Circuit, OpType, Qubit  # type: ignore
@@ -36,6 +37,31 @@ _MEASURE_GATES = {OpType.Measure: gate.Measurement}
 _TWO_QUBIT_GATES = {OpType.CX: gate.CNOT, OpType.CZ: gate.CZ, OpType.SWAP: gate.SWAP}
 
 _IBM_GATES = {OpType.U1: gate.U1, OpType.U2: gate.U2, OpType.U3: gate.U3}
+
+
+def _get_implicit_swaps(circuit: Circuit) -> List[Tuple[Qubit, Qubit]]:
+    # We implement the implicit qubit permutation using SWAPs
+    qubits = circuit.qubits
+    perm = circuit.implicit_qubit_permutation()
+    # output wire -> qubit
+    qubit_2_wire = wire_2_qubit = {q: q for q in qubits}
+    # qubit -> output wire
+    swaps = []
+    for q in qubits:
+        q_wire = qubit_2_wire[q]
+        target_wire = perm[q]
+        if q_wire == target_wire:
+            continue
+        # find which qubit is on target_wire
+        p = wire_2_qubit[target_wire]
+        # swap p and q so q is on the target wire
+        swaps.append((q_wire, target_wire))
+        # update dicts
+        qubit_2_wire[q] = target_wire
+        qubit_2_wire[p] = q_wire
+        wire_2_qubit[q_wire] = p
+        wire_2_qubit[target_wire] = q
+    return swaps
 
 
 def tk_to_qulacs(
@@ -99,21 +125,10 @@ def tk_to_qulacs(
         qulacs_circ.add_gate(add_gate)
 
     if replace_implicit_swaps:
-        # We implement the implicit qubit permutation using SWAPs
-        # qubit -> output wire
-        perm = circuit.implicit_qubit_permutation()
-        # output wire -> qubit
-        wire_labels = {i: i for i in range(n_qubits)}
-        for q_wire in range(n_qubits):
-            q = wire_labels[q_wire]
-            p_wire = perm[Qubit(q)].index[0]
-            if q_wire == p_wire:
-                continue
-            p = wire_labels[p_wire]
-            # swap p and q so q is on the target wire
-            qulacs_circ.add_gate(gate.SWAP(index_map[q_wire], index_map[p_wire]))
-            # update wire_labels
-            wire_labels[p_wire] = q
-            wire_labels[q_wire] = p
+        swaps = _get_implicit_swaps(circuit)
+        for p, q in swaps:
+            qulacs_circ.add_gate(
+                gate.SWAP(index_map[p.index[0]], index_map[q.index[0]])
+            )
 
     return qulacs_circ
