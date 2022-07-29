@@ -6,14 +6,14 @@ pytket-extensions
    :align: right
 
 
-These extensions enable ``pytket`` to interface with different hardware platforms and classical simulators. One can also access additional quantum devices and simulators via the cloud through the extensions for `Azure <https://cqcl.github.io/pytket-extensions/api/qsharp/api.html#pytket.extensions.qsharp.AzureBackend>`_ and `Braket <https://cqcl.github.io/pytket-extensions/api/braket/api.html#pytket.extensions.braket.BraketBackend>`_ . 
+These extensions enable ``pytket`` to interface with different hardware platforms and classical simulators. One can also access additional quantum devices and simulators via the cloud through the extensions for `Azure <https://cqcl.github.io/pytket-extensions/api/qsharp/api.html#pytket.extensions.qsharp.AzureBackend>`_ and `Braket <https://cqcl.github.io/pytket-braket/api/api.html#pytket.extensions.braket.BraketBackend>`_ . 
 In pytket a ``Backend`` represents a connection to a QPU (Quantum Processing Unit) or simulator for processing quantum circuits. The types of ``Backend`` available in pytket are the following.
 
 Types of Backend
 ================
 
 * **QPUs** - These are real quantum computers that return shots based results. E.g the `QuantinuumBackend <https://cqcl.github.io/pytket-quantinuum/api/>`_ .
-* **Cloud Access** - Cloud backends allow pytket to interface with cloud platforms to access additional QPUs and simulators. E.g `BraketBackend <https://cqcl.github.io/pytket-extensions/api/braket/api.html#pytket.extensions.braket.BraketBackend>`_ .
+* **Cloud Access** - Cloud backends allow pytket to interface with cloud platforms to access additional QPUs and simulators. E.g `BraketBackend <https://cqcl.github.io/pytket-braket/api/api.html#pytket.extensions.braket.BraketBackend>`_ .
 * **Emulators** - These classically simulate a circuit and produce shots based results. Sometimes emulators use a noise model and have connectivity constraints to emulate real QPUs. E.g. `IBMQEmulatorBackend <https://cqcl.github.io/pytket-extensions/api/qiskit/api.html#pytket.extensions.qiskit.IBMQEmulatorBackend>`_ .
 * **Statevector Simulators** - Calculates the pure quantum state prepared by a circuit returning a vector/ndarray. Examples of statevector simulators are the `ForestStateBackend <https://cqcl.github.io/pytket-extensions/api/pyquil/api.html#pytket.extensions.pyquil.ForestStateBackend>`_ and the `AerStateBackend <https://cqcl.github.io/pytket-extensions/api/qiskit/api.html#pytket.extensions.qiskit.AerStateBackend>`_ . 
 * **Unitary Simulators** - Unitary simulators calculate the unitary operator that is applied by a circuit. A unitary matrix/ndarray is returned `AerUnitaryBackend <https://cqcl.github.io/pytket-extensions/api/qiskit/api.html#pytket.extensions.qiskit.AerUnitaryBackend>`_ is an example of such a simulator.
@@ -46,7 +46,7 @@ Cloud access
 `AzureBackend <https://cqcl.github.io/pytket-extensions/api/qsharp/api.html#pytket.extensions.qsharp.AzureBackend>`_
 Backend for running circuits remotely using Azure Quantum devices and simulators.
 
-`BraketBackend <https://cqcl.github.io/pytket-extensions/api/braket/api.html#pytket.extensions.braket.BraketBackend>`_
+`BraketBackend <https://cqcl.github.io/pytket-braket/api/api.html#pytket.extensions.braket.BraketBackend>`_
 Interface to Amazon Braket service.
 
 Emulators

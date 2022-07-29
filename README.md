@@ -14,10 +14,8 @@ Code for the following extensions is included here, each within its own
 subdirectory of the `modules` directory:
 
 * `pytket-aqt`
-* `pytket-braket`
 * `pytket-cirq`
 * `pytket-ionq`
-* `pytket-iqm`
 * `pytket-projectq`
 * `pytket-pyquil`
 * `pytket-pysimplex`
@@ -31,6 +29,8 @@ See the individual `README` files for descriptions.
 
 Other extensions can be found in other repos:
 
+* [pytket-braket](https://github.com/CQCL/pytket-braket)
+* [pytket-iqm](https://github.com/CQCL/pytket-iqm)
 * [pytket-quantinuum](https://github.com/CQCL/pytket-quantinuum)
 * [pytket-qujax](https://github.com/CQCL/pytket-qujax)
 
