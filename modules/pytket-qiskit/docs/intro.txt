@@ -16,7 +16,70 @@ representations.
 ``pytket-qiskit`` is available for Python 3.8, 3.9 and 3.10, on Linux, MacOS and
 Windows. To install, run:
 
-``pip install pytket-qiskit``
+::
+
+    pip install pytket-qiskit
+
+The ``pytket-qiskit`` extension has several types of available ``Backend``. These are the ``IBMQBackend``
+and several types of simulator.
+
+.. list-table:: **Backends available through pytket-qiskit**
+   :widths: 25 25
+   :header-rows: 1
+
+   * - Backend
+     - Type
+   * - `IBMQBackend <https://cqcl.github.io/pytket-extensions/api/qiskit/api.html#pytket.extensions.qiskit.IBMQBackend>`_
+     - Interface to an IBM quantum computer.
+   * - `IBMQEmulatorBackend <https://cqcl.github.io/pytket-extensions/api/qiskit/api.html#pytket.extensions.qiskit.IBMQEmulatorBackend>`_
+     - Emulator for a chosen ``IBMBackend`` (Device specific).
+   * - `AerBackend <https://cqcl.github.io/pytket-extensions/api/qiskit/api.html#pytket.extensions.qiskit.AerBackend>`_
+     - A noiseless, shots-based simulator for quantum circuits [1]
+   * - `AerStateBackend <https://cqcl.github.io/pytket-extensions/api/qiskit/api.html#pytket.extensions.qiskit.AerStateBackend>`_
+     - Statevector simulator.
+   * - `AerUnitaryBackend <https://cqcl.github.io/pytket-extensions/api/qiskit/api.html#pytket.extensions.qiskit.AerUnitaryBackend>`_ 
+     - Unitary simulator
+
+* [1] By default ``AerBackend`` is noiseless by default and has no architecture. However it can accept a user defined ``NoiseModel`` and ``Architecture``.
+
+Every ``Backend`` in pytket has its own ``default_compilation_pass`` method. This method applies a sequence of optimisations to a circuit depending on the value of an ``optimisation_level`` parameter. This default compilation will ensure that the circuit meets all the constraints required to run on the Backend. The passes applied by different levels of optimisation are specified in the table below.
+
+.. list-table:: **Default compilation pass for the IBMQBackend and IBMQEmulatorBackend**
+   :widths: 25 25 25
+   :header-rows: 1
+
+   * - optimisation_level = 0
+     - optimisation_level = 1 [1]
+     - optimisation_level = 2
+   * - `DecomposeBoxes <https://cqcl.github.io/tket/pytket/api/passes.html#pytket.passes.DecomposeBoxes>`_
+     - `DecomposeBoxes <https://cqcl.github.io/tket/pytket/api/passes.html#pytket.passes.DecomposeBoxes>`_
+     - `DecomposeBoxes <https://cqcl.github.io/tket/pytket/api/passes.html#pytket.passes.DecomposeBoxes>`_
+   * - `CXMappingPass <https://cqcl.github.io/tket/pytket/api passes.html#pytket.passes.CXMappingPass>`_ [2]
+     - `SynthesiseTket <https://cqcl.github.io/tket/pytket/api passes.html#pytket.passes.SynthesiseTket>`_
+     - `FullPeepholeOptimise <https://cqcl.github.io/tket/pytket/api passes.html#pytket.passes.FullPeepholeOptimise>`_
+   * - `NoiseAwarePlacement <https://cqcl.github.io/tket/pytket/api/placement.html#pytket.placement.NoiseAwarePlacement>`_
+     - `CXMappingPass <https://cqcl.github.io/tket/pytket/api/passes.html#pytket.passes.CXMappingPass>`_ [2]
+     - `CXMappingPass <https://cqcl.github.io/tket/pytket/api/passes.html#pytket.passes.CXMappingPass>`_ [2]
+   * - `NaivePlacementPass <https://cqcl.github.io/tket/pytket/api/placement.html#pytket.passes.NaivePlacementPass>`_
+     - `NaivePlacementPass <https://cqcl.github.io/tket/pytket/api/placement.html#pytket.passes.NaivePlacementPass>`_
+     - `NaivePlacementPass <https://cqcl.github.io/tket/pytket/api/placement.html#pytket.passes.NaivePlacementPass>`_
+   * - self.rebase_pass [3]
+     - `SynthesiseTket <https://cqcl.github.io/tket/pytket/api passes.html#pytket.passes.SynthesiseTket>`_
+     - `CliffordSimp(allow_swaps=False) <https://cqcl.github.io/tket/pytket/api/passes.html#pytket.passes.CliffordSimp>`_
+   * - `RemoveRedundancies <https://cqcl.github.io/tket/pytket/api/passes.html#pytket.passes.RemoveRedundancies>`_
+     - `SimplifyInitial <https://cqcl.github.io/tket/pytket/api/passes.html#pytket.passes.SimplifyInitial>`_
+     - `SynthesiseTket <https://cqcl.github.io/tket/pytket/api passes.html#pytket.passes.SynthesiseTket>`_
+   * -
+     - self.rebase_pass [3]
+     - `RemoveRedundancies <https://cqcl.github.io/tket/pytket/api/passes.html#pytket.passes.RemoveRedundancies>`_
+   * - 
+     -
+     - `SimplifyInitial <https://cqcl.github.io/tket/pytket/api/passes.html#pytket.passes.SimplifyInitial>`_
+     
+* [1] If no value is specified then ``optimisation_level`` defaults to a value of 1.
+* [2] Here ``CXMappingPass`` maps program qubits to the architecture using a `NoiseAwarePlacement <https://cqcl.github.io/tket/pytket/api/placement.html#pytket.placement.NoiseAwarePlacement>`_
+* [3] self.rebase_pass is a rebase to the IBM native gate set (e.g. {X, SX, Rz, CX}).
+* [4] The ``default_compilation_pass`` for ``AerBackend`` is the same as above except it doesn't use ``SimplifyInitial``.
 
 .. toctree::
     api.rst
