@@ -14,21 +14,25 @@ Code for the following extensions is included here, each within its own
 subdirectory of the `modules` directory:
 
 * `pytket-aqt`
-* `pytket-braket`
 * `pytket-cirq`
 * `pytket-ionq`
-* `pytket-iqm`
 * `pytket-projectq`
 * `pytket-pyquil`
 * `pytket-pysimplex`
 * `pytket-pyzx`
 * `pytket-qiskit`
 * `pytket-qsharp`
-* `pytket-quantinuum`
 * `pytket-qulacs`
 * `pytket-stim`
 
 See the individual `README` files for descriptions.
+
+Other extensions can be found in other repos:
+
+* [pytket-braket](https://github.com/CQCL/pytket-braket)
+* [pytket-iqm](https://github.com/CQCL/pytket-iqm)
+* [pytket-quantinuum](https://github.com/CQCL/pytket-quantinuum)
+* [pytket-qujax](https://github.com/CQCL/pytket-qujax)
 
 Note that most backend providers require you to set up credentials in order to
 submit jobs over the internet. These should be obtained directly from the
@@ -55,98 +59,7 @@ Please file bugs and feature requests on the Github
 
 ## Supported Backends
 
-Here you can see a list of supported backends sorted by category.
-
-### QPUs
-
-[IBMQBackend](https://cqcl.github.io/pytket-extensions/api/qiskit/api.html#pytket.extensions.qiskit.IBMQBackend)
-A backend for running circuits on remote IBMQ devices.
-
-[IonQBackend](https://cqcl.github.io/pytket-extensions/api/ionq/api.html#pytket.extensions.ionq.IonQBackend)
-Interface to an IonQ device.
-
-[ForestBackend](https://cqcl.github.io/pytket-extensions/api/pyquil/api.html#pytket.extensions.pyquil.ForestBackend)
-Interface to a Rigetti device.
-
-[ForestStateBackend](https://cqcl.github.io/pytket-extensions/api/pyquil/api.html#pytket.extensions.pyquil.ForestStateBackend)
-State-based interface to a Rigetti device.
-
-[AQTBackend](https://cqcl.github.io/pytket-extensions/api/aqt/api.html#pytket.extensions.aqt.AQTBackend)
-Interface to an AQT device or simulator.
-
-[QuantinuumBackend](https://cqcl.github.io/pytket-extensions/api/quantinuum/api.html#pytket.extensions.quantinuum.QuantinuumBackend)
-Interface to a Quantinuum device.
-
-### Cloud access
-
-[AzureBackend](https://cqcl.github.io/pytket-extensions/api/qsharp/api.html#pytket.extensions.qsharp.AzureBackend)
-Backend for running circuits remotely using Azure Quantum devices and simulators.
-
-[BraketBackend](https://cqcl.github.io/pytket-extensions/api/braket/api.html#pytket.extensions.braket.BraketBackend)
-Interface to Amazon Braket service.
-
-### Emulators
-
-[IBMQEmulatorBackend](https://cqcl.github.io/pytket-extensions/api/qiskit/api.html#pytket.extensions.qiskit.IBMQEmulatorBackend)
-A backend which uses the AerBackend to emulate the behaviour of IBMQBackend.
-
-### State vector simulators
-
-[CirqStateSampleBackend](https://cqcl.github.io/pytket-extensions/api/cirq/api.html#pytket.extensions.cirq.CirqStateSampleBackend)
-Backend for Cirq statevector simulator sampling.
-
-[CirqStateSimBackend](https://cqcl.github.io/pytket-extensions/api/cirq/api.html#pytket.extensions.cirq.CirqStateSimBackend)
-Backend for Cirq statevector simulator state return.
-
-[AerStateBackend](https://cqcl.github.io/pytket-extensions/api/qiskit/api.html#pytket.extensions.qiskit.AerStateBackend)
-Backend for running simulations on the Qiskit Aer Statevector simulator.
-
-[ProjectQBackend](https://cqcl.github.io/pytket-extensions/api/projectq/api.html#pytket.extensions.projectq.ProjectQBackend)
-Backend for running statevector simulations on the ProjectQ simulator.
-
-### Unitary simulators
-
-[AerUnitaryBackend](https://cqcl.github.io/pytket-extensions/api/qiskit/api.html#pytket.extensions.qiskit.AerUnitaryBackend)
-Backend for running simulations on the Qiskit Aer Unitary simulator.
-
-### Density matrix simulator
-
-[CirqDensityMatrixSampleBackend](https://cqcl.github.io/pytket-extensions/api/cirq/api.html#pytket.extensions.cirq.CirqDensityMatrixSampleBackend)
-Backend for Cirq density matrix simulator sampling.
-
-[CirqDensityMatrixSimBackend](https://cqcl.github.io/pytket-extensions/api/cirq/api.html#pytket.extensions.cirq.CirqDensityMatrixSimBackend)
-Backend for Cirq density matrix simulator density_matrix return.
-
-### Clifford simulator
-
-[CirqCliffordSampleBackend](https://cqcl.github.io/pytket-extensions/api/cirq/api.html#pytket.extensions.cirq.CirqCliffordSampleBackend)
-Backend for Cirq Clifford simulator sampling.
-
-[CirqCliffordSimBackend](https://cqcl.github.io/pytket-extensions/api/cirq/api.html#pytket.extensions.cirq.CirqCliffordSimBackend)
-Backend for Cirq Clifford simulator state return.
-
-[SimplexBackend](https://cqcl.github.io/pytket-extensions/api/pysimplex/api.html#pytket.extensions.pysimplex.SimplexBackend)
-Backend for simulating Clifford circuits using pysimplex.
-
-[StimBackend](https://cqcl.github.io/pytket-extensions/api/stim/api.html#pytket.extensions.stim.StimBackend)
-Backend for simulating Clifford circuits using Stim.
-
-### Other
-
-[AerBackend](https://cqcl.github.io/pytket-extensions/api/qiskit/api.html#pytket.extensions.qiskit.AerBackend)
-Backend for running simulations on the Qiskit Aer QASM simulator.
-
-[QulacsBackend](https://cqcl.github.io/pytket-extensions/api/qulacs/api.html#pytket.extensions.qulacs.QulacsBackend)
-Backend for running simulations on the Qulacs simulator.
-
-[QsharpSimulatorBackend](https://cqcl.github.io/pytket-extensions/api/qsharp/api.html#pytket.extensions.qsharp.QsharpSimulatorBackend)
-Backend for simulating a circuit using the QDK.
-
-[QsharpToffoliSimulatorBackend](https://cqcl.github.io/pytket-extensions/api/qsharp/api.html#pytket.extensions.qsharp.QsharpToffoliSimulatorBackend)
-Backend for simulating a Toffoli circuit using the QDK.
-
-[QsharpEstimatorBackend](https://cqcl.github.io/pytket-extensions/api/qsharp/api.html#pytket.extensions.qsharp.QsharpEstimatorBackend)
-Backend for estimating resources of a circuit using the QDK.
+For a list of accessible backends refer to the [documentation](https://cqcl.github.io/pytket-extensions/api/index.html).
 
 ## Development
 

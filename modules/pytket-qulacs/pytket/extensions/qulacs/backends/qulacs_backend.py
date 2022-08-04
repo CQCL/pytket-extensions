@@ -185,10 +185,12 @@ class QulacsBackend(Backend):
         for circuit, n_shots_circ in zip(circuits, n_shots_list):
             qulacs_state = self._sim(circuit.n_qubits)
             qulacs_state.set_zero_state()
-            qulacs_circ = tk_to_qulacs(circuit)
+            qulacs_circ = tk_to_qulacs(
+                circuit, reverse_index=True, replace_implicit_swaps=True
+            )
             qulacs_circ.update_quantum_state(qulacs_state)
             state = qulacs_state.get_vector()
-            qubits = sorted(circuit.qubits, reverse=True)
+            qubits = sorted(circuit.qubits, reverse=False)
             shots = None
             bits = None
             if n_shots_circ is not None:
@@ -215,8 +217,6 @@ class QulacsBackend(Backend):
                     "Global phase is dependent on a symbolic parameter, so cannot "
                     "adjust for phase"
                 )
-            implicit_perm = circuit.implicit_qubit_permutation()
-            qubits = [implicit_perm[qb] for qb in qubits]
             handle = ResultHandle(str(uuid4()))
             self._cache[handle] = {
                 "result": BackendResult(

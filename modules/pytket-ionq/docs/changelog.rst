@@ -1,6 +1,12 @@
 Changelog
 ~~~~~~~~~
 
+0.21.0 (August 2022)
+--------------------
+
+* Make ``qpu.harmony`` the default device name.
+* Updated pytket version requirement to 1.5.
+
 0.20.0 (July 2022)
 ------------------
 

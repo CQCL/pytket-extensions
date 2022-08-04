@@ -1,7 +1,7 @@
 # pytket-pysimplex
 
-[Pytket](https://cqcl.github.io/pytket) is a Python module for interfacing
-with TKET, a quantum compilation toolchain.
+[Pytket](https://cqcl.github.io/tket/pytket/api/index.html) is a python module for interfacing
+with CQC tket, a set of quantum programming tools.
 
 [Pysimplex](https://github.com/CQCL/simplex) is a Clifford circuit simulator
 optimized for large sparse circuits.

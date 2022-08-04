@@ -1,6 +1,13 @@
 Changelog
 ~~~~~~~~~
 
+0.26.0 (August 2022)
+--------------------
+
+* Updated cirq version requirement to 1.x.
+* Update conversion to support rx, ry, and rz operations.
+* Updated pytket version requirement to 1.5.
+
 0.25.0 (July 2022)
 ------------------
 
