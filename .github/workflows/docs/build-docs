@@ -137,6 +137,8 @@ if __name__ == "__main__":
             for module in get_all_modules():
                 content.append(f"\tpytket-{module} <{module}/index.html#http://>\n")
 
+            content.append(f"\tpytket-braket <{PYTKET_BRAKET_DOCS_LINK}>\n")
+            content.append(f"\tpytket-iqm <{PYTKET_IQM_DOCS_LINK}>\n")
             content.append(f"\tpytket-quantinuum <{PYTKET_QUANTINUUM_DOCS_LINK}>\n")
             content.append(f"\tpytket-qujax <{PYTKET_QUJAX_DOCS_LINK}>\n")
 
