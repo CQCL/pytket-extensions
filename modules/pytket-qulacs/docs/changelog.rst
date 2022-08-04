@@ -2,7 +2,7 @@ Changelog
 ~~~~~~~~~
 
 0.22.0 (August 2022)
--------------------
+--------------------
 
 * Improve state retrieval speed.
 * Updated pytket version requirement to 1.5.
