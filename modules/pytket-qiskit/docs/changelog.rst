@@ -1,6 +1,11 @@
 Changelog
 ~~~~~~~~~
 
+0.28.1 (August 2022)
+--------------------
+
+* Fix error in aer backend creation
+
 0.28.0 (August 2022)
 --------------------
 
