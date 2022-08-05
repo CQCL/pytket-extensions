@@ -641,18 +641,22 @@ def _process_model(noise_model: NoiseModel, gate_set: Set[OpType]) -> dict:
             generic_2q_qerrors_dict[(q0, q1)].append(
                 [error["instructions"], error["probabilities"]]
             )
-            coupling_map.append(qubits)
+
+            if qubits[0] != qubits[1]:
+                coupling_map.append(qubits)
 
     # free qubits (ie qubits with no link errors) have full connectivity
     free_qubits = set(node_errors).union(set(readout_errors)) - link_errors_qubits
 
     for q in free_qubits:
         for lq in link_errors_qubits:
-            coupling_map.append([q, lq])
-            coupling_map.append([lq, q])
+            if q != lq:
+                coupling_map.append([q, lq])
+                coupling_map.append([lq, q])
 
     for pair in itertools.permutations(free_qubits, 2):
-        coupling_map.append(pair)
+        if pair[0] != pair[1]:
+            coupling_map.append(pair)
 
     # map type (k1 -> k2) -> v[k1] -> v[k2]
     K1 = TypeVar("K1")
