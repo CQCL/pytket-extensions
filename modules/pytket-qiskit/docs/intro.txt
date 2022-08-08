@@ -20,10 +20,14 @@ Windows. To install, run:
 
     pip install pytket-qiskit
 
+
+Backends Available Through pytket-qiskit
+========================================
+
 The ``pytket-qiskit`` extension has several types of available ``Backend``. These are the ``IBMQBackend``
 and several types of simulator.
 
-.. list-table:: **Backends available through pytket-qiskit**
+.. list-table:: 
    :widths: 25 25
    :header-rows: 1
 
@@ -40,7 +44,19 @@ and several types of simulator.
    * - `AerUnitaryBackend <https://cqcl.github.io/pytket-extensions/api/qiskit/api.html#pytket.extensions.qiskit.AerUnitaryBackend>`_ 
      - Unitary simulator
 
-* [1] By default ``AerBackend`` is noiseless by default and has no architecture. However it can accept a user defined ``NoiseModel`` and ``Architecture``.
+* [1] ``AerBackend`` is noiseless by default and has no architecture. However it can accept a user defined ``NoiseModel`` and ``Architecture``.
+
+::
+
+    from pytket.extensions.qiskit import IBMQBackend
+    
+    backend = IBMQBackend('ibmq_guadalupe')
+
+Access and Credentials
+======================
+
+Default Compilation
+===================
 
 Every ``Backend`` in pytket has its own ``default_compilation_pass`` method. This method applies a sequence of optimisations to a circuit depending on the value of an ``optimisation_level`` parameter. This default compilation will ensure that the circuit meets all the constraints required to run on the Backend. The passes applied by different levels of optimisation are specified in the table below.
 
@@ -74,12 +90,31 @@ Every ``Backend`` in pytket has its own ``default_compilation_pass`` method. Thi
      - `RemoveRedundancies <https://cqcl.github.io/tket/pytket/api/passes.html#pytket.passes.RemoveRedundancies>`_
    * - 
      -
-     - `SimplifyInitial <https://cqcl.github.io/tket/pytket/api/passes.html#pytket.passes.SimplifyInitial>`_
+     - `SimplifyInitial <https://cqcl.github.io/tket/pytket/api/passes.html#pytket.passes.SimplifyInitial>`_ [5].
      
 * [1] If no value is specified then ``optimisation_level`` defaults to a value of 1.
 * [2] Here ``CXMappingPass`` maps program qubits to the architecture using a `NoiseAwarePlacement <https://cqcl.github.io/tket/pytket/api/placement.html#pytket.placement.NoiseAwarePlacement>`_
-* [3] self.rebase_pass is a rebase to the IBM native gate set (e.g. {X, SX, Rz, CX}).
+* [3] self.rebase_pass is a rebase to the gateset supported by the backend, For IBM quantum devices that is {X, SX, Rz, CX}.
 * [4] The ``default_compilation_pass`` for ``AerBackend`` is the same as above except it doesn't use ``SimplifyInitial``.
+* [5] ``SimplifyInitial`` has arguments ``allow_classical=False`` and ``create_all_qubits=True``.
+
+Backend Predicates
+==================
+
+Circuits must satisfy certain conditions before they can be processed on a device or simulator. In pytket these conditions are called predicates.
+
+All pytket-qiskit backends have the following two predicates.
+
+* `GateSetPredicate <https://cqcl.github.io/tket/pytket/api/predicates.html#pytket.predicates.GateSetPredicate>`_ - The circuit must contain only operations supported by the ``Backend``. To view supported Ops run ``BACKENDNAME.backend_info.gate_set``.
+* `NoSymbolsPredicate <https://cqcl.github.io/tket/pytket/api/predicates.html#pytket.predicates.NoSymbolsPredicate>`_ - Parameterised gates must have numerical values when the circuit is executed.
+
+The ``IBMQBackend`` and ``IBMQEmulatorBackend`` may also have the following predicates depending on the capabilities of the specified device.
+
+* `NoClassicalControlPredicate <https://cqcl.github.io/tket/pytket/api/predicates.html#pytket.predicates.NoClassicalControlPredicate>`_
+* `NoMidMeasurePredicate <https://cqcl.github.io/tket/pytket/api/predicates.html#pytket.predicates.NoMidMeasurePredicatePredicate>`_
+* `NoFastFeedforwardPredicate <https://cqcl.github.io/tket/pytket/api/predicates.html#pytket.predicates.NoFastFeedforwardPredicate>`_
+
+
 
 .. toctree::
     api.rst
