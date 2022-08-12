@@ -259,7 +259,7 @@ class IBMQBackend(Backend):
             k: v for k, v in characterisation.items() if k in characterisation_keys
         }
         supports_mid_measure = config.simulator or config.multi_meas_enabled
-        supports_fast_feedforward = supports_mid_measure
+        supports_fast_feedforward = False
         # simulator i.e. "ibmq_qasm_simulator" does not have `supported_instructions`
         # attribute
         gate_set = _tk_gate_set(backend)
