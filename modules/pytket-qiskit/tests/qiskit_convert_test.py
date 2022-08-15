@@ -690,5 +690,5 @@ def test_crx_and_cry() -> None:
     tk_circ.CRx(0.5, 0, 1)
     tk_circ.CRy(0.2, 1, 0)
     qiskit_circ = tk_to_qiskit(tk_circ)
-    ops_dict = qiskit_circ.count_ops
+    ops_dict = qiskit_circ.count_ops()
     assert ops_dict["crx"] == 1 and ops_dict["cry"] == 1
