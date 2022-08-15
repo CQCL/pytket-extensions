@@ -110,6 +110,8 @@ _qiskit_gates_2q = {
     # Exact equivalents (same signature except for factor of pi in each parameter):
     qiskit_gates.CHGate: OpType.CH,
     qiskit_gates.CPhaseGate: OpType.CU1,
+    qiskit_gates.CRXGate: OpType.CRx
+    qiskit_gates.CRYGate: OpType.CRy,
     qiskit_gates.CRZGate: OpType.CRz,
     qiskit_gates.CUGate: OpType.CU3,
     qiskit_gates.CU1Gate: OpType.CU1,
@@ -135,8 +137,6 @@ _qiskit_gates_other = {
     qiskit_gates.MCXGrayCode: OpType.CnX,
     qiskit_gates.MCXRecursive: OpType.CnX,
     qiskit_gates.MCXVChain: OpType.CnX,
-    # Note: should be OpType.CRy, but not currently available
-    qiskit_gates.CRYGate: OpType.CnRy,
     # Special types:
     Barrier: OpType.Barrier,
     Instruction: OpType.CircBox,
