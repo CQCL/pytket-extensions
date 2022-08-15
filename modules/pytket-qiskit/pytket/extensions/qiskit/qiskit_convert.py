@@ -152,11 +152,6 @@ _known_qiskit_gate = {**_qiskit_gates_1q, **_qiskit_gates_2q, **_qiskit_gates_ot
 # In such cases this reversal will select one or the other.
 _known_qiskit_gate_rev = {v: k for k, v in _known_qiskit_gate.items()}
 
-# One way mapping: CRY is a special case of CnRy, but not vice versa.
-# Constructing a qiskit CnRy gate is not just a single step,
-# so treat as a special case.
-del _known_qiskit_gate_rev[OpType.CnRy]
-
 # Ensure U3 maps to UGate. (U3Gate deprecated in Qiskit but equivalent.)
 _known_qiskit_gate_rev[OpType.U3] = qiskit_gates.UGate
 
