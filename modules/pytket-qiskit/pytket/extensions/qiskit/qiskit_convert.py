@@ -110,7 +110,7 @@ _qiskit_gates_2q = {
     # Exact equivalents (same signature except for factor of pi in each parameter):
     qiskit_gates.CHGate: OpType.CH,
     qiskit_gates.CPhaseGate: OpType.CU1,
-    qiskit_gates.CRXGate: OpType.CRx
+    qiskit_gates.CRXGate: OpType.CRx 
     qiskit_gates.CRYGate: OpType.CRy,
     qiskit_gates.CRZGate: OpType.CRz,
     qiskit_gates.CUGate: OpType.CU3,
