@@ -684,7 +684,7 @@ def test_convert_multi_c_reg() -> None:
     assert circ.get_commands()[0].args == [m0, q1]
 
 
-# test that tk_to_qiskit works after adding OpType.CRx and OpType.CRy (TKET-2386)
+# test that tk_to_qiskit works after adding OpType.CRx and OpType.CRy
 def test_crx_and_cry() -> None:
     tk_circ = Circuit(2)
     tk_circ.CRx(0.5, 0, 1)
