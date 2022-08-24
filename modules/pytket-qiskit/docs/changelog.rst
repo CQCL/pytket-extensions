@@ -1,6 +1,11 @@
 Changelog
 ~~~~~~~~~
 
+0.29.0 (unreleased)
+-------------------
+
+* Add post-routing ``KAKDecomposition`` to default pass with ``optimisation_level`` = 2.
+
 0.28.0 (August 2022)
 --------------------
 
