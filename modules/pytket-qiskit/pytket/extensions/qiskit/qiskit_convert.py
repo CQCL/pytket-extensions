@@ -119,6 +119,7 @@ _qiskit_gates_2q = {
     qiskit_gates.CXGate: OpType.CX,
     qiskit_gates.CYGate: OpType.CY,
     qiskit_gates.CZGate: OpType.CZ,
+    qiskit_gates.ECRGate: OpType.ECR,
     qiskit_gates.iSwapGate: OpType.ISWAPMax,
     qiskit_gates.RXXGate: OpType.XXPhase,
     qiskit_gates.RYYGate: OpType.YYPhase,

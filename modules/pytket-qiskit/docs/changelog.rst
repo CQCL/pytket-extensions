@@ -5,6 +5,7 @@ Changelog
 -------------------
 
 * Add post-routing ``KAKDecomposition`` to default pass with ``optimisation_level`` = 2.
+* Add support for ``ECRGate`` in ``tk_to_qiskit`` conversion.
 
 0.28.0 (August 2022)
 --------------------
