@@ -17,8 +17,10 @@ import warnings
 import numpy as np
 from qulacs import QuantumCircuit, QuantumState  # type: ignore
 from qulacs.state import inner_product  # type: ignore
-from pytket.circuit import Circuit, OpType  # type: ignore
+from pytket.circuit import Circuit, OpType, Qubit  # type: ignore
+from pytket.passes import CliffordSimp  # type: ignore
 from pytket.extensions.qulacs import tk_to_qulacs
+from pytket.extensions.qulacs.qulacs_convert import _get_implicit_swaps
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.warn("this will not show", DeprecationWarning)
@@ -94,3 +96,25 @@ def test_rotations() -> None:
     v = state.get_vector()
     assert np.isclose(v[0], np.sqrt(0.5))
     assert np.isclose(v[1], -1j * np.sqrt(0.5))
+
+
+def test_implicit_swaps() -> None:
+    swap_c = Circuit(6)
+    swap_c.SWAP(0, 1).SWAP(1, 2).SWAP(2, 3).SWAP(0, 4).SWAP(1, 5)
+    CliffordSimp(True).apply(swap_c)
+    assert len(swap_c.get_commands()) == 0
+    assert swap_c.phase == 0.0
+    assert swap_c.implicit_qubit_permutation() == {
+        Qubit(0): Qubit(3),
+        Qubit(1): Qubit(4),
+        Qubit(2): Qubit(5),
+        Qubit(3): Qubit(2),
+        Qubit(4): Qubit(0),
+        Qubit(5): Qubit(1),
+    }
+    swaps = _get_implicit_swaps(swap_c)
+
+    c2 = Circuit(6)
+    for p, q in swaps:
+        c2.SWAP(p, q)
+    assert np.allclose(swap_c.get_unitary(), c2.get_unitary())

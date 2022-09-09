@@ -51,6 +51,7 @@ from pytket.extensions.qiskit._metadata import __extension_version__
 from pytket.passes import (  # type: ignore
     BasePass,
     auto_rebase_pass,
+    KAKDecomposition,
     RemoveRedundancies,
     SequencePass,
     SynthesiseTket,
@@ -348,7 +349,13 @@ class IBMQBackend(Backend):
         if optimisation_level == 1:
             passlist.append(SynthesiseTket())
         if optimisation_level == 2:
-            passlist.extend([CliffordSimp(False), SynthesiseTket()])
+            passlist.extend(
+                [
+                    KAKDecomposition(allow_swaps=False),
+                    CliffordSimp(False),
+                    SynthesiseTket(),
+                ]
+            )
         if self._standard_gateset:
             passlist.extend([self.rebase_pass(), RemoveRedundancies()])
         if optimisation_level > 0:

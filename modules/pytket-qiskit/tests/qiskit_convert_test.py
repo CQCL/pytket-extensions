@@ -95,6 +95,7 @@ def get_test_circuit(measure: bool, reset: bool = True) -> QuantumCircuit:
     qc.cu(pi / 4, pi / 5, pi / 6, 0, qr[3], qr[0])
     qc.cy(qr[0], qr[1])
     qc.cz(qr[1], qr[2])
+    qc.ecr(qr[0], qr[1])
     qc.i(qr[2])
     qc.iswap(qr[3], qr[0])
     qc.mct([qr[0], qr[1], qr[2]], qr[3])
@@ -682,3 +683,13 @@ def test_convert_multi_c_reg() -> None:
     qcirc = tk_to_qiskit(c)
     circ = qiskit_to_tk(qcirc)
     assert circ.get_commands()[0].args == [m0, q1]
+
+
+# test that tk_to_qiskit works after adding OpType.CRx and OpType.CRy
+def test_crx_and_cry() -> None:
+    tk_circ = Circuit(2)
+    tk_circ.CRx(0.5, 0, 1)
+    tk_circ.CRy(0.2, 1, 0)
+    qiskit_circ = tk_to_qiskit(tk_circ)
+    ops_dict = qiskit_circ.count_ops()
+    assert ops_dict["crx"] == 1 and ops_dict["cry"] == 1

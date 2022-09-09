@@ -1,10 +1,18 @@
 Changelog
 ~~~~~~~~~
 
-0.28.0 (unreleased)
+0.29.0 (unreleased)
 -------------------
 
+* Add post-routing ``KAKDecomposition`` to default pass with ``optimisation_level`` = 2.
+* Add support for ``ECRGate`` in ``tk_to_qiskit`` conversion.
+
+0.28.0 (August 2022)
+--------------------
+
+* Improve result retrieval speed of ``AerUnitaryBackend`` and ``AerStateBackend``.
 * Update qiskit version to 0.37.
+* Updated pytket version requirement to 1.5.
 
 0.27.0 (July 2022)
 ------------------

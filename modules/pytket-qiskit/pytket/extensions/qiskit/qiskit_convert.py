@@ -110,6 +110,8 @@ _qiskit_gates_2q = {
     # Exact equivalents (same signature except for factor of pi in each parameter):
     qiskit_gates.CHGate: OpType.CH,
     qiskit_gates.CPhaseGate: OpType.CU1,
+    qiskit_gates.CRXGate: OpType.CRx,
+    qiskit_gates.CRYGate: OpType.CRy,
     qiskit_gates.CRZGate: OpType.CRz,
     qiskit_gates.CUGate: OpType.CU3,
     qiskit_gates.CU1Gate: OpType.CU1,
@@ -117,6 +119,7 @@ _qiskit_gates_2q = {
     qiskit_gates.CXGate: OpType.CX,
     qiskit_gates.CYGate: OpType.CY,
     qiskit_gates.CZGate: OpType.CZ,
+    qiskit_gates.ECRGate: OpType.ECR,
     qiskit_gates.iSwapGate: OpType.ISWAPMax,
     qiskit_gates.RXXGate: OpType.XXPhase,
     qiskit_gates.RYYGate: OpType.YYPhase,
@@ -135,8 +138,6 @@ _qiskit_gates_other = {
     qiskit_gates.MCXGrayCode: OpType.CnX,
     qiskit_gates.MCXRecursive: OpType.CnX,
     qiskit_gates.MCXVChain: OpType.CnX,
-    # Note: should be OpType.CRy, but not currently available
-    qiskit_gates.CRYGate: OpType.CnRy,
     # Special types:
     Barrier: OpType.Barrier,
     Instruction: OpType.CircBox,
@@ -151,11 +152,6 @@ _known_qiskit_gate = {**_qiskit_gates_1q, **_qiskit_gates_2q, **_qiskit_gates_ot
 # Some qiskit gates are aliases (e.g. UGate and U3Gate).
 # In such cases this reversal will select one or the other.
 _known_qiskit_gate_rev = {v: k for k, v in _known_qiskit_gate.items()}
-
-# One way mapping: CRY is a special case of CnRy, but not vice versa.
-# Constructing a qiskit CnRy gate is not just a single step,
-# so treat as a special case.
-del _known_qiskit_gate_rev[OpType.CnRy]
 
 # Ensure U3 maps to UGate. (U3Gate deprecated in Qiskit but equivalent.)
 _known_qiskit_gate_rev[OpType.U3] = qiskit_gates.UGate
@@ -539,11 +535,42 @@ def append_tk_command_to_qiskit(
     return qcirc.append(g, qargs=qargs)
 
 
-def tk_to_qiskit(tkcirc: Circuit) -> QuantumCircuit:
+def _get_implicit_swaps(circuit: Circuit) -> List[Tuple[Qubit, Qubit]]:
+    # We implement the implicit qubit permutation using SWAPs
+    qubits = circuit.qubits
+    perm = circuit.implicit_qubit_permutation()
+    # output wire -> qubit
+    qubit_2_wire = wire_2_qubit = {q: q for q in qubits}
+    # qubit -> output wire
+    swaps = []
+    for q in qubits:
+        q_wire = qubit_2_wire[q]
+        target_wire = perm[q]
+        if q_wire == target_wire:
+            continue
+        # find which qubit is on target_wire
+        p = wire_2_qubit[target_wire]
+        # swap p and q so q is on the target wire
+        swaps.append((q_wire, target_wire))
+        # update dicts
+        qubit_2_wire[q] = target_wire
+        qubit_2_wire[p] = q_wire
+        wire_2_qubit[q_wire] = p
+        wire_2_qubit[target_wire] = q
+    return swaps
+
+
+def tk_to_qiskit(
+    tkcirc: Circuit, reverse_index: bool = False, replace_implicit_swaps: bool = False
+) -> QuantumCircuit:
     """Convert back
 
     :param tkcirc: A circuit to be converted
     :type tkcirc: Circuit
+    :param reverse_index: Reverse the order of wires
+    :type reverse_index: bool
+    :param replace_implicit_swaps: Implement implicit permutation using SWAPs
+    :type replace_implicit_swaps: bool
     :return: The converted circuit
     :rtype: QuantumCircuit
     """
@@ -593,6 +620,17 @@ def tk_to_qiskit(tkcirc: Circuit) -> QuantumCircuit:
             new_p.__init__(p_name)
             updates[p] = new_p
     qcirc.assign_parameters(updates, inplace=True)
+
+    if replace_implicit_swaps:
+        swaps = _get_implicit_swaps(tkc)
+        for p, q in swaps:
+            qcirc.swap(
+                qregmap[p.reg_name][p.index[0]],
+                qregmap[q.reg_name][q.index[0]],
+            )
+
+    if reverse_index:
+        return qcirc.reverse_bits()
     return qcirc
 
 
