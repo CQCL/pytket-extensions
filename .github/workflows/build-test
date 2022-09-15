@@ -39,10 +39,6 @@ function unsupported() {
             # Cannot install qsharp on Windows with 3.10.
             [[ "${PLAT}" == "Windows" && ${PYVER} == "3.10" ]] && return
             ;;
-        pytket-qulacs)
-            # Cannot install qulacs on MacOS or Windows with 3.10.
-            [[ "${PLAT}" != "Linux" && "${PYVER}" == "3.10" ]] && return
-            ;;
         *)
             false
             ;;
