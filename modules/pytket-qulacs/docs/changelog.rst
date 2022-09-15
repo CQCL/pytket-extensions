@@ -1,7 +1,7 @@
 Changelog
 ~~~~~~~~~
 
-0.22.0 (unreleased)
+0.23.0 (unreleased)
 -------------------
 
 * Updated qulacs version requirement to 0.5.
