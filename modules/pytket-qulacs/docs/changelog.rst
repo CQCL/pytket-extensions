@@ -1,6 +1,12 @@
 Changelog
 ~~~~~~~~~
 
+0.22.0 (unreleased)
+-------------------
+
+* Updated qulacs version requirement to 0.5.
+* Updated pytket version requirement to 1.6.
+
 0.22.0 (August 2022)
 --------------------
 
