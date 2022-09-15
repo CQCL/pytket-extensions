@@ -531,7 +531,10 @@ def append_tk_command_to_qiskit(
         ) from error
     params = _get_params(op, symb_map)
     g = gatetype(*params)
-    qcirc.global_phase += phase * sympy.pi
+    if isinstance(qcirc.global_phase, ParameterExpression):
+        qcirc.global_phase += phase * np.pi
+    else:
+        qcirc.global_phase += phase * sympy.pi
     return qcirc.append(g, qargs=qargs)
 
 
