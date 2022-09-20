@@ -128,4 +128,4 @@ Other
 - Backend for estimating resources of a circuit using the QDK.
 
 .. _pytket: https://cqcl.github.io/tket/pytket/api/
-.. _CQC: https://cambridgequantum.com
+.. _Quantinuum: https://quantinuum.com
