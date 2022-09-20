@@ -1,8 +1,8 @@
 pytket-ionq
 ===========
 
-.. image:: CQCLogo.png
-   :width: 120px
+.. image:: Quantinuum_logo.png
+   :width: 160px
    :align: right
 
 ``pytket-ionq`` is an extension to ``pytket`` that allows ``pytket`` circuits to

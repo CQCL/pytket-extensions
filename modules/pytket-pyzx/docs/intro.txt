@@ -1,8 +1,8 @@
 pytket-pyzx
 ===========
 
-.. image:: CQCLogo.png
-   :width: 120px
+.. image:: Quantinuum_logo.png
+   :width: 160px
    :align: right
 
 `PyZX <https://github.com/Quantomatic/pyzx>`_ is an open-source Python library for
@@ -15,7 +15,9 @@ PyZX representations.
 ``pytket-pyzx`` is available for Python 3.8, 3.9 and 3.10, on Linux, MacOS and
 Windows. To install, run:
 
-``pip install pytket-pyzx``
+::
+
+   pip install pytket-pyzx
 
 .. toctree::
     api.rst
