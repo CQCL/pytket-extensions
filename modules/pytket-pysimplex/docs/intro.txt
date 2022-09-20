@@ -1,8 +1,8 @@
 pytket-pysimplex
 ==================================
 
-.. image:: CQCLogo.png
-   :width: 120px
+.. image:: Quantinuum_logo.png
+   :width: 160px
    :align: right
 
 `Pysimplex <https://github.com/CQCL/simplex>`_ is a Clifford simulator optimized
@@ -14,7 +14,9 @@ circuits to be simulated using ``pysimplex``.
 ``pytket-pysimplex`` is available for Python 3.8, 3.9 and 3.10, on Linux, MacOS
 and Windows. To install, run:
 
-``pip install pytket-pysimplex``
+::
+
+   pip install pytket-pysimplex
 
 .. toctree::
     api.rst

@@ -11,7 +11,9 @@ be executed on IonQ's quantum devices.
 ``pytket-ionq`` is available for Python 3.8, 3.9 and 3.10, on Linux, MacOS and
 Windows. To install, run:
 
-``pip install pytket-ionq``
+::
+
+   pip install pytket-ionq
 
 
 .. note::   Requires an `IonQ <https://ionq.com/>`_ account.
