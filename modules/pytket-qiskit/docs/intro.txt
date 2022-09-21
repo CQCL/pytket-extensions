@@ -1,8 +1,8 @@
 pytket-qiskit
 ==================================
 
-.. image:: CQCLogo.png
-   :width: 120px
+.. image:: Quantinuum_logo.png
+   :width: 160px
    :align: right
 
 IBM's `Qiskit <https://qiskit.org>`_ is an open-source framework for quantum
@@ -16,7 +16,9 @@ representations.
 ``pytket-qiskit`` is available for Python 3.8, 3.9 and 3.10, on Linux, MacOS and
 Windows. To install, run:
 
-``pip install pytket-qiskit``
+::
+   
+   pip install pytket-qiskit
 
 .. toctree::
     api.rst

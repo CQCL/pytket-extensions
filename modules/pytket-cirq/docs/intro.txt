@@ -1,8 +1,8 @@
 pytket-cirq
 ===========
 
-.. image:: CQCLogo.png
-   :width: 120px
+.. image:: Quantinuum_logo.png
+   :width: 160px
    :align: right
 
 `Cirq <https://www.github.com/quantumlib/cirq>`_ is a python library for producing
@@ -14,7 +14,9 @@ Cirq representations.
 ``pytket-cirq`` is available for Python 3.8, 3.9 and 3.10, on Linux, MacOS and
 Windows. To install, run:
 
-``pip install pytket-cirq``
+::
+
+   pip install pytket-cirq
 
 .. toctree::
     api.rst

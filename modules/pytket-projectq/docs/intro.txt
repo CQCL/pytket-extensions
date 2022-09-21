@@ -1,8 +1,8 @@
 pytket-projectq
 ===============
 
-.. image:: CQCLogo.png
-   :width: 120px
+.. image:: Quantinuum_logo.png
+   :width: 160px
    :align: right
 
 `ProjectQ <https://github.com/ProjectQ-Framework/ProjectQ>`_ is an open-source
@@ -15,7 +15,9 @@ representation.
 ``pytket-projectq`` is available for Python 3.8, 3.9 and 3.10, on Linux, MacOS
 and Windows. To install, run:
 
-``pip install pytket-projectq``
+::
+
+    pip install pytket-projectq
 
 .. warning::
     ``pytket-projectq`` currently cannot be installed on MacOS Big Sur due to a compatibility issue in ProjectQ <= 0.5.1.
