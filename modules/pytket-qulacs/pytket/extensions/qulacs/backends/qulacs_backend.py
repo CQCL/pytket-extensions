@@ -123,7 +123,7 @@ class QulacsBackend(Backend):
 
     @property
     def backend_info(self) -> Optional["BackendInfo"]:
-        return None
+        return self._backend_info
 
     @property
     def required_predicates(self) -> List[Predicate]:
