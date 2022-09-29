@@ -1,8 +1,8 @@
 pytket-stim
 ==================================
 
-.. image:: CQCLogo.png
-   :width: 120px
+.. image:: Quantinuum_logo.png
+   :width: 160px
    :align: right
 
 `Stim <https://github.com/quantumlib/Stim>`_ is an optimized Clifford circuit
@@ -14,7 +14,9 @@ to be simulated using ``stim``.
 ``pytket-stim`` is available for Python 3.8, 3.9 and 3.10, on Linux, MacOS and
 Windows. To install, run:
 
-``pip install pytket-stim``
+::
+   
+   pip install pytket-stim
 
 .. toctree::
     api.rst

@@ -14,6 +14,7 @@
 
 from typing import cast, List, Optional, Sequence, Union
 from uuid import uuid4
+from pytket.architecture import Architecture  # type: ignore
 from pytket.backends import (
     Backend,
     CircuitNotRunError,
@@ -21,9 +22,11 @@ from pytket.backends import (
     ResultHandle,
     StatusEnum,
 )
+from pytket.backends.backendinfo import BackendInfo
 from pytket.backends.backendresult import BackendResult
 from pytket.backends.resulthandle import _ResultIdTuple
 from pytket.circuit import Circuit, OpType  # type: ignore
+from pytket.extensions.stim._metadata import __extension_version__
 from pytket.passes import (  # type: ignore
     BasePass,
     DecomposeBoxes,
@@ -121,6 +124,20 @@ class StimBackend(Backend):
 
     _supports_shots = True
     _supports_counts = True
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._backend_info = BackendInfo(
+            type(self).__name__,
+            None,
+            __extension_version__,
+            Architecture([]),
+            set(_gate.keys()),
+        )
+
+    @property
+    def backend_info(self) -> Optional[BackendInfo]:
+        return self._backend_info
 
     @property
     def required_predicates(self) -> List[Predicate]:

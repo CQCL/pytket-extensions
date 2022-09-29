@@ -1,8 +1,8 @@
 pytket-qulacs
 ==================================
 
-.. image:: CQCLogo.png
-   :width: 120px
+.. image:: Quantinuum_logo.png
+   :width: 160px
    :align: right
 
 `Qulacs <https://docs.qulacs.org/en/latest/index.html>`_ is an optimized quantum
@@ -14,7 +14,9 @@ to be simulated using ``qulacs``.
 ``pytket-qulacs`` is available for Python 3.8 and 3.9 on Linux, MacOS and
 Windows, and also for Python 3.10 on Linux. To install, run:
 
-``pip install pytket-qulacs``
+::
+   
+   pip install pytket-qulacs
 
 GPU acceleration
 ~~~~~~~~~~~~~~~~
@@ -29,7 +31,9 @@ toolset. For platform-specific instructions on how to do this, see:
 
 Afterwards, install ``qulacs-gpu``:
 
-``pip install qulacs-gpu``
+::
+   
+   pip install qulacs-gpu
 
 The ``QulacsGPUBackend`` has an identical API to the ``QulacsBackend``.
 

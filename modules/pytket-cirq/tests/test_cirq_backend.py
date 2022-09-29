@@ -15,6 +15,7 @@
 from collections import Counter
 from typing import List
 import math
+
 from hypothesis import given, strategies
 import numpy as np
 import pytest
@@ -31,6 +32,7 @@ from pytket.extensions.cirq.backends.cirq import (
 )
 from pytket.circuit import Circuit, Qubit, Bit  # type: ignore
 from pytket.backends import StatusEnum
+from pytket.backends.backendinfo import BackendInfo
 from pytket.predicates import GateSetPredicate  # type: ignore
 from cirq.contrib.noise_models import DepolarizingNoiseModel  # type: ignore
 
@@ -367,9 +369,9 @@ def test_invalid_n_shots_in_sim_backends(cirq_backend: _CirqSimBackend) -> None:
         CirqCliffordSimBackend(),
     ],
 )
-def test_backend_info_and_characterisation_are_none(
+def test_backend_info_is_set_and_characterisation_is_none(
     cirq_backend: _CirqBaseBackend,
 ) -> None:
     b = cirq_backend
-    assert b.backend_info == None
-    assert b.characterisation == None
+    assert isinstance(b.backend_info, BackendInfo)
+    assert b.characterisation is None
