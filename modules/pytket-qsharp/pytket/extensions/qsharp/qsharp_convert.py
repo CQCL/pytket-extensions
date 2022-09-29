@@ -41,7 +41,7 @@ def cmd_body(op: Op, qbs: List[int]) -> str:
     elif optype == OpType.H:
         return "H(q[{}])".format(*qbs)
     elif optype == OpType.noop:
-        pass
+        return ""
     elif optype == OpType.Rx:
         return "Rx({}, q[{}])".format(pi * op.params[0], qbs[0])
     elif optype == OpType.Ry:
