@@ -16,7 +16,7 @@ as well as local simulators and resource estimators from the Microsoft QDK.
 ## Getting started
 
 `pytket-qsharp` is available for Python 3.8, 3.9 and 3.10, on Linux, MacOS and
-Windows (except for Windows with 3.10). To install, run:
+Windows. To install, run:
 
 ```pip install pytket-qsharp```
 
