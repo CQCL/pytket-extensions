@@ -15,7 +15,7 @@ PYTKET_QUANTINUUM_DOCS_LINK = "https://cqcl.github.io/pytket-quantinuum/api/inde
 PYTKET_QUJAX_DOCS_LINK = "https://cqcl.github.io/pytket-qujax/api/index.html"
 PYTKET_BRAKET_DOCS_LINK = "https://cqcl.github.io/pytket-braket/api/index.html"
 PYTKET_IQM_DOCS_LINK = "https://cqcl.github.io/pytket-iqm/api/index.html"
-
+PYTKET_PENNYLANE_DOCS_LINK ="https://cqcl.github.io/pytket-pennylane/api/"
 
 def get_all_modules():
     all_mods = []
@@ -68,6 +68,7 @@ def build_module_docs(module):
         content.append(f"\tpytket-iqm <{PYTKET_IQM_DOCS_LINK}>\n")
         content.append(f"\tpytket-quantinuum <{PYTKET_QUANTINUUM_DOCS_LINK}>\n")
         content.append(f"\tpytket-qujax <{PYTKET_QUJAX_DOCS_LINK}>\n")
+        content.append(f"\tpytket-pennylane <{PYTKET_PENNYLANE_DOCS_LINK}>\n")
         content.append(
             "\n.. toctree::\n\t:caption: More documentation:\n\t:maxdepth: 1\n\n"
         )
@@ -141,6 +142,7 @@ if __name__ == "__main__":
             content.append(f"\tpytket-iqm <{PYTKET_IQM_DOCS_LINK}>\n")
             content.append(f"\tpytket-quantinuum <{PYTKET_QUANTINUUM_DOCS_LINK}>\n")
             content.append(f"\tpytket-qujax <{PYTKET_QUJAX_DOCS_LINK}>\n")
+            content.append(f"\tpytket-pennylane <{PYTKET_PENNYLANE_DOCS_LINK}>\n")
 
             content.append(
                 "\n.. toctree::\n\t:caption: More documentation:\n\t:maxdepth: 1\n\n"
