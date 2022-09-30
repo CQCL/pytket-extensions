@@ -68,7 +68,7 @@ def build_module_docs(module):
         content.append(f"\tpytket-iqm <{PYTKET_IQM_DOCS_LINK}>\n")
         content.append(f"\tpytket-quantinuum <{PYTKET_QUANTINUUM_DOCS_LINK}>\n")
         content.append(f"\tpytket-qujax <{PYTKET_QUJAX_DOCS_LINK}>\n")
-        ontent.append(f"\tpytket-pennylane <{PYTKET_PENNYLANE_DOCS_LINK}>\n")
+        content.append(f"\tpytket-pennylane <{PYTKET_PENNYLANE_DOCS_LINK}>\n")
         content.append(
             "\n.. toctree::\n\t:caption: More documentation:\n\t:maxdepth: 1\n\n"
         )
