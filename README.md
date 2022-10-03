@@ -1,7 +1,7 @@
 # Pytket Extensions
 
-This repository contains a collection of Python extension modules for CQC's
-[pytket](https://cqcl.github.io/tket/pytket/api/index.html) quantum SDK.
+This repository contains a collection of Python extension modules for 
+[pytket](https://cqcl.github.io/tket/pytket/api/index.html), a quantum computing toolkit and optimising compiler developed by Quantinuum.
 
 Each of these modules provides one or several _backends_ (interfaces to devices
 or simulators), _frontends_ (interfaces to other high-level quantum languages),
@@ -33,6 +33,7 @@ Other extensions can be found in other repos:
 * [pytket-iqm](https://github.com/CQCL/pytket-iqm)
 * [pytket-quantinuum](https://github.com/CQCL/pytket-quantinuum)
 * [pytket-qujax](https://github.com/CQCL/pytket-qujax)
+* [pytket-pennylane](https://github.com/CQCL/pytket-pennylane)
 
 Note that most backend providers require you to set up credentials in order to
 submit jobs over the internet. These should be obtained directly from the
@@ -52,10 +53,12 @@ and methods into the `pytket.extensions` namespace.
 Full documentation for all these extension module is available
 [here](https://cqcl.github.io/pytket-extensions/api/index.html).
 
-## Bugs and feature requests
+## Bugs, support and feature requests
 
 Please file bugs and feature requests on the Github
 [issue tracker](https://github.com/CQCL/pytket-extensions/issues).
+
+There is also a Slack channel for discussion and support. Click [here](https://tketusers.slack.com/join/shared_invite/zt-18qmsamj9-UqQFVdkRzxnXCcKtcarLRA#/shared-invite/email) to join.
 
 ## Supported Backends
 

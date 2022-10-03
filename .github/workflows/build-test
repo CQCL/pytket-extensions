@@ -35,9 +35,6 @@ python -m pip install --upgrade pip wheel build
 
 function unsupported() {
     case "$1" in
-        pytket-qsharp)
-            # Cannot install qsharp on Windows with 3.10.
-            [[ "${PLAT}" == "Windows" && ${PYVER} == "3.10" ]] && return
             ;;
         *)
             false
@@ -47,17 +44,6 @@ function unsupported() {
 
 function skip_tests() {
     case "$1" in
-        pytket-qsharp)
-            case "${PLAT}" in
-                Darwin)
-                    # Test timeout issues
-                    [[ ${PYVER} == "3.10" ]] && return
-                    ;;
-                *)
-                    false
-                    ;;
-            esac
-            ;;
         *)
             false
             ;;
@@ -65,7 +51,8 @@ function skip_tests() {
 }
 
 # Generate and install the package
-if ! (unsupported ${MODULE}) ; then
+if ! (
+${MODULE}) ; then
     echo "${MODULE}..."
     cd ${MODULEDIR}/${MODULE}
     python -m build
