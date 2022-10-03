@@ -92,18 +92,18 @@ def tk_to_qulacs(
                 )
 
         elif optype in _ONE_QUBIT_GATES:
-            qulacs_gate = _ONE_QUBIT_GATES[optype]
+            qulacs_gate = _ONE_QUBIT_GATES[optype]  # type: ignore
             index = index_map[com.qubits[0].index[0]]
             add_gate = qulacs_gate(index)
 
         elif optype in _ONE_QUBIT_ROTATIONS:
-            qulacs_gate = _ONE_QUBIT_ROTATIONS[optype]
+            qulacs_gate = _ONE_QUBIT_ROTATIONS[optype]  # type: ignore
             index = index_map[com.qubits[0].index[0]]
             param = com.op.params[0] * np.pi
             add_gate = qulacs_gate(index, -param)  # parameter negated for qulacs
 
         elif optype in _TWO_QUBIT_GATES:
-            qulacs_gate = _TWO_QUBIT_GATES[optype]
+            qulacs_gate = _TWO_QUBIT_GATES[optype]  # type: ignore
             id1 = index_map[com.qubits[0].index[0]]
             id2 = index_map[com.qubits[1].index[0]]
             add_gate = qulacs_gate(id1, id2)
