@@ -50,8 +50,7 @@ function skip_tests() {
 }
 
 # Generate and install the package
-if ! (
-${MODULE}) ; then
+if ! (unsupported ${MODULE}) ; then
     echo "${MODULE}..."
     cd ${MODULEDIR}/${MODULE}
     python -m build
