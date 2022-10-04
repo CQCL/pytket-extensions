@@ -1,8 +1,8 @@
 pytket-qsharp
 ==================================
 
-.. image:: CQCLogo.png
-   :width: 120px
+.. image:: Quantinuum_logo.png
+   :width: 160px
    :align: right
 
 Microsoft's `QDK <https://docs.microsoft.com/en-us/quantum/install-guide>`_ is a
@@ -12,9 +12,11 @@ language and associated toolkit for quantum programming.
 executed on simulators and resource estimators from the Microsoft QDK.
 
 ``pytket-qsharp`` is available for Python 3.8, 3.9 and 3.10, on Linux, MacOS and
-Windows (except for Windows with 3.10). To install, run:
+Windows. To install, run:
 
-``pip install pytket-qsharp``
+::
+   
+   pip install pytket-qsharp
 
 In order to use ``pytket-qsharp`` you will first need to install the ``dotnet`` SDK
 (6.0) and the ``iqsharp`` tool. On some Linux systems it is also necessary to

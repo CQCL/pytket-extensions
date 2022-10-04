@@ -1,6 +1,13 @@
 Changelog
 ~~~~~~~~~
 
+0.29.0 (unreleased)
+-------------------
+
+* Updated pytket version requirement to 1.6.
+* Updated qsharp version requirement to 0.26.
+* Support Python 3.10 on Windows.
+
 0.28.0 (August 2022)
 --------------------
 
