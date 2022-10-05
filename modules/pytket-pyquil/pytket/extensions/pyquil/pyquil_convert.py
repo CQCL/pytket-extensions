@@ -83,7 +83,7 @@ def param_to_pyquil(p: Union[float, Expr]) -> Union[float, Expression]:
         return float(ppi.evalf())
     else:
 
-        def to_pyquil(e: Expr) -> Union[float, Expression]:
+        def to_pyquil(e: Expr) -> Union[float, Expression]:  # type: ignore
             if isinstance(e, Number):
                 return float(e)
             elif isinstance(e, Symbol):
