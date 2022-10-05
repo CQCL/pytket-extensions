@@ -77,13 +77,13 @@ _known_quil_gate = {
 _known_quil_gate_rev = {v: k for k, v in _known_quil_gate.items()}
 
 
-def param_to_pyquil(p: Union[float, Expr]) -> Union[float, Expression, None]:
+def param_to_pyquil(p: Union[float, Expr]) -> Union[float, Expression]:
     ppi = p * pi
     if len(ppi.free_symbols) == 0:
         return float(ppi.evalf())
     else:
 
-        def to_pyquil(e: Expr) -> Union[float, Expression, None]:
+        def to_pyquil(e: Expr) -> Union[float, Expression]:  # type: ignore
             if isinstance(e, Number):
                 return float(e)
             elif isinstance(e, Symbol):
