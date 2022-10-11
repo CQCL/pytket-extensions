@@ -1,2 +1,0 @@
--r ../../base-test-requirements.txt
-openfermion~=1.3
