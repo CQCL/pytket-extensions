@@ -10,30 +10,24 @@ or both.
 All the extensions are written in pure Python, and depend on the `pytket`
 module.
 
-Code for the following extensions is included here, each within its own
-subdirectory of the `modules` directory:
+The extensions can be found in other repos:
 
-* `pytket-aqt`
-* `pytket-cirq`
-* `pytket-ionq`
-* `pytket-projectq`
-* `pytket-pyquil`
-* `pytket-pysimplex`
-* `pytket-pyzx`
-* `pytket-qiskit`
-* `pytket-qsharp`
-* `pytket-qulacs`
-* `pytket-stim`
-
-See the individual `README` files for descriptions.
-
-Other extensions can be found in other repos:
-
+* [pytket-aqt](https://github.com/CQCL/pytket-aqt)
 * [pytket-braket](https://github.com/CQCL/pytket-braket)
+* [pytket-cirq](https://github.com/CQCL/pytket-cirq)
+* [pytket-ionq](https://github.com/CQCL/pytket-ionq)
 * [pytket-iqm](https://github.com/CQCL/pytket-iqm)
+* [pytket-pennylane](https://github.com/CQCL/pytket-pennylane)
+* [pytket-projectq](https://github.com/CQCL/pytket-projectq)
+* [pytket-pyquil](https://github.com/CQCL/pytket-pyquil)
+* [pytket-pysimplex](https://github.com/CQCL/pytket-pysimplex)
+* [pytket-pyzx](https://github.com/CQCL/pytket-pyzx)
+* [pytket-qiskit](https://github.com/CQCL/pytket-qiskit)
+* [pytket-qsharp](https://github.com/CQCL/pytket-qsharp)
 * [pytket-quantinuum](https://github.com/CQCL/pytket-quantinuum)
 * [pytket-qujax](https://github.com/CQCL/pytket-qujax)
-* [pytket-pennylane](https://github.com/CQCL/pytket-pennylane)
+* [pytket-qulacs](https://github.com/CQCL/pytket-qulacs)
+* [pytket-stim](https://github.com/CQCL/pytket-stim)
 
 Note that most backend providers require you to set up credentials in order to
 submit jobs over the internet. These should be obtained directly from the
