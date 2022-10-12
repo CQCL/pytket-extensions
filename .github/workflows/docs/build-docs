@@ -81,9 +81,6 @@ if __name__ == "__main__":
             content.append(f"\tpytket-qujax <{PYTKET_QUJAX_DOCS_LINK}>\n")
             content.append(f"\tpytket-stim <{PYTKET_STIM_DOCS_LINK}>\n")
 
-            content.append(f"\tpytket-quantinuum <{PYTKET_QUANTINUUM_DOCS_LINK}>\n")
-            content.append(f"\tpytket-qujax <{PYTKET_QUJAX_DOCS_LINK}>\n")
-
             content.append(
                 "\n.. toctree::\n\t:caption: More documentation:\n\t:maxdepth: 1\n\n"
             )

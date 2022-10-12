@@ -40,6 +40,9 @@ QPUs
 `QuantinuumBackend <https://cqcl.github.io/pytket-quantinuum/api/api.html#pytket.extensions.quantinuum.QuantinuumBackend>`_
 - Interface to a Quantinuum device. There are currently two Quantinuum devices offered (H1-1 and H1-2).
 
+`IQMBackend <https://cqcl.github.io/pytket-iqm/api/api.html#pytket.extensions.iqm.IQMBackend>`_
+- Interface to an IQM device or simulator.
+
 Cloud access
 ============
 
