@@ -1,6 +1,6 @@
 # Pytket Extensions
 
-This repository contains a collection of Python extension modules for 
+This repository gives an overview of Python extension modules for 
 [pytket](https://cqcl.github.io/tket/pytket/api/index.html), a quantum computing toolkit and optimising compiler developed by Quantinuum.
 
 Each of these modules provides one or several _backends_ (interfaces to devices
