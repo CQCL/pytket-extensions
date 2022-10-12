@@ -29,6 +29,13 @@ The extensions can be found in other repos:
 * [pytket-qulacs](https://github.com/CQCL/pytket-qulacs)
 * [pytket-stim](https://github.com/CQCL/pytket-stim)
 
+Other extensions can be found in other repos:
+
+* [pytket-braket](https://github.com/CQCL/pytket-braket)
+* [pytket-iqm](https://github.com/CQCL/pytket-iqm)
+* [pytket-quantinuum](https://github.com/CQCL/pytket-quantinuum)
+* [pytket-qujax](https://github.com/CQCL/pytket-qujax)
+
 Note that most backend providers require you to set up credentials in order to
 submit jobs over the internet. These should be obtained directly from the
 providers.
