@@ -1,52 +1,47 @@
-name: Pytket Extensions Docs
+name: publish docs
 
 on:
   push:
     branches:
-      - 'docs/**'
-  schedule:
-    # 04:00 every weekday morning
-    - cron: '0 4 * * 1-5'
+      - main
 
-jobs:
+jobs:  
   docs:
-    name: build docs
+    name: Build and publish docs
+    if: github.event_name == 'release'
     runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v3
+      with:
+        fetch-depth: '0'
     - name: Set up Python 3.9
       uses: actions/setup-python@v3
       with:
-        python-version: 3.9
-    - name: Upgrade pip and install wheel
-      run: pip install --upgrade pip wheel
-    - name: Install pytket extensions
-      run: |
-        for path in modules/*/
-        do
-          cd ${path}
-          pip install .
-          cd ../..
-        done
-    - name: Install dotnet SDK
-      uses: actions/setup-dotnet@v2
-      with:
-        dotnet-version: '6.0.x'
-    - name: Install iqsharp
-      run: |
-        dotnet tool install -g Microsoft.Quantum.IQSharp
-        dotnet iqsharp install --user
+        python-version: '3.9'
+    - name: Install pip, wheel
+      run: pip install -U pip wheel
     - name: Install docs dependencies
       run: |
         pip install -r .github/workflows/docs/requirements.txt
-
-    - name: Test building docs
+    - name: Build docs
       timeout-minutes: 20
       run: |
         cd .github/workflows/docs
         mkdir extensions
         ./build-docs -a -i -d ${GITHUB_WORKSPACE}/.github/workflows/docs/extensions
-    - uses: actions/upload-artifact@v3
-      with:
-        name: pytket-extension-docs
-        path: .github/workflows/docs/extensions/
+    - name: Configure git
+      run: |
+        git config --global user.email "tket-bot@cambridgequantum.com"
+        git config --global user.name  "«$GITHUB_WORKFLOW» github action"
+    - name: Check out gh-pages branch
+      run: git checkout gh-pages
+    - name: Remove old docs
+      run: git rm -r --ignore-unmatch docs/api
+    - name: Add generated docs to repository
+      run: |
+        mkdir -p docs
+        mv .github/workflows/docs/extensions docs/api
+        git add -f docs/api
+        git commit --allow-empty -m "Add generated documentation."
+    - name: Publish docs
+      run:  git push origin gh-pages:gh-pages

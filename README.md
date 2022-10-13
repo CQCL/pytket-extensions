@@ -1,7 +1,7 @@
 # Pytket Extensions
 
-This repository contains a collection of Python extension modules for CQC's
-[pytket](https://cqcl.github.io/tket/pytket/api/index.html) quantum SDK.
+This repository gives an overview of Python extension modules for 
+[pytket](https://cqcl.github.io/tket/pytket/api/index.html), a quantum computing toolkit and optimising compiler developed by Quantinuum.
 
 Each of these modules provides one or several _backends_ (interfaces to devices
 or simulators), _frontends_ (interfaces to other high-level quantum languages),
@@ -10,29 +10,24 @@ or both.
 All the extensions are written in pure Python, and depend on the `pytket`
 module.
 
-Code for the following extensions is included here, each within its own
-subdirectory of the `modules` directory:
+The extensions can be found in other repos:
 
-* `pytket-aqt`
-* `pytket-cirq`
-* `pytket-ionq`
-* `pytket-projectq`
-* `pytket-pyquil`
-* `pytket-pysimplex`
-* `pytket-pyzx`
-* `pytket-qiskit`
-* `pytket-qsharp`
-* `pytket-qulacs`
-* `pytket-stim`
-
-See the individual `README` files for descriptions.
-
-Other extensions can be found in other repos:
-
+* [pytket-aqt](https://github.com/CQCL/pytket-aqt)
 * [pytket-braket](https://github.com/CQCL/pytket-braket)
+* [pytket-cirq](https://github.com/CQCL/pytket-cirq)
+* [pytket-ionq](https://github.com/CQCL/pytket-ionq)
 * [pytket-iqm](https://github.com/CQCL/pytket-iqm)
+* [pytket-pennylane](https://github.com/CQCL/pytket-pennylane)
+* [pytket-projectq](https://github.com/CQCL/pytket-projectq)
+* [pytket-pyquil](https://github.com/CQCL/pytket-pyquil)
+* [pytket-pysimplex](https://github.com/CQCL/pytket-pysimplex)
+* [pytket-pyzx](https://github.com/CQCL/pytket-pyzx)
+* [pytket-qiskit](https://github.com/CQCL/pytket-qiskit)
+* [pytket-qsharp](https://github.com/CQCL/pytket-qsharp)
 * [pytket-quantinuum](https://github.com/CQCL/pytket-quantinuum)
 * [pytket-qujax](https://github.com/CQCL/pytket-qujax)
+* [pytket-qulacs](https://github.com/CQCL/pytket-qulacs)
+* [pytket-stim](https://github.com/CQCL/pytket-stim)
 
 Note that most backend providers require you to set up credentials in order to
 submit jobs over the internet. These should be obtained directly from the
@@ -52,10 +47,12 @@ and methods into the `pytket.extensions` namespace.
 Full documentation for all these extension module is available
 [here](https://cqcl.github.io/pytket-extensions/api/index.html).
 
-## Bugs and feature requests
+## Bugs, support and feature requests
 
 Please file bugs and feature requests on the Github
 [issue tracker](https://github.com/CQCL/pytket-extensions/issues).
+
+There is also a Slack channel for discussion and support. Click [here](https://tketusers.slack.com/join/shared_invite/zt-18qmsamj9-UqQFVdkRzxnXCcKtcarLRA#/shared-invite/email) to join.
 
 ## Supported Backends
 
