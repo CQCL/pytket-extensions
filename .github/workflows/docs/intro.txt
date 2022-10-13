@@ -5,7 +5,7 @@ pytket-extensions
    :width: 160px
    :align: right
 
-The pytket extensions are separate python modules which allow pytket to interface with ``Backend``s from a range of providers including devices from Quantinuum and IBM.
+The pytket extensions are separate python modules which allow pytket to interface with ``Backend``s from a range of providers including quantum hardware from Quantinuum and IBM.
 In pytket a ``Backend`` represents a connection to a QPU (Quantum Processing Unit) or simulator for processing quantum circuits. One can also access additional quantum devices and simulators via the cloud through the extensions for `Azure <https://cqcl.github.io/pytket-extensions/api/qsharp/api.html#pytket.extensions.qsharp.AzureBackend>`_ and `Braket <https://cqcl.github.io/pytket-braket/api/api.html#pytket.extensions.braket.BraketBackend>`_ . 
 
 Additionally the extensions allow pytket to cross-compile circuits from different quantum computing libraries with the extensions for `qiskit <https://cqcl.github.io/pytket-qiskit/api/index.html>`_, `cirq <https://cqcl.github.io/pytket-cirq/api/index.html>`_and `pennylane <https://cqcl.github.io/pytket-pennylane/api/index.html>`_. This enables pytket's compilation features to be used in conjunction with other software tools.
