@@ -19,11 +19,11 @@ In pytket a ``Backend`` represents a connection to a QPU (Quantum Processing Uni
 
 Additionally, the extensions allow pytket to cross-compile circuits from different quantum computing libraries with the extensions for `qiskit <https://cqcl.github.io/pytket-qiskit/api/index.html>`_, `cirq <https://cqcl.github.io/pytket-cirq/api/index.html>`_ and `pennylane <https://cqcl.github.io/pytket-pennylane/api/index.html>`_ . This enables pytket's compilation features to be used in conjunction with other software tools.
 
-The additional modules can be installed adding the extension name to the installation command for pytket. For example pytket-qiskit can be installed by running
+The additional modules can be installed adding the extension name to the installation command for pytket. For example pytket-quantinuum can be installed by running
 
 ::
 
-   pip install pytket-qiskit
+   pip install pytket-quantinuum
 
 The types of ``Backend`` available in pytket are the following
 
@@ -68,7 +68,7 @@ Cloud access
 - Backend for running circuits remotely using Azure Quantum devices and simulators.
 
 `BraketBackend <https://cqcl.github.io/pytket-braket/api/api.html#pytket.extensions.braket.BraketBackend>`_
-- Interface to Amazon Braket service. 
+- Interface to Amazon Braket service.
 
 Emulators
 =========
