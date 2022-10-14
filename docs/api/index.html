@@ -78,9 +78,19 @@
              
   <section id="pytket-extensions">
 <h1>pytket-extensions<a class="headerlink" href="#pytket-extensions" title="Permalink to this headline"></a></h1>
-<a class="reference internal image-reference" href="_images/Quantinuum_logo.png"><img alt="_images/Quantinuum_logo.png" class="align-right" src="_images/Quantinuum_logo.png" style="width: 160px;" /></a>
-<p>These extensions enable <code class="docutils literal notranslate"><span class="pre">pytket</span></code> to interface with different hardware platforms and classical simulators. One can also access additional quantum devices and simulators via the cloud through the extensions for <a class="reference external" href="https://cqcl.github.io/pytket-extensions/api/qsharp/api.html#pytket.extensions.qsharp.AzureBackend">Azure</a> and <a class="reference external" href="https://cqcl.github.io/pytket-braket/api/api.html#pytket.extensions.braket.BraketBackend">Braket</a> .
-In pytket a <code class="docutils literal notranslate"><span class="pre">Backend</span></code> represents a connection to a QPU (Quantum Processing Unit) or simulator for processing quantum circuits. The types of <code class="docutils literal notranslate"><span class="pre">Backend</span></code> available in pytket are the following.</p>
+<embed>
+<div style="width:100%; display:flex; align-items:center; justify-content:end; transform: translateY(-85px); margin-bottom: -75px">
+    <img src="_images/Quantinuum_logo.png" width="100" height="100"></img>
+</div>
+</embed><a class="reference internal image-reference" href="_images/Quantinuum_logo.png"><img alt="_images/Quantinuum_logo.png" class="align-right" src="_images/Quantinuum_logo.png" style="width: 0px; height: 0px;" /></a>
+<p>The pytket extensions are separate python modules which allow pytket to interface with backends from a range of providers including quantum devices from Quantinuum and IBM.
+In pytket a <code class="docutils literal notranslate"><span class="pre">Backend</span></code> represents a connection to a QPU (Quantum Processing Unit) or simulator for processing quantum circuits. One can also access additional quantum devices and simulators via the cloud through the extensions for <a class="reference external" href="https://cqcl.github.io/pytket-extensions/api/qsharp/api.html#pytket.extensions.qsharp.AzureBackend">Azure</a> and <a class="reference external" href="https://cqcl.github.io/pytket-braket/api/api.html#pytket.extensions.braket.BraketBackend">Braket</a> .</p>
+<p>Additionally, the extensions allow pytket to cross-compile circuits from different quantum computing libraries with the extensions for <a class="reference external" href="https://cqcl.github.io/pytket-qiskit/api/index.html">qiskit</a>, <a class="reference external" href="https://cqcl.github.io/pytket-cirq/api/index.html">cirq</a> and <a class="reference external" href="https://cqcl.github.io/pytket-pennylane/api/index.html">pennylane</a> . This enables pytket’s compilation features to be used in conjunction with other software tools.</p>
+<p>The additional modules can be installed adding the extension name to the installation command for pytket. For example pytket-quantinuum can be installed by running</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">pytket</span><span class="o">-</span><span class="n">quantinuum</span>
+</pre></div>
+</div>
+<p>The types of <code class="docutils literal notranslate"><span class="pre">Backend</span></code> available in pytket are the following</p>
 </section>
 <section id="types-of-backend">
 <h1>Types of Backend<a class="headerlink" href="#types-of-backend" title="Permalink to this headline"></a></h1>
@@ -100,13 +110,13 @@ In pytket a <code class="docutils literal notranslate"><span class="pre">Backend
 <p><a class="reference external" href="https://cqcl.github.io/pytket-extensions/api/qiskit/api.html#pytket.extensions.qiskit.IBMQBackend">IBMQBackend</a>
 - A backend for running circuits on remote IBMQ devices.</p>
 <p><a class="reference external" href="https://cqcl.github.io/pytket-extensions/api/ionq/api.html#pytket.extensions.ionq.IonQBackend">IonQBackend</a>
-- Interface to an IonQ device.</p>
+- A backend for running circuits on remote IONQ devices.</p>
 <p><a class="reference external" href="https://cqcl.github.io/pytket-extensions/api/pyquil/api.html#pytket.extensions.pyquil.ForestBackend">ForestBackend</a>
-- Interface to a Rigetti device.</p>
+- A backend for running circuits on remote Rigetti devices.</p>
 <p><a class="reference external" href="https://cqcl.github.io/pytket-extensions/api/aqt/api.html#pytket.extensions.aqt.AQTBackend">AQTBackend</a>
 - Interface to an AQT device or simulator.</p>
 <p><a class="reference external" href="https://cqcl.github.io/pytket-quantinuum/api/api.html#pytket.extensions.quantinuum.QuantinuumBackend">QuantinuumBackend</a>
-- Interface to a Quantinuum device. There are currently two Quantinuum devices offered (H1-1 and H1-2).</p>
+- Interface to a remote Quantinuum device or simulator. There are currently two Quantinuum devices offered (H1-1 and H1-2).</p>
 <p><a class="reference external" href="https://cqcl.github.io/pytket-iqm/api/api.html#pytket.extensions.iqm.IQMBackend">IQMBackend</a>
 - Interface to an IQM device or simulator.</p>
 </section>
@@ -125,7 +135,7 @@ In pytket a <code class="docutils literal notranslate"><span class="pre">Backend
 - The QuantinuumBackend has two available emulators namely H1-1E and H1-2E. These are device specific emulators for the H1-1 and H1-2 devices. These emualtors run remotely on a server.</p>
 </section>
 <section id="statevector-simulators">
-<h1>Statevector simulators<a class="headerlink" href="#statevector-simulators" title="Permalink to this headline"></a></h1>
+<h1>Statevector Simulators<a class="headerlink" href="#statevector-simulators" title="Permalink to this headline"></a></h1>
 <p><a class="reference external" href="https://cqcl.github.io/pytket-extensions/api/cirq/api.html#pytket.extensions.cirq.CirqStateSampleBackend">CirqStateSampleBackend</a>
 - Backend for Cirq statevector simulator sampling.</p>
 <p><a class="reference external" href="https://cqcl.github.io/pytket-extensions/api/cirq/api.html#pytket.extensions.cirq.CirqStateSimBackend">CirqStateSimBackend</a>
@@ -138,19 +148,19 @@ In pytket a <code class="docutils literal notranslate"><span class="pre">Backend
 - Backend for running statevector simulations on the ProjectQ simulator.</p>
 </section>
 <section id="unitary-simulators">
-<h1>Unitary simulators<a class="headerlink" href="#unitary-simulators" title="Permalink to this headline"></a></h1>
+<h1>Unitary Simulators<a class="headerlink" href="#unitary-simulators" title="Permalink to this headline"></a></h1>
 <p><a class="reference external" href="https://cqcl.github.io/pytket-extensions/api/qiskit/api.html#pytket.extensions.qiskit.AerUnitaryBackend">AerUnitaryBackend</a>
 - Backend for running simulations on the Qiskit Aer Unitary simulator.</p>
 </section>
 <section id="density-matrix-simulator">
-<h1>Density matrix simulator<a class="headerlink" href="#density-matrix-simulator" title="Permalink to this headline"></a></h1>
+<h1>Density Matrix Simulator<a class="headerlink" href="#density-matrix-simulator" title="Permalink to this headline"></a></h1>
 <p><a class="reference external" href="https://cqcl.github.io/pytket-extensions/api/cirq/api.html#pytket.extensions.cirq.CirqDensityMatrixSampleBackend">CirqDensityMatrixSampleBackend</a>
 - Backend for Cirq density matrix simulator sampling.</p>
 <p><a class="reference external" href="https://cqcl.github.io/pytket-extensions/api/cirq/api.html#pytket.extensions.cirq.CirqDensityMatrixSimBackend">CirqDensityMatrixSimBackend</a>
 - Backend for Cirq density matrix simulator density_matrix return.</p>
 </section>
 <section id="clifford-simulator">
-<h1>Clifford simulator<a class="headerlink" href="#clifford-simulator" title="Permalink to this headline"></a></h1>
+<h1>Clifford Simulator<a class="headerlink" href="#clifford-simulator" title="Permalink to this headline"></a></h1>
 <p><a class="reference external" href="https://cqcl.github.io/pytket-extensions/api/cirq/api.html#pytket.extensions.cirq.CirqCliffordSampleBackend">CirqCliffordSampleBackend</a>
 - Backend for Cirq Clifford simulator sampling.</p>
 <p><a class="reference external" href="https://cqcl.github.io/pytket-extensions/api/cirq/api.html#pytket.extensions.cirq.CirqCliffordSimBackend">CirqCliffordSimBackend</a>

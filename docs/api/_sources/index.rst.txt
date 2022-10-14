@@ -1,13 +1,31 @@
 pytket-extensions
 =================
 
+.. raw:: html
+
+    <embed>
+    <div style="width:100%; display:flex; align-items:center; justify-content:end; transform: translateY(-85px); margin-bottom: -75px">
+        <img src="_images/Quantinuum_logo.png" width="100" height="100"></img>
+    </div>
+    </embed>
+
 .. image:: Quantinuum_logo.png
-   :width: 160px
-   :align: right
+   :width: 0px
+   :height: 0px
+   :align: right 
 
+The pytket extensions are separate python modules which allow pytket to interface with backends from a range of providers including quantum devices from Quantinuum and IBM.
+In pytket a ``Backend`` represents a connection to a QPU (Quantum Processing Unit) or simulator for processing quantum circuits. One can also access additional quantum devices and simulators via the cloud through the extensions for `Azure <https://cqcl.github.io/pytket-extensions/api/qsharp/api.html#pytket.extensions.qsharp.AzureBackend>`_ and `Braket <https://cqcl.github.io/pytket-braket/api/api.html#pytket.extensions.braket.BraketBackend>`_ . 
 
-These extensions enable ``pytket`` to interface with different hardware platforms and classical simulators. One can also access additional quantum devices and simulators via the cloud through the extensions for `Azure <https://cqcl.github.io/pytket-extensions/api/qsharp/api.html#pytket.extensions.qsharp.AzureBackend>`_ and `Braket <https://cqcl.github.io/pytket-braket/api/api.html#pytket.extensions.braket.BraketBackend>`_ . 
-In pytket a ``Backend`` represents a connection to a QPU (Quantum Processing Unit) or simulator for processing quantum circuits. The types of ``Backend`` available in pytket are the following.
+Additionally, the extensions allow pytket to cross-compile circuits from different quantum computing libraries with the extensions for `qiskit <https://cqcl.github.io/pytket-qiskit/api/index.html>`_, `cirq <https://cqcl.github.io/pytket-cirq/api/index.html>`_ and `pennylane <https://cqcl.github.io/pytket-pennylane/api/index.html>`_ . This enables pytket's compilation features to be used in conjunction with other software tools.
+
+The additional modules can be installed adding the extension name to the installation command for pytket. For example pytket-quantinuum can be installed by running
+
+::
+
+   pip install pytket-quantinuum
+
+The types of ``Backend`` available in pytket are the following
 
 Types of Backend
 ================
@@ -29,16 +47,16 @@ QPUs
 - A backend for running circuits on remote IBMQ devices.
 
 `IonQBackend <https://cqcl.github.io/pytket-extensions/api/ionq/api.html#pytket.extensions.ionq.IonQBackend>`_
-- Interface to an IonQ device.
+- A backend for running circuits on remote IONQ devices.
 
 `ForestBackend <https://cqcl.github.io/pytket-extensions/api/pyquil/api.html#pytket.extensions.pyquil.ForestBackend>`_
-- Interface to a Rigetti device.
+- A backend for running circuits on remote Rigetti devices.
 
 `AQTBackend <https://cqcl.github.io/pytket-extensions/api/aqt/api.html#pytket.extensions.aqt.AQTBackend>`_
 - Interface to an AQT device or simulator.
 
 `QuantinuumBackend <https://cqcl.github.io/pytket-quantinuum/api/api.html#pytket.extensions.quantinuum.QuantinuumBackend>`_
-- Interface to a Quantinuum device. There are currently two Quantinuum devices offered (H1-1 and H1-2).
+- Interface to a remote Quantinuum device or simulator. There are currently two Quantinuum devices offered (H1-1 and H1-2).
 
 `IQMBackend <https://cqcl.github.io/pytket-iqm/api/api.html#pytket.extensions.iqm.IQMBackend>`_
 - Interface to an IQM device or simulator.
@@ -61,7 +79,7 @@ Emulators
 `QuantinuumBackend <https://cqcl.github.io/pytket-quantinuum/api/api.html#pytket.extensions.quantinuum.QuantinuumBackend>`_
 - The QuantinuumBackend has two available emulators namely H1-1E and H1-2E. These are device specific emulators for the H1-1 and H1-2 devices. These emualtors run remotely on a server.
 
-Statevector simulators
+Statevector Simulators
 =======================
 
 `CirqStateSampleBackend <https://cqcl.github.io/pytket-extensions/api/cirq/api.html#pytket.extensions.cirq.CirqStateSampleBackend>`_
@@ -79,13 +97,13 @@ Statevector simulators
 `ProjectQBackend <https://cqcl.github.io/pytket-extensions/api/projectq/api.html#pytket.extensions.projectq.ProjectQBackend>`_
 - Backend for running statevector simulations on the ProjectQ simulator.
 
-Unitary simulators
+Unitary Simulators
 ==================
 
 `AerUnitaryBackend <https://cqcl.github.io/pytket-extensions/api/qiskit/api.html#pytket.extensions.qiskit.AerUnitaryBackend>`_
 - Backend for running simulations on the Qiskit Aer Unitary simulator.
 
-Density matrix simulator
+Density Matrix Simulator
 ========================
 
 `CirqDensityMatrixSampleBackend <https://cqcl.github.io/pytket-extensions/api/cirq/api.html#pytket.extensions.cirq.CirqDensityMatrixSampleBackend>`_
@@ -94,7 +112,7 @@ Density matrix simulator
 `CirqDensityMatrixSimBackend <https://cqcl.github.io/pytket-extensions/api/cirq/api.html#pytket.extensions.cirq.CirqDensityMatrixSimBackend>`_
 - Backend for Cirq density matrix simulator density_matrix return.
 
-Clifford simulator
+Clifford Simulator
 ==================
 
 `CirqCliffordSampleBackend <https://cqcl.github.io/pytket-extensions/api/cirq/api.html#pytket.extensions.cirq.CirqCliffordSampleBackend>`_
