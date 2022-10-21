@@ -41,7 +41,7 @@ Types of Backend
 A full list of available pytket backends is shown below.
 
 QPUs
-====https://cqcl.github.io/pytket-qiskit/api/index.html
+====
 
 `IBMQBackend <https://cqcl.github.io/pytket-qiskit/api/api.html#pytket.extensions.qiskit.IBMQBackend>`_
 - A backend for running circuits on remote IBMQ devices.
