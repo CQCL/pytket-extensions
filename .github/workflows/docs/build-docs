@@ -2,7 +2,6 @@
 
 import argparse
 import datetime
-from importlib import import_module
 from pathlib import Path
 import shutil
 import subprocess
