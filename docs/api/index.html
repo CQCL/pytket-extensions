@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>pytket-extensions &#8212; pytket-extensions  documentation</title>
+    <title>Extension Modules &#8212; pytket-extensions  documentation</title>
     
   <!-- Loaded before other Sphinx assets -->
   <link href="_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
@@ -22,6 +22,7 @@
 
     <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
     <link rel="stylesheet" href="_static/styles/sphinx-book-theme.css?digest=5115cc725059bd94278eecd172e13a965bf8f5a9" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="_static/copybutton.css" />
     <link rel="stylesheet" type="text/css" href="_static/custom.css" />
     
   <!-- Pre-loaded scripts that we'll load fully later -->
@@ -31,6 +32,8 @@
     <script src="_static/jquery.js"></script>
     <script src="_static/underscore.js"></script>
     <script src="_static/doctools.js"></script>
+    <script src="_static/clipboard.min.js"></script>
+    <script src="_static/copybutton.js"></script>
     <script src="_static/scripts/sphinx-book-theme.js?digest=9c920249402e914e316237a7dbc6769907cce411"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -74,7 +77,7 @@
         
       
       
-      <img src="_static/Quantinuum_logo2.png" class="logo" alt="logo">
+      <img src="_static/Quantinuum_logo.png" class="logo" alt="logo">
       
       
       <h1 class="site-logo" id="site-title">pytket-extensions  documentation</h1>
@@ -181,6 +184,16 @@
  <li class="toctree-l1">
   <a class="reference external" href="https://cqcl.github.io/tket/pytket/api/index.html">
    pytket
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference external" href="https://cqcl.github.io/pytket/manual/index.html">
+   Manual
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference external" href="https://github.com/CQCL/pytket/tree/main/examples">
+   Example notebooks
   </a>
  </li>
 </ul>
@@ -362,7 +375,7 @@ title="Print to PDF"
         <ul class="visible nav section-nav flex-column">
  <li class="toc-h1 nav-item toc-entry">
   <a class="reference internal nav-link" href="#">
-   pytket-extensions
+   Extension Modules
   </a>
  </li>
  <li class="toc-h1 nav-item toc-entry">
@@ -401,8 +414,8 @@ title="Print to PDF"
   </a>
  </li>
  <li class="toc-h1 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#clifford-simulator">
-   Clifford Simulator
+  <a class="reference internal nav-link" href="#clifford-simulators">
+   Clifford Simulators
   </a>
  </li>
  <li class="toc-h1 nav-item toc-entry">
@@ -421,7 +434,7 @@ title="Print to PDF"
         <div class="col pl-md-3 pl-lg-5 content-container">
             <!-- Table of contents that is only displayed when printing the page -->
             <div id="jb-print-docs-body" class="onlyprint">
-                <h1>pytket-extensions</h1>
+                <h1>Extension Modules</h1>
                 <!-- Table of contents -->
                 <div id="print-main-content">
                     <div id="jb-print-toc">
@@ -433,7 +446,7 @@ title="Print to PDF"
                             <ul class="visible nav section-nav flex-column">
  <li class="toc-h1 nav-item toc-entry">
   <a class="reference internal nav-link" href="#">
-   pytket-extensions
+   Extension Modules
   </a>
  </li>
  <li class="toc-h1 nav-item toc-entry">
@@ -472,8 +485,8 @@ title="Print to PDF"
   </a>
  </li>
  <li class="toc-h1 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#clifford-simulator">
-   Clifford Simulator
+  <a class="reference internal nav-link" href="#clifford-simulators">
+   Clifford Simulators
   </a>
  </li>
  <li class="toc-h1 nav-item toc-entry">
@@ -493,8 +506,8 @@ title="Print to PDF"
                 
               <div>
                 
-  <section id="pytket-extensions">
-<h1>pytket-extensions<a class="headerlink" href="#pytket-extensions" title="Permalink to this headline">#</a></h1>
+  <section id="extension-modules">
+<h1>Extension Modules<a class="headerlink" href="#extension-modules" title="Permalink to this headline">#</a></h1>
 <p>The pytket extensions are separate python modules which allow pytket to interface with backends from a range of providers including quantum devices from Quantinuum and IBM.
 In pytket a <code class="docutils literal notranslate"><span class="pre">Backend</span></code> represents a connection to a QPU (Quantum Processing Unit) or simulator for processing quantum circuits. One can also access additional quantum devices and simulators via the cloud through the extensions for <a class="reference external" href="https://cqcl.github.io/pytket-qsharp/api/api.html#pytket.extensions.qsharp.AzureBackend">Azure</a> and <a class="reference external" href="https://cqcl.github.io/pytket-braket/api/api.html#pytket.extensions.braket.BraketBackend">Braket</a> .</p>
 <p>Additionally, the extensions allow pytket to cross-compile circuits from different quantum computing libraries with the extensions for <a class="reference external" href="https://cqcl.github.io/pytket-qiskit/api/index.html">qiskit</a>, <a class="reference external" href="https://cqcl.github.io/pytket-cirq/api/index.html">cirq</a> and <a class="reference external" href="https://cqcl.github.io/pytket-pennylane/api/index.html">pennylane</a> . This enables pytket’s compilation features to be used in conjunction with other software tools.</p>
@@ -542,7 +555,7 @@ In pytket a <code class="docutils literal notranslate"><span class="pre">Backend
 <section id="emulators">
 <h1>Emulators<a class="headerlink" href="#emulators" title="Permalink to this headline">#</a></h1>
 <p><a class="reference external" href="https://cqcl.github.io/pytket-qiskit/api/api.html#pytket.extensions.qiskit.IBMQEmulatorBackend">IBMQEmulatorBackend</a>
-- A backend which uses the AerBackend to emulate the behavior of IBMQBackend.</p>
+- A backend which uses the <a class="reference external" href="https://cqcl.github.io/pytket-qiskit/api/api.html#pytket.extensions.qiskit.AerBackend">AerBackend</a> to emulate the behavior of IBMQBackend.</p>
 <p><a class="reference external" href="https://cqcl.github.io/pytket-quantinuum/api/api.html#pytket.extensions.quantinuum.QuantinuumBackend">QuantinuumBackend</a>
 - The QuantinuumBackend has two available emulators namely H1-1E and H1-2E. These are device specific emulators for the H1-1 and H1-2 devices. These emualtors run remotely on a server.</p>
 </section>
@@ -571,8 +584,8 @@ In pytket a <code class="docutils literal notranslate"><span class="pre">Backend
 <p><a class="reference external" href="https://cqcl.github.io/pytket-cirq/api/api.html#pytket.extensions.cirq.CirqDensityMatrixSimBackend">CirqDensityMatrixSimBackend</a>
 - Backend for Cirq density matrix simulator density_matrix return.</p>
 </section>
-<section id="clifford-simulator">
-<h1>Clifford Simulator<a class="headerlink" href="#clifford-simulator" title="Permalink to this headline">#</a></h1>
+<section id="clifford-simulators">
+<h1>Clifford Simulators<a class="headerlink" href="#clifford-simulators" title="Permalink to this headline">#</a></h1>
 <p><a class="reference external" href="https://cqcl.github.io/pytket-cirq/api/api.html#pytket.extensions.cirq.CirqCliffordSampleBackend">CirqCliffordSampleBackend</a>
 - Backend for Cirq Clifford simulator sampling.</p>
 <p><a class="reference external" href="https://cqcl.github.io/pytket-cirq/api/api.html#pytket.extensions.cirq.CirqCliffordSimBackend">CirqCliffordSimBackend</a>
@@ -585,9 +598,9 @@ In pytket a <code class="docutils literal notranslate"><span class="pre">Backend
 <section id="other">
 <h1>Other<a class="headerlink" href="#other" title="Permalink to this headline">#</a></h1>
 <p><a class="reference external" href="https://cqcl.github.io/pytket-qiskit/api/api.html#pytket.extensions.qiskit.AerBackend">AerBackend</a>
-- Backend for running simulations on the Qiskit Aer QASM simulator. This simulation runs locally on the users computer.</p>
+- Backend for running simulations on the Qiskit Aer QASM simulator. This simulator is noiseless by default but can take a user defined <code class="docutils literal notranslate"><span class="pre">NoiseModel</span></code>.</p>
 <p><a class="reference external" href="https://cqcl.github.io/pytket-qulacs/api/api.html#pytket.extensions.qulacs.QulacsBackend">QulacsBackend</a>
-- Backend for running simulations on the Qulacs simulator.</p>
+- Backend for running simulations of variational quantum circuits on the Qulacs simulator.</p>
 <p><a class="reference external" href="https://cqcl.github.io/pytket-qsharp/api/api.html#pytket.extensions.qsharp.QsharpSimulatorBackend">QsharpSimulatorBackend</a>
 - Backend for simulating a circuit using the QDK.</p>
 <p><a class="reference external" href="https://cqcl.github.io/pytket-qsharp/api/api.html#pytket.extensions.qsharp.QsharpToffoliSimulatorBackend">QsharpToffoliSimulatorBackend</a>
@@ -619,6 +632,8 @@ In pytket a <code class="docutils literal notranslate"><span class="pre">Backend
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">More documentation:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference external" href="https://cqcl.github.io/tket/pytket/api/index.html">pytket</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://cqcl.github.io/pytket/manual/index.html">Manual</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/CQCL/pytket/tree/main/examples">Example notebooks</a></li>
 </ul>
 </div>
 </section>
@@ -640,7 +655,7 @@ In pytket a <code class="docutils literal notranslate"><span class="pre">Backend
   
     By Cambridge Quantum Computing Ltd<br/>
   
-      &copy; Copyright 2022 Cambridge Quantum Computing.<br/>
+      &copy; Copyright 2023 Cambridge Quantum Computing.<br/>
 </p>
         </footer>
     </div>
