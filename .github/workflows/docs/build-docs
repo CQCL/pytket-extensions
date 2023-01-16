@@ -10,27 +10,31 @@ import sys
 
 DOCS_DIR = Path(sys.argv[0]).absolute().parent
 MODULES_DIR = DOCS_DIR.parent.parent.parent / "modules"
+MANUAL_LINK = "https://cqcl.github.io/pytket/manual/index.html"
+EXAMPLES_LINK = "https://github.com/CQCL/pytket/tree/main/examples"
 PYTKET_DOCS_LINK = "https://cqcl.github.io/tket/pytket/api/index.html"
-PYTKET_AQT_DOCS_LINK ="https://cqcl.github.io/pytket-aqt/api/index.html"
-PYTKET_BRAKET_DOCS_LINK ="https://cqcl.github.io/pytket-braket/api/index.html"
-PYTKET_CIRQ_DOCS_LINK ="https://cqcl.github.io/pytket-cirq/api/index.html"
-PYTKET_IONQ_DOCS_LINK ="https://cqcl.github.io/pytket-ionq/api/index.html"
-PYTKET_IQM_DOCS_LINK ="https://cqcl.github.io/pytket-iqm/api/index.html"
-PYTKET_PENNYLANE_DOCS_LINK ="https://cqcl.github.io/pytket-pennylane/api/index.html"
-PYTKET_PROJECTQ_DOCS_LINK ="https://cqcl.github.io/pytket-projectq/api/index.html"
-PYTKET_PYQUIL_DOCS_LINK ="https://cqcl.github.io/pytket-pyquil/api/index.html"
-PYTKET_PYSIMPLEX_DOCS_LINK ="https://cqcl.github.io/pytket-pysimplex/api/index.html"
-PYTKET_PYZX_DOCS_LINK ="https://cqcl.github.io/pytket-pyzx/api/index.html"
-PYTKET_QISKIT_DOCS_LINK ="https://cqcl.github.io/pytket-qiskit/api/index.html"
-PYTKET_QSHARP_DOCS_LINK ="https://cqcl.github.io/pytket-qsharp/api/index.html"
-PYTKET_QUANTINUUM_DOCS_LINK ="https://cqcl.github.io/pytket-quantinuum/api/index.html"
-PYTKET_QULACS_DOCS_LINK ="https://cqcl.github.io/pytket-qulacs/api/index.html"
-PYTKET_QUJAX_DOCS_LINK ="https://cqcl.github.io/pytket-qujax/api/index.html"
-PYTKET_STIM_DOCS_LINK ="https://cqcl.github.io/pytket-stim/api/index.html"
+PYTKET_AQT_DOCS_LINK = "https://cqcl.github.io/pytket-aqt/api/index.html"
+PYTKET_BRAKET_DOCS_LINK = "https://cqcl.github.io/pytket-braket/api/index.html"
+PYTKET_CIRQ_DOCS_LINK = "https://cqcl.github.io/pytket-cirq/api/index.html"
+PYTKET_IONQ_DOCS_LINK = "https://cqcl.github.io/pytket-ionq/api/index.html"
+PYTKET_IQM_DOCS_LINK = "https://cqcl.github.io/pytket-iqm/api/index.html"
+PYTKET_PENNYLANE_DOCS_LINK = "https://cqcl.github.io/pytket-pennylane/api/index.html"
+PYTKET_PROJECTQ_DOCS_LINK = "https://cqcl.github.io/pytket-projectq/api/index.html"
+PYTKET_PYQUIL_DOCS_LINK = "https://cqcl.github.io/pytket-pyquil/api/index.html"
+PYTKET_PYSIMPLEX_DOCS_LINK = "https://cqcl.github.io/pytket-pysimplex/api/index.html"
+PYTKET_PYZX_DOCS_LINK = "https://cqcl.github.io/pytket-pyzx/api/index.html"
+PYTKET_QISKIT_DOCS_LINK = "https://cqcl.github.io/pytket-qiskit/api/index.html"
+PYTKET_QSHARP_DOCS_LINK = "https://cqcl.github.io/pytket-qsharp/api/index.html"
+PYTKET_QUANTINUUM_DOCS_LINK = "https://cqcl.github.io/pytket-quantinuum/api/index.html"
+PYTKET_QULACS_DOCS_LINK = "https://cqcl.github.io/pytket-qulacs/api/index.html"
+PYTKET_QUJAX_DOCS_LINK = "https://cqcl.github.io/pytket-qujax/api/index.html"
+PYTKET_STIM_DOCS_LINK = "https://cqcl.github.io/pytket-stim/api/index.html"
+
 
 def remove_dir(dirpath):
     if dirpath.exists() and dirpath.is_dir():
         shutil.rmtree(dirpath)
+
 
 def fix_links(filepath):
     with open(filepath, "r", encoding="utf8") as f:
@@ -38,6 +42,7 @@ def fix_links(filepath):
     content = content.replace("pytket._tket", "pytket")
     with open(filepath, "w", encoding="utf8") as f:
         f.write(content)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -85,6 +90,8 @@ if __name__ == "__main__":
                 "\n.. toctree::\n\t:caption: More documentation:\n\t:maxdepth: 1\n\n"
             )
             content.append(f"\tpytket <{PYTKET_DOCS_LINK}>\n")
+            content.append(f"\tManual <{MANUAL_LINK}>\n")
+            content.append(f"\tExample notebooks <{EXAMPLES_LINK}>\n")
 
         with open(index_rst, "w") as f:
             f.writelines(content)
