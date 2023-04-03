@@ -12,6 +12,8 @@ echo "#!/bin/bash" > mgitclone.sh
 echo "#!/bin/bash" > mgitcommit.sh
 echo "#!/bin/bash" > mgitnewbranch.sh
 echo "#!/bin/bash" > mgitopenpr.sh
+echo "#!/bin/bash" > mgitrename.sh
+echo "#!/bin/bash" > mgitcopy.sh
 
 # choose the list of the extensions you want to use
 # list of all extensions: "aqt" "braket" "cirq" "ionq" "iqm" "pennylane" "projectq" "pyquil" "pysimplex" "pyzx" "qiskit" "qsharp" "quantinuum" "qulacs" "qujax" "stim"
@@ -51,6 +53,20 @@ do
   echo "cd .." >> mgitopenpr.sh
   echo "firefox https://github.com/CQCL/pytket-$ext/compare/\$1...\$2 &"  >> mgitopenpr.sh
   echo "" >> mgitopenpr.sh
+
+  echo "" >> mgitrename.sh
+  echo "cd pytket-$ext" >> mgitrename.sh
+  echo "pwd" >> mgitrename.sh
+  echo "mv \$1 \$2" >> mgitrename.sh
+  echo "cd .." >> mgitrename.sh
+  echo "" >> mgitrename.sh
+
+  echo "" >> mgitcopy.sh
+  echo "cd pytket-$ext" >> mgitcopy.sh
+  echo "pwd" >> mgitcopy.sh
+  echo "cp \$1 \$2" >> mgitcopy.sh
+  echo "cd .." >> mgitcopy.sh
+  echo "" >> mgitcopy.sh
 
 done
 
