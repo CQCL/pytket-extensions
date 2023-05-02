@@ -28,8 +28,8 @@ a:visited,
 .sig-param,
 .std.std-ref,
 
-:root {
-    --pst-color-inline-code: 199, 37, 78 !important;
+html[data-theme=light] {
+    --pst-color-inline-code: rgb(199, 37, 78) !important;
 }
 
 .sig-name {
