@@ -22,6 +22,7 @@ PYTKET_PROJECTQ_DOCS_LINK = "https://cqcl.github.io/pytket-projectq/api/index.ht
 PYTKET_PYQUIL_DOCS_LINK = "https://cqcl.github.io/pytket-pyquil/api/index.html"
 PYTKET_PYSIMPLEX_DOCS_LINK = "https://cqcl.github.io/pytket-pysimplex/api/index.html"
 PYTKET_PYZX_DOCS_LINK = "https://cqcl.github.io/pytket-pyzx/api/index.html"
+PYTKET_QIR_DOCS_LINK = "https://cqcl.github.io/pytket-qir/api/index.html"
 PYTKET_QISKIT_DOCS_LINK = "https://cqcl.github.io/pytket-qiskit/api/index.html"
 PYTKET_QSHARP_DOCS_LINK = "https://cqcl.github.io/pytket-qsharp/api/index.html"
 PYTKET_QUANTINUUM_DOCS_LINK = "https://cqcl.github.io/pytket-quantinuum/api/index.html"
@@ -78,6 +79,7 @@ if __name__ == "__main__":
             content.append(f"\tpytket-pyquil <{PYTKET_PYQUIL_DOCS_LINK}>\n")
             content.append(f"\tpytket-pysimplex <{PYTKET_PYSIMPLEX_DOCS_LINK}>\n")
             content.append(f"\tpytket-pyzx <{PYTKET_PYZX_DOCS_LINK}>\n")
+            content.append(f"\tpytket-pyzx <{PYTKET_QIR_DOCS_LINK}>\n")
             content.append(f"\tpytket-qiskit <{PYTKET_QISKIT_DOCS_LINK}>\n")
             content.append(f"\tpytket-qsharp <{PYTKET_QSHARP_DOCS_LINK}>\n")
             content.append(f"\tpytket-quantinuum <{PYTKET_QUANTINUUM_DOCS_LINK}>\n")
