@@ -22,6 +22,7 @@ The extensions can be found in other repos:
 * [pytket-pyquil](https://github.com/CQCL/pytket-pyquil)
 * [pytket-pysimplex](https://github.com/CQCL/pytket-pysimplex)
 * [pytket-pyzx](https://github.com/CQCL/pytket-pyzx)
+* [pytket-qir](https://github.com/CQCL/pytket-qir)
 * [pytket-qiskit](https://github.com/CQCL/pytket-qiskit)
 * [pytket-qsharp](https://github.com/CQCL/pytket-qsharp)
 * [pytket-quantinuum](https://github.com/CQCL/pytket-quantinuum)
