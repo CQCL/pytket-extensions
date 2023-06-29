@@ -79,7 +79,7 @@ if __name__ == "__main__":
             content.append(f"\tpytket-pyquil <{PYTKET_PYQUIL_DOCS_LINK}>\n")
             content.append(f"\tpytket-pysimplex <{PYTKET_PYSIMPLEX_DOCS_LINK}>\n")
             content.append(f"\tpytket-pyzx <{PYTKET_PYZX_DOCS_LINK}>\n")
-            content.append(f"\tpytket-pyzx <{PYTKET_QIR_DOCS_LINK}>\n")
+            content.append(f"\tpytket-qir <{PYTKET_QIR_DOCS_LINK}>\n")
             content.append(f"\tpytket-qiskit <{PYTKET_QISKIT_DOCS_LINK}>\n")
             content.append(f"\tpytket-qsharp <{PYTKET_QSHARP_DOCS_LINK}>\n")
             content.append(f"\tpytket-quantinuum <{PYTKET_QUANTINUUM_DOCS_LINK}>\n")
