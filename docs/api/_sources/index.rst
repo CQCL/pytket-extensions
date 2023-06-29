@@ -149,7 +149,7 @@ Other
 	pytket-pyquil <https://cqcl.github.io/pytket-pyquil/api/index.html>
 	pytket-pysimplex <https://cqcl.github.io/pytket-pysimplex/api/index.html>
 	pytket-pyzx <https://cqcl.github.io/pytket-pyzx/api/index.html>
-	pytket-pyzx <https://cqcl.github.io/pytket-qir/api/index.html>
+	pytket-qir <https://cqcl.github.io/pytket-qir/api/index.html>
 	pytket-qiskit <https://cqcl.github.io/pytket-qiskit/api/index.html>
 	pytket-qsharp <https://cqcl.github.io/pytket-qsharp/api/index.html>
 	pytket-quantinuum <https://cqcl.github.io/pytket-quantinuum/api/index.html>
