@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import argparse
-import datetime
 from pathlib import Path
 import shutil
 import subprocess
