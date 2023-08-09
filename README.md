@@ -26,6 +26,7 @@ The extensions can be found in other repos:
 * [pytket-qiskit](https://github.com/CQCL/pytket-qiskit)
 * [pytket-qsharp](https://github.com/CQCL/pytket-qsharp)
 * [pytket-quantinuum](https://github.com/CQCL/pytket-quantinuum)
+* [pytket-cutensornet](https://github.com/CQCL/pytket-cutensornet)
 * [pytket-qujax](https://github.com/CQCL/pytket-qujax)
 * [pytket-qulacs](https://github.com/CQCL/pytket-qulacs)
 * [pytket-stim](https://github.com/CQCL/pytket-stim)

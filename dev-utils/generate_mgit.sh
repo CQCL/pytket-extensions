@@ -16,8 +16,8 @@ echo "#!/bin/bash" > mgitrename.sh
 echo "#!/bin/bash" > mgitcopy.sh
 
 # choose the list of the extensions you want to use
-# list of all extensions: "aqt" "braket" "cirq" "ionq" "iqm" "pennylane" "projectq" "pyquil" "pysimplex" "pyzx" "qir" "qiskit" "qsharp" "quantinuum" "qulacs" "qujax" "stim"
-for ext in "aqt" "braket" "cirq" "ionq" "iqm" "pennylane" "projectq" "pyquil" "pysimplex" "pyzx" "qir" "qiskit" "qsharp" "quantinuum" "qulacs" "qujax" "stim"
+# list of all extensions: "aqt" "braket" "cirq" "ionq" "iqm" "pennylane" "projectq" "pyquil" "pysimplex" "pyzx" "qir" "qiskit" "qsharp" "quantinuum" "cutensornet" "qulacs" "qujax" "stim"
+for ext in "aqt" "braket" "cirq" "ionq" "iqm" "pennylane" "projectq" "pyquil" "pysimplex" "pyzx" "qir" "qiskit" "qsharp" "quantinuum" "cutensornet" "qulacs" "qujax" "stim"
 do
   
   echo "git clone git@github.com:CQCL/pytket-$ext.git" >> mgitclone.sh
