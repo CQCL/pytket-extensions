@@ -107,8 +107,6 @@ if __name__ == "__main__":
                 "-D",
                 f"project=pytket-extensions",
                 "-D",
-                f"copyright={datetime.date.today().year} Cambridge Quantum Computing",
-                "-D",
                 "templates_path=templates",
                 ".",
                 "build",
