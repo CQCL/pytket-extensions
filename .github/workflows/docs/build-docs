@@ -84,6 +84,7 @@ if __name__ == "__main__":
             content.append(f"\tpytket-qiskit <{PYTKET_QISKIT_DOCS_LINK}>\n")
             content.append(f"\tpytket-qsharp <{PYTKET_QSHARP_DOCS_LINK}>\n")
             content.append(f"\tpytket-quantinuum <{PYTKET_QUANTINUUM_DOCS_LINK}>\n")
+            content.append(f"\tpytket-cutensornet <{PYTKET_CUTENSORNET_LINK}>\n")
             content.append(f"\tpytket-qulacs <{PYTKET_QULACS_DOCS_LINK}>\n")
             content.append(f"\tpytket-qujax <{PYTKET_QUJAX_DOCS_LINK}>\n")
             content.append(f"\tpytket-stim <{PYTKET_STIM_DOCS_LINK}>\n")
