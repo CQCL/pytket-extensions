@@ -153,6 +153,7 @@ Other
 	pytket-qiskit <https://cqcl.github.io/pytket-qiskit/api/index.html>
 	pytket-qsharp <https://cqcl.github.io/pytket-qsharp/api/index.html>
 	pytket-quantinuum <https://cqcl.github.io/pytket-quantinuum/api/index.html>
+	pytket-cutensornet <https://cqcl.github.io/pytket-cutensornet/api/index.html>
 	pytket-qulacs <https://cqcl.github.io/pytket-qulacs/api/index.html>
 	pytket-qujax <https://cqcl.github.io/pytket-qujax/api/index.html>
 	pytket-stim <https://cqcl.github.io/pytket-stim/api/index.html>
