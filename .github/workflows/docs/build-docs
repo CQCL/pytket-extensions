@@ -14,7 +14,6 @@ PYTKET_DOCS_LINK = "https://tket.quantinuum.com/api-docs/index.html"
 PYTKET_AQT_DOCS_LINK = "https://tket.quantinuum.com/extensions/pytket-aqt/api/index.html"
 PYTKET_BRAKET_DOCS_LINK = "https://tket.quantinuum.com/extensions/pytket-braket/api/index.html"
 PYTKET_CIRQ_DOCS_LINK = "https://tket.quantinuum.com/extensions/pytket-cirq/api/index.html"
-PYTKET_IONQ_DOCS_LINK = "https://tket.quantinuum.com/extensions/pytket-ionq/api/index.html"
 PYTKET_IQM_DOCS_LINK = "https://tket.quantinuum.com/extensions/pytket-iqm/api/index.html"
 PYTKET_PENNYLANE_DOCS_LINK = "https://tket.quantinuum.com/extensions/pytket-pennylane/api/index.html"
 PYTKET_PROJECTQ_DOCS_LINK = "https://tket.quantinuum.com/extensions/pytket-projectq/api/index.html"
@@ -72,7 +71,6 @@ if __name__ == "__main__":
             content.append(f"\tpytket-aqt <{PYTKET_AQT_DOCS_LINK}>\n")
             content.append(f"\tpytket-braket <{PYTKET_BRAKET_DOCS_LINK}>\n")
             content.append(f"\tpytket-cirq <{PYTKET_CIRQ_DOCS_LINK}>\n")
-            content.append(f"\tpytket-ionq <{PYTKET_IONQ_DOCS_LINK}>\n")
             content.append(f"\tpytket-iqm <{PYTKET_IQM_DOCS_LINK}>\n")
             content.append(f"\tpytket-pennylane <{PYTKET_PENNYLANE_DOCS_LINK}>\n")
             content.append(f"\tpytket-projectq <{PYTKET_PROJECTQ_DOCS_LINK}>\n")

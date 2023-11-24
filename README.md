@@ -15,7 +15,6 @@ The extensions can be found in other repos:
 * [pytket-aqt](https://github.com/CQCL/pytket-aqt)
 * [pytket-braket](https://github.com/CQCL/pytket-braket)
 * [pytket-cirq](https://github.com/CQCL/pytket-cirq)
-* [pytket-ionq](https://github.com/CQCL/pytket-ionq)
 * [pytket-iqm](https://github.com/CQCL/pytket-iqm)
 * [pytket-pennylane](https://github.com/CQCL/pytket-pennylane)
 * [pytket-projectq](https://github.com/CQCL/pytket-projectq)
