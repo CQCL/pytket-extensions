@@ -1,7 +1,7 @@
 # Pytket Extensions
 
 This repository gives an overview of Python extension modules for 
-[pytket](https://cqcl.github.io/tket/pytket/api/index.html), a quantum computing toolkit and optimising compiler developed by Quantinuum.
+[pytket](https://tket.quantinuum.com/api-docs/index.html), a quantum computing toolkit and optimising compiler developed by Quantinuum.
 
 Each of these modules provides one or several _backends_ (interfaces to devices
 or simulators), _frontends_ (interfaces to other high-level quantum languages),
@@ -47,7 +47,7 @@ This will install `pytket` if it isn't already installed, and add new classes
 and methods into the `pytket.extensions` namespace.
 
 Full documentation for all these extension module is available
-[here](https://cqcl.github.io/pytket-extensions/api/index.html).
+[here](https://tket.quantinuum.com/api-docs/extensions.html).
 
 ## Bugs, support and feature requests
 
@@ -58,7 +58,7 @@ There is also a Slack channel for discussion and support. Click [here](https://t
 
 ## Supported Backends
 
-For a list of accessible backends refer to the [documentation](https://cqcl.github.io/pytket-extensions/api/index.html).
+For a list of accessible backends refer to the [documentation](https://tket.quantinuum.com/api-docs/extensions.html).
 
 ## Development
 
