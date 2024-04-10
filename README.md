@@ -109,5 +109,5 @@ To run the tests for a module:
 the `test-requirements.txt` file (all via `pip`);
 3. run `pytest`.
 
-When adding a new feature, please add a test for it. When fixing a bug, please
+When adding a new feature, please add a test for it. When fixing a bug please
 add a test that demonstrates the fix.
